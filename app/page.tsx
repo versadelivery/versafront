@@ -1,94 +1,20 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer"
-import { Menu } from "lucide-react";
 import Image from "next/image";
 import logoHero from "@/public/img/logo_hero.svg"
-import logoHeader from "@/public/img/logo.svg"
 import meat from "@/public/img/meat_img.png"
 import bannerImg from "@/public/img/banner_image.jpg"
+import { Header } from "@/components/landing/header";
+import { Footer } from "@/components/landing/footer";
 
 export default function Home() {
 
   return (
     <main className="min-h-screen bg-black text-white">
-      <nav className="fixed w-full z-50 bg-black/5 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex justify-start">
-            <Image src={logoHeader} alt="Versa" width={120} />
-          </div>
+      <Header/>
 
-          <div className="font-antarctican-mono hidden md:flex justify-center gap-8">
-            <a href="#" className="text-white hover:text-gray-300">HOME</a>
-            <a href="#" className="text-white hover:text-gray-300">SOBRE</a>
-          </div>
-
-          <div className="flex justify-end items-center gap-4">
-            <div className="hidden md:block">
-              <Button variant="outline" className="rounded-none font-antarctican-mono bg-transparent border-white text-white hover:bg-white hover:text-black">
-                ASSINE AGORA
-              </Button>
-            </div>
-            
-            <Drawer direction="right">
-              <DrawerTrigger asChild>
-                <button className="md:hidden text-white mr-8">
-                  <Menu />
-                </button>
-              </DrawerTrigger>
-              <DrawerContent className="h-full top-0 right-0 left-auto mt-0 w-[300px] rounded-none bg-black/95 border-l border-gray-800">
-                <div className="flex flex-col h-full p-6">
-                  <DrawerHeader className="px-0 pt-0">
-                    <DrawerTitle className="text-white text-2xl">Menu</DrawerTitle>
-                  </DrawerHeader>
-                  
-                  <div className="flex-1 flex flex-col gap-6 mt-8">
-                    <DrawerClose asChild>
-                      <a 
-                        href="#" 
-                        className="text-white hover:text-gray-300 text-lg font-medium transition-colors py-2"
-                      >
-                        HOME
-                      </a>
-                    </DrawerClose>
-                    
-                    <DrawerClose asChild>
-                      <a 
-                        href="#" 
-                        className="text-white hover:text-gray-300 text-lg font-medium transition-colors py-2"
-                      >
-                        SOBRE
-                      </a>
-                    </DrawerClose>
-                  </div>
-                  
-                  <DrawerFooter className="px-0 pb-0">
-                    <DrawerClose asChild>
-                      <Button 
-                        variant="outline" 
-                        className="rounded-none bg-transparent border-white text-white hover:bg-white hover:text-black w-full py-6 text-lg mt-4"
-                      >
-                        ASSINE AGORA
-                      </Button>
-                    </DrawerClose>
-                  </DrawerFooter>
-                </div>
-              </DrawerContent>
-            </Drawer>
-          </div>
-        </div>
-      </nav>
-
-      <section className="relative min-h-[90vh] flex items-center">
+      <section id="home" className="relative min-h-[90vh] flex items-center">
         <div className="absolute inset-0">
           <Image
             src={bannerImg}
@@ -127,7 +53,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="bg-white text-black py-20">
+      <section id="sobre" className="bg-white text-black py-20">
         <div className="max-w-10/12 mx-auto px-4">
           <div className="grid md:grid-cols-2 gap-12 items-start">
             <div>
@@ -191,16 +117,14 @@ export default function Home() {
           </div>
 
           <div className="text-center mt-16">
-            <Button className="rounded-none bg-emerald-600 text-white hover:bg-emerald-700 text-lg p-4 py-8">
+            <Button className="cursor-pointer rounded-none bg-emerald-600 text-white hover:bg-emerald-700 text-lg p-4 py-8">
               TESTE GRATUITAMENTE
             </Button>
           </div>
         </div>
       </section>
 
-      <footer className="font-antarctican-mono bg-foreground text-white py-8 text-center text-sm">
-        <p>VERSA DELIVERY 2025 - TODOS OS DIREITOS RESERVADOS</p>
-      </footer>
+      <Footer/>
     </main>
   );
 }
