@@ -1,17 +1,20 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { AuthLayout } from "@/components/auth/auth-layout";
-import { AuthFormInput } from "@/components/auth/auth-form-input";
-import { AuthButton } from "@/components/auth/auth-button";
-import { AuthFormFooter } from "@/components/auth/auth-form-footer";
+import { LoginForm } from "@/components/auth/login-form";
 import cesta from "@/public/img/cesta.png";
+import { loginUser } from "../services/auth-service";
 
 export default function Login() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     email: "",
     password: ""
   });
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -21,9 +24,21 @@ export default function Login() {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log(formData);
+    setIsLoading(true);
+
+    try {
+      const response = await loginUser(formData);
+      localStorage.setItem("authToken", response.token);
+      toast.success("Login realizado com sucesso!");
+      router.push("/");
+    } catch (error) {
+      toast.error("Credenciais inválidas. Por favor, tente novamente.");
+      console.error("Login error:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -32,32 +47,12 @@ export default function Login() {
       imageSrc={cesta} 
       imagePosition="left"
     >
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <AuthFormInput
-          type="email"
-          name="email"
-          value={formData.email}
-          onChange={handleChange}
-          placeholder="johndoe@mail.com"
-          label="Email"
-        />
-
-        <AuthFormInput
-          type="password"
-          name="password"
-          value={formData.password}
-          onChange={handleChange}
-          placeholder="********"
-          label="Senha"
-          showPasswordToggle
-        />
-
-        <AuthFormFooter isLogin />
-
-        <AuthButton type="submit" variant="primary">
-          ACESSAR
-        </AuthButton>
-      </form>
+      <LoginForm
+        formData={formData}
+        handleChange={handleChange}
+        isLoading={isLoading}
+        onSubmit={handleSubmit}
+      />
     </AuthLayout>
   );
 }

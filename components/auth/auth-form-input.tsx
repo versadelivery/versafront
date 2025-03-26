@@ -1,19 +1,9 @@
 "use client";
 
+import { AuthFormInputProps } from "@/app/types";
 import { Input } from "@/components/ui/input";
 import { Eye } from "lucide-react";
 import { useState } from "react";
-
-interface AuthFormInputProps {
-  type: string;
-  name: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  placeholder: string;
-  label: string;
-  required?: boolean;
-  showPasswordToggle?: boolean;
-}
 
 export function AuthFormInput({
   type,

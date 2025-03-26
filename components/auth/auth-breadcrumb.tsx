@@ -7,22 +7,29 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-// import { useRouter } from "next/navigation";
+import { AuthBreadcrumbProps } from "@/app/types";
 
-interface AuthBreadcrumbProps {
-  currentStep: number;
-  setStep: (step: number) => void;
-}
+export function AuthBreadcrumb({ 
+  currentStep, 
+  setStep,
+  isStepValid
+}: AuthBreadcrumbProps) {
+  const handleStepChange = (targetStep: number) => {
+    if (targetStep < currentStep && isStepValid) {
+      setStep(targetStep);
+    }
+  };
 
-export function AuthBreadcrumb({ currentStep, setStep }: AuthBreadcrumbProps) {
   return (
     <Breadcrumb className="mb-8 font-antarctican-mono">
       <BreadcrumbList>
         <BreadcrumbItem>
           <BreadcrumbLink 
             href="#" 
-            onClick={() => setStep(1)}
-            className={`font-bold text-xl ${currentStep === 1 ? "font-bold text-primary" : "text-foreground/40"}`}
+            onClick={() => handleStepChange(1)}
+            className={`font-bold text-xl ${currentStep === 1 ? "text-primary" : "text-foreground/40"} ${
+              currentStep > 1 && isStepValid ? "cursor-pointer hover:underline" : "cursor-default"
+            }`}
           >
             Estabelecimento
           </BreadcrumbLink>
@@ -30,9 +37,9 @@ export function AuthBreadcrumb({ currentStep, setStep }: AuthBreadcrumbProps) {
         <BreadcrumbSeparator />
         <BreadcrumbItem>
           <BreadcrumbLink 
-            href="#" 
-            onClick={() => setStep(2)}
-            className={`font-bold text-xl ${currentStep === 2 ? "font-bold text-primary" : "text-foreground/40"}`}
+            href="#"
+            onClick={() => handleStepChange(2)}
+            className={`font-bold text-xl ${currentStep === 2 ? "text-primary" : "text-foreground/40"} cursor-default`}
           >
             Dados Pessoais
           </BreadcrumbLink>

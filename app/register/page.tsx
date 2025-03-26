@@ -2,14 +2,17 @@
 
 import { useState } from "react";
 import { AuthLayout } from "@/components/auth/auth-layout";
-import { AuthFormInput } from "@/components/auth/auth-form-input";
-import { AuthButton } from "@/components/auth/auth-button";
-import { AuthFormFooter } from "@/components/auth/auth-form-footer";
 import { AuthBreadcrumb } from "@/components/auth/auth-breadcrumb";
+import { RegisterForm } from "@/components/auth/register-form";
 import cesta from "@/public/img/breads.png";
+import { registerShop } from "../services/auth-service";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function Register() {
+  const router = useRouter();
   const [step, setStep] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     storeName: "",
     storePhone: "",
@@ -26,87 +29,55 @@ export default function Register() {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const nextStep = () => setStep(2);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log(formData);
+    setIsLoading(true);
+
+    const payload = {
+      shop: {
+        name: formData.storeName,
+        cellphone: formData.storePhone,
+      },
+      shop_user: {
+        name: formData.userName,
+        email: formData.userEmail,
+        password: formData.userPassword,
+      },
+    };
+
+    try {
+      await registerShop(payload);
+      toast.success("Cadastro realizado com sucesso!");
+      router.push("/login");
+    } catch (error) {
+      toast.error("Erro ao cadastrar. Por favor, tente novamente.");
+      console.error("Registration error:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const nextStep = () => setStep(2);
+  const validateCurrentStep = () => {
+    if (step === 1) {
+      return formData.storeName.trim() !== "" && formData.storePhone.trim() !== "";
+    }
+    return true;
+  };
 
   return (
     <AuthLayout title="Cadastre-se na plataforma" imageSrc={cesta}>
-      <AuthBreadcrumb currentStep={step} setStep={setStep} />
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {step === 1 ? (
-          <>
-            <AuthFormInput
-              type="text"
-              name="storeName"
-              value={formData.storeName}
-              onChange={handleChange}
-              placeholder="Minha Loja"
-              label="Nome da Loja"
-            />
-
-            <AuthFormInput
-              type="tel"
-              name="storePhone"
-              value={formData.storePhone}
-              onChange={handleChange}
-              placeholder="(00) 00000-0000"
-              label="Telefone da Loja"
-            />
-
-            <AuthFormFooter />
-
-            <AuthButton 
-              type="button"
-              onClick={nextStep}
-              variant="secondary"
-              withArrow
-            >
-              Próximo
-            </AuthButton>
-          </>
-        ) : (
-          <>
-            <AuthFormInput
-              type="text"
-              name="userName"
-              value={formData.userName}
-              onChange={handleChange}
-              placeholder="João da Silva"
-              label="Seu Nome"
-            />
-
-            <AuthFormInput
-              type="email"
-              name="userEmail"
-              value={formData.userEmail}
-              onChange={handleChange}
-              placeholder="johndoe@mail.com"
-              label="Seu Email"
-            />
-
-            <AuthFormInput
-              type="password"
-              name="userPassword"
-              value={formData.userPassword}
-              onChange={handleChange}
-              placeholder="********"
-              label="Senha"
-              showPasswordToggle
-            />
-
-            <AuthFormFooter />
-
-            <AuthButton type="submit" variant="primary">
-              CADASTRAR
-            </AuthButton>
-          </>
-        )}
-      </form>
+      <AuthBreadcrumb currentStep={step} setStep={setStep} isStepValid={validateCurrentStep()} />
+      
+      <RegisterForm
+        step={step}
+        formData={formData}
+        handleChange={handleChange}
+        nextStep={nextStep}
+        isLoading={isLoading}
+        onSubmit={handleSubmit}
+      />
     </AuthLayout>
   );
 }

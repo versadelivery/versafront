@@ -2,15 +2,9 @@
 
 import { Header } from "@/components/landing/header";
 import { Footer } from "@/components/landing/footer";
-import Image, { StaticImageData } from "next/image";
+import Image from "next/image";
 import logoGreen from "@/public/img/logo_green.svg";
-
-interface AuthLayoutProps {
-  children: React.ReactNode;
-  title: string;
-  imageSrc: string | StaticImageData;
-  imagePosition?: "left" | "right";
-}
+import { AuthLayoutProps } from "@/app/types";
 
 export function AuthLayout({
   children,

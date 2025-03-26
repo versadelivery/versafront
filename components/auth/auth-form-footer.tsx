@@ -1,8 +1,5 @@
+import { AuthFormFooterProps } from "@/app/types";
 import Link from "next/link";
-
-interface AuthFormFooterProps {
-  isLogin?: boolean;
-}
 
 export function AuthFormFooter({ isLogin = false }: AuthFormFooterProps) {
   return (
