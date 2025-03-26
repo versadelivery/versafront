@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
+import { Toaster } from "sonner";
 
 const montserrat = Montserrat({
   variable: "--font-montserrat",
@@ -51,6 +52,7 @@ export default function RootLayout({
       <body
         className={`${montserrat.variable} ${antarcticanMono.variable} antialiased`}
       >
+        <Toaster position="top-center" />
         {children}
       </body>
     </html>
