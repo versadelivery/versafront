@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
+import Link from "next/link";
 import logoHero from "@/public/img/logo_hero.svg"
 import meat from "@/public/img/meat_img.png"
 import bannerImg from "@/public/img/banner_image.jpg"
@@ -34,7 +35,7 @@ export default function Home() {
             <Image 
               src={logoHero} 
               alt="Versa Delivery" 
-              className="w-[70vw] md:w-[40vw] "
+              className="w-[70vw] md:w-[40vw]"
               width={500}
               height={200}
             />
@@ -46,9 +47,11 @@ export default function Home() {
           </div>
 
           <div className="mt-8">
-            <Button className="rounded-none cursor-pointer bg-transparent font-antarctican-mono border-2 border-white text-white hover:bg-white hover:text-black text-lg px-8 py-6">
-              ASSINE AGORA
-            </Button>
+            <Link href="/login">
+              <Button className="rounded-none cursor-pointer bg-transparent font-antarctican-mono border-2 border-white text-white hover:bg-white hover:text-black text-lg px-8 py-6">
+                ASSINE AGORA
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
@@ -117,9 +120,11 @@ export default function Home() {
           </div>
 
           <div className="text-center mt-16">
-            <Button className="cursor-pointer rounded-none bg-emerald-600 text-white hover:bg-emerald-700 text-lg p-4 py-8">
-              TESTE GRATUITAMENTE
-            </Button>
+            <Link href="/login">
+              <Button className="cursor-pointer rounded-none bg-emerald-600 text-white hover:bg-emerald-700 text-lg p-4 py-8">
+                TESTE GRATUITAMENTE
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
