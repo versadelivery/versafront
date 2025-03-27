@@ -1,6 +1,6 @@
 import api from "../lib/api";
 import { API_ENDPOINTS } from "../constants/api";
-import { LoginData, RegisterData } from "../types";
+import { LoginData, RegisterData } from "../types/utils";
 
 export const registerShop = async (data: RegisterData) => {
   try {

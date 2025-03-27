@@ -7,7 +7,7 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { AuthBreadcrumbProps } from "@/app/types";
+import { AuthBreadcrumbProps } from "@/app/types/utils";
 
 export function AuthBreadcrumb({ 
   currentStep, 

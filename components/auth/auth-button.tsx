@@ -3,7 +3,8 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { AuthButtonProps } from "@/app/types";
+import { AuthButtonProps } from "@/app/types/utils";
+import { Loader2 } from "lucide-react";
 
 export function AuthButton({
   type = "button",
@@ -11,6 +12,7 @@ export function AuthButton({
   className = "",
   withArrow = false,
   children,
+  isLoading = false,
   ...props
 }: AuthButtonProps) {
   const baseClasses = "font-antarctican-mono rounded-none cursor-pointer w-80 text-lg font-bold p-8";
@@ -27,13 +29,19 @@ export function AuthButton({
       className={cn(
         baseClasses,
         variantClasses,
-        props.disabled && disabledClasses,
+        (props.disabled || isLoading) && disabledClasses,
         className
       )}
       {...props}
     >
-      {children}
-      {withArrow && <ArrowRight className="h-5 w-5" />}
+      {isLoading ? (
+        <Loader2 className="h-6 w-6 animate-spin" />
+      ) : (
+        <>
+          {children}
+          {withArrow && <ArrowRight className="h-5 w-5" />}
+        </>
+      )}
     </Button>
   );
 }

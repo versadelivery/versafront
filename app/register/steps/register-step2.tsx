@@ -3,9 +3,25 @@
 import { AuthFormInput } from "@/components/auth/auth-form-input";
 import { AuthButton } from "@/components/auth/auth-button";
 import { AuthFormFooter } from "@/components/auth/auth-form-footer";
-import { RegisterStep2Props } from "@/app/types";
+import { RegisterStep2Props } from "@/app/types/utils";
 
-export function RegisterStep2({ formData, handleChange, isLoading }: RegisterStep2Props) {
+export function RegisterStep2({ 
+  formData, 
+  handleChange,
+  handleBlur,
+  isLoading,
+  errors,
+  touched
+}: RegisterStep2Props & {
+  handleBlur: (e: React.FocusEvent<HTMLInputElement>) => void;
+  touched: Record<string, boolean>;
+}) {
+  const isFormValid = 
+    formData.userName.length >= 3 &&
+    formData.userEmail.includes('@') &&
+    formData.userPassword.length >= 6 &&
+    formData.userPassword === formData.confirmPassword;
+
   return (
     <>
       <AuthFormInput
@@ -13,8 +29,10 @@ export function RegisterStep2({ formData, handleChange, isLoading }: RegisterSte
         name="userName"
         value={formData.userName}
         onChange={handleChange}
+        onBlur={handleBlur}
         placeholder="João da Silva"
         label="Seu Nome"
+        error={touched.userName ? errors.userName : undefined}
       />
 
       <AuthFormInput
@@ -22,8 +40,10 @@ export function RegisterStep2({ formData, handleChange, isLoading }: RegisterSte
         name="userEmail"
         value={formData.userEmail}
         onChange={handleChange}
+        onBlur={handleBlur}
         placeholder="johndoe@mail.com"
         label="Seu Email"
+        error={touched.userEmail ? errors.userEmail : undefined}
       />
 
       <AuthFormInput
@@ -31,9 +51,23 @@ export function RegisterStep2({ formData, handleChange, isLoading }: RegisterSte
         name="userPassword"
         value={formData.userPassword}
         onChange={handleChange}
+        onBlur={handleBlur}
         placeholder="********"
         label="Senha"
         showPasswordToggle
+        error={touched.userPassword ? errors.userPassword : undefined}
+      />
+
+      <AuthFormInput
+        type="password"
+        name="confirmPassword"
+        value={formData.confirmPassword}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        placeholder="********"
+        label="Confirmar Senha"
+        showPasswordToggle
+        error={touched.confirmPassword ? errors.confirmPassword : undefined}
       />
 
       <AuthFormFooter />
@@ -41,9 +75,10 @@ export function RegisterStep2({ formData, handleChange, isLoading }: RegisterSte
       <AuthButton 
         type="submit" 
         variant="primary"
-        disabled={isLoading || !formData.userName || !formData.userEmail || !formData.userPassword}
+        disabled={isLoading || !isFormValid}
+        isLoading={isLoading}
       >
-        {isLoading ? "CADASTRANDO..." : "CADASTRAR"}
+        CADASTRAR
       </AuthButton>
     </>
   );

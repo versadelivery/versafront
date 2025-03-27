@@ -1,4 +1,4 @@
-import { AuthFormFooterProps } from "@/app/types";
+import { AuthFormFooterProps } from "@/app/types/utils";
 import Link from "next/link";
 
 export function AuthFormFooter({ isLogin = false }: AuthFormFooterProps) {

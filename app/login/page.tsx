@@ -7,14 +7,18 @@ import { AuthLayout } from "@/components/auth/auth-layout";
 import { LoginForm } from "@/components/auth/login-form";
 import cesta from "@/public/img/cesta.png";
 import { loginUser } from "../services/auth-service";
+import { loginSchema, LoginFormData } from "@/app/validations/auth-schemas";
+import { z } from "zod";
 
 export default function Login() {
   const router = useRouter();
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<LoginFormData>({
     email: "",
     password: ""
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<Partial<LoginFormData>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -22,10 +26,41 @@ export default function Login() {
       ...prev,
       [name]: value
     }));
+    
+    if (errors[name as keyof LoginFormData]) {
+      setErrors(prev => ({ ...prev, [name]: undefined }));
+    }
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name } = e.target;
+    setTouched(prev => ({ ...prev, [name]: true }));
+    validateForm();
+  };
+
+  const validateForm = () => {
+    try {
+      loginSchema.parse(formData);
+      setErrors({});
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const newErrors: Partial<LoginFormData> = {};
+        error.errors.forEach(err => {
+          const path = err.path[0] as keyof LoginFormData;
+          newErrors[path] = err.message;
+        });
+        setErrors(newErrors);
+      }
+      return false;
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) return;
+    
     setIsLoading(true);
 
     try {
@@ -50,8 +85,11 @@ export default function Login() {
       <LoginForm
         formData={formData}
         handleChange={handleChange}
+        handleBlur={handleBlur}
         isLoading={isLoading}
         onSubmit={handleSubmit}
+        errors={errors}
+        touched={touched}
       />
     </AuthLayout>
   );

@@ -3,14 +3,21 @@
 import { AuthFormInput } from "./auth-form-input";
 import { AuthButton } from "./auth-button";
 import { AuthFormFooter } from "./auth-form-footer";
-import { LoginFormProps } from "@/app/types";
+import { LoginFormProps } from "@/app/types/utils";
 
 export function LoginForm({
   formData,
   handleChange,
+  handleBlur,
   isLoading,
-  onSubmit
+  onSubmit,
+  errors,
+  touched
 }: LoginFormProps) {
+  const isFormValid = 
+    formData.email.includes('@') && 
+    formData.password.length >= 6;
+
   return (
     <form onSubmit={onSubmit} className="space-y-6">
       <AuthFormInput
@@ -18,8 +25,10 @@ export function LoginForm({
         name="email"
         value={formData.email}
         onChange={handleChange}
+        onBlur={handleBlur}
         placeholder="johndoe@mail.com"
         label="Email"
+        error={touched?.email ? errors?.email : undefined}
       />
 
       <AuthFormInput
@@ -27,9 +36,11 @@ export function LoginForm({
         name="password"
         value={formData.password}
         onChange={handleChange}
+        onBlur={handleBlur}
         placeholder="********"
         label="Senha"
         showPasswordToggle
+        error={touched?.password ? errors?.password : undefined}
       />
 
       <AuthFormFooter isLogin />
@@ -37,9 +48,10 @@ export function LoginForm({
       <AuthButton 
         type="submit" 
         variant="primary"
-        disabled={isLoading || !formData.email || !formData.password}
+        disabled={isLoading || !isFormValid}
+        isLoading={isLoading}
       >
-        {isLoading ? "ACESSANDO..." : "ACESSAR"}
+        ACESSAR
       </AuthButton>
     </form>
   );
