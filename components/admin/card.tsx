@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
-import { LucideIcon } from "lucide-react";
+import { LucideIcon, ArrowRight } from "lucide-react";
 
 interface AdminDashboardCardProps {
   href: string;
@@ -21,7 +21,10 @@ export function AdminDashboardCard({
 }: AdminDashboardCardProps) {
   return (
     <Link href={href}>
-      <Card className="bg-white rounded-sm p-12 shadow-lg border-none h-full">
+      <Card className="bg-white rounded-sm p-12 shadow-lg border-none h-full relative">
+        <div className="absolute top-8 right-8">
+          <ArrowRight className="h-5 w-5 text-gray-400" />
+        </div>
         <div className="flex flex-col items-start text-center h-full">
           <div className={`${iconBgColor} p-4 rounded-lg mb-4`}>
             <Icon className="h-8 w-8 text-white" />

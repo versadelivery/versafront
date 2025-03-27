@@ -1,7 +1,7 @@
 "use client";
 
 import { Header } from "@/components/landing/header";
-import { Footer } from "@/components/landing/footer";
+import { Footer } from "@/components/footer";
 import Image from "next/image";
 import logoGreen from "@/public/img/logo_green.svg";
 import { AuthLayoutProps } from "@/app/types/utils";

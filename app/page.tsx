@@ -7,7 +7,7 @@ import logoHero from "@/public/img/logo_hero.svg"
 import meat from "@/public/img/meat_img.png"
 import bannerImg from "@/public/img/banner_image.jpg"
 import { Header } from "@/components/landing/header";
-import { Footer } from "@/components/landing/footer";
+import { Footer } from "@/components/footer";
 
 export default function Home() {
 
