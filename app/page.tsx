@@ -121,7 +121,7 @@ export default function Home() {
 
           <div className="text-center mt-16">
             <Link href="/login">
-              <Button className="cursor-pointer rounded-none bg-emerald-600 text-white hover:bg-emerald-700 text-lg p-4 py-8">
+              <Button className="cursor-pointer rounded-none bg-emerald-600 text-white hover:bg-primary/80 text-lg p-4 py-8">
                 TESTE GRATUITAMENTE
               </Button>
             </Link>
