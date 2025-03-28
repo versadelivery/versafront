@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ProtectedRoute from "@/components/protected-route";
 import { Header } from "./components/catalog-header";
 import { Tabs } from "./components/tabs";
@@ -8,82 +8,92 @@ import { ActionBar } from "./components/action-bar";
 import { ProductGroup } from "./components/product-group";
 import { GroupModal } from "./components/group-modal";
 import { NewItemModal } from "./components/item-modal/new-item-modal";
-import { CatalogTab, ProductGroup as ProductGroupType } from "@/app/types/admin";
+import { CatalogTab, CatalogGroup } from "@/app/types/admin";
 import { StockContent } from "./components/stock-content";
-
-const initialGroups: ProductGroupType[] = [
-  {
-    id: '1',
-    name: 'Carnes',
-    description: 'Cortes selecionados de carne bovina, suína e aves',
-    priority: 1,
-    products: [
-      {
-        id: '1',
-        name: 'PICANHA',
-        description: 'Picanha premium',
-        price: 31.70,
-        unit: 'Por unidade',
-        active: true,
-        image: '/img/picanha.jpg'
-      },
-      {
-        id: '2',
-        name: 'PEITO DE FRANGO',
-        description: 'Peito de frango sem osso',
-        price: 28.30,
-        unit: 'Por peso',
-        active: true,
-        image: '/img/peito-de-frango.jpg'
-      }
-    ]
-  },
-  {
-    id: '2',
-    name: 'Bebidas',
-    description: 'Refrigerantes, sucos e águas',
-    priority: 2,
-    products: [
-      {
-        id: '3',
-        name: 'ÁGUA MINERAL',
-        description: 'Garrafa 500ml',
-        price: 3.50,
-        unit: 'Unidade',
-        active: true
-      }
-    ]
-  }
-];
+import { getCatalogGroups, createCatalogGroup, updateCatalogGroup, deleteCatalogGroup } from "@/app/services/catalog-service";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 export default function CatalogPage() {
   const [activeTab, setActiveTab] = useState<CatalogTab>('catalog');
   const [isNewGroupOpen, setIsNewGroupOpen] = useState(false);
   const [isNewItemOpen, setIsNewItemOpen] = useState(false);
-  const [editingGroup, setEditingGroup] = useState<ProductGroupType | null>(null);
-  const [groups, setGroups] = useState<ProductGroupType[]>(initialGroups);
+  const [editingGroup, setEditingGroup] = useState<CatalogGroup | null>(null);
+  const [groups, setGroups] = useState<CatalogGroup[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSaveGroup = (groupData: Omit<ProductGroupType, 'id' | 'products'>) => {
-    if (editingGroup) {
-      setGroups(groups.map(g => 
-        g.id === editingGroup.id ? {...g, ...groupData} : g
-      ));
-    } else {
-      const newGroup: ProductGroupType = {
-        ...groupData,
-        id: Date.now().toString(),
-        products: []
-      };
-      setGroups([...groups, newGroup]);
+  useEffect(() => {
+    fetchGroups();
+  }, []);
+
+  const fetchGroups = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await getCatalogGroups();
+      setGroups(data);
+      toast.success("Catálogo carregado com sucesso");
+    } catch (error) {
+      console.error("Erro ao carregar grupos:", error);
+      setError("Falha ao carregar grupos. Tente novamente.");
+      setGroups([]);
+      toast.error("Falha ao carregar grupos");
+    } finally {
+      setIsLoading(false);
     }
-    setIsNewGroupOpen(false);
-    setEditingGroup(null);
   };
 
-  const handleEditGroup = (group: ProductGroupType) => {
+  const handleSaveGroup = async (groupData: Omit<CatalogGroup, 'id'> & { imageFile?: File }) => {
+    try {
+      const formData = new FormData();
+      formData.append('name', groupData.name);
+      formData.append('description', groupData.description || '');
+      formData.append('priority', groupData.priority.toString());
+
+      if (groupData.imageFile) {
+        formData.append('image', groupData.imageFile);
+      } else if (groupData.image && typeof groupData.image === 'string') {
+        formData.append('image_url', groupData.image);
+      }
+
+      if (editingGroup) {
+        const updatedGroup = await updateCatalogGroup(editingGroup.id, formData);
+        setGroups(groups.map(g => g.id === updatedGroup.id ? updatedGroup : g));
+        toast.success("Grupo atualizado com sucesso");
+      } else {
+        const newGroup = await createCatalogGroup(formData);
+        setGroups([...groups, newGroup]);
+        toast.success("Grupo criado com sucesso");
+      }
+      
+      setIsNewGroupOpen(false);
+      setEditingGroup(null);
+    } catch (error) {
+      console.error("Erro ao salvar grupo:", error);
+      toast.error("Erro ao salvar grupo");
+    }
+  };
+
+  const handleDeleteGroup = async (id: number): Promise<boolean> => {
+    try {
+      await deleteCatalogGroup(id);
+      setGroups(groups.filter(g => g.id !== id));
+      toast.success("Grupo deletado com sucesso");
+      return true;
+    } catch (error) {
+      console.error("Erro ao deletar grupo:", error);
+      toast.error("Falha ao deletar grupo");
+      return false;
+    }
+  };
+
+  const handleEditGroup = (group: CatalogGroup) => {
     setEditingGroup(group);
     setIsNewGroupOpen(true);
   };
+
+  const sortedGroups = [...groups].sort((a, b) => (b.priority || 0) - (a.priority || 0));
 
   return (
     <div className="w-full px-4 sm:px-8 lg:px-24">
@@ -101,7 +111,10 @@ export default function CatalogPage() {
           <main className="min-h-screen bg-white">
             <div className="w-full">
               <ActionBar 
-                onNewGroup={() => setIsNewGroupOpen(true)}
+                onNewGroup={() => {
+                  setEditingGroup(null);
+                  setIsNewGroupOpen(true);
+                }}
                 onNewItem={() => setIsNewItemOpen(true)}
               />
               
@@ -119,19 +132,26 @@ export default function CatalogPage() {
                 }}
                 editingGroup={editingGroup}
                 onSave={handleSaveGroup}
+                onDelete={handleDeleteGroup}
               />
               
-              <div className="space-y-8">
-                {groups
-                  .sort((a, b) => a.priority - b.priority)
-                  .map(group => (
-                    <ProductGroup 
+              {isLoading ? (
+                <div className="flex justify-center items-center h-64">
+                  <Loader2 className="h-8 w-8 animate-spin" />
+                </div>
+              ) : error ? (
+                <div className="text-red-500 p-4 text-center">{error}</div>
+              ) : (
+                <div className="space-y-8">
+                  {sortedGroups.map(group => (
+                    <ProductGroup
                       key={group.id} 
                       group={group} 
-                      onEdit={handleEditGroup} 
+                      onEdit={handleEditGroup}
                     />
                   ))}
-              </div>
+                </div>
+              )}
             </div>
           </main>
         </ProtectedRoute>
