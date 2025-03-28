@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
 import logoHeader from "@/public/img/logo.svg";
+import { LogOut } from "lucide-react";
 
 export function Header() {
 
@@ -16,19 +17,16 @@ export function Header() {
           </Link>
         </div>
 
-
         <div className="flex justify-end items-center gap-4">
           <div className="hidden md:block">
-            <Link href="/login">
-              <Button
-                variant="outline"
-                className="cursor-pointer rounded-none font-antarctican-mono bg-transparent border-white text-white hover:bg-white hover:text-black"
-                >
-                ASSINE AGORA
-              </Button>
-            </Link>
+            <Button
+              variant="outline"
+              className="cursor-pointer rounded-none font-antarctican-mono bg-transparent border-white text-white hover:bg-white hover:text-black gap-2"
+              >
+              <LogOut className="h-4 w-4" />
+              LOGOUT
+            </Button>
           </div>
-          
         </div>
       </div>
     </nav>
