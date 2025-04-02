@@ -38,14 +38,21 @@ export function ProductGroup({ group, onEdit }: ProductGroupProps) {
             <p className="text-sm sm:text-base text-foreground/40">Prioridade: {group.priority}</p>
           </div>
         </div>
-        
       </div>
       
-      {group?.products && group.products.length > 0 && (
+      {group.products.length > 0 ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {group.products.map(product => (
-            <ProductCard key={product.id} product={product} groupName={group.name} />
+            <ProductCard 
+              key={product.id} 
+              product={product} 
+              groupName={group.name} 
+            />
           ))}
+        </div>
+      ) : (
+        <div className="text-center py-4 text-gray-500">
+          Nenhum produto cadastrado neste grupo
         </div>
       )}
     </div>
