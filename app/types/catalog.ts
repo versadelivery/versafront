@@ -1,3 +1,5 @@
+import { FieldErrors, UseFormRegister, UseFormSetValue, UseFormWatch } from "react-hook-form";
+
 export interface Product {
   id: string;
   name: string;
@@ -13,6 +15,33 @@ export interface Product {
   image_url: string;
   active?: boolean;
 }
+
+export interface MeasurePriceSectionProps {
+  measureType: 'unit' | 'weight';
+  setMeasureType: (type: 'unit' | 'weight') => void;
+  hasDiscount: boolean;
+  setHasDiscount: (value: boolean) => void;
+  register: UseFormRegister<any>;
+  setValue: UseFormSetValue<any>;
+  watch: UseFormWatch<any>;
+  errors: FieldErrors<any>;
+}
+
+export interface FormValues {
+  id?: string;
+  name: string;
+  description: string;
+  catalog_group_id: string;
+  item_type: 'unit' | 'weight';
+  price: string;
+  unit_of_measurement?: 'kg' | 'g';
+  measure_interval?: string;
+  min_weight?: string;
+  max_weight?: string;
+  priority: string;
+  price_with_discount?: string;
+}
+
 
 export interface CatalogItem {
   id: string;
@@ -85,4 +114,13 @@ export interface UICatalogGroup {
   priority: number;
   image?: string;
   products: ProductData[];
+}
+
+
+export interface NewItemModalProps {
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
+  onSuccess?: () => void;
+  editingItem?: any;
+  onDelete?: (id: string) => Promise<void>;
 }

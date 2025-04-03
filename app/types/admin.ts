@@ -126,11 +126,3 @@ export type Step = {
   title: string;
   items: StepItem[];
 };
-
-export interface NewItemModalProps {
-  isOpen: boolean;
-  setIsOpen: (open: boolean) => void;
-  onSuccess?: () => void;
-  editingItem?: UICatalogItem | null;
-  onDelete?: (id: string) => Promise<void>;
-}

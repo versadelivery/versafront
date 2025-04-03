@@ -138,6 +138,7 @@ export default function CatalogPage() {
                       key={group.id} 
                       group={group} 
                       onEdit={handleEditGroup}
+                      onEditItem={handleEditItem}
                     />
                   ))}
                 </div>

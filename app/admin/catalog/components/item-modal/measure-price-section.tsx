@@ -7,17 +7,7 @@ import { HelpCircle } from "lucide-react";
 import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors } from "react-hook-form";
 import { useEffect } from "react";
 import { CurrencyInput } from "./currency-input";
-
-interface MeasurePriceSectionProps {
-  measureType: 'unit' | 'weight';
-  setMeasureType: (type: 'unit' | 'weight') => void;
-  hasDiscount: boolean;
-  setHasDiscount: (value: boolean) => void;
-  register: UseFormRegister<any>;
-  setValue: UseFormSetValue<any>;
-  watch: UseFormWatch<any>;
-  errors: FieldErrors<any>;
-}
+import { MeasurePriceSectionProps } from "@/app/types/catalog";
 
 export function MeasurePriceSection({
   measureType,

@@ -43,7 +43,7 @@ export function ImageUpload({
             onClick={() => {
               onRemoveImage();
               if (fileInputRef.current) {
-                fileInputRef.current.value = ''; // Limpa o input file
+                fileInputRef.current.value = '';
               }
             }}
             className="absolute -top-2 -right-2 bg-gray-800 rounded-full p-1 w-8 h-8 flex items-center justify-center cursor-pointer"

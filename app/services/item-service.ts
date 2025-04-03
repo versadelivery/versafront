@@ -9,6 +9,8 @@ export const createCatalogItem = async (formData: FormData) => {
 };
 
 export const updateCatalogItem = async ({ id, formData }: { id: string; formData: FormData }) => {
+  formData.append('id', id);
+  
   const response = await api.put(`/catalog_items/${id}`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });

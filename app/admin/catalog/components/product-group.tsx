@@ -11,7 +11,6 @@ interface ProductGroupProps {
 }
 
 export function ProductGroup({ group, onEdit, onEditItem }: ProductGroupProps) {
-
   const handleEditItem = (item: UICatalogItem) => {
     if (onEditItem) {
       onEditItem(item);
@@ -54,7 +53,8 @@ export function ProductGroup({ group, onEdit, onEditItem }: ProductGroupProps) {
             <ProductCard
               key={product.data.id}
               product={product.data} 
-              groupName={group.name} 
+              groupName={group.name}
+              onEdit={handleEditItem}
             />
           ))}
         </div>

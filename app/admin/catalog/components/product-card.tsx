@@ -1,12 +1,12 @@
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Edit2 } from "lucide-react";
-import { Product } from "@/app/types/catalog";
+import { Product, UICatalogItem } from "@/app/types/catalog";
 
 interface ProductCardProps {
   product: Product;
   groupName: string;
-  onEdit?: (product: Product) => void;
+  onEdit?: (product: UICatalogItem) => void;
 }
 
 export function ProductCard({ product, groupName, onEdit }: ProductCardProps) {
@@ -19,7 +19,7 @@ export function ProductCard({ product, groupName, onEdit }: ProductCardProps) {
 
   const handleEditClick = () => {
     if (onEdit) {
-      onEdit(product);
+      onEdit(product as never);
     }
   };
 

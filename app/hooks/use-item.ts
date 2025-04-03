@@ -1,58 +1,38 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import { 
-  createCatalogItem, 
-  updateCatalogItem, 
-  deleteCatalogItem
-} from '../services/item-service';
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+import { createCatalogItem, updateCatalogItem, deleteCatalogItem } from "../services/item-service";
 
-export const useCreateItem = () => {
+export function useCreateItem() {
   const queryClient = useQueryClient();
   
   return useMutation({
     mutationFn: createCatalogItem,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['catalog-groups'] });
-      toast.success('Item criado com sucesso');
-    },
-    onError: (error: any) => {
-      console.error('Erro ao criar item:', error);
-      const errorMessage = error.response?.data?.message || 'Erro ao criar item';
-      toast.error(errorMessage);
     }
   });
-};
+}
 
-export const useUpdateItem = () => {
+export function useUpdateItem() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: updateCatalogItem,
+    mutationFn: async ({ id, formData }: { id: string; formData: FormData }) => {
+      return await updateCatalogItem({ id, formData });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['catalog-groups'] });
-      toast.success('Item atualizado com sucesso');
-    },
-    onError: (error: any) => {
-      console.error('Erro ao atualizar item:', error);
-      const errorMessage = error.response?.data?.message || 'Erro ao atualizar item';
-      toast.error(errorMessage);
     }
   });
-};
+}
 
-export const useDeleteItem = () => {
+export function useDeleteItem() {
   const queryClient = useQueryClient();
   
   return useMutation({
     mutationFn: deleteCatalogItem,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['catalog-groups'] });
-      toast.success('Item excluído com sucesso');
-    },
-    onError: (error: any) => {
-      console.error('Erro ao excluir item:', error);
-      const errorMessage = error.response?.data?.message || 'Erro ao excluir item';
-      toast.error(errorMessage);
     }
   });
-};
+}
