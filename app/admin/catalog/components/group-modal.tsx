@@ -26,6 +26,7 @@ interface GroupModalProps {
 export function GroupModal({ isOpen, onOpenChange, editingGroup, onSave, onDelete }: GroupModalProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [hasRemovedImage, setHasRemovedImage] = useState(false);
 
   const form = useForm<GroupFormValues>({
     resolver: zodResolver(groupSchema),
@@ -34,6 +35,7 @@ export function GroupModal({ isOpen, onOpenChange, editingGroup, onSave, onDelet
       description: '',
       priority: 0,
       image: undefined,
+      removeImage: false,
     }
   });
 
@@ -44,16 +46,20 @@ export function GroupModal({ isOpen, onOpenChange, editingGroup, onSave, onDelet
         description: editingGroup.description,
         priority: editingGroup.priority,
         image: undefined,
+        removeImage: false,
       });
       setPreviewImage(editingGroup.image || null);
+      setHasRemovedImage(false);
     } else {
       form.reset({
         name: '',
         description: '',
         priority: 0,
         image: undefined,
+        removeImage: false,
       });
       setPreviewImage(null);
+      setHasRemovedImage(false);
     }
   }, [editingGroup, form]);
 
@@ -61,17 +67,26 @@ export function GroupModal({ isOpen, onOpenChange, editingGroup, onSave, onDelet
 
   const handleImageChange = (file: File) => {
     form.setValue('image', file, { shouldValidate: true });
+    form.setValue('removeImage', false, { shouldValidate: true });
     setPreviewImage(URL.createObjectURL(file));
+    setHasRemovedImage(false);
   };
 
   const handleRemoveImage = () => {
     form.setValue('image', undefined, { shouldValidate: true });
+    form.setValue('removeImage', true, { shouldValidate: true });
     setPreviewImage(null);
+    setHasRemovedImage(true);
   };
 
   const onSubmit = async (values: GroupFormValues) => {
     try {
-      await onSave(values);
+      const finalValues = {
+        ...values,
+        image: values.removeImage ? '' : values.image
+      };
+      
+      await onSave(finalValues);
       onOpenChange(false);
       form.reset();
       setPreviewImage(null);
@@ -178,9 +193,10 @@ export function GroupModal({ isOpen, onOpenChange, editingGroup, onSave, onDelet
                   IMAGEM DO GRUPO
                 </FormLabel>
                 <ImageUpload
-                  previewImage={previewImage || editingGroup?.image || null}
+                  previewImage={previewImage}
                   onImageChange={handleImageChange}
                   onRemoveImage={handleRemoveImage}
+                  hasRemovedImage={hasRemovedImage}
                 />
               </FormItem>
               

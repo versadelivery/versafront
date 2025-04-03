@@ -8,9 +8,15 @@ interface ImageUploadProps {
   previewImage: string | null;
   onImageChange: (file: File) => void;
   onRemoveImage: () => void;
+  hasRemovedImage?: boolean;
 }
 
-export function ImageUpload({ previewImage, onImageChange, onRemoveImage }: ImageUploadProps) {
+export function ImageUpload({ 
+  previewImage, 
+  onImageChange, 
+  onRemoveImage,
+  hasRemovedImage = false
+}: ImageUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -21,7 +27,7 @@ export function ImageUpload({ previewImage, onImageChange, onRemoveImage }: Imag
 
   return (
     <div className="flex flex-col items-center gap-4">
-      {previewImage && (
+      {previewImage && !hasRemovedImage && (
         <div className="relative">
           <div className="w-32 h-32 relative rounded-xs overflow-hidden">
             <Image
@@ -34,8 +40,13 @@ export function ImageUpload({ previewImage, onImageChange, onRemoveImage }: Imag
           </div>
           <button
             type="button"
-            onClick={onRemoveImage}
-            className="absolute -top-2 -right-2 bg-gray-800 rounded-full p-1"
+            onClick={() => {
+              onRemoveImage();
+              if (fileInputRef.current) {
+                fileInputRef.current.value = ''; // Limpa o input file
+              }
+            }}
+            className="absolute -top-2 -right-2 bg-gray-800 rounded-full p-1 w-8 h-8 flex items-center justify-center cursor-pointer"
           >
             <X className="w-4 text-white" />
           </button>
@@ -46,7 +57,7 @@ export function ImageUpload({ previewImage, onImageChange, onRemoveImage }: Imag
           <div className="flex flex-col items-center justify-center pt-2 pb-3">
             <Camera className="w-5 h-5 text-foreground" />
             <span className="text-xs sm:text-sm text-foreground/60 mt-1">
-              {previewImage ? 'Alterar imagem' : 'Adicionar imagem'}
+              {previewImage && !hasRemovedImage ? 'Alterar imagem' : 'Adicionar imagem'}
             </span>
           </div>
           <input 

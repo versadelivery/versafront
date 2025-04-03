@@ -22,7 +22,7 @@ export function ProductGroup({ group, onEdit }: ProductGroupProps) {
           >
             <Edit2 className="w-5 h-5" />
           </Button>
-          {group.image && (
+          {group.image &&(
             <div className="w-16 h-16 sm:w-20 sm:h-20 relative rounded-xs overflow-hidden">
               <Image
                 src={group.image}

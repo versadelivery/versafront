@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import ProtectedRoute from "@/components/protected-route";
 import { Header } from "./components/catalog-header";
 import { Tabs } from "./components/tabs";
@@ -8,7 +8,7 @@ import { ActionBar } from "./components/action-bar";
 import { ProductGroup } from "./components/product-group";
 import { GroupModal } from "./components/group-modal";
 import { NewItemModal } from "./components/item-modal/new-item-modal";
-import { CatalogTab, GroupData, UICatalogGroup } from "@/app/types/catalog";
+import { CatalogTab, UICatalogGroup } from "@/app/types/catalog";
 import { StockContent } from "./components/stock-content";
 import { useGroups, useCreateGroup, useUpdateGroup, useDeleteGroup } from "@/app/hooks/use-group";
 import { Loader2 } from "lucide-react";
@@ -30,12 +30,13 @@ export default function CatalogPage() {
     formData.append('description', values.description || '');
     formData.append('priority', values.priority.toString());
 
-    if (values.image) {
+    if (values.removeImage) {
+      formData.append('image', '');
+    } else if (values.image) {
       formData.append('image', values.image);
     } else if (editingGroup?.image) {
       formData.append('image_url', editingGroup.image);
     }
-
     if (editingGroup) {
       await updateGroupMutation.mutateAsync({ id: editingGroup.id, formData });
     } else {
