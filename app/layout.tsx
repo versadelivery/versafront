@@ -3,6 +3,7 @@ import { Montserrat } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 import { Toaster } from "sonner";
+import { Providers } from "./providers";
 
 const montserrat = Montserrat({
   variable: "--font-montserrat",
@@ -50,10 +51,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${montserrat.variable} ${antarcticanMono.variable} antialiased`}
+        className={`${montserrat.variable} ${antarcticanMono.variable} antialiased bg-white`}
       >
         <Toaster position="top-center" />
-        {children}
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );

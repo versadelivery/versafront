@@ -1,23 +1,64 @@
 export interface CatalogItemAttributes {
   name: string;
   description?: string;
+  item_type?: string;
+  unit_of_measurement?: string;
+  price?: string;
+  price_with_discount?: string;
+  measure_interval?: string;
+  min_weight?: string;
+  max_weight?: string;
   priority?: number;
+  image_url?: string | null;
+}
+
+export interface ItemAttributes {
+  name?: string;
+  description?: string;
+  item_type?: string;
+  unit_of_measurement?: string;
+  price?: string;
+  price_with_discount?: string;
+  measure_interval?: string;
+  min_weight?: string;
+  max_weight?: string;
   image_url?: string;
+}
+
+export interface Item {
+  id: string;
+  attributes?: ItemAttributes;
 }
 
 export interface CatalogItem {
   id: string;
+  type: string;
   attributes: CatalogItemAttributes;
 }
 
+export interface CatalogGroupAttributes {
+  name: string;
+  description?: string;
+  priority?: number;
+  image_url?: string;
+  items: {
+    data: CatalogItem[];
+  }[];
+}
+
+export interface CatalogGroupData {
+  id: string;
+  type: string;
+  attributes: CatalogGroupAttributes;
+}
+
 export interface CatalogListResponse {
-  data: CatalogItem[];
+  data: CatalogGroupData[];
 }
 
 export interface SingleCatalogResponse {
-  data: CatalogItem;
+  data: CatalogGroupData;
 }
-
 
 export type ApiResponse<T> = {
   success: boolean;
@@ -29,8 +70,13 @@ export type Product = {
   id: string;
   name: string;
   description: string;
+  item_type?: string;
+  unit?: string;
   price: number;
-  unit: string;
+  price_with_discount?: number;
+  measure_interval?: number;
+  min_weight?: number;
+  max_weight?: number;
   image?: string;
   active: boolean;
 };
@@ -41,7 +87,7 @@ export type CatalogGroup = {
   description: string;
   priority: number;
   image?: string;
-  products?: Product[];
+  products: Product[];
 };
 
 export type ProductGroup = {
@@ -52,6 +98,8 @@ export type ProductGroup = {
   image?: string;
   products: Product[];
 };
+
+export type CatalogType = 'catalog_group' | 'catalog_item';
 
 export type CatalogTab = 'catalog' | 'stock';
 
