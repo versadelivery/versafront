@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Edit2 } from "lucide-react";
-import { Product } from "@/app/types/admin";
+import { CatalogItem, Product } from "@/app/types/catalog";
 
 interface ProductCardProps {
   product: Product;
@@ -9,13 +9,20 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, groupName }: ProductCardProps) {
+  // @ts-ignore
+  const { attributes } = product;
+  
+  const formatCurrency = (value: string) => {
+    return parseFloat(value).toFixed(2).replace('.', ',');
+  };
+
   return (
     <div className="overflow-hidden bg-[#212121]/10 rounded-xs shadow-none hover:shadow-md transition-shadow">
       <div className="relative w-full aspect-square lg:h-48 bg-gray-100">
-        {product.image ? (
+        {attributes.image_url ? (
           <Image
-            src={product.image}
-            alt={product.name}
+            src={attributes.image_url}
+            alt={attributes.name}
             fill
             className="object-cover"
           />
@@ -35,31 +42,32 @@ export function ProductCard({ product, groupName }: ProductCardProps) {
       <div className="p-3 lg:p-4">
         <div className="flex justify-between items-start mb-2">
           <div>
-            <h3 className="text-sm font-semibold lg:text-base line-clamp-1">{product.name}</h3>
-            <p className="text-xs text-gray-500 lg:text-sm line-clamp-2">{product.description}</p>
+            <h3 className="text-sm font-semibold lg:text-base line-clamp-1">{attributes.name}</h3>
+            <p className="text-xs text-gray-500 lg:text-sm line-clamp-2">{attributes.description}</p>
           </div>
           <div className="flex flex-col items-end">
-            {product.price_with_discount !== undefined && product.price_with_discount < product.price ? (
+            {attributes.price_with_discount && 
+            parseFloat(attributes.price_with_discount) < parseFloat(attributes.price) ? (
               <>
                 <span className="text-sm font-semibold text-gray-400 line-through">
-                  R$ {product.price.toFixed(2).replace('.', ',')}
+                  R$ {formatCurrency(attributes.price)}
                 </span>
                 <span className="text-sm font-semibold text-primary lg:text-base">
-                  R$ {product.price_with_discount.toFixed(2).replace('.', ',')}
+                  R$ {formatCurrency(attributes.price_with_discount)}
                 </span>
               </>
             ) : (
               <span className="text-sm font-semibold lg:text-base">
-                R$ {product.price.toFixed(2).replace('.', ',')}
+                R$ {formatCurrency(attributes.price)}
               </span>
             )}
           </div>
         </div>
         <div className="flex justify-between items-center">
           <span className="text-xs text-gray-500 lg:text-sm">{groupName}</span>
-          {product.item_type === 'weight' && (
+          {attributes.item_type === 'weight' && (
             <span className="text-xs text-gray-500 lg:text-sm">
-              {product.min_weight}g - {product.max_weight}g ({product.measure_interval}g)
+              {attributes.min_weight}g - {attributes.max_weight}g ({attributes.measure_interval}g)
             </span>
           )}
         </div>

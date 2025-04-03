@@ -14,7 +14,7 @@ api.interceptors.request.use((config) => {
     delete config.headers['Content-Type'];
   }
   
-  const token = "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3NDU4MTMxNjN9.pWT9IEOrAgYOxpa1n0h-BPxqD7AkJW-rNyilnb524dA";
+  const token = "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3NDYyMTM0NjB9.mOOWK7otNlhJlB7JVHNMHqf0BG1K9q4whoJF-QbGSEw";
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }

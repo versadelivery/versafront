@@ -1,61 +1,82 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { groupSchema, GroupFormValues } from "@/app/schemas/group-schema";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info, Loader2, Trash2 } from "lucide-react";
-import { CatalogGroup } from "@/app/types/admin";
 import { toast } from "sonner";
 import { ImageUpload } from "./image-upload";
 import { DeleteConfirmation } from "./delete-confirmation";
+import { UICatalogGroup } from "@/app/types/catalog";
 
 interface GroupModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  editingGroup: CatalogGroup | null;
-  onSave: (groupData: Omit<CatalogGroup, 'id'> & { imageFile?: File }) => Promise<void>;
-  onDelete?: (id: number) => Promise<boolean>;
+  editingGroup: UICatalogGroup | null;
+  onSave: (values: GroupFormValues) => Promise<void>;
+  onDelete?: (id: string) => Promise<void>;
 }
 
 export function GroupModal({ isOpen, onOpenChange, editingGroup, onSave, onDelete }: GroupModalProps) {
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+
+  const form = useForm<GroupFormValues>({
+    resolver: zodResolver(groupSchema),
+    defaultValues: {
+      name: '',
+      description: '',
+      priority: 0,
+      image: undefined,
+    }
+  });
 
   useEffect(() => {
-    if (editingGroup?.image) {
-      setPreviewImage(editingGroup.image);
+    if (editingGroup) {
+      form.reset({
+        name: editingGroup.name,
+        description: editingGroup.description,
+        priority: editingGroup.priority,
+        image: undefined,
+      });
+      setPreviewImage(editingGroup.image || null);
     } else {
+      form.reset({
+        name: '',
+        description: '',
+        priority: 0,
+        image: undefined,
+      });
       setPreviewImage(null);
     }
-    setImageFile(null);
-  }, [editingGroup, isOpen]);
+  }, [editingGroup, form]);
 
-  const handleSave = async () => {
-    setIsLoading(true);
+  const isLoading = form.formState.isSubmitting;
+
+  const handleImageChange = (file: File) => {
+    form.setValue('image', file, { shouldValidate: true });
+    setPreviewImage(URL.createObjectURL(file));
+  };
+
+  const handleRemoveImage = () => {
+    form.setValue('image', undefined, { shouldValidate: true });
+    setPreviewImage(null);
+  };
+
+  const onSubmit = async (values: GroupFormValues) => {
     try {
-      const name = (document.getElementById('name') as HTMLInputElement).value;
-      const description = (document.getElementById('description') as HTMLInputElement).value;
-      const priorityInput = (document.getElementById('priority') as HTMLInputElement).value;
-      const priority = priorityInput ? parseInt(priorityInput) : 0;
-
-      await onSave({
-        name,
-        description,
-        priority,
-        image: previewImage || undefined,
-        imageFile: imageFile || undefined
-      });
-      
+      await onSave(values);
       onOpenChange(false);
+      form.reset();
+      setPreviewImage(null);
     } catch (error) {
-      console.error("Error saving group:", error);
       toast.error("Erro ao salvar grupo");
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -63,17 +84,21 @@ export function GroupModal({ isOpen, onOpenChange, editingGroup, onSave, onDelet
     if (!editingGroup?.id || !onDelete) return;
     
     try {
-      setIsLoading(true);
-      const success = await onDelete(editingGroup.id);
-      if (success) {
-        onOpenChange(false);
-      }
-    } catch (error) {
-      console.error("Error deleting group:", error);
-      toast.error("Erro ao deletar grupo");
-    } finally {
-      setIsLoading(false);
+      await onDelete(editingGroup.id);
+      onOpenChange(false);
       setIsDeleteDialogOpen(false);
+    } catch (error) {
+      toast.error("Erro ao deletar grupo");
+    }
+  };
+
+  const handleOpenChange = (open: boolean) => {
+    if (!isLoading) {
+      onOpenChange(open);
+      if (!open) {
+        form.reset();
+        setPreviewImage(null);
+      }
     }
   };
 
@@ -90,53 +115,139 @@ export function GroupModal({ isOpen, onOpenChange, editingGroup, onSave, onDelet
             </DialogDescription>
           </DialogHeader>
           
-          <div className="flex flex-col gap-4">
-            <FormField 
-              id="name"
-              label="NOME DO GRUPO"
-              placeholder="Digite o nome do grupo"
-              defaultValue={editingGroup?.name || ''}
-            />
-            
-            <div className="grid grid-cols-1 gap-4">
-              <PriorityField 
-                defaultValue={editingGroup?.priority || 0}
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-bold text-foreground">
+                      NOME DO GRUPO
+                    </FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Digite o nome do grupo"
+                        className="py-4 text-sm placeholder:text-foreground/40"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
               
-              <div>
-                <label className="text-sm font-bold text-foreground block mb-2">
+              <FormField
+                control={form.control}
+                name="priority"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="flex items-center gap-1 mb-1">
+                      <FormLabel className="text-sm font-bold text-foreground">
+                        PRIORIDADE
+                      </FormLabel>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="w-4 h-4 text-foreground/60" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-[200px] text-sm">
+                            <p>Ordem de exibição no catálogo</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        placeholder="0" 
+                        min="0" 
+                        max="100"
+                        className="py-4 text-sm"
+                        {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormItem>
+                <FormLabel className="text-sm font-bold text-foreground block mb-2">
                   IMAGEM DO GRUPO
-                </label>
+                </FormLabel>
                 <ImageUpload
-                  previewImage={previewImage}
-                  onImageChange={(file) => {
-                    setImageFile(file);
-                    setPreviewImage(URL.createObjectURL(file));
-                  }}
-                  onRemoveImage={() => {
-                    setPreviewImage(null);
-                    setImageFile(null);
-                  }}
+                  previewImage={previewImage || editingGroup?.image || null}
+                  onImageChange={handleImageChange}
+                  onRemoveImage={handleRemoveImage}
                 />
+              </FormItem>
+              
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-bold text-foreground">
+                      DESCRIÇÃO
+                    </FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Digite a descrição do grupo"
+                        className="py-4 text-sm placeholder:text-foreground/40"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div className="flex flex-col-reverse sm:flex-row justify-between gap-2 mt-4">
+                <div className="flex gap-2 w-full sm:w-auto">
+                  {editingGroup && onDelete && (
+                    <Button 
+                      variant="destructive" 
+                      onClick={() => setIsDeleteDialogOpen(true)}
+                      className="rounded-xs gap-2 bg-red-500 hover:bg-red-600 w-full sm:w-auto"
+                      disabled={isLoading}
+                      size="lg"
+                      type="button"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      <span className="hidden sm:inline">Deletar</span>
+                    </Button>
+                  )}
+                  
+                  <Button 
+                    variant="outline" 
+                    onClick={() => onOpenChange(false)} 
+                    className="rounded-xs border-none bg-foreground/10 w-full sm:w-auto"
+                    disabled={isLoading}
+                    size="lg"
+                    type="button"
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+                
+                <Button 
+                  className="rounded-xs bg-primary hover:bg-primary/80 text-white border-none w-full sm:w-auto"
+                  disabled={isLoading}
+                  size="lg"
+                  type="submit"
+                >
+                  {isLoading ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      {editingGroup ? 'Salvando...' : 'Criando...'}
+                    </span>
+                  ) : editingGroup ? 'Salvar' : 'Criar'}
+                </Button>
               </div>
-            </div>
-            
-            <FormField 
-              id="description"
-              label="DESCRIÇÃO"
-              placeholder="Digite a descrição do grupo"
-              defaultValue={editingGroup?.description || ''}
-            />
-          </div>
-          
-          <FormActions
-            isLoading={isLoading}
-            isEditing={!!editingGroup}
-            hasDelete={!!(editingGroup && onDelete)}
-            onCancel={() => onOpenChange(false)}
-            onSave={handleSave}
-            onDelete={() => setIsDeleteDialogOpen(true)}
-          />
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
 
@@ -147,117 +258,5 @@ export function GroupModal({ isOpen, onOpenChange, editingGroup, onSave, onDelet
         isLoading={isLoading}
       />
     </>
-  );
-}
-
-// Componentes internos ajustados para mobile
-function FormField({ id, label, placeholder, defaultValue }: {
-  id: string;
-  label: string;
-  placeholder: string;
-  defaultValue: string;
-}) {
-  return (
-    <div className="w-full">
-      <label htmlFor={id} className="text-sm font-bold text-foreground block mb-1">
-        {label}
-      </label>
-      <Input 
-        id={id}
-        placeholder={placeholder}
-        className="py-4 text-sm placeholder:text-foreground/40"
-        defaultValue={defaultValue}
-      />
-    </div>
-  );
-}
-
-function PriorityField({ defaultValue }: { defaultValue: number }) {
-  return (
-    <div className="w-full">
-      <div className="flex items-center gap-1 mb-1">
-        <label htmlFor="priority" className="text-sm font-bold text-foreground">
-          PRIORIDADE
-        </label>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Info className="w-4 h-4 text-foreground/60" />
-            </TooltipTrigger>
-            <TooltipContent className="max-w-[200px] text-sm">
-              <p>Ordem de exibição no catálogo</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
-      <Input 
-        id="priority" 
-        type="number" 
-        placeholder="0" 
-        min="0" 
-        max="100"
-        className="py-4 text-sm"
-        defaultValue={defaultValue}
-      />
-    </div>
-  );
-}
-
-function FormActions({
-  isLoading,
-  isEditing,
-  hasDelete,
-  onCancel,
-  onSave,
-  onDelete
-}: {
-  isLoading: boolean;
-  isEditing: boolean;
-  hasDelete: boolean;
-  onCancel: () => void;
-  onSave: () => void;
-  onDelete: () => void;
-}) {
-  return (
-    <div className="flex flex-col-reverse sm:flex-row justify-between gap-2 mt-4">
-      <div className="flex gap-2 w-full sm:w-auto">
-        {hasDelete && (
-          <Button 
-            variant="destructive" 
-            onClick={onDelete}
-            className="rounded-xs gap-2 bg-red-500 hover:bg-red-600 w-full sm:w-auto"
-            disabled={isLoading}
-            size="lg"
-          >
-            <Trash2 className="w-4 h-4" />
-            <span className="hidden sm:inline">Deletar</span>
-          </Button>
-        )}
-        
-        <Button 
-          variant="outline" 
-          onClick={onCancel} 
-          className="rounded-xs border-none bg-foreground/10 w-full sm:w-auto"
-          disabled={isLoading}
-          size="lg"
-        >
-          Cancelar
-        </Button>
-      </div>
-      
-      <Button 
-        onClick={onSave}
-        className="rounded-xs bg-primary hover:bg-primary/80 text-white border-none w-full sm:w-auto"
-        disabled={isLoading}
-        size="lg"
-      >
-        {isLoading ? (
-          <span className="flex items-center gap-2">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            {isEditing ? 'Salvando...' : 'Criando...'}
-          </span>
-        ) : isEditing ? 'Salvar' : 'Criar'}
-      </Button>
-    </div>
   );
 }

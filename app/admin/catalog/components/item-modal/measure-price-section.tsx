@@ -4,14 +4,18 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { HelpCircle } from "lucide-react";
+import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors } from "react-hook-form";
+import { useEffect } from "react";
 
 interface MeasurePriceSectionProps {
   measureType: 'unit' | 'weight';
   setMeasureType: (type: 'unit' | 'weight') => void;
   hasDiscount: boolean;
   setHasDiscount: (value: boolean) => void;
-  discountValue: string;
-  setDiscountValue: (value: string) => void;
+  register: UseFormRegister<any>;
+  setValue: UseFormSetValue<any>;
+  watch: UseFormWatch<any>;
+  errors: FieldErrors<any>;
 }
 
 export function MeasurePriceSection({
@@ -19,9 +23,18 @@ export function MeasurePriceSection({
   setMeasureType,
   hasDiscount,
   setHasDiscount,
-  discountValue,
-  setDiscountValue
+  register,
+  setValue,
+  watch,
+  errors
 }: MeasurePriceSectionProps) {
+  useEffect(() => {
+    const initialValue = watch('item_type');
+    if (initialValue !== measureType) {
+      setMeasureType(initialValue || 'unit');
+    }
+  }, [watch, setMeasureType]);
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -29,7 +42,10 @@ export function MeasurePriceSection({
           <Label className="text-sm sm:text-md font-bold">TIPO DE MEDIDA</Label>
           <Select 
             value={measureType}
-            onValueChange={(value: 'unit' | 'weight') => setMeasureType(value)}
+            onValueChange={(value: 'unit' | 'weight') => {
+              setMeasureType(value);
+              setValue('item_type', value, { shouldValidate: true });
+            }}
           >
             <SelectTrigger className="mt-2 py-6 text-base bg-white">
               <SelectValue placeholder="Selecione" />
@@ -44,7 +60,7 @@ export function MeasurePriceSection({
         {measureType === 'weight' && (
           <div>
             <Label className="text-sm sm:text-md font-bold">UNIDADE</Label>
-            <Select>
+            <Select {...register('unit_of_measurement')}>
               <SelectTrigger className="mt-2 py-6 text-base">
                 <SelectValue placeholder="Kg" />
               </SelectTrigger>
@@ -67,7 +83,9 @@ export function MeasurePriceSection({
             <Input 
               placeholder="R$ 0,00" 
               className="mt-2 py-6 text-base"
+              {...register('price', { required: 'Preço é obrigatório' })}
             />
+            {errors.price && <p className="text-red-500 text-sm mt-1">{errors.price.message as string}</p>}
           </div>
 
           <div>
@@ -85,6 +103,7 @@ export function MeasurePriceSection({
             <Input 
               placeholder="Ex: 10" 
               className="mt-2 py-6 text-base"
+              {...register('measure_interval')}
             />
           </div>
         </div>
@@ -97,6 +116,7 @@ export function MeasurePriceSection({
             <Input 
               placeholder="Ex: 1.2" 
               className="mt-2 py-6 text-base"
+              {...register('max_weight')}
             />
           </div>
 
@@ -105,6 +125,7 @@ export function MeasurePriceSection({
             <Input 
               placeholder="Ex: 0.4" 
               className="mt-2 py-6 text-base"
+              {...register('min_weight')}
             />
           </div>
         </div>
@@ -116,7 +137,9 @@ export function MeasurePriceSection({
           <Input 
             placeholder="R$ 0,00" 
             className="mt-2 py-6 text-base w-full lg:w-1/2"
+            {...register('price', { required: 'Preço é obrigatório' })}
           />
+          {errors.price && <p className="text-red-500 text-sm mt-1">{errors.price.message as string}</p>}
         </div>
       )}
 
@@ -134,9 +157,8 @@ export function MeasurePriceSection({
             <Label className="text-sm sm:text-md font-bold whitespace-nowrap">VALOR DO DESCONTO</Label>
             <Input 
               placeholder="R$ 0,00" 
-              value={discountValue}
-              onChange={(e) => setDiscountValue(e.target.value)}
               className="py-6 text-base"
+              {...register('price_with_discount')}
             />
           </div>
         )}
@@ -157,7 +179,9 @@ export function MeasurePriceSection({
         <Input 
           placeholder="2" 
           className="mt-2 py-6 text-base w-full lg:w-1/2"
+          {...register('priority', { required: 'Prioridade é obrigatória' })}
         />
+        {errors.priority && <p className="text-red-500 text-sm mt-1">{errors.priority.message as string}</p>}
       </div>
     </div>
   );

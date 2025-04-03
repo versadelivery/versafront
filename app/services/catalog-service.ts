@@ -22,7 +22,6 @@ function mapItemToProduct(item: Item): Product {
 export async function getCatalogGroups(): Promise<CatalogGroup[]> {
   try {
     const response = await api.get<CatalogListResponse>(API_ENDPOINTS.CATALOG);
-    console.log('API Response:', response.data);
     
     if (!response.data || !Array.isArray(response.data.data)) {
       return [];
@@ -102,5 +101,32 @@ export async function deleteCatalogGroup(id: number): Promise<void> {
   } catch (error) {
     console.error('Erro ao deletar o catálogo:', error);
     throw error;
+  }
+}
+
+export async function createCatalogItem(formData: FormData): Promise<Item> {
+  try {
+    const response = await api.post<{ data: Item }>(API_ENDPOINTS.CATALOG_ITEMS, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+
+    if (!response.data?.data) {
+      throw new Error('Resposta inválida da API');
+    }
+
+    return response.data.data;
+  } catch (error) {
+    console.error('Erro ao criar item:', error);
+    
+    let errorMessage = 'Erro ao criar item';
+    if (error.response) {
+      errorMessage = error.response.data?.message || errorMessage;
+    } else if (error.request) {
+      errorMessage = 'Sem resposta do servidor';
+    }
+    
+    throw new Error(errorMessage);
   }
 }

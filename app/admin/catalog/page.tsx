@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import ProtectedRoute from "@/components/protected-route";
 import { Header } from "./components/catalog-header";
 import { Tabs } from "./components/tabs";
@@ -8,87 +8,46 @@ import { ActionBar } from "./components/action-bar";
 import { ProductGroup } from "./components/product-group";
 import { GroupModal } from "./components/group-modal";
 import { NewItemModal } from "./components/item-modal/new-item-modal";
-import { CatalogTab, CatalogGroup } from "@/app/types/admin";
+import { CatalogTab, GroupData, UICatalogGroup } from "@/app/types/catalog";
 import { StockContent } from "./components/stock-content";
-import { getCatalogGroups, createCatalogGroup, updateCatalogGroup, deleteCatalogGroup } from "@/app/services/catalog-service";
+import { useGroups, useCreateGroup, useUpdateGroup, useDeleteGroup } from "@/app/hooks/use-group";
 import { Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { GroupFormValues } from "@/app/schemas/group-schema";
 
 export default function CatalogPage() {
   const [activeTab, setActiveTab] = useState<CatalogTab>('catalog');
   const [isNewGroupOpen, setIsNewGroupOpen] = useState(false);
   const [isNewItemOpen, setIsNewItemOpen] = useState(false);
-  const [editingGroup, setEditingGroup] = useState<CatalogGroup | null>(null);
-  const [groups, setGroups] = useState<CatalogGroup[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [editingGroup, setEditingGroup] = useState<UICatalogGroup | null>(null);
+  const { data: groups = [], isLoading, error } = useGroups();
+  const createGroupMutation = useCreateGroup();
+  const updateGroupMutation = useUpdateGroup();
+  const deleteGroupMutation = useDeleteGroup();
 
-  useEffect(() => {
-    fetchGroups();
-  }, []);
+  const handleSaveGroup = async (values: GroupFormValues) => {
+    const formData = new FormData();
+    formData.append('name', values.name);
+    formData.append('description', values.description || '');
+    formData.append('priority', values.priority.toString());
 
-  const fetchGroups = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const data = await getCatalogGroups();
-      setGroups(data);
-      toast.success("Catálogo carregado com sucesso");
-    } catch (error) {
-      console.error("Erro ao carregar grupos:", error);
-      setError("Falha ao carregar grupos. Tente novamente.");
-      setGroups([]);
-      toast.error("Falha ao carregar grupos");
-    } finally {
-      setIsLoading(false);
+    if (values.image) {
+      formData.append('image', values.image);
+    } else if (editingGroup?.image) {
+      formData.append('image_url', editingGroup.image);
+    }
+
+    if (editingGroup) {
+      await updateGroupMutation.mutateAsync({ id: editingGroup.id, formData });
+    } else {
+      await createGroupMutation.mutateAsync(formData as never);
     }
   };
 
-  const handleSaveGroup = async (groupData: Omit<CatalogGroup, 'id'> & { imageFile?: File }) => {
-    try {
-      const formData = new FormData();
-      formData.append('name', groupData.name);
-      formData.append('description', groupData.description || '');
-      formData.append('priority', groupData.priority.toString());
-
-      if (groupData.imageFile) {
-        formData.append('image', groupData.imageFile);
-      } else if (groupData.image && typeof groupData.image === 'string') {
-        formData.append('image_url', groupData.image);
-      }
-
-      if (editingGroup) {
-        const updatedGroup = await updateCatalogGroup(editingGroup.id, formData);
-        setGroups(groups.map(g => g.id === updatedGroup.id ? updatedGroup : g));
-        toast.success("Grupo atualizado com sucesso");
-      } else {
-        const newGroup = await createCatalogGroup(formData);
-        setGroups([...groups, newGroup]);
-        toast.success("Grupo criado com sucesso");
-      }
-      
-      setIsNewGroupOpen(false);
-      setEditingGroup(null);
-    } catch (error) {
-      console.error("Erro ao salvar grupo:", error);
-      toast.error("Erro ao salvar grupo");
-    }
+  const handleDeleteGroup = async (id: string) => {
+    await deleteGroupMutation.mutateAsync(id);
   };
 
-  const handleDeleteGroup = async (id: number): Promise<boolean> => {
-    try {
-      await deleteCatalogGroup(id);
-      setGroups(groups.filter(g => g.id !== id));
-      toast.success("Grupo deletado com sucesso");
-      return true;
-    } catch (error) {
-      console.error("Erro ao deletar grupo:", error);
-      toast.error("Falha ao deletar grupo");
-      return false;
-    }
-  };
-
-  const handleEditGroup = (group: CatalogGroup) => {
+  const handleEditGroup = (group: UICatalogGroup) => {
     setEditingGroup(group);
     setIsNewGroupOpen(true);
   };
@@ -120,7 +79,7 @@ export default function CatalogPage() {
               
               <NewItemModal isOpen={isNewItemOpen} setIsOpen={setIsNewItemOpen} />
 
-              <GroupModal 
+              <GroupModal
                 isOpen={isNewGroupOpen}
                 onOpenChange={(open) => {
                   if (!open) {
@@ -140,7 +99,7 @@ export default function CatalogPage() {
                   <Loader2 className="h-8 w-8 animate-spin" />
                 </div>
               ) : error ? (
-                <div className="text-red-500 p-4 text-center">{error}</div>
+                <div className="text-red-500 p-4 text-center">Falha ao carregar grupos</div>
               ) : (
                 <div className="space-y-8">
                   {sortedGroups.map(group => (

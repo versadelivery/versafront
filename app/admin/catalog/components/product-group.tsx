@@ -2,11 +2,11 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Edit2 } from "lucide-react";
 import { ProductCard } from "./product-card";
-import { CatalogGroup } from "@/app/types/admin";
+import { UICatalogGroup } from "@/app/types/catalog";
 
 interface ProductGroupProps {
-  group: CatalogGroup;
-  onEdit: (group: CatalogGroup) => void;
+  group: UICatalogGroup;
+  onEdit: (group: UICatalogGroup) => void;
 }
 
 export function ProductGroup({ group, onEdit }: ProductGroupProps) {
@@ -40,12 +40,12 @@ export function ProductGroup({ group, onEdit }: ProductGroupProps) {
         </div>
       </div>
       
-      {group.products.length > 0 ? (
+      {group?.products && group.products.length > 0 ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {group.products.map(product => (
-            <ProductCard 
-              key={product.id} 
-              product={product} 
+            <ProductCard
+              key={product.data.id}
+              product={product.data} 
               groupName={group.name} 
             />
           ))}
