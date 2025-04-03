@@ -1,19 +1,26 @@
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Edit2 } from "lucide-react";
-import { CatalogItem, Product } from "@/app/types/catalog";
+import { Product } from "@/app/types/catalog";
 
 interface ProductCardProps {
   product: Product;
   groupName: string;
+  onEdit?: (product: Product) => void;
 }
 
-export function ProductCard({ product, groupName }: ProductCardProps) {
+export function ProductCard({ product, groupName, onEdit }: ProductCardProps) {
   // @ts-ignore
   const { attributes } = product;
   
   const formatCurrency = (value: string) => {
     return parseFloat(value).toFixed(2).replace('.', ',');
+  };
+
+  const handleEditClick = () => {
+    if (onEdit) {
+      onEdit(product);
+    }
   };
 
   return (
@@ -33,8 +40,9 @@ export function ProductCard({ product, groupName }: ProductCardProps) {
         )}
         <Button 
           size="icon"
-          variant="ghost" 
+          variant="ghost"
           className="absolute top-2 right-2 bg-white/80 hover:bg-white w-8 h-8 lg:w-10 lg:h-10"
+          onClick={handleEditClick}
         >
           <Edit2 className="w-3 h-3 lg:w-4 lg:h-4" />
         </Button>

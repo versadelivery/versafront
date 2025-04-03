@@ -17,13 +17,15 @@ interface DeleteConfirmationProps {
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
   isLoading: boolean;
+  type: string;
 }
 
 export function DeleteConfirmation({ 
   isOpen, 
   onOpenChange, 
   onConfirm, 
-  isLoading 
+  isLoading,
+  type = "Grupo"
 }: DeleteConfirmationProps) {
   return (
     <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
@@ -31,7 +33,7 @@ export function DeleteConfirmation({
         <AlertDialogHeader>
           <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
           <AlertDialogDescription>
-            Tem certeza que deseja excluir este grupo? Esta ação não pode ser desfeita.
+            Tem certeza que deseja excluir este {type}? Esta ação não pode ser desfeita.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

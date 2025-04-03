@@ -11,18 +11,47 @@ export interface Product {
   max_weight: string;
   priority: number;
   image_url: string;
-  active: boolean;
+  active?: boolean;
+}
+
+export interface CatalogItem {
+  id: string;
+  attributes: {
+    name: string;
+    description: string;
+    catalog_group_id: string;
+    item_type: 'unit' | 'weight';
+    price: string;
+    unit_of_measurement?: 'kg' | 'g';
+    measure_interval?: string;
+    min_weight?: string;
+    max_weight?: string;
+    priority: string;
+    price_with_discount?: string;
+    image_url?: string;
+  };
+}
+
+export interface UICatalogItem {
+  id: string;
+  name: string;
+  description: string;
+  groupId: string;
+  type: 'unit' | 'weight';
+  price: string;
+  unit?: 'kg' | 'g';
+  interval?: string;
+  minWeight?: string;
+  maxWeight?: string;
+  priority: string;
+  discountPrice?: string;
+  image?: string;
 }
 
 export interface ProductData {
   data: Product;
 }
 
-export interface CatalogItem {
-  id: string;
-  type: "catalog_item";
-  attributes: Product;
-}
 
 export interface CatalogGroup {
   id: string;

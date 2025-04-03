@@ -2,14 +2,22 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Edit2 } from "lucide-react";
 import { ProductCard } from "./product-card";
-import { UICatalogGroup } from "@/app/types/catalog";
+import { UICatalogGroup, UICatalogItem } from "@/app/types/catalog";
 
 interface ProductGroupProps {
   group: UICatalogGroup;
   onEdit: (group: UICatalogGroup) => void;
+  onEditItem?: (item: UICatalogItem) => void;
 }
 
-export function ProductGroup({ group, onEdit }: ProductGroupProps) {
+export function ProductGroup({ group, onEdit, onEditItem }: ProductGroupProps) {
+
+  const handleEditItem = (item: UICatalogItem) => {
+    if (onEditItem) {
+      onEditItem(item);
+    }
+  };
+
   return (
     <div className="bg-white rounded-xs shadow-sm p-4 sm:p-6 border border-gray-100">
       <div className="flex items-start justify-between mb-6">

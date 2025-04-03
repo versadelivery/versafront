@@ -16,7 +16,7 @@ interface BasicInfoSectionProps {
   previewImage: string | null;
   onImageChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRemoveImage: () => void;
-  fileInputRef: React.RefObject<HTMLInputElement>;
+  fileInputRef?: React.RefObject<HTMLInputElement>;
 }
 
 export function BasicInfoSection({ 

@@ -1,3 +1,5 @@
+import { UICatalogItem } from "./catalog";
+
 export interface CatalogItemAttributes {
   name: string;
   description?: string;
@@ -125,7 +127,10 @@ export type Step = {
   items: StepItem[];
 };
 
-export type NewItemModalProps = {
+export interface NewItemModalProps {
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
-};
+  onSuccess?: () => void;
+  editingItem?: UICatalogItem | null;
+  onDelete?: (id: string) => Promise<void>;
+}

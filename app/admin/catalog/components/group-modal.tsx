@@ -272,6 +272,7 @@ export function GroupModal({ isOpen, onOpenChange, editingGroup, onSave, onDelet
         onOpenChange={setIsDeleteDialogOpen}
         onConfirm={handleDelete}
         isLoading={isLoading}
+        type="Item"
       />
     </>
   );

@@ -10,8 +10,7 @@ import { MeasurePriceSection } from "./measure-price-section";
 import { AdditionalsSection } from "./additionals-section";
 import { PreparationModesSection } from "./preparation-modes-section";
 import { StepsSection } from "./steps-section";
-import { createCatalogItem } from "@/app/services/catalog-service";
-import { toast } from "sonner";
+import { useCreateItem } from "@/app/hooks/use-item";
 
 interface FormValues {
   name: string;
@@ -27,7 +26,7 @@ interface FormValues {
   price_with_discount?: string;
 }
 
-export function NewItemModal({ isOpen, setIsOpen }: NewItemModalProps) {
+export function NewItemModal({ isOpen, setIsOpen, onSuccess, editingItem, onDelete  }: NewItemModalProps) {
   const { register, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm<FormValues>({
     defaultValues: {
       item_type: 'unit'
@@ -43,70 +42,66 @@ export function NewItemModal({ isOpen, setIsOpen }: NewItemModalProps) {
   const [hasSteps, setHasSteps] = useState(false);
   const [steps, setSteps] = useState<Step[]>([]);
   const [currentStepTitle, setCurrentStepTitle] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const { mutate: createItem, isPending: isSubmitting } = useCreateItem();
+
   const onSubmit = async (data: FormValues) => {
-    setIsSubmitting(true);
-    try {
-      const formData = new FormData();
-      
-      formData.append('name', data.name);
-      formData.append('description', data.description);
-      formData.append('catalog_group_id', data.catalog_group_id);
-      formData.append('item_type', data.item_type);
-      formData.append('price', data.price);
-      formData.append('priority', data.priority);
-      
-      if (imageFile) {
-        formData.append('image', imageFile);
-      }
-      
-      if (data.item_type === 'weight') {
-        formData.append('unit_of_measurement', data.unit_of_measurement || 'g');
-        formData.append('measure_interval', data.measure_interval || '0');
-        formData.append('min_weight', data.min_weight || '0');
-        formData.append('max_weight', data.max_weight || '0');
-      }
-      
-      if (hasDiscount && data.price_with_discount) {
-        formData.append('price_with_discount', data.price_with_discount);
-      }
-      
-      if (hasAdditionals && additionals.length > 0) {
-        additionals.forEach((additional, index) => {
-          formData.append(`catalog_item_extras_attributes[${index}][name]`, additional.name);
-          formData.append(`catalog_item_extras_attributes[${index}][price]`, additional.price);
-        });
-      }
-      
-      if (hasPreparationModes && preparationModes.length > 0) {
-        preparationModes.forEach((mode, index) => {
-          formData.append(`catalog_item_prepare_methods_attributes[${index}][name]`, mode.description);
-        });
-      }
-      
-      if (hasSteps && steps.length > 0) {
-        steps.forEach((step, stepIndex) => {
-          formData.append(`catalog_item_steps_attributes[${stepIndex}][name]`, step.title);
-          step.items.forEach((item, itemIndex) => {
-            formData.append(`catalog_item_steps_attributes[${stepIndex}][catalog_item_step_options_attributes][${itemIndex}][name]`, item.name);
-          });
-        });
-      }
-      
-      await createCatalogItem(formData);
-      toast.success('Item criado com sucesso!');
-      setIsOpen(false);
-      resetForm();
-    } catch (error) {
-      console.error('Erro ao criar item:', error);
-      toast.error(error.message || 'Erro ao criar item');
-    } finally {
-      setIsSubmitting(false);
+    const formData = new FormData();
+    
+    formData.append('name', data.name);
+    formData.append('description', data.description);
+    formData.append('catalog_group_id', data.catalog_group_id);
+    formData.append('item_type', data.item_type);
+    formData.append('price', data.price);
+    formData.append('priority', data.priority);
+    
+    if (imageFile) {
+      formData.append('image', imageFile);
     }
+    
+    if (data.item_type === 'weight') {
+      formData.append('unit_of_measurement', data.unit_of_measurement || 'kg');
+      if (data.measure_interval) formData.append('measure_interval', data.measure_interval);
+      if (data.min_weight) formData.append('min_weight', data.min_weight);
+      if (data.max_weight) formData.append('max_weight', data.max_weight);
+    }
+    
+    if (hasDiscount && data.price_with_discount) {
+      formData.append('price_with_discount', data.price_with_discount);
+    }
+    
+    if (hasAdditionals && additionals.length > 0) {
+      additionals.forEach((additional, index) => {
+        formData.append(`catalog_item_extras_attributes[${index}][name]`, additional.name);
+        formData.append(`catalog_item_extras_attributes[${index}][price]`, additional.price);
+      });
+    }
+    
+    if (hasPreparationModes && preparationModes.length > 0) {
+      preparationModes.forEach((mode, index) => {
+        formData.append(`catalog_item_prepare_methods_attributes[${index}][name]`, mode.description);
+      });
+    }
+    
+    if (hasSteps && steps.length > 0) {
+      steps.forEach((step, stepIndex) => {
+        formData.append(`catalog_item_steps_attributes[${stepIndex}][name]`, step.title);
+        step.items.forEach((item, itemIndex) => {
+          formData.append(`catalog_item_steps_attributes[${stepIndex}][catalog_item_step_options_attributes][${itemIndex}][name]`, item.name);
+        });
+      });
+    }
+    
+    createItem(formData, {
+      onSuccess: () => {
+        setIsOpen(false);
+        resetForm();
+        if (onSuccess) onSuccess();
+      }
+    });
   };
 
   const resetForm = () => {
@@ -239,7 +234,6 @@ export function NewItemModal({ isOpen, setIsOpen }: NewItemModalProps) {
               previewImage={previewImage}
               onImageChange={handleImageChange}
               onRemoveImage={removeImage}
-              fileInputRef={fileInputRef}
             />
             
             <div className="border-t border-gray-200 pt-6"></div>

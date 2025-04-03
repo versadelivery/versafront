@@ -6,6 +6,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { HelpCircle } from "lucide-react";
 import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors } from "react-hook-form";
 import { useEffect } from "react";
+import { CurrencyInput } from "./currency-input";
 
 interface MeasurePriceSectionProps {
   measureType: 'unit' | 'weight';
@@ -34,6 +35,9 @@ export function MeasurePriceSection({
       setMeasureType(initialValue || 'unit');
     }
   }, [watch, setMeasureType]);
+
+  const priceValue = watch('price') || '0.00';
+  const discountValue = watch('price_with_discount') || '0.00';
 
   return (
     <div className="space-y-6">
@@ -80,10 +84,10 @@ export function MeasurePriceSection({
               <Label className="text-sm sm:text-md font-bold">PREÇO</Label>
               <span className="text-xs sm:text-sm text-gray-500">POR KG</span>
             </div>
-            <Input 
-              placeholder="R$ 0,00" 
-              className="mt-2 py-6 text-base"
-              {...register('price', { required: 'Preço é obrigatório' })}
+            <CurrencyInput
+              value={priceValue}
+              onChange={(value) => setValue('price', value, { shouldValidate: true })}
+              placeholder="R$ 0,00"
             />
             {errors.price && <p className="text-red-500 text-sm mt-1">{errors.price.message as string}</p>}
           </div>
@@ -134,10 +138,11 @@ export function MeasurePriceSection({
       {measureType === 'unit' && (
         <div>
           <Label className="text-sm sm:text-md font-bold">PREÇO</Label>
-          <Input 
-            placeholder="R$ 0,00" 
+          <CurrencyInput
+            value={priceValue}
+            onChange={(value) => setValue('price', value, { shouldValidate: true })}
+            placeholder="R$ 0,00"
             className="mt-2 py-6 text-base w-full lg:w-1/2"
-            {...register('price', { required: 'Preço é obrigatório' })}
           />
           {errors.price && <p className="text-red-500 text-sm mt-1">{errors.price.message as string}</p>}
         </div>
@@ -155,10 +160,11 @@ export function MeasurePriceSection({
         {hasDiscount && (
           <div className="flex items-center gap-3 flex-1 max-w-md">
             <Label className="text-sm sm:text-md font-bold whitespace-nowrap">VALOR DO DESCONTO</Label>
-            <Input 
-              placeholder="R$ 0,00" 
+            <CurrencyInput
+              value={discountValue}
+              onChange={(value) => setValue('price_with_discount', value)}
+              placeholder="R$ 0,00"
               className="py-6 text-base"
-              {...register('price_with_discount')}
             />
           </div>
         )}
