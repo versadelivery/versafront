@@ -11,7 +11,7 @@ import { NewItemModal } from "./components/item-modal/new-item-modal";
 import { CatalogTab, UICatalogGroup, UICatalogItem } from "@/app/types/catalog";
 import { StockContent } from "./components/stock-content";
 import { useGroups, useCreateGroup, useUpdateGroup, useDeleteGroup } from "@/app/hooks/use-group";
-import { useCreateItem, useDeleteItem } from "@/app/hooks/use-item";
+import { useCreateItem, useDeleteItem, useUpdateItem } from "@/app/hooks/use-item";
 import { Loader2 } from "lucide-react";
 import { GroupFormValues } from "@/app/schemas/group-schema";
 import { toast } from "sonner";
@@ -28,6 +28,7 @@ export default function CatalogPage() {
   const updateGroupMutation = useUpdateGroup();
   const deleteGroupMutation = useDeleteGroup();
   const createItemMutation = useCreateItem();
+  const updateItemMutation = useUpdateItem();
   const deleteItemMutation = useDeleteItem();
 
   const handleSaveGroup = async (values: GroupFormValues) => {
@@ -62,7 +63,7 @@ export default function CatalogPage() {
     setIsNewItemOpen(false);
     setEditingItem(null);
     if (success) {
-      toast.success("Item criado com sucesso!");
+      toast.success(editingItem ? "Item atualizado com sucesso!" : "Item criado com sucesso!");
     }
   };
 
@@ -101,12 +102,21 @@ export default function CatalogPage() {
                       else setIsNewItemOpen(true);
                     }}
                     groups={groups}
+                    editingItem={editingItem}
+                    onDelete={handleDeleteItem}
                     onSave={async (formData) => {
                       try {
-                        await createItemMutation.mutateAsync(formData);
-                        handleItemModalClose(true);
+                        if (editingItem) {
+                          await updateItemMutation.mutateAsync({ id: editingItem.id, formData });
+                          handleItemModalClose(true);
+                          toast.success("Item atualizado com sucesso!");
+                        } else {
+                          await createItemMutation.mutateAsync(formData);
+                          handleItemModalClose(true);
+                          toast.success("Item criado com sucesso!");
+                        }
                       } catch (error) {
-                        toast.error("Erro ao criar item");
+                        toast.error("Erro ao salvar item");
                       }
                     }}
                   />
@@ -145,6 +155,10 @@ export default function CatalogPage() {
                           onEdit={(group) => {
                             setEditingGroup(group);
                             setIsNewGroupOpen(true);
+                          }}
+                          onEditItem={(item) => {
+                            setEditingItem(item);
+                            setIsNewItemOpen(true);
                           }}
                         />
                       ))}

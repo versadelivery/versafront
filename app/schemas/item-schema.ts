@@ -10,15 +10,18 @@ export const itemSchema = z.object({
     required_error: 'Selecione o tipo de unidade',
   }),
   weightUnit: z.enum(['kg', 'g']).optional(),
-  weightPerKg: z.number().min(0).optional(),
   minWeight: z.number().min(0).optional(),
   maxWeight: z.number().min(0).optional(),
   weightInterval: z.number().min(0).optional(),
+  price_with_discount: z.union([
+    z.number().min(0, "O preço com desconto deve ser positivo").optional(),
+    z.literal('')
+  ]).transform(val => val === '' ? '' : String(val)),
   image: z.union([z.instanceof(File), z.literal('')]).optional(),
   removeImage: z.boolean().optional(),
 }).refine((data) => {
   if (data.unitType === 'weight') {
-    return data.weightUnit && data.weightPerKg && data.minWeight && data.maxWeight && data.weightInterval;
+    return data.weightUnit && data.minWeight && data.maxWeight && data.weightInterval;
   }
   return true;
 }, {

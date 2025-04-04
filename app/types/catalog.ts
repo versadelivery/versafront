@@ -75,6 +75,20 @@ export interface UICatalogItem {
   priority: string;
   discountPrice?: string;
   image?: string;
+  attributes: {
+    name: string;
+    description: string;
+    catalog_group_id: string;
+    item_type: 'unit' | 'weight' | 'volume';
+    price: string;
+    unit_of_measurement?: 'kg' | 'g';
+    measure_interval?: string;
+    min_weight?: string;
+    max_weight?: string;
+    priority: string;
+    price_with_discount?: string;
+    image_url?: string;
+  };
 }
 
 export interface ProductData {
