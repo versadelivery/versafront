@@ -35,7 +35,7 @@ export function NewItemModal(props: NewItemModalProps) {
     modalActions,
     onSubmit,
     handleImageChange,
-    removeImage,
+    handleRemoveImage,
     setCurrentStepTitle,
     setHasAdditionals,
     setHasPreparationModes,
@@ -43,6 +43,7 @@ export function NewItemModal(props: NewItemModalProps) {
     setValue,
     watch,
     resetForm,
+    hasRemovedImage,
   } = useNewItemModal(props);
 
   const { isOpen, setIsOpen, editingItem, onDelete } = props;
@@ -82,19 +83,10 @@ export function NewItemModal(props: NewItemModalProps) {
                 register={register} 
                 errors={errors} 
                 setDefaultGroupId={(id) => setValue('catalog_group_id', id)}
-                setImageFile={(file) => {
-                  if (file) {
-                    const event = {
-                      target: {
-                        files: [file]
-                      }
-                    } as unknown as React.ChangeEvent<HTMLInputElement>;
-                    handleImageChange(event);
-                  }
-                }}
                 previewImage={previewImage}
                 onImageChange={handleImageChange}
-                onRemoveImage={removeImage}
+                onRemoveImage={handleRemoveImage}
+                hasRemovedImage={hasRemovedImage}
               />
               
               <div className="border-t border-gray-200 pt-6"></div>

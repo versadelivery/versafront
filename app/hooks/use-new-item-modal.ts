@@ -13,7 +13,7 @@ export const useNewItemModal = ({ isOpen, setIsOpen, onSuccess, editingItem, onD
     }
   });
 
-  const [measureType, setMeasureType] = useState<'unit' | 'weight'>('unit');
+  const [measureType, setMeasureType] = useState<'unit' | 'weight' | 'volume'>('unit');
   const [hasDiscount, setHasDiscount] = useState(false);
   const [hasAdditionals, setHasAdditionals] = useState(false);
   const [additionals, setAdditionals] = useState<Additional[]>([]);
@@ -24,6 +24,7 @@ export const useNewItemModal = ({ isOpen, setIsOpen, onSuccess, editingItem, onD
   const [currentStepTitle, setCurrentStepTitle] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [hasRemovedImage, setHasRemovedImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { mutate: createItem, isPending: isCreating } = useCreateItem();
@@ -31,7 +32,18 @@ export const useNewItemModal = ({ isOpen, setIsOpen, onSuccess, editingItem, onD
   const isSubmitting = isCreating || isUpdating;
 
   useEffect(() => {
+    const subscription = watch((value, { name }) => {
+      if (name === 'item_type' && value.item_type !== measureType) {
+        setMeasureType(value.item_type as 'unit' | 'weight' | 'volume');
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [watch, measureType]);
+
+  useEffect(() => {
     if (editingItem) {
+      const itemType = editingItem.attributes.item_type || 'unit';
+      setMeasureType(itemType);
       reset({
         id: editingItem.id,
         name: editingItem.attributes.name,
@@ -46,7 +58,6 @@ export const useNewItemModal = ({ isOpen, setIsOpen, onSuccess, editingItem, onD
         priority: editingItem.attributes.priority,
         price_with_discount: editingItem.attributes.price_with_discount,
       });
-      
       setMeasureType(editingItem.attributes.item_type);
       setHasDiscount(!!editingItem.attributes.price_with_discount);
       
@@ -59,10 +70,10 @@ export const useNewItemModal = ({ isOpen, setIsOpen, onSuccess, editingItem, onD
   }, [editingItem, reset]);
 
   const resetForm = () => {
+    setMeasureType('unit');
     reset({
       item_type: 'unit'
     });
-    setMeasureType('unit');
     setHasDiscount(false);
     setHasAdditionals(false);
     setAdditionals([]);
@@ -73,6 +84,7 @@ export const useNewItemModal = ({ isOpen, setIsOpen, onSuccess, editingItem, onD
     setCurrentStepTitle('');
     setImageFile(null);
     setPreviewImage(null);
+    setHasRemovedImage(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -94,6 +106,8 @@ export const useNewItemModal = ({ isOpen, setIsOpen, onSuccess, editingItem, onD
     
     if (imageFile) {
       formData.append('image', imageFile);
+    } else if (hasRemovedImage) {
+      formData.append('image', '');
     }
     
     if (data.item_type === 'weight') {
@@ -103,8 +117,10 @@ export const useNewItemModal = ({ isOpen, setIsOpen, onSuccess, editingItem, onD
       if (data.max_weight) formData.append('max_weight', data.max_weight);
     }
     
-    if (hasDiscount && data.price_with_discount) {
-      formData.append('price_with_discount', data.price_with_discount);
+    if (hasDiscount) {
+      formData.append('price_with_discount', data.price_with_discount || '');
+    } else if (editingItem) {
+      formData.append('price_with_discount', '');
     }
     
     if (hasAdditionals && additionals.length > 0) {
@@ -148,24 +164,16 @@ export const useNewItemModal = ({ isOpen, setIsOpen, onSuccess, editingItem, onD
     }
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
+  const handleImageChange = (file: File) => {
+    setImageFile(file);
+    setPreviewImage(URL.createObjectURL(file));
+    setHasRemovedImage(false);
   };
 
-  const removeImage = () => {
+  const handleRemoveImage = () => {
     setImageFile(null);
     setPreviewImage(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    setHasRemovedImage(true);
   };
 
   const modalActions = {
@@ -237,26 +245,32 @@ export const useNewItemModal = ({ isOpen, setIsOpen, onSuccess, editingItem, onD
     handleSubmit,
     errors,
     measureType,
+    setMeasureType,
     hasDiscount,
     setHasDiscount,
     hasAdditionals,
+    setHasAdditionals,
     additionals,
+    setAdditionals,
     hasPreparationModes,
+    setHasPreparationModes,
     preparationModes,
+    setPreparationModes,
     hasSteps,
+    setHasSteps,
     steps,
+    setSteps,
     currentStepTitle,
+    setCurrentStepTitle,
     previewImage,
-    isSubmitting,
+    hasRemovedImage,
     fileInputRef,
+    handleImageChange,
+    handleRemoveImage,
+    isSubmitting,
     modalActions,
     onSubmit,
-    handleImageChange,
-    removeImage,
-    setCurrentStepTitle,
-    setHasAdditionals,
-    setHasPreparationModes,
-    setHasSteps,
+    onDelete,
     setValue,
     watch,
     resetForm,

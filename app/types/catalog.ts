@@ -17,8 +17,8 @@ export interface Product {
 }
 
 export interface MeasurePriceSectionProps {
-  measureType: 'unit' | 'weight';
-  setMeasureType: (type: 'unit' | 'weight') => void;
+  measureType: 'unit' | 'weight' | 'volume';
+  setMeasureType: (type: 'unit' | 'weight' | 'volume') => void;
   hasDiscount: boolean;
   setHasDiscount: (value: boolean) => void;
   register: UseFormRegister<any>;
@@ -32,7 +32,7 @@ export interface FormValues {
   name: string;
   description: string;
   catalog_group_id: string;
-  item_type: 'unit' | 'weight';
+  item_type: 'unit' | 'weight' | 'volume';
   price: string;
   unit_of_measurement?: 'kg' | 'g';
   measure_interval?: string;
@@ -49,7 +49,7 @@ export interface CatalogItem {
     name: string;
     description: string;
     catalog_group_id: string;
-    item_type: 'unit' | 'weight';
+    item_type: 'unit' | 'weight' | 'volume';
     price: string;
     unit_of_measurement?: 'kg' | 'g';
     measure_interval?: string;
@@ -66,7 +66,7 @@ export interface UICatalogItem {
   name: string;
   description: string;
   groupId: string;
-  type: 'unit' | 'weight';
+  type: 'unit' | 'weight' | 'volume';
   price: string;
   unit?: 'kg' | 'g';
   interval?: string;

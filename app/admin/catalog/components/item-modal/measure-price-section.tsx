@@ -4,7 +4,6 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { HelpCircle } from "lucide-react";
-import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors } from "react-hook-form";
 import { useEffect } from "react";
 import { CurrencyInput } from "./currency-input";
 import { MeasurePriceSectionProps } from "@/app/types/catalog";
@@ -19,15 +18,20 @@ export function MeasurePriceSection({
   watch,
   errors
 }: MeasurePriceSectionProps) {
-  useEffect(() => {
-    const initialValue = watch('item_type');
-    if (initialValue !== measureType) {
-      setMeasureType(initialValue || 'unit');
-    }
-  }, [watch, setMeasureType]);
-
   const priceValue = watch('price') || '0.00';
   const discountValue = watch('price_with_discount') || '0.00';
+  const itemType = watch('item_type');
+
+  useEffect(() => {
+    if (itemType && itemType !== measureType) {
+      setMeasureType(itemType as 'unit' | 'weight');
+    }
+  }, [itemType, measureType, setMeasureType]);
+
+  const handleMeasureTypeChange = (value: 'unit' | 'weight') => {
+    setValue('item_type', value, { shouldValidate: true });
+    setMeasureType(value);
+  };
 
   return (
     <div className="space-y-6">
@@ -36,10 +40,7 @@ export function MeasurePriceSection({
           <Label className="text-sm sm:text-md font-bold">TIPO DE MEDIDA</Label>
           <Select 
             value={measureType}
-            onValueChange={(value: 'unit' | 'weight') => {
-              setMeasureType(value);
-              setValue('item_type', value, { shouldValidate: true });
-            }}
+            onValueChange={handleMeasureTypeChange}
           >
             <SelectTrigger className="mt-2 py-6 text-base bg-white">
               <SelectValue placeholder="Selecione" />
