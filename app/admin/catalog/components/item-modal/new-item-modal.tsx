@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useForm, SubmitHandler } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { itemSchema, ItemFormValues } from "@/app/schemas/item-schema";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -76,12 +76,26 @@ export function NewItemModal({ isOpen, onOpenChange, groups = [], onSave, editin
       setPreviewImage(editingItem.attributes.image_url || null);
       setHasRemovedImage(false);
     } else {
-      reset();
+      reset({
+        name: '',
+        description: '',
+        groupId: groups[0]?.id || '',
+        price: 0,
+        priority: 0,
+        unitType: 'unit',
+        weightUnit: 'kg',
+        minWeight: 0,
+        maxWeight: 0,
+        weightInterval: 0,
+        price_with_discount: '',
+        image: undefined,
+        removeImage: false,
+      });
       setHasDiscount(false);
       setPreviewImage(null);
       setHasRemovedImage(false);
     }
-  }, [editingItem, reset]);
+  }, [editingItem, reset, groups]);
 
   const isLoading = formState.isSubmitting;
   const unitType = watch('unitType');

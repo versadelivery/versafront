@@ -63,18 +63,6 @@ export interface CatalogItem {
 
 export interface UICatalogItem {
   id: string;
-  name: string;
-  description: string;
-  groupId: string;
-  type: 'unit' | 'weight' | 'volume';
-  price: string;
-  unit?: 'kg' | 'g';
-  interval?: string;
-  minWeight?: string;
-  maxWeight?: string;
-  priority: string;
-  discountPrice?: string;
-  image?: string;
   attributes: {
     name: string;
     description: string;
@@ -127,7 +115,7 @@ export interface UICatalogGroup {
   description: string;
   priority: number;
   image?: string;
-  products: ProductData[];
+  products: UICatalogItem[];
 }
 
 

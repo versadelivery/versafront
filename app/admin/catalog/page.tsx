@@ -15,8 +15,10 @@ import { useCreateItem, useDeleteItem, useUpdateItem } from "@/app/hooks/use-ite
 import { Loader2 } from "lucide-react";
 import { GroupFormValues } from "@/app/schemas/group-schema";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function CatalogPage() {
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<CatalogTab>('catalog');
   const [isNewGroupOpen, setIsNewGroupOpen] = useState(false);
   const [isNewItemOpen, setIsNewItemOpen] = useState(false);
@@ -24,6 +26,9 @@ export default function CatalogPage() {
   const [editingItem, setEditingItem] = useState<UICatalogItem | null>(null);
   
   const { data: groups = [], isLoading, error } = useGroups();
+  
+  console.log("Groups data:", groups);
+  
   const createGroupMutation = useCreateGroup();
   const updateGroupMutation = useUpdateGroup();
   const deleteGroupMutation = useDeleteGroup();
@@ -49,22 +54,36 @@ export default function CatalogPage() {
     } else {
       await createGroupMutation.mutateAsync(formData as never);
     }
+    queryClient.invalidateQueries({ queryKey: ['catalog-groups'] });
   };
 
   const handleDeleteGroup = async (id: string) => {
     await deleteGroupMutation.mutateAsync(id);
+    queryClient.invalidateQueries({ queryKey: ['catalog-groups'] });
   };
 
   const handleDeleteItem = async (id: string) => {
     await deleteItemMutation.mutateAsync(id);
+    queryClient.invalidateQueries({ queryKey: ['catalog-groups'] });
   };
 
   const handleItemModalClose = (success: boolean) => {
     setIsNewItemOpen(false);
     setEditingItem(null);
     if (success) {
+      queryClient.invalidateQueries({ queryKey: ['catalog-groups'] });
       toast.success(editingItem ? "Item atualizado com sucesso!" : "Item criado com sucesso!");
     }
+  };
+
+  const handleOpenNewItemModal = () => {
+    setEditingItem(null); 
+    setIsNewItemOpen(true);
+  };
+
+  const handleOpenEditItemModal = (item: UICatalogItem) => {
+    setEditingItem(item);
+    setIsNewItemOpen(true);
   };
 
   return (
@@ -89,17 +108,15 @@ export default function CatalogPage() {
                       setEditingGroup(null);
                       setIsNewGroupOpen(true);
                     }}
-                    onNewItem={() => {
-                      setEditingItem(null);
-                      setIsNewItemOpen(true);
-                    }}
+                    onNewItem={handleOpenNewItemModal}
                   />
                   
                   <NewItemModal 
                     isOpen={isNewItemOpen} 
                     onOpenChange={(open) => {
-                      if (!open) handleItemModalClose(false);
-                      else setIsNewItemOpen(true);
+                      if (!open) {
+                        handleItemModalClose(false);
+                      }
                     }}
                     groups={groups}
                     editingItem={editingItem}
@@ -109,11 +126,9 @@ export default function CatalogPage() {
                         if (editingItem) {
                           await updateItemMutation.mutateAsync({ id: editingItem.id, formData });
                           handleItemModalClose(true);
-                          toast.success("Item atualizado com sucesso!");
                         } else {
                           await createItemMutation.mutateAsync(formData);
                           handleItemModalClose(true);
-                          toast.success("Item criado com sucesso!");
                         }
                       } catch (error) {
                         toast.error("Erro ao salvar item");
@@ -148,20 +163,28 @@ export default function CatalogPage() {
                     <div className="space-y-4">
                       {[...groups]
                         .sort((a, b) => b.priority - a.priority)
-                        .map((group) => (
-                        <ProductGroup 
-                          key={group.id} 
-                          group={group} 
-                          onEdit={(group) => {
-                            setEditingGroup(group);
-                            setIsNewGroupOpen(true);
-                          }}
-                          onEditItem={(item) => {
-                            setEditingItem(item);
-                            setIsNewItemOpen(true);
-                          }}
-                        />
-                      ))}
+                        .map((group) => {
+                          // Verificar a estrutura do grupo
+                          console.log("Group in map:", group);
+                          
+                          // Garantir que o grupo tem a estrutura esperada
+                          if (!group || !group.products) {
+                            console.error("Grupo inválido:", group);
+                            return null;
+                          }
+                          
+                          return (
+                            <ProductGroup 
+                              key={group.id} 
+                              group={group} 
+                              onEdit={(group) => {
+                                setEditingGroup(group);
+                                setIsNewGroupOpen(true);
+                              }}
+                              onEditItem={handleOpenEditItemModal}
+                            />
+                          );
+                        })}
                     </div>
                   )}
                 </div>

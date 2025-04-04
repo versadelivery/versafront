@@ -2,10 +2,16 @@ import api from "../lib/api";
 import { GroupData } from "../types/catalog";
 
 export const getCatalogGroups = async () => {
-  const response = await api.get('/catalog_groups', {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
-  return response.data;
+  try {
+    const response = await api.get('/catalog_groups', {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    console.log("API response for catalog groups:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching catalog groups:", error);
+    return { data: [] };
+  }
 }
 
 export const createGroup = async (formData: GroupData) => {

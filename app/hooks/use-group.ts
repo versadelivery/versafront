@@ -8,14 +8,37 @@ export const useGroups = () => {
     queryKey: ['catalog-groups'],
     queryFn: async () => {
       const response = await getCatalogGroups();
-      return response.data.map((group: CatalogGroup) => ({
-        id: group.id,
-        name: group.attributes.name,
-        description: group.attributes.description,
-        priority: group.attributes.priority,
-        image: group.attributes.image_url,
-        products: group.attributes.items
-      }));
+      console.log("Raw catalog groups response:", response);
+      
+      const mappedGroups = response.data.map((group: CatalogGroup) => {
+        console.log("Group before mapping:", group);
+        
+        if (!group || !group.attributes) {
+          console.error("Grupo inválido na resposta:", group);
+          return {
+            id: "invalid-group",
+            name: "Grupo inválido",
+            description: "Este grupo não pôde ser carregado",
+            priority: 0,
+            products: []
+          };
+        }
+        
+        const products = group.attributes.items || [];
+        console.log("Products in group:", products);
+        
+        return {
+          id: group.id,
+          name: group.attributes.name,
+          description: group.attributes.description,
+          priority: group.attributes.priority,
+          image: group.attributes.image_url,
+          products: products
+        };
+      });
+      
+      console.log("Mapped groups:", mappedGroups);
+      return mappedGroups;
     },
     initialData: []
   });
