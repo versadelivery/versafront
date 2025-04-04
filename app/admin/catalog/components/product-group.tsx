@@ -50,7 +50,10 @@ export function ProductGroup({ group, onEdit, onEditItem }: ProductGroupProps) {
         catalog_group_id: group.id,
         item_type: "unit",
         price: "0",
-        priority: 0
+        priority: 0,
+        extra: { data: [] },
+        prepare_method: { data: [] },
+        steps: { data: [] }
       }
     };
   };

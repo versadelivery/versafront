@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Info, Loader2, Trash2 } from "lucide-react";
+import { Info, Loader2, Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { ImageUpload } from "../image-upload";
 import { UICatalogGroup, UICatalogItem } from "@/app/types/catalog";
@@ -52,6 +52,15 @@ interface PrepareMethodData {
   };
 }
 
+interface Step {
+  name: string;
+  options: StepOption[];
+}
+
+interface StepOption {
+  name: string;
+}
+
 export function NewItemModal({ isOpen, onOpenChange, groups = [], onSave, editingItem, onDelete }: NewItemModalProps) {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [hasRemovedImage, setHasRemovedImage] = useState(false);
@@ -59,8 +68,10 @@ export function NewItemModal({ isOpen, onOpenChange, groups = [], onSave, editin
   const [hasDiscount, setHasDiscount] = useState(false);
   const [hasExtras, setHasExtras] = useState(false);
   const [hasPrepareMethods, setHasPrepareMethods] = useState(false);
+  const [hasSteps, setHasSteps] = useState(false);
   const [extras, setExtras] = useState<Extra[]>([]);
   const [prepareMethods, setPrepareMethods] = useState<PrepareMethod[]>([]);
+  const [steps, setSteps] = useState<Step[]>([]);
 
   const form = useForm<ItemFormValues>({
     resolver: zodResolver(itemSchema) as any,
@@ -130,6 +141,21 @@ export function NewItemModal({ isOpen, onOpenChange, groups = [], onSave, editin
         setPrepareMethods([]);
       }
 
+      if (editingItem.attributes.steps?.data?.length) {
+        const formattedSteps = editingItem.attributes.steps.data.map((step: any) => ({
+          name: step.attributes.name,
+          options: step.attributes.options?.data?.map((option: any) => ({
+            name: option.attributes.name,
+            id: option.id
+          })) || []
+        }));
+        setSteps(formattedSteps);
+        setHasSteps(true);
+      } else {
+        setSteps([]);
+        setHasSteps(false);
+      }
+
       setPreviewImage(editingItem.attributes.image_url || null);
       setHasRemovedImage(false);
     } else {
@@ -155,6 +181,8 @@ export function NewItemModal({ isOpen, onOpenChange, groups = [], onSave, editin
       setHasPrepareMethods(false);
       setExtras([]);
       setPrepareMethods([]);
+      setSteps([]);
+      setHasSteps(false);
       setPreviewImage(null);
       setHasRemovedImage(false);
     }
@@ -214,6 +242,39 @@ export function NewItemModal({ isOpen, onOpenChange, groups = [], onSave, editin
     const newMethods = [...prepareMethods];
     newMethods[index] = { ...newMethods[index], name: value };
     setPrepareMethods(newMethods);
+  };
+
+  const handleAddStep = () => {
+    setSteps([...steps, { name: '', options: [] }]);
+  };
+
+  const handleRemoveStep = (index: number) => {
+    const newSteps = steps.filter((_, i) => i !== index);
+    setSteps(newSteps);
+  };
+
+  const handleStepNameChange = (index: number, value: string) => {
+    const newSteps = [...steps];
+    newSteps[index] = { ...newSteps[index], name: value };
+    setSteps(newSteps);
+  };
+
+  const handleAddStepOption = (stepIndex: number) => {
+    const newSteps = [...steps];
+    newSteps[stepIndex].options.push({ name: '' });
+    setSteps(newSteps);
+  };
+
+  const handleRemoveStepOption = (stepIndex: number, optionIndex: number) => {
+    const newSteps = [...steps];
+    newSteps[stepIndex].options = newSteps[stepIndex].options.filter((_, i) => i !== optionIndex);
+    setSteps(newSteps);
+  };
+
+  const handleStepOptionChange = (stepIndex: number, optionIndex: number, value: string) => {
+    const newSteps = [...steps];
+    newSteps[stepIndex].options[optionIndex] = { name: value };
+    setSteps(newSteps);
   };
 
   const onSubmit = async (data: ItemFormValues) => {
@@ -324,6 +385,54 @@ export function NewItemModal({ isOpen, onOpenChange, groups = [], onSave, editin
         editingItem.attributes.prepare_method.data.forEach((method: PrepareMethodData, index: number) => {
           formData.append(`catalog_item_prepare_methods_attributes[${index}][id]`, method.id);
           formData.append(`catalog_item_prepare_methods_attributes[${index}][_destroy]`, 'true');
+        });
+      }
+  
+      if (hasSteps) {
+        if (editingItem?.attributes.steps?.data?.length) {
+          editingItem.attributes.steps.data.forEach((step: any, index: number) => {
+            formData.append(`catalog_item_steps_attributes[${index}][id]`, step.id);
+            formData.append(`catalog_item_steps_attributes[${index}][_destroy]`, 'true');
+          });
+
+          steps.forEach((step, newIndex) => {
+            const originalIndex = editingItem?.attributes?.steps?.data?.findIndex(
+              (s: any) => s.attributes.name === step.name
+            ) ?? -1;
+
+            if (originalIndex === -1) {
+              const stepDataLength = editingItem?.attributes?.steps?.data?.length ?? 0;
+              formData.append(`catalog_item_steps_attributes[${newIndex + stepDataLength}][name]`, step.name);
+              
+              step.options.forEach((option, optionIndex) => {
+                formData.append(`catalog_item_steps_attributes[${newIndex + stepDataLength}][catalog_item_step_options_attributes][${optionIndex}][name]`, option.name);
+              });
+            } else {
+              const stepId = editingItem?.attributes?.steps?.data?.[originalIndex]?.id;
+              if (stepId) {
+                formData.append(`catalog_item_steps_attributes[${originalIndex}][id]`, stepId);
+                formData.append(`catalog_item_steps_attributes[${originalIndex}][name]`, step.name);
+                formData.append(`catalog_item_steps_attributes[${originalIndex}][_destroy]`, 'false');
+
+                step.options.forEach((option, optionIndex) => {
+                  formData.append(`catalog_item_steps_attributes[${originalIndex}][catalog_item_step_options_attributes][${optionIndex}][name]`, option.name);
+                });
+              }
+            }
+          });
+        } else {
+          steps.forEach((step, index) => {
+            formData.append(`catalog_item_steps_attributes[${index}][name]`, step.name);
+            
+            step.options.forEach((option, optionIndex) => {
+              formData.append(`catalog_item_steps_attributes[${index}][catalog_item_step_options_attributes][${optionIndex}][name]`, option.name);
+            });
+          });
+        }
+      } else if (editingItem?.attributes.steps?.data?.length) {
+        editingItem.attributes.steps.data.forEach((step: any, index: number) => {
+          formData.append(`catalog_item_steps_attributes[${index}][id]`, step.id);
+          formData.append(`catalog_item_steps_attributes[${index}][_destroy]`, 'true');
         });
       }
   
@@ -793,6 +902,97 @@ export function NewItemModal({ isOpen, onOpenChange, groups = [], onSave, editin
                       className="w-full"
                     >
                       Adicionar novo modo de preparo
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-sm font-bold text-foreground">ETAPAS DO ITEM</h3>
+
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">O item tem etapas?</FormLabel>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={hasSteps}
+                      onCheckedChange={setHasSteps}
+                    />
+                  </FormControl>
+                </FormItem>
+
+                {hasSteps && (
+                  <div className="space-y-4">
+                    {steps.map((step, stepIndex) => (
+                      <div key={stepIndex} className="space-y-3 border border-gray-200 rounded-lg p-4 bg-gray-50">
+                        <div className="flex gap-2 items-start">
+                          <div className="flex-1 space-y-1">
+                            <label className="text-sm font-medium text-gray-700">Nome da etapa</label>
+                            <Input
+                              placeholder="Ex: Escolha o pão"
+                              value={step.name}
+                              onChange={(e) => handleStepNameChange(stepIndex, e.target.value)}
+                              className="bg-white"
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRemoveStep(stepIndex)}
+                            className="shrink-0 text-gray-500 hover:text-red-500"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+
+                        <div className="space-y-3 pl-4 border-l-2 border-gray-200">
+                          <div className="flex items-center justify-between">
+                            <h4 className="text-sm font-medium text-gray-600">Itens desta etapa</h4>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleAddStepOption(stepIndex)}
+                              className="text-xs"
+                            >
+                              Adicionar item
+                            </Button>
+                          </div>
+
+                          <div className="space-y-2">
+                            {step.options.map((option, optionIndex) => (
+                              <div key={optionIndex} className="flex gap-2 items-start bg-white p-2 rounded-md border border-gray-100">
+                                <Input
+                                  placeholder="Ex: Pão Australiano"
+                                  value={option.name}
+                                  onChange={(e) => handleStepOptionChange(stepIndex, optionIndex, e.target.value)}
+                                  className="flex-1 border-0 focus-visible:ring-0 bg-transparent"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleRemoveStepOption(stepIndex, optionIndex)}
+                                  className="shrink-0 text-gray-400 hover:text-red-500"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleAddStep}
+                      className="w-full border-dashed"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Nova etapa
                     </Button>
                   </div>
                 )}

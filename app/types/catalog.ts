@@ -76,7 +76,7 @@ export interface UICatalogItem {
     priority: number;
     image_url?: string;
     price_with_discount?: string;
-    extra?: {
+    extra: {
       data: Array<{
         id: string;
         type: string;
@@ -86,7 +86,7 @@ export interface UICatalogItem {
         };
       }>;
     };
-    prepare_method?: {
+    prepare_method: {
       data: Array<{
         id: string;
         type: string;
@@ -95,8 +95,23 @@ export interface UICatalogItem {
         };
       }>;
     };
-    steps?: {
-      data: any[];
+    steps: {
+      data: Array<{
+        id: string;
+        type: string;
+        attributes: {
+          name: string;
+          options: {
+            data: Array<{
+              id: string;
+              type: string;
+              attributes: {
+                name: string;
+              };
+            }>;
+          };
+        };
+      }>;
     };
   };
 }
