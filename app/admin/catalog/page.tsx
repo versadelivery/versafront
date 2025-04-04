@@ -27,8 +27,6 @@ export default function CatalogPage() {
   
   const { data: groups = [], isLoading, error } = useGroups();
   
-  console.log("Groups data:", groups);
-  
   const createGroupMutation = useCreateGroup();
   const updateGroupMutation = useUpdateGroup();
   const deleteGroupMutation = useDeleteGroup();
@@ -164,12 +162,7 @@ export default function CatalogPage() {
                       {[...groups]
                         .sort((a, b) => b.priority - a.priority)
                         .map((group) => {
-                          // Verificar a estrutura do grupo
-                          console.log("Group in map:", group);
-                          
-                          // Garantir que o grupo tem a estrutura esperada
                           if (!group || !group.products) {
-                            console.error("Grupo inválido:", group);
                             return null;
                           }
                           

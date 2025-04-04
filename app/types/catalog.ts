@@ -73,9 +73,31 @@ export interface UICatalogItem {
     measure_interval?: string;
     min_weight?: string;
     max_weight?: string;
-    priority: string;
-    price_with_discount?: string;
+    priority: number;
     image_url?: string;
+    price_with_discount?: string;
+    extra?: {
+      data: Array<{
+        id: string;
+        type: string;
+        attributes: {
+          name: string;
+          price: string;
+        };
+      }>;
+    };
+    prepare_method?: {
+      data: Array<{
+        id: string;
+        type: string;
+        attributes: {
+          name: string;
+        };
+      }>;
+    };
+    steps?: {
+      data: any[];
+    };
   };
 }
 
@@ -115,7 +137,7 @@ export interface UICatalogGroup {
   description: string;
   priority: number;
   image?: string;
-  products: UICatalogItem[];
+  products?: UICatalogItem[];
 }
 
 

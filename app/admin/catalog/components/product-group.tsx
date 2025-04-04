@@ -16,8 +16,6 @@ export function ProductGroup({ group, onEdit, onEditItem }: ProductGroupProps) {
       onEditItem(item);
     }
   };
-
-  console.log("Group products:", group.products);
   
   const getProductId = (product: any, index: number) => {
     if (product?.id) return product.id;
@@ -52,7 +50,7 @@ export function ProductGroup({ group, onEdit, onEditItem }: ProductGroupProps) {
         catalog_group_id: group.id,
         item_type: "unit",
         price: "0",
-        priority: "0"
+        priority: 0
       }
     };
   };

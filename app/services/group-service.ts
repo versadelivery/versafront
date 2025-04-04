@@ -6,7 +6,6 @@ export const getCatalogGroups = async () => {
     const response = await api.get('/catalog_groups', {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
-    console.log("API response for catalog groups:", response.data);
     return response.data;
   } catch (error) {
     console.error("Error fetching catalog groups:", error);

@@ -2,6 +2,15 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { createCatalogItem, updateCatalogItem, deleteCatalogItem } from "../services/item-service";
 
+interface ExtraAttribute {
+  name: string;
+  price: string;
+}
+
+interface PrepareMethodAttribute {
+  name: string;
+}
+
 export function useCreateItem() {
   const queryClient = useQueryClient();
   
@@ -13,7 +22,6 @@ export function useCreateItem() {
       }
       
       const formDataObj = Object.fromEntries(newFormData.entries());
-      console.log('Hook - FormData recebido:', formDataObj);
       
       const result = await createCatalogItem(newFormData);
       return result;
@@ -36,7 +44,14 @@ export function useUpdateItem() {
   
   return useMutation({
     mutationFn: async ({ id, formData }: { id: string; formData: FormData }) => {
-      return await updateCatalogItem({ id, formData });
+      const processedFormData = new FormData();
+      
+      for (const [key, value] of formData.entries()) {
+        processedFormData.append(key, value);
+      }
+      
+      console.log('FormData processado:', Object.fromEntries(processedFormData.entries()));
+      return await updateCatalogItem({ id, formData: processedFormData });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['catalog-items'] });

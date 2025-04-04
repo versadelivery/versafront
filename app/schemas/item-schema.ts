@@ -1,32 +1,43 @@
 import { z } from 'zod';
 
+export const extraSchema = z.object({
+  name: z.string().min(1, "Nome é obrigatório"),
+  price: z.number().min(0, "Preço deve ser maior ou igual a 0"),
+});
+
+export const prepareMethodSchema = z.object({
+  name: z.string().min(1, "Nome é obrigatório"),
+});
+
 export const itemSchema = z.object({
-  name: z.string().min(3, 'Nome deve ter pelo menos 3 caracteres'),
+  name: z.string().min(1, "Nome é obrigatório"),
   description: z.string().optional(),
-  groupId: z.string().min(1, 'Selecione um grupo'),
-  price: z.number().min(0, 'Preço deve ser maior que 0'),
-  priority: z.number().min(0).max(100),
-  unitType: z.enum(['unit', 'weight'], {
-    required_error: 'Selecione o tipo de unidade',
-  }),
-  weightUnit: z.enum(['kg', 'g']).optional(),
-  minWeight: z.number().min(0).optional(),
-  maxWeight: z.number().min(0).optional(),
-  weightInterval: z.number().min(0).optional(),
+  catalog_group_id: z.string().min(1, "Grupo é obrigatório"),
+  price: z.number().min(0, "Preço deve ser maior ou igual a 0"),
+  priority: z.number().min(0, "Prioridade deve ser maior ou igual a 0"),
+  item_type: z.enum(["unit", "weight"]),
+  unit_of_measurement: z.enum(["kg", "g"]).optional(),
+  min_weight: z.number().min(0, "Peso mínimo deve ser maior ou igual a 0").optional(),
+  max_weight: z.number().min(0, "Peso máximo deve ser maior ou igual a 0").optional(),
+  measure_interval: z.number().min(0, "Intervalo deve ser maior ou igual a 0").optional(),
   price_with_discount: z.union([
     z.number().min(0, "O preço com desconto deve ser positivo").optional(),
     z.literal('')
   ]).transform(val => val === '' ? '' : String(val)),
-  image: z.union([z.instanceof(File), z.literal('')]).optional(),
+  image: z.any().optional(),
   removeImage: z.boolean().optional(),
+  has_extras: z.boolean().optional(),
+  catalog_item_extras_attributes: z.array(extraSchema).optional(),
+  has_prepare_methods: z.boolean().optional(),
+  catalog_item_prepare_methods_attributes: z.array(prepareMethodSchema).optional(),
 }).refine((data) => {
-  if (data.unitType === 'weight') {
-    return data.weightUnit && data.minWeight && data.maxWeight && data.weightInterval;
+  if (data.item_type === 'weight') {
+    return data.unit_of_measurement && data.min_weight && data.max_weight && data.measure_interval;
   }
   return true;
 }, {
   message: 'Preencha todos os campos de peso',
-  path: ['weightUnit'],
+  path: ['unit_of_measurement'],
 });
 
 export type ItemFormValues = z.infer<typeof itemSchema>;

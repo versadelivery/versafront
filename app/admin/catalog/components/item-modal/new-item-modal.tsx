@@ -26,28 +26,62 @@ interface NewItemModalProps {
   onDelete?: (id: string) => Promise<void>;
 }
 
+interface Extra {
+  name: string;
+  price: number;
+}
+
+interface PrepareMethod {
+  name: string;
+}
+
+interface ExtraData {
+  id: string;
+  type: string;
+  attributes: {
+    name: string;
+    price: string;
+  };
+}
+
+interface PrepareMethodData {
+  id: string;
+  type: string;
+  attributes: {
+    name: string;
+  };
+}
+
 export function NewItemModal({ isOpen, onOpenChange, groups = [], onSave, editingItem, onDelete }: NewItemModalProps) {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [hasRemovedImage, setHasRemovedImage] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [hasDiscount, setHasDiscount] = useState(false);
+  const [hasExtras, setHasExtras] = useState(false);
+  const [hasPrepareMethods, setHasPrepareMethods] = useState(false);
+  const [extras, setExtras] = useState<Extra[]>([]);
+  const [prepareMethods, setPrepareMethods] = useState<PrepareMethod[]>([]);
 
   const form = useForm<ItemFormValues>({
     resolver: zodResolver(itemSchema) as any,
     defaultValues: {
       name: '',
       description: '',
-      groupId: groups[0]?.id || '',
+      catalog_group_id: groups[0]?.id || '',
       price: 0,
       priority: 0,
-      unitType: 'unit',
-      weightUnit: 'kg',
-      minWeight: 0,
-      maxWeight: 0,
-      weightInterval: 0,
+      item_type: 'unit',
+      unit_of_measurement: 'kg',
+      min_weight: 0,
+      max_weight: 0,
+      measure_interval: 0,
       price_with_discount: '',
       image: undefined,
       removeImage: false,
+      has_extras: false,
+      catalog_item_extras_attributes: [],
+      has_prepare_methods: false,
+      catalog_item_prepare_methods_attributes: [],
     },
   }) as any;
 
@@ -58,47 +92,76 @@ export function NewItemModal({ isOpen, onOpenChange, groups = [], onSave, editin
       const values = {
         name: editingItem.attributes.name,
         description: editingItem.attributes.description || '',
-        groupId: editingItem.attributes.catalog_group_id,
+        catalog_group_id: editingItem.attributes.catalog_group_id,
         price: parseFloat(editingItem.attributes.price || '0'),
-        priority: parseInt(editingItem.attributes.priority || '0'),
-        unitType: editingItem.attributes.item_type as 'unit' | 'weight',
-        weightUnit: editingItem.attributes.unit_of_measurement as 'kg' | 'g' || 'kg',
-        minWeight: parseFloat(editingItem.attributes.min_weight || '0'),
-        maxWeight: parseFloat(editingItem.attributes.max_weight || '0'),
-        weightInterval: parseFloat(editingItem.attributes.measure_interval || '0'),
+        priority: parseInt(editingItem.attributes.priority.toString() || '0'),
+        item_type: editingItem.attributes.item_type as 'unit' | 'weight',
+        unit_of_measurement: editingItem.attributes.unit_of_measurement as 'kg' | 'g' || 'kg',
+        min_weight: parseFloat(editingItem.attributes.min_weight || '0'),
+        max_weight: parseFloat(editingItem.attributes.max_weight || '0'),
+        measure_interval: parseFloat(editingItem.attributes.measure_interval || '0'),
         price_with_discount: editingItem.attributes.price_with_discount || '',
         image: undefined,
         removeImage: false,
+        has_extras: !!editingItem.attributes.extra?.data?.length,
+        has_prepare_methods: !!editingItem.attributes.prepare_method?.data?.length,
       };
       
       reset(values);
       setHasDiscount(!!editingItem.attributes.price_with_discount);
+      setHasExtras(!!editingItem.attributes.extra?.data?.length);
+      setHasPrepareMethods(!!editingItem.attributes.prepare_method?.data?.length);
+      
+      if (editingItem.attributes.extra?.data?.length) {
+        const formattedExtras = editingItem.attributes.extra.data.map((extra: ExtraData) => ({
+          name: extra.attributes.name,
+          price: parseFloat(extra.attributes.price)
+        }));
+        setExtras(formattedExtras);
+      } else {
+        setExtras([]);
+      }
+
+      if (editingItem.attributes.prepare_method?.data?.length) {
+        setPrepareMethods(editingItem.attributes.prepare_method.data.map((method: PrepareMethodData) => ({
+          name: method.attributes.name
+        })));
+      } else {
+        setPrepareMethods([]);
+      }
+
       setPreviewImage(editingItem.attributes.image_url || null);
       setHasRemovedImage(false);
     } else {
       reset({
         name: '',
         description: '',
-        groupId: groups[0]?.id || '',
+        catalog_group_id: groups[0]?.id || '',
         price: 0,
         priority: 0,
-        unitType: 'unit',
-        weightUnit: 'kg',
-        minWeight: 0,
-        maxWeight: 0,
-        weightInterval: 0,
+        item_type: 'unit',
+        unit_of_measurement: 'kg',
+        min_weight: 0,
+        max_weight: 0,
+        measure_interval: 0,
         price_with_discount: '',
         image: undefined,
         removeImage: false,
+        has_extras: false,
+        has_prepare_methods: false,
       });
       setHasDiscount(false);
+      setHasExtras(false);
+      setHasPrepareMethods(false);
+      setExtras([]);
+      setPrepareMethods([]);
       setPreviewImage(null);
       setHasRemovedImage(false);
     }
   }, [editingItem, reset, groups]);
 
   const isLoading = formState.isSubmitting;
-  const unitType = watch('unitType');
+  const unitType = watch('item_type');
 
   const handleImageChange = (file: File) => {
     setValue('image', file, { shouldValidate: true });
@@ -121,24 +184,65 @@ export function NewItemModal({ isOpen, onOpenChange, groups = [], onSave, editin
     }
   };
 
+  const handleAddExtra = () => {
+    const newExtras = [...extras, { name: '', price: 0 }];
+    setExtras(newExtras);
+  };
+
+  const handleRemoveExtra = (index: number) => {
+    const newExtras = extras.filter((_, i) => i !== index);
+    setExtras(newExtras);
+  };
+
+  const handleExtraChange = (index: number, field: keyof Extra, value: string | number) => {
+    const newExtras = [...extras];
+    newExtras[index] = { ...newExtras[index], [field]: value };
+    setExtras(newExtras);
+  };
+
+  const handleAddPrepareMethod = () => {
+    const newMethods = [...prepareMethods, { name: '' }];
+    setPrepareMethods(newMethods);
+  };
+
+  const handleRemovePrepareMethod = (index: number) => {
+    const newMethods = prepareMethods.filter((_, i) => i !== index);
+    setPrepareMethods(newMethods);
+  };
+
+  const handlePrepareMethodChange = (index: number, value: string) => {
+    const newMethods = [...prepareMethods];
+    newMethods[index] = { ...newMethods[index], name: value };
+    setPrepareMethods(newMethods);
+  };
+
   const onSubmit = async (data: ItemFormValues) => {
     try {
+      console.log('=== LOGS DO MODAL ===');
+      console.log('1. Dados do formulário:', {
+        ...data,
+        extras,
+        prepareMethods,
+        hasExtras,
+        hasPrepareMethods
+      });
+  
       const formData = new FormData();
       
       formData.append('name', data.name);
       formData.append('description', data.description || '');
-      formData.append('catalog_group_id', data.groupId);
+      formData.append('catalog_group_id', data.catalog_group_id);
       formData.append('price', data.price.toString());
       formData.append('priority', data.priority.toString());
-      formData.append('item_type', data.unitType);
+      formData.append('item_type', data.item_type);
       
       formData.append('price_with_discount', hasDiscount ? (data.price_with_discount || '') : '');
   
-      if (data.unitType === 'weight') {
-        formData.append('unit_of_measurement', data.weightUnit || '');
-        formData.append('min_weight', data.minWeight?.toString() || '');
-        formData.append('max_weight', data.maxWeight?.toString() || '');
-        formData.append('measure_interval', data.weightInterval?.toString() || '');
+      if (data.item_type === 'weight') {
+        formData.append('unit_of_measurement', data.unit_of_measurement || '');
+        formData.append('min_weight', data.min_weight?.toString() || '');
+        formData.append('max_weight', data.max_weight?.toString() || '');
+        formData.append('measure_interval', data.measure_interval?.toString() || '');
       }
   
       if (data.image) {
@@ -148,8 +252,88 @@ export function NewItemModal({ isOpen, onOpenChange, groups = [], onSave, editin
         formData.append('remove_image', 'true');
       }
   
+      if (hasExtras) {
+        if (editingItem?.attributes.extra?.data?.length) {
+          editingItem.attributes.extra.data.forEach((extra: ExtraData, index: number) => {
+            formData.append(`catalog_item_extras_attributes[${index}][id]`, extra.id);
+            formData.append(`catalog_item_extras_attributes[${index}][_destroy]`, 'true');
+          });
+      
+          extras.forEach((extra, newIndex) => {
+            const originalIndex = editingItem?.attributes?.extra?.data?.findIndex(
+              (e: ExtraData) => e.attributes.name === extra.name && parseFloat(e.attributes.price) === extra.price
+            ) ?? -1;
+      
+            if (originalIndex === -1) {
+              const extraDataLength = editingItem?.attributes?.extra?.data?.length ?? 0;
+              formData.append(`catalog_item_extras_attributes[${newIndex + extraDataLength}][name]`, extra.name);
+              formData.append(`catalog_item_extras_attributes[${newIndex + extraDataLength}][price]`, extra.price.toString());
+            } else {
+              const extraId = editingItem?.attributes?.extra?.data?.[originalIndex]?.id;
+              if (extraId) {
+                formData.append(`catalog_item_extras_attributes[${originalIndex}][id]`, extraId);
+                formData.append(`catalog_item_extras_attributes[${originalIndex}][name]`, extra.name);
+                formData.append(`catalog_item_extras_attributes[${originalIndex}][price]`, extra.price.toString());
+                formData.append(`catalog_item_extras_attributes[${originalIndex}][_destroy]`, 'false');
+              }
+            }
+          });
+        } else {
+          extras.forEach((extra, index) => {
+            formData.append(`catalog_item_extras_attributes[${index}][name]`, extra.name);
+            formData.append(`catalog_item_extras_attributes[${index}][price]`, extra.price.toString());
+          });
+        }
+      } else if (editingItem?.attributes.extra?.data?.length) {
+        editingItem.attributes.extra.data.forEach((extra: ExtraData, index: number) => {
+          formData.append(`catalog_item_extras_attributes[${index}][id]`, extra.id);
+          formData.append(`catalog_item_extras_attributes[${index}][_destroy]`, 'true');
+        });
+      }
+  
+      if (hasPrepareMethods) {
+        if (editingItem?.attributes.prepare_method?.data?.length) {
+          editingItem.attributes.prepare_method.data.forEach((method: PrepareMethodData, index: number) => {
+            formData.append(`catalog_item_prepare_methods_attributes[${index}][id]`, method.id);
+            formData.append(`catalog_item_prepare_methods_attributes[${index}][_destroy]`, 'true');
+          });
+      
+          prepareMethods.forEach((method, newIndex) => {
+            const originalIndex = editingItem?.attributes?.prepare_method?.data?.findIndex(
+              (m: PrepareMethodData) => m.attributes.name === method.name
+            ) ?? -1;
+      
+            if (originalIndex === -1) {
+              const methodDataLength = editingItem?.attributes?.prepare_method?.data?.length ?? 0;
+              formData.append(`catalog_item_prepare_methods_attributes[${newIndex + methodDataLength}][name]`, method.name);
+            } else {
+              const methodId = editingItem?.attributes?.prepare_method?.data?.[originalIndex]?.id;
+              if (methodId) {
+                formData.append(`catalog_item_prepare_methods_attributes[${originalIndex}][id]`, methodId);
+                formData.append(`catalog_item_prepare_methods_attributes[${originalIndex}][name]`, method.name);
+                formData.append(`catalog_item_prepare_methods_attributes[${originalIndex}][_destroy]`, 'false');
+              }
+            }
+          });
+        } else {
+          prepareMethods.forEach((method, index) => {
+            formData.append(`catalog_item_prepare_methods_attributes[${index}][name]`, method.name);
+          });
+        }
+      } else if (editingItem?.attributes.prepare_method?.data?.length) {
+        editingItem.attributes.prepare_method.data.forEach((method: PrepareMethodData, index: number) => {
+          formData.append(`catalog_item_prepare_methods_attributes[${index}][id]`, method.id);
+          formData.append(`catalog_item_prepare_methods_attributes[${index}][_destroy]`, 'true');
+        });
+      }
+  
       if (editingItem) {
         formData.append('id', editingItem.id);
+      }
+  
+      console.log('4. FormData final:');
+      for (const [key, value] of formData.entries()) {
+        console.log(`${key}: ${value}`);
       }
       
       await onSave(formData);
@@ -225,7 +409,7 @@ export function NewItemModal({ isOpen, onOpenChange, groups = [], onSave, editin
 
                 <FormField
                   control={control}
-                  name="groupId"
+                  name="catalog_group_id"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-sm font-bold text-foreground">
@@ -292,7 +476,7 @@ export function NewItemModal({ isOpen, onOpenChange, groups = [], onSave, editin
 
                 <FormField
                   control={control}
-                  name="unitType"
+                  name="item_type"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-sm font-bold text-foreground">
@@ -318,7 +502,7 @@ export function NewItemModal({ isOpen, onOpenChange, groups = [], onSave, editin
                   <>
                     <FormField
                       control={control}
-                      name="weightUnit"
+                      name="unit_of_measurement"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-sm font-bold text-foreground">
@@ -342,7 +526,7 @@ export function NewItemModal({ isOpen, onOpenChange, groups = [], onSave, editin
 
                     <FormField
                       control={control}
-                      name="minWeight"
+                      name="min_weight"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-sm font-bold text-foreground">
@@ -365,7 +549,7 @@ export function NewItemModal({ isOpen, onOpenChange, groups = [], onSave, editin
 
                     <FormField
                       control={control}
-                      name="maxWeight"
+                      name="max_weight"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-sm font-bold text-foreground">
@@ -388,7 +572,7 @@ export function NewItemModal({ isOpen, onOpenChange, groups = [], onSave, editin
 
                     <FormField
                       control={control}
-                      name="weightInterval"
+                      name="measure_interval"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-sm font-bold text-foreground">
@@ -506,6 +690,112 @@ export function NewItemModal({ isOpen, onOpenChange, groups = [], onSave, editin
                     </FormItem>
                   )}
                 />
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-sm font-bold text-foreground">ADICIONAIS E MODOS DE PREPARO</h3>
+
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">O produto tem adicionais?</FormLabel>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={hasExtras}
+                      onCheckedChange={setHasExtras}
+                    />
+                  </FormControl>
+                </FormItem>
+
+                {hasExtras && (
+                  <div className="space-y-3">
+                    {extras.map((extra, index) => (
+                      <div key={index} className="flex gap-2 items-start">
+                        <div className="flex-1">
+                          <Input
+                            placeholder="Nome do adicional"
+                            value={extra.name}
+                            onChange={(e) => handleExtraChange(index, 'name', e.target.value)}
+                            className="mb-2"
+                          />
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">R$</span>
+                            <Input
+                              type="number"
+                              placeholder="Preço"
+                              value={extra.price}
+                              onChange={(e) => handleExtraChange(index, 'price', parseFloat(e.target.value))}
+                              min="0"
+                              step="0.01"
+                              className="pl-8"
+                            />
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemoveExtra(index)}
+                          className="shrink-0"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleAddExtra}
+                      className="w-full"
+                    >
+                      Adicionar novo adicional
+                    </Button>
+                  </div>
+                )}
+
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">O produto tem modos de preparo?</FormLabel>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={hasPrepareMethods}
+                      onCheckedChange={setHasPrepareMethods}
+                    />
+                  </FormControl>
+                </FormItem>
+
+                {hasPrepareMethods && (
+                  <div className="space-y-3">
+                    {prepareMethods.map((method, index) => (
+                      <div key={index} className="flex gap-2 items-start">
+                        <Input
+                          placeholder="Modo de preparo"
+                          value={method.name}
+                          onChange={(e) => handlePrepareMethodChange(index, e.target.value)}
+                          className="flex-1"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemovePrepareMethod(index)}
+                          className="shrink-0"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleAddPrepareMethod}
+                      className="w-full"
+                    >
+                      Adicionar novo modo de preparo
+                    </Button>
+                  </div>
+                )}
               </div>
               
               <div className="flex flex-col-reverse sm:flex-row justify-between gap-2 mt-4">
