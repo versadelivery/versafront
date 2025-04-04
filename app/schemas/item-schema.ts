@@ -1,28 +1,29 @@
 import { z } from 'zod';
 
-const baseItemSchema = z.object({
+export const itemSchema = z.object({
   name: z.string().min(3, 'Nome deve ter pelo menos 3 caracteres'),
-  description: z.string().min(1, 'Descrição é obrigatória'),
-  catalog_group_id: z.string().min(1, 'Grupo é obrigatório'),
-  item_type: z.enum(['unit', 'weight']),
-  price: z.string().min(1, 'Preço é obrigatório'),
-  priority: z.string().min(1, 'Prioridade é obrigatória'),
-  price_with_discount: z.string().optional(),
-  image: z.union([z.instanceof(File), z.string()]).optional(),
+  description: z.string().optional(),
+  groupId: z.string().min(1, 'Selecione um grupo'),
+  price: z.number().min(0, 'Preço deve ser maior que 0'),
+  priority: z.number().min(0).max(100),
+  unitType: z.enum(['unit', 'weight'], {
+    required_error: 'Selecione o tipo de unidade',
+  }),
+  weightUnit: z.enum(['kg', 'g']).optional(),
+  weightPerKg: z.number().min(0).optional(),
+  minWeight: z.number().min(0).optional(),
+  maxWeight: z.number().min(0).optional(),
+  weightInterval: z.number().min(0).optional(),
+  image: z.union([z.instanceof(File), z.literal('')]).optional(),
+  removeImage: z.boolean().optional(),
+}).refine((data) => {
+  if (data.unitType === 'weight') {
+    return data.weightUnit && data.weightPerKg && data.minWeight && data.maxWeight && data.weightInterval;
+  }
+  return true;
+}, {
+  message: 'Preencha todos os campos de peso',
+  path: ['weightUnit'],
 });
-
-
-
-export const itemSchema = baseItemSchema
-  .extend({
-    item_type: z.literal('weight'),
-    unit_of_measurement: z.enum(['kg', 'g']).default('kg'),
-    measure_interval: z.string().optional(),
-    min_weight: z.string().optional(),
-    max_weight: z.string().optional(),
-  })
-  .or(baseItemSchema.extend({
-    item_type: z.literal('unit'),
-  }));
 
 export type ItemFormValues = z.infer<typeof itemSchema>;

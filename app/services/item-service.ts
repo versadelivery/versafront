@@ -2,6 +2,8 @@ import api from "../lib/api";
 import { CatalogItem } from "../types/catalog";
 
 export const createCatalogItem = async (formData: FormData) => {
+  console.log('Service - FormData recebido:', Object.fromEntries(formData.entries()));
+  
   const response = await api.post<{ data: CatalogItem }>('/catalog_items', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
@@ -10,7 +12,6 @@ export const createCatalogItem = async (formData: FormData) => {
 
 export const updateCatalogItem = async ({ id, formData }: { id: string; formData: FormData }) => {
   formData.append('id', id);
-  
   const response = await api.put(`/catalog_items/${id}`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });

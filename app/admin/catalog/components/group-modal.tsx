@@ -180,7 +180,8 @@ export function GroupModal({ isOpen, onOpenChange, editingGroup, onSave, onDelet
                         max="100"
                         className="py-4 text-sm"
                         {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value))}
+                        value={field.value?.toString() || ''}
+                        onChange={(e) => field.onChange(Number(e.target.value))}
                       />
                     </FormControl>
                     <FormMessage />
