@@ -5,15 +5,17 @@ import { UICatalogItem } from "@/app/types/catalog";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
+import { ProductDetailsModal } from "./product-details-modal";
 
 interface ProductCardProps {
   product: UICatalogItem;
   groupName: string;
-  onEdit?: (item: UICatalogItem) => void;
+  onEdit: (product: UICatalogItem) => void;
 }
 
 export function ProductCard({ product, groupName, onEdit }: ProductCardProps) {
   const [isImageLoading, setIsImageLoading] = useState(true);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   
   if (!product || !product.attributes) {
     return (
@@ -40,93 +42,108 @@ export function ProductCard({ product, groupName, onEdit }: ProductCardProps) {
   } : null;
 
   return (
-    <div className="overflow-hidden bg-white rounded-xs shadow-sm hover:shadow-md transition-shadow">
-      <div className="relative w-full aspect-square lg:h-48 bg-muted/50 hover:scale-105 duration-300">
-        {isImageLoading && (
-          <Skeleton className="absolute inset-0 w-full h-full" />
-        )}
-        {attributes.image_url ? (
-          <Image
-            src={attributes.image_url}
-            alt={attributes.name || "Produto"}
-            fill
-            className={cn(
-              "object-cover transition-opacity duration-300",
-              isImageLoading ? "opacity-0" : "opacity-100"
-            )}
-            onLoadingComplete={() => setIsImageLoading(false)}
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-            <Package className="w-8 h-8" />
-          </div>
-        )}
-        {onEdit && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onEdit(product)}
-            className="absolute top-2 right-2 bg-white/80 hover:bg-white"
-          >
-            <Edit2 className="w-4 h-4" />
-          </Button>
-        )}
-      </div>
-      
-      <div className="p-3 space-y-2">
-        <div className="space-y-1">
-          <h3 className="font-semibold text-sm leading-tight">{attributes.name || "Sem nome"}</h3>
-          {attributes.description && (
-            <p className="text-xs text-muted-foreground line-clamp-2">{attributes.description}</p>
+    <>
+      <div 
+        className="bg-white rounded-xs shadow-sm p-4 border border-gray-100 hover:border-primary/20 transition-colors cursor-pointer"
+        onClick={() => setIsDetailsModalOpen(true)}
+      >
+        <div className="relative w-full aspect-square lg:h-48 bg-muted/50 hover:scale-105 duration-300">
+          {isImageLoading && (
+            <Skeleton className="absolute inset-0 w-full h-full" />
+          )}
+          {attributes.image_url ? (
+            <Image
+              src={attributes.image_url}
+              alt={attributes.name || "Produto"}
+              fill
+              className={cn(
+                "object-cover transition-opacity duration-300",
+                isImageLoading ? "opacity-0" : "opacity-100"
+              )}
+              onLoadingComplete={() => setIsImageLoading(false)}
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+              <Package className="w-8 h-8" />
+            </div>
+          )}
+          {onEdit && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(product);
+              }}
+              className="absolute top-2 right-2 bg-white/80 hover:bg-white"
+            >
+              <Edit2 className="w-4 h-4" />
+            </Button>
           )}
         </div>
+        
+        <div className="p-3 space-y-2">
+          <div className="space-y-1">
+            <h3 className="font-semibold text-sm leading-tight">{attributes.name || "Sem nome"}</h3>
+            {attributes.description && (
+              <p className="text-xs text-muted-foreground line-clamp-2">{attributes.description}</p>
+            )}
+          </div>
 
-        <div className="space-y-1.5">
-          {hasDiscount ? (
-            <>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Preço original</span>
-                <span className="line-through text-muted-foreground">
+          <div className="space-y-1.5">
+            {hasDiscount ? (
+              <>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Preço original</span>
+                  <span className="line-through text-muted-foreground">
+                    R$ {originalPrice.toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Preço com desconto</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-medium text-primary">
+                      R$ {discountPrice.toFixed(2)}
+                    </span>
+                    <span className="text-xs font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
+                      -{discountPercentage}%
+                    </span>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Preço</span>
+                <span className="text-sm font-medium">
                   R$ {originalPrice.toFixed(2)}
                 </span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Preço com desconto</span>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-medium text-primary">
-                    R$ {discountPrice.toFixed(2)}
-                  </span>
-                  <span className="text-xs font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
-                    -{discountPercentage}%
-                  </span>
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Preço</span>
-              <span className="text-sm font-medium">
-                R$ {originalPrice.toFixed(2)}
-              </span>
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <div className="flex items-center gap-1">
-            <Tag className="w-3 h-3" />
-            <span>Prioridade: {attributes.priority || "0"}</span>
+            )}
           </div>
-          {isWeightType && weightInfo && (
+
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
             <div className="flex items-center gap-1">
-              <Scale className="w-3 h-3" />
-              <span>
-                {weightInfo.min}{weightInfo.unit} - {weightInfo.max}{weightInfo.unit}
-              </span>
+              <Tag className="w-3 h-3" />
+              <span>Prioridade: {attributes.priority || "0"}</span>
             </div>
-          )}
+            {isWeightType && weightInfo && (
+              <div className="flex items-center gap-1">
+                <Scale className="w-3 h-3" />
+                <span>
+                  {weightInfo.min}{weightInfo.unit} - {weightInfo.max}{weightInfo.unit}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+
+      <ProductDetailsModal
+        isOpen={isDetailsModalOpen}
+        onOpenChange={setIsDetailsModalOpen}
+        product={product}
+        onEdit={onEdit}
+      />
+    </>
   );
 }
