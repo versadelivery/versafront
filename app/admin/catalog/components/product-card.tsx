@@ -84,7 +84,7 @@ export function ProductCard({ product, groupName, onEdit }: ProductCardProps) {
         
         <div className="p-3 space-y-2">
           <div className="space-y-1">
-            <h3 className="font-semibold text-sm leading-tight">{attributes.name || "Sem nome"}</h3>
+            <h3 className="font-semibold text-sm leading-tight break-words">{attributes.name || "Sem nome"}</h3>
             {attributes.description && (
               <p className="text-xs text-muted-foreground line-clamp-2">{attributes.description}</p>
             )}
