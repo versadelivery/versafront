@@ -1,17 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { AuthLayout } from "@/components/auth/auth-layout";
 import { LoginForm } from "@/components/auth/login-form";
 import cesta from "@/public/img/cesta.png";
-import { loginUser } from "../services/auth-service";
 import { loginSchema, LoginFormData } from "@/app/validations/auth-schemas";
+import { useAuth } from "../hooks/use-auth";
 import { z } from "zod";
 
 export default function Login() {
-  const router = useRouter();
+  const { login } = useAuth();
   const [formData, setFormData] = useState<LoginFormData>({
     email: "",
     password: ""
@@ -19,6 +18,7 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Partial<LoginFormData>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -64,10 +64,8 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      const response = await loginUser(formData);
-      localStorage.setItem("authToken", response.token);
+      await login({email: formData.email, password: formData.password});
       toast.success("Login realizado com sucesso!");
-      router.push("/");
     } catch (error) {
       toast.error("Credenciais inválidas. Por favor, tente novamente.");
       console.error("Login error:", error);

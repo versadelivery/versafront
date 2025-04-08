@@ -2,20 +2,23 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { isAuthenticated } from '@/app/lib/auth';
+import { getToken } from '@/app/lib/auth';
 
-export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
+  const token = getToken();
 
   useEffect(() => {
-    if (isAuthenticated()) {
+    if (!token) {
       router.push('/login');
     }
-  }, [router]);
+  }, [token, router]);
 
-  if (isAuthenticated()) {
+  if (!token) {
     return null;
   }
 
   return <>{children}</>;
-}
+};
+
+export default ProtectedRoute;

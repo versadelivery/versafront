@@ -1,5 +1,6 @@
-import axios from "axios";
-import { API_BASE_URL } from "../constants/api";
+import axios from "axios"
+import { API_BASE_URL } from "../constants/api"
+import { getToken, removeToken } from "./auth"
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -7,19 +8,27 @@ const api = axios.create({
     "Content-Type": "application/json",
     "ngrok-skip-browser-warning": "true",
   },
-});
+})
 
 api.interceptors.request.use((config) => {
-  if (config.data instanceof FormData) {
-    delete config.headers['Content-Type'];
-  }
-  
-  const token = "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3NDYzMDEzMzd9.ekMsOJzJuR0OZQ9FGQ_CEXtc3Ct-VKZzJxzwuBKl0z4";
+  const token = getToken()
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    config.headers.Authorization = `Bearer ${token}`
   }
-  
-  return config;
-});
+  return config
+})
 
-export default api;
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      removeToken()
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login'
+      }
+    }
+    return Promise.reject(error)
+  }
+)
+
+export default api

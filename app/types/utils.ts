@@ -118,3 +118,22 @@ export interface RegisterFormProps {
   onSubmit: (e: React.FormEvent) => void;
   errors: Partial<RegisterFormData>;
 }
+
+export interface UserData {
+  email: string;
+  name: string;
+  role: string;
+  shop: {
+    type: string;
+    attributes: {
+      cellphone: string;
+      name: string;
+      slug: string;
+    };
+  };
+}
+
+export type LoginResponse = {
+  token: string;
+  user: UserData;
+};

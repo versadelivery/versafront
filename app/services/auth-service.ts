@@ -1,21 +1,30 @@
-import api from "../lib/api";
-import { API_ENDPOINTS } from "../constants/api";
-import { LoginData, RegisterData } from "../types/utils";
+import api from "../lib/api"
+import { API_ENDPOINTS } from "../constants/api"
+import { LoginData } from "../types/utils"
 
-export const registerShop = async (data: RegisterData) => {
-  try {
-    const response = await api.post(API_ENDPOINTS.SHOPS, data);
-    return response.data;
-  } catch (error) {
-    throw error;
+interface UserData {
+  email: string
+  name: string
+  role: string
+  shop: {
+    type: string
+    attributes: {
+      cellphone: string
+      name: string
+      slug: string
+    }
   }
-};
+}
 
-export const loginUser = async (data: LoginData) => {
-  try {
-    const response = await api.post(API_ENDPOINTS.LOGIN, data);
-    return response.data;
-  } catch (error) {
-    throw error;
+type LoginResponse = {
+  token: string
+  user: UserData
+}
+
+export const loginUser = async (data: LoginData): Promise<LoginResponse> => {
+  const response = await api.post(API_ENDPOINTS.LOGIN, data)
+  return {
+    token: response.data.token,
+    user: response.data.user
   }
-};
+}

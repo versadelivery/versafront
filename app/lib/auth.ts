@@ -1,23 +1,16 @@
-export const TOKEN_KEY = '@versa:token';
+const TOKEN_KEY = 'auth_token'
 
-export const isAuthenticated = () => {
-  if (typeof window !== 'undefined') {
-    return localStorage.getItem(TOKEN_KEY) !== null;
-  }
-  return false;
-};
+export const getToken = (): string | null => {
+  if (typeof window === 'undefined') return null
+  return localStorage.getItem(TOKEN_KEY)
+}
 
-export const getToken = () => {
-  if (typeof window !== 'undefined') {
-    return localStorage.getItem(TOKEN_KEY);
-  }
-  return null;
-};
+export const setToken = (token: string): void => {
+  if (typeof window === 'undefined') return
+  localStorage.setItem(TOKEN_KEY, token)
+}
 
-export const login = (token: string) => {
-  localStorage.setItem(TOKEN_KEY, token);
-};
-
-export const logout = () => {
-  localStorage.removeItem(TOKEN_KEY);
-};
+export const removeToken = (): void => {
+  if (typeof window === 'undefined') return
+  localStorage.removeItem(TOKEN_KEY)
+}
