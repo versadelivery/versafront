@@ -1,10 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
 import api from '../lib/api'
 import { Group } from '../types/client-catalog'
-import { notFound } from 'next/navigation'
+import { notFound, useRouter } from 'next/navigation'
 import { ShopResponse } from '../types/client-catalog'
 
 export function useCatalog(slug: string) {
+  const router = useRouter()
+
   return useQuery<Group[]>({
     queryKey: ['catalog', slug],
     queryFn: async () => {
@@ -47,6 +49,7 @@ export function useCatalog(slug: string) {
         }))
       } catch (error) {
         console.error('Error fetching catalog:', error)
+        router.push('/catalog/not-found')
         notFound()
       }
     },

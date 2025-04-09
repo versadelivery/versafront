@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useParams } from 'next/navigation'
-import { Search, LogIn } from 'lucide-react'
+import { Search, LogIn, ShoppingCart } from 'lucide-react'
 import { Filters } from '@/app/(client)/catalog/[slug]/components/filters'
 import { GroupSection } from '@/app/(client)/catalog/[slug]/components/group-section'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -12,7 +12,9 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { AuthModal } from '@/app/(client)/client-auth/(auth)/components/auth-modal'
 import { useCatalog } from '@/app/hooks/use-catalog'
+import logoHeader from "@/public/img/logo.svg";
 import { Group, Item } from '@/app/types/client-catalog'
+import Image from 'next/image'
 
 export default function CatalogPage() {
   const params = useParams()
@@ -81,63 +83,89 @@ export default function CatalogPage() {
 
   return (
     <div className="flex flex-col h-screen">
-      <header className="flex items-center justify-between p-4 border-b">
-        <div className="flex items-center gap-4">
-          <div className="relative">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Pesquisar produtos..."
-              className="pl-8 pr-4 py-2 rounded-md border"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+      <header className="sticky top-0 z-50 w-full shadow-lg bg-black backdrop-blur p-2">
+        <div className="container flex h-14 items-center justify-between px-4">
+          <div className="flex items-center md:min-w-[120px] md:justify-end">
+            <div className="hidden md:block">
+              <Image src={logoHeader} alt="Versa" width={120} />
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsAuthModalOpen(true)}
-            className="flex items-center gap-2"
-          >
-            <LogIn className="h-4 w-4" />
-            Entrar
-          </Button>
+
+          <div className="flex flex-1 justify-center px-2">
+            <div className="relative w-full max-w-md">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Pesquisar produtos..."
+                className="w-full rounded-xs bg-background pl-10 pr-4 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 md:min-w-[120px] md:justify-start">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsAuthModalOpen(true)}
+              className="relative"
+            >
+              <LogIn className="h-5 w-5 text-white" />
+              <span className="sr-only">Entrar</span>
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative"
+            >
+              <ShoppingCart className="h-5 w-5 text-white" />
+              {totalCartItems > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                  {totalCartItems}
+                </span>
+              )}
+              <span className="sr-only">Carrinho</span>
+            </Button>
+          </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="flex-1 container mx-auto px-4 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Categorias em mobile */}
           <div className="lg:hidden mb-6">
-            <ScrollArea className="w-full whitespace-nowrap">
-              <Tabs defaultValue="all" className="w-full">
-                <TabsList className="grid w-full grid-flow-col auto-cols-max gap-2 p-1">
+          <ScrollArea className="w-full whitespace-nowrap rounded-lg">
+            <Tabs defaultValue="all" className="w-full">
+              <TabsList className="flex w-full space-x-2 p-1 bg-gray-50">
+                <TabsTrigger 
+                  value="all" 
+                  onClick={() => setSelectedGroups([])}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    selectedGroups.length === 0 
+                      ? 'bg-primary text-white shadow-sm' 
+                      : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+                  }`}
+                >
+                  Todos
+                </TabsTrigger>
+                {groups.map((group: Group) => (
                   <TabsTrigger 
-                    value="all" 
-                    onClick={() => setSelectedGroups([])}
-                    className={`px-4 py-2 rounded-full text-sm whitespace-nowrap ${
-                      selectedGroups.length === 0 ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    key={group.id}
+                    value={group.id}
+                    onClick={() => setSelectedGroups([group.id])}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      selectedGroups.includes(group.id) 
+                        ? 'bg-primary text-white shadow-sm' 
+                        : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
                     }`}
                   >
-                    Todos
+                    {group.name}
                   </TabsTrigger>
-                  {groups.map((group: Group) => (
-                    <TabsTrigger 
-                      key={group.id}
-                      value={group.id}
-                      onClick={() => setSelectedGroups([group.id])}
-                      className={`px-4 py-2 rounded-full text-sm whitespace-nowrap max-w-[200px] truncate ${
-                        selectedGroups.includes(group.id) ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      {group.name}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-              </Tabs>
-            </ScrollArea>
+                ))}
+              </TabsList>
+            </Tabs>
+          </ScrollArea>
           </div>
           
           {/* Filtros - Escondido em mobile, visível em desktop */}
