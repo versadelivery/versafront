@@ -2,13 +2,15 @@
 
 import { useState } from 'react'
 import { useParams } from 'next/navigation'
-import { Search } from 'lucide-react'
+import { Search, LogIn } from 'lucide-react'
 import { Filters } from '@/app/(client)/catalog/[slug]/components/filters'
 import { GroupSection } from '@/app/(client)/catalog/[slug]/components/group-section'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Button } from '@/components/ui/button'
+import { AuthModal } from '@/app/(client)/client-auth/(auth)/components/auth-modal'
 import { useCatalog } from '@/app/hooks/use-catalog'
 import { Group, Item } from '@/app/types/client-catalog'
 
@@ -22,6 +24,7 @@ export default function CatalogPage() {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 500])
   const [sortOption, setSortOption] = useState('featured')
   const [cartItems, setCartItems] = useState<{id: string, quantity: number}[]>([])
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
 
   const allItems = groups.flatMap((group: Group) => group.items)
   const totalCartItems = cartItems.reduce((sum: number, item: {id: string, quantity: number}) => sum + item.quantity, 0)
@@ -74,17 +77,35 @@ export default function CatalogPage() {
           : item
       )
     }))
-    // Aqui você precisará implementar a lógica para atualizar o estado dos grupos
-    // Por exemplo, usando um estado local ou uma mutação do TanStack Query
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* <Header
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        totalCartItems={totalCartItems}
-      /> */}
+    <div className="flex flex-col h-screen">
+      <header className="flex items-center justify-between p-4 border-b">
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Pesquisar produtos..."
+              className="pl-8 pr-4 py-2 rounded-md border"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsAuthModalOpen(true)}
+            className="flex items-center gap-2"
+          >
+            <LogIn className="h-4 w-4" />
+            Entrar
+          </Button>
+        </div>
+      </header>
 
       <main className="container mx-auto px-4 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
@@ -206,6 +227,11 @@ export default function CatalogPage() {
           </div>
         </div>
       </main>
+
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+      />
     </div>
   )
 } 
