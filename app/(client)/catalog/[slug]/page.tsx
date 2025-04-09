@@ -11,6 +11,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { AuthModal } from '@/app/(client)/client-auth/(auth)/components/auth-modal'
+import CartDrawer from '../../client-auth/(auth)/components/cart-drawer'
 import { useCatalog } from '@/app/hooks/use-catalog'
 import logoHeader from "@/public/img/logo.svg";
 import { Group, Item } from '@/app/types/client-catalog'
@@ -21,11 +22,12 @@ export default function CatalogPage() {
   const slug = params.slug as string
   
   const { data: groups = [], isLoading } = useCatalog(slug) as { data: Group[], isLoading: boolean }
+  const [isCartOpen, setIsCartOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedGroups, setSelectedGroups] = useState<string[]>([])
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 500])
   const [sortOption, setSortOption] = useState('featured')
-  const [cartItems, setCartItems] = useState<{id: string, quantity: number}[]>([])
+  const [cartItems, setCartItems] = useState<{id: string, quantity: number, product: Item}[]>([])
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
 
   const allItems = groups.flatMap((group: Group) => group.items)
@@ -66,7 +68,9 @@ export default function CatalogPage() {
             : item
         )
       }
-      return [...prev, {id: productId, quantity: 1}]
+      const product = allItems.find(item => item.id === productId)
+      if (!product) return prev
+      return [...prev, {id: productId, quantity: 1, product}]
     })
   }
 
@@ -79,6 +83,19 @@ export default function CatalogPage() {
           : item
       )
     }))
+  }
+
+  const updateCartItem = (productId: string, newQuantity: number) => {
+    setCartItems(prev => {
+      if (newQuantity <= 0) {
+        return prev.filter(item => item.id !== productId)
+      }
+      return prev.map(item => 
+        item.id === productId 
+          ? {...item, quantity: newQuantity} 
+          : item
+      )
+    })
   }
 
   return (
@@ -119,6 +136,7 @@ export default function CatalogPage() {
               variant="ghost"
               size="icon"
               className="relative"
+              onClick={() => setIsCartOpen(true)}
             >
               <ShoppingCart className="h-5 w-5 text-white" />
               {totalCartItems > 0 && (
@@ -259,6 +277,14 @@ export default function CatalogPage() {
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
+      />
+
+      <CartDrawer
+        isCartOpen={isCartOpen}
+        setIsCartOpen={setIsCartOpen}
+        cartItems={cartItems}
+        allItems={allItems}
+        updateCartItem={updateCartItem}
       />
     </div>
   )
