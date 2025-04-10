@@ -1,128 +1,107 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { Button } from "@/components/ui/button";
-import { Form } from "@/components/ui/form";
-import { AuthToggle } from "./auth-toggle";
-import { FormField } from "./form-field";
-import { loginSchema, registerSchema, type LoginFormData, type RegisterFormData } from "./validations/client-auth-schema";
-import { Lock, Mail, User, Phone } from "lucide-react";
-import { motion } from "framer-motion";
-import { useState } from "react";
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { loginSchema, registerSchema, LoginInput, RegisterInput } from './validations/auth.schema'
+import { useAuth } from '../hooks/useAuth'
+import { FormField } from './form-field'
+import { Button } from '@/components/ui/button'
+import { useState } from 'react'
 
 export function AuthForm() {
-  const [isLogin, setIsLogin] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLogin, setIsLogin] = useState(true)
+  const { login, register, isLoading } = useAuth()
 
-  const form = useForm<LoginFormData | RegisterFormData>({
-    resolver: zodResolver(isLogin ? loginSchema : registerSchema),
-    defaultValues: isLogin 
-      ? { email: "", password: "" }
-      : { email: "", password: "", name: "", cellphone: "" }
-  });
+  const loginForm = useForm<LoginInput>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { customer: { email: '', password: '' } }
+  })
 
-  async function onSubmit(data: LoginFormData | RegisterFormData) {
-    setIsSubmitting(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log("Form submitted:", data);
-    } catch (error) {
-      console.error("Error:", error);
-    } finally {
-      setIsSubmitting(false);
-    }
+  const registerForm = useForm<RegisterInput>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: { customer: { name: '', email: '', password: '', cellphone: '' } }
+  })
+
+  const onLoginSubmit = (data: LoginInput) => {
+    login(data)
+  }
+
+  const onRegisterSubmit = (data: RegisterInput) => {
+    register(data)
   }
 
   return (
     <div className="max-w-md w-full mx-auto p-8 space-y-8 bg-card rounded-xl border-none">
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="text-center space-y-2"
-      >
+      <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold bg-primary from-primary to-purple-600 bg-clip-text text-transparent">
           VERSA DELIVERY
         </h1>
         <p className="text-muted-foreground">
           {isLogin ? "Faça login para continuar" : "Preencha seus dados para se registrar"}
         </p>
-      </motion.div>
+      </div>
 
-      <AuthToggle isLogin={isLogin} setIsLogin={setIsLogin} />
+      {isLogin ? (
+        <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
+          <FormField
+            label="Email"
+            type="email"
+            error={loginForm.formState.errors.customer?.email?.message}
+            {...loginForm.register('customer.email')}
+          />
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="space-y-4"
-          >
-            {!isLogin && (
-              <>
-                <FormField
-                  label="Nome completo"
-                  name="name"
-                  placeholder="Digite seu nome"
-                  icon={<User className="h-4 w-4" />}
-                  error={(form.formState.errors as any).name}
-                  register={form.register}
-                />
-                <FormField
-                  label="Telefone"
-                  name="cellphone"
-                  placeholder="(00) 00000-0000"
-                  icon={<Phone className="h-4 w-4" />}
-                  error={(form.formState.errors as any).cellphone}
-                  register={form.register}
-                />
-              </>
-            )}
+          <FormField
+            label="Senha"
+            type="password"
+            error={loginForm.formState.errors.customer?.password?.message}
+            {...loginForm.register('customer.password')}
+          />
 
-            <FormField
-              label="Email"
-              name="email"
-              type="email"
-              placeholder="seu@email.com"
-              icon={<Mail className="h-4 w-4" />}
-              error={form.formState.errors.email}
-              register={form.register}
-            />
-
-            <FormField
-              label="Senha"
-              name="password"
-              type="password"
-              placeholder="••••••"
-              icon={<Lock className="h-4 w-4" />}
-              error={form.formState.errors.password}
-              register={form.register}
-            />
-          </motion.div>
-
-          {isLogin && (
-            <div className="flex justify-end">
-              <Button variant="link" size="sm" className="px-0 text-muted-foreground">
-                Esqueceu a senha?
-              </Button>
-            </div>
-          )}
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="space-y-4"
-          >
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? "Processando..." : isLogin ? "Entrar" : "Registrar"}
-            </Button>
-
-          </motion.div>
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? 'Carregando...' : 'Entrar'}
+          </Button>
         </form>
-      </Form>
+      ) : (
+        <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
+          <FormField
+            label="Nome"
+            error={registerForm.formState.errors.customer?.name?.message}
+            {...registerForm.register('customer.name')}
+          />
+
+          <FormField
+            label="Email"
+            type="email"
+            error={registerForm.formState.errors.customer?.email?.message}
+            {...registerForm.register('customer.email')}
+          />
+
+          <FormField
+            label="Senha"
+            type="password"
+            error={registerForm.formState.errors.customer?.password?.message}
+            {...registerForm.register('customer.password')}
+          />
+
+          <FormField
+            label="Celular"
+            error={registerForm.formState.errors.customer?.cellphone?.message}
+            {...registerForm.register('customer.cellphone')}
+          />
+
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? 'Carregando...' : 'Registrar'}
+          </Button>
+        </form>
+      )}
+
+      <button
+        type="button"
+        onClick={() => setIsLogin(!isLogin)}
+        className="text-sm text-blue-600 hover:underline"
+      >
+        {isLogin ? 'Não tem uma conta? Registre-se' : 'Já tem uma conta? Entre'}
+      </button>
     </div>
-  );
+  )
 }

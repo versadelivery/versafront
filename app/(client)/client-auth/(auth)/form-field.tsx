@@ -1,44 +1,28 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { ReactNode } from "react";
-import { FieldError } from "react-hook-form";
 
-interface FormFieldProps {
+interface FormFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
-  name: string;
-  type?: string;
-  placeholder: string;
-  icon: ReactNode;
-  error?: FieldError;
-  register: any;
-  className?: string;
+  error?: string;
 }
 
-export function FormField({
-  label,
-  name,
-  type = "text",
-  placeholder,
-  icon,
-  error,
-  register,
-  className,
-}: FormFieldProps) {
+export function FormField({ label, error, className, ...props }: FormFieldProps) {
   return (
-    <div className={cn("space-y-2", className)}>
-      <Label htmlFor={name} className="flex items-center gap-2 text-muted-foreground">
-        {icon}
-        {label}
-      </Label>
+    <div className="space-y-2">
+      <Label htmlFor={props.id}>{label}</Label>
       <Input
-        id={name}
-        type={type}
-        placeholder={placeholder}
-        {...register(name)}
-        className={error ? "border-destructive" : ""}
+        id={props.id}
+        className={cn(
+          'w-full',
+          error && 'border-red-500 focus-visible:ring-red-500',
+          className
+        )}
+        {...props}
       />
-      {error && <p className="text-sm text-destructive">{error.message}</p>}
+      {error && (
+        <p className="text-sm text-red-500">{error}</p>
+      )}
     </div>
   );
 }
