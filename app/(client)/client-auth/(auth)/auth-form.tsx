@@ -6,11 +6,21 @@ import { loginSchema, registerSchema, LoginInput, RegisterInput } from './valida
 import { useAuth } from '../hooks/useAuth'
 import { FormField } from './form-field'
 import { Button } from '@/components/ui/button'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
-export function AuthForm() {
+interface AuthFormProps {
+  onClose: () => void;
+}
+
+export function AuthForm({ onClose }: AuthFormProps) {
   const [isLogin, setIsLogin] = useState(true)
-  const { login, register, isLoading } = useAuth()
+  const { login, register, isAuthenticated, isPending } = useAuth()
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      onClose()
+    }
+  }, [isAuthenticated, onClose])
 
   const loginForm = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
@@ -57,8 +67,8 @@ export function AuthForm() {
             {...loginForm.register('customer.password')}
           />
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? 'Carregando...' : 'Entrar'}
+          <Button type="submit" className="w-full" disabled={isPending}>
+            {isPending ? 'Carregando...' : 'Entrar'}
           </Button>
         </form>
       ) : (
@@ -89,8 +99,8 @@ export function AuthForm() {
             {...registerForm.register('customer.cellphone')}
           />
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? 'Carregando...' : 'Registrar'}
+          <Button type="submit" className="w-full" disabled={isPending}>
+            {isPending ? 'Carregando...' : 'Registrar'}
           </Button>
         </form>
       )}

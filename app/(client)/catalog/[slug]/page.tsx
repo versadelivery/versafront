@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from 'react'
-import { useParams } from 'next/navigation'
-import { Search, LogIn, ShoppingCart } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import { Search, LogIn, LogOut, ShoppingCart, CheckCircle } from 'lucide-react'
 import { Filters } from '@/app/(client)/catalog/[slug]/components/filters'
 import { GroupSection } from '@/app/(client)/catalog/[slug]/components/group-section'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -16,9 +16,12 @@ import { useCatalog } from '@/app/hooks/use-catalog'
 import logoHeader from "@/public/img/logo.svg";
 import { Group, Item } from '@/app/types/client-catalog'
 import Image from 'next/image'
+import { useCart } from '../store/CartContext'
+import { useAuth } from '@/app/(client)/client-auth/hooks/useAuth'
 
 export default function CatalogPage() {
   const params = useParams()
+  const router = useRouter()
   const slug = params.slug as string
   
   const { data: groups = [], isLoading } = useCatalog(slug) as { data: Group[], isLoading: boolean }
@@ -29,9 +32,42 @@ export default function CatalogPage() {
   const [sortOption, setSortOption] = useState('featured')
   const [cartItems, setCartItems] = useState<{id: string, quantity: number, product: Item}[]>([])
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
+  const [allItems, setAllItems] = useState<Item[]>([])
+  const { items: persistedItems, addItem, updateQuantity, removeItem, getItemsByStore } = useCart()
+  const { isAuthenticated, logout } = useAuth()
 
-  const allItems = groups.flatMap((group: Group) => group.items)
+  useEffect(() => {
+    console.log('Itens do carrinho no localStorage:', persistedItems);
+  }, [persistedItems]);
+
   const totalCartItems = cartItems.reduce((sum: number, item: {id: string, quantity: number}) => sum + item.quantity, 0)
+
+  useEffect(() => {
+    if (allItems.length > 0) {
+      const storeItems = getItemsByStore(slug)
+      
+      const mappedItems = storeItems.map(item => {
+        const product = allItems.find(p => p.id === item.id)
+        if (product) {
+          return {
+            id: item.id,
+            quantity: item.quantity,
+            product
+          }
+        }
+        return null
+      }).filter(Boolean) as {id: string, quantity: number, product: Item}[]
+      
+      setCartItems(mappedItems)
+    }
+  }, [allItems, slug, getItemsByStore])
+
+  useEffect(() => {
+    if (groups.length > 0) {
+      const items = groups.flatMap((group: Group) => group.items)
+      setAllItems(items)
+    }
+  }, [groups])
 
   const filteredGroups = groups
     .filter((group: Group) => 
@@ -59,6 +95,14 @@ export default function CatalogPage() {
     .filter((group: Group) => group.items.length > 0)
 
   const addToCart = (productId: string) => {
+    if (!isAuthenticated) {
+      setIsAuthModalOpen(true)
+      return
+    }
+
+    const product = allItems.find(item => item.id === productId)
+    if (!product) return
+
     setCartItems(prev => {
       const existing = prev.find(item => item.id === productId)
       if (existing) {
@@ -68,10 +112,19 @@ export default function CatalogPage() {
             : item
         )
       }
-      const product = allItems.find(item => item.id === productId)
-      if (!product) return prev
       return [...prev, {id: productId, quantity: 1, product}]
     })
+
+    const cartItem = {
+      id: product.id,
+      name: product.attributes.name,
+      price: parseFloat(product.attributes.price),
+      quantity: 1,
+      image: product.attributes.image_url || '',
+      storeSlug: slug
+    }
+    
+    addItem(cartItem)
   }
 
   const toggleFavorite = (productId: string) => {
@@ -96,7 +149,25 @@ export default function CatalogPage() {
           : item
       )
     })
+
+    if (newQuantity <= 0) {
+      removeItem(productId)
+    } else {
+      updateQuantity(productId, newQuantity)
+    }
   }
+
+  const handleCheckout = () => {
+    if (cartItems.length === 0) {
+      return;
+    }
+    
+    if (isAuthenticated) {
+      router.push(`/catalog/${slug}/checkout`);
+    } else {
+      setIsAuthModalOpen(true);
+    }
+  };
 
   return (
     <div className="flex flex-col h-screen">
@@ -122,30 +193,55 @@ export default function CatalogPage() {
           </div>
 
           <div className="flex items-center gap-2 md:min-w-[120px] md:justify-start">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsAuthModalOpen(true)}
-              className="relative"
-            >
-              <LogIn className="h-5 w-5 text-white" />
-              <span className="sr-only">Entrar</span>
-            </Button>
+            {isAuthenticated ? (
+              <>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={logout}
+                  className="relative"
+                >
+                  <LogOut className="h-5 w-5 text-white" />
+                  <span className="sr-only">Sair</span>
+                </Button>
 
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative"
-              onClick={() => setIsCartOpen(true)}
-            >
-              <ShoppingCart className="h-5 w-5 text-white" />
-              {totalCartItems > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
-                  {totalCartItems}
-                </span>
-              )}
-              <span className="sr-only">Carrinho</span>
-            </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="relative"
+                  onClick={() => setIsCartOpen(true)}
+                >
+                  <ShoppingCart className="h-5 w-5 text-white" />
+                  {totalCartItems > 0 && (
+                    <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                      {totalCartItems}
+                    </span>
+                  )}
+                  <span className="sr-only">Carrinho</span>
+                </Button>
+                
+                {totalCartItems > 0 && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={handleCheckout}
+                    className="bg-primary text-white hover:bg-primary/90"
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Finalizar Pedido
+                  </Button>
+                )}
+              </>
+            ) : (
+              <Button
+                variant="outline"
+                onClick={() => setIsAuthModalOpen(true)}
+                className="cursor-pointer rounded-xs font-antarctican-mono bg-transparent border-white text-white hover:bg-white hover:text-black gap-2"
+              >
+                <LogIn className="h-5 w-5" />
+                  Entrar
+              </Button>
+            )}
           </div>
         </div>
       </header>
@@ -186,16 +282,17 @@ export default function CatalogPage() {
           </ScrollArea>
           </div>
           
-          {/* Filtros - Escondido em mobile, visível em desktop */}
-          <div className="hidden lg:block w-72 flex-shrink-0">
-            <Filters
-              selectedGroups={selectedGroups}
-              onGroupsChange={setSelectedGroups}
-              priceRange={priceRange}
-              onPriceRangeChange={setPriceRange}
-              groups={groups}
-            />
-          </div>
+          {!isLoading && (
+            <div className="hidden lg:block w-72 flex-shrink-0">
+              <Filters
+                selectedGroups={selectedGroups}
+                onGroupsChange={setSelectedGroups}
+                priceRange={priceRange}
+                onPriceRangeChange={setPriceRange}
+                groups={groups}
+              />
+            </div>
+          )}
           
           <div className="flex-1 min-w-0">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">

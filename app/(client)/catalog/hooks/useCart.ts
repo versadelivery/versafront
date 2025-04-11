@@ -1,31 +1,31 @@
-import { useCartStore, CartItem } from '../store/cart.store'
+import { useCart as useCartContext, CartItem } from '../store/CartContext'
 
 export function useCart() {
-  const store = useCartStore()
+  const cart = useCartContext()
 
   const addToCart = (item: Omit<CartItem, 'quantity'>) => {
-    store.addItem({ ...item, quantity: 1 })
+    cart.addItem({ ...item, quantity: 1 })
   }
 
   const removeFromCart = (itemId: string) => {
-    store.removeItem(itemId)
+    cart.removeItem(itemId)
   }
 
   const updateItemQuantity = (itemId: string, quantity: number) => {
     if (quantity <= 0) {
-      store.removeItem(itemId)
+      cart.removeItem(itemId)
       return
     }
-    store.updateQuantity(itemId, quantity)
+    cart.updateQuantity(itemId, quantity)
   }
 
   return {
-    items: store.items,
-    total: store.total,
+    items: cart.items,
+    total: cart.total,
     addToCart,
     removeFromCart,
     updateItemQuantity,
-    clearCart: store.clearCart,
-    itemCount: store.items.reduce((total, item) => total + item.quantity, 0)
+    clearCart: cart.clearCart,
+    itemCount: cart.items.reduce((total, item) => total + item.quantity, 0)
   }
 } 

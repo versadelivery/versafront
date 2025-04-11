@@ -3,7 +3,9 @@ import { X, Plus, Minus, ShoppingCart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Image from 'next/image'
 import { Item } from '@/app/types/client-catalog'
-import { useEffect } from 'react'
+import { useAuth } from '../../hooks/useAuth'
+import { useRouter } from 'next/navigation'
+import { useCart } from '../../../catalog/hooks/useCart'
 
 interface CartItem {
   id: string;
@@ -13,10 +15,35 @@ interface CartItem {
 
 export default function CartDrawer({ isCartOpen, setIsCartOpen, cartItems, allItems, updateCartItem }: { isCartOpen: boolean, setIsCartOpen: (open: boolean) => void, cartItems: CartItem[], allItems: Item[], updateCartItem: (productId: string, newQuantity: number) => void }) {
   const totalCartItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const { isAuthenticated } = useAuth();
+  const router = useRouter();
+  const { updateItemQuantity, removeFromCart } = useCart();
   
-  useEffect(() => {
-    console.log(cartItems)
-  }, [cartItems])
+  const handleQuantityChange = (itemId: string, newQuantity: number) => {
+    updateCartItem(itemId, newQuantity);
+    
+    if (newQuantity <= 0) {
+      removeFromCart(itemId);
+    } else {
+      updateItemQuantity(itemId, newQuantity);
+    }
+  };
+
+  const handleCheckout = () => {
+    if (cartItems.length === 0) {
+      return;
+    }
+
+    const pathParts = window.location.pathname.split('/');
+    const slug = pathParts.length > 2 ? pathParts[2] : '';
+    
+    if (isAuthenticated) {
+      setIsCartOpen(false);
+      router.push(`/catalog/${slug}/checkout`);
+    } else {
+      setIsCartOpen(false);
+    }
+  };
 
   return (
     <Drawer open={isCartOpen} onOpenChange={setIsCartOpen}>
@@ -100,7 +127,7 @@ export default function CartDrawer({ isCartOpen, setIsCartOpen, cartItems, allIt
                                 variant="outline"
                                 size="icon"
                                 className="h-7 w-7 rounded-full"
-                                onClick={() => updateCartItem(cartItem.id, cartItem.quantity - 1)}
+                                onClick={() => handleQuantityChange(cartItem.id, cartItem.quantity - 1)}
                               >
                                 <Minus className="h-3 w-3" />
                               </Button>
@@ -109,7 +136,7 @@ export default function CartDrawer({ isCartOpen, setIsCartOpen, cartItems, allIt
                                 variant="outline"
                                 size="icon"
                                 className="h-7 w-7 rounded-full"
-                                onClick={() => updateCartItem(cartItem.id, cartItem.quantity + 1)}
+                                onClick={() => handleQuantityChange(cartItem.id, cartItem.quantity + 1)}
                               >
                                 <Plus className="h-3 w-3" />
                               </Button>
@@ -119,7 +146,7 @@ export default function CartDrawer({ isCartOpen, setIsCartOpen, cartItems, allIt
                               variant="ghost"
                               size="sm"
                               className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                              onClick={() => updateCartItem(cartItem.id, 0)}
+                              onClick={() => handleQuantityChange(cartItem.id, 0)}
                             >
                               <X className="h-4 w-4" />
                             </Button>
@@ -147,7 +174,7 @@ export default function CartDrawer({ isCartOpen, setIsCartOpen, cartItems, allIt
                   }, 0).toFixed(2)}
                 </span>
               </div>
-              <Button className="w-full">
+              <Button className="w-full" onClick={handleCheckout}>
                 Finalizar Compra
               </Button>
             </DrawerFooter>

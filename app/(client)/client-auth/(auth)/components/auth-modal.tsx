@@ -17,7 +17,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
       className="max-w-md"
     >
       <div className="py-4">
-        <AuthForm />
+        <AuthForm onClose={onClose} />
       </div>
     </Modal>
   );

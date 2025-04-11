@@ -2,7 +2,7 @@ import api from '@/app/lib/api'
 import { LoginInput, RegisterInput } from '../(auth)/validations/auth.schema'
 
 export interface AuthResponse {
-  user: {
+  customer: {
     id: string
     name: string
     email: string
