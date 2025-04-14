@@ -3,7 +3,7 @@
 import ProtectedRoute from "@/components/protected-route";
 import { Header } from "../catalog/components/catalog-header";
 import { AdminDashboardCard } from "@/components/admin/card";
-import { Settings, Users, Bell, Link as LinkIcon } from "lucide-react";
+import { Settings, Users, Bell, Link as LinkIcon, Truck } from "lucide-react";
 
 const settingsCards = [
   {
@@ -21,11 +21,11 @@ const settingsCards = [
     iconBgColor: "bg-emerald-600"
   },
   {
-    href: "/admin/settings/notifications",
-    icon: Bell,
-    title: "Configurações de Notificações",
-    description: "Configure as notificações do sistema",
-    iconBgColor: "bg-purple-500"
+    href: "/admin/settings/delivery",
+    icon: Truck,
+    title: "Configurações de Delivery",
+    description: "Configure a taxa de entrega e as zonas de entrega",
+    iconBgColor: "bg-red-500"
   },
   {
     href: "/admin/settings/integrations",

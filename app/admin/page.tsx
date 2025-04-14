@@ -7,7 +7,6 @@ import { UrlCard } from "@/components/admin/url-card";
 import { Footer } from "@/components/footer";
 import { AdminDashboardCard } from "@/components/admin/card";
 import { dashboardCards } from "./config/dashboard-cards";
-import kifrango from "@/public/img/kifrango.png";
 import bannerImg from "@/public/img/hero-admin.jpg";
 
 export default function AdminDashboard() {
@@ -16,8 +15,8 @@ export default function AdminDashboard() {
       <main className="min-h-screen bg-[#f5f5f5]">
         <Header />
         
-        <AdminBanner bannerImg={bannerImg} logo={kifrango} />
-        
+          <AdminBanner bannerImg={bannerImg}/>
+
         <div className="max-w-2xl mx-auto px-4 -mt-10 z-20 relative border-none">
           <UrlCard url="www.versadelivery.com.br/kifrango" />
         </div>
