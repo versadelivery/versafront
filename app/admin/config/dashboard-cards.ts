@@ -16,7 +16,7 @@ export const dashboardCards = [
     iconBgColor: "bg-emerald-600"
   },
   {
-    href: "#configuracoes",
+    href: "/admin/settings",
     icon: Settings,
     title: "Configurações",
     description: "Configure sua loja",

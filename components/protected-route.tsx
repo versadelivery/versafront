@@ -1,24 +1,35 @@
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getToken } from '@/app/lib/auth';
+import { Suspense } from 'react';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
-  const token = getToken();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
+    const token = getToken();
+    setIsAuthenticated(!!token);
     if (!token) {
       router.push('/login');
     }
-  }, [token, router]);
+  }, [router]);
 
-  if (!token) {
+  if (isAuthenticated === null) {
+    return null; // Mostra nada enquanto verifica a autenticação
+  }
+
+  if (!isAuthenticated) {
     return null;
   }
 
-  return <>{children}</>;
+  return (
+    <Suspense fallback={null}>
+      {children}
+    </Suspense>
+  );
 };
 
 export default ProtectedRoute;
