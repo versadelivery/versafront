@@ -18,7 +18,7 @@ export default function AdminDashboard() {
           <AdminBanner bannerImg={bannerImg}/>
 
         <div className="max-w-2xl mx-auto px-4 -mt-10 z-20 relative border-none">
-          <UrlCard url="www.versadelivery.com.br/kifrango" />
+          <UrlCard url="www.versadelivery.com.br" />
         </div>
 
         <div className="max-w-full mx-auto p-12">
