@@ -6,10 +6,11 @@ import { ProductCard } from './product-card'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ChevronDown, ChevronUp } from 'lucide-react'
+import { ProductModal } from './product-modal'
 
 interface GroupSectionProps {
   group: Group
-  onAddToCart: (id: string) => void
+  onAddToCart: (id: string, options?: any) => void
   onToggleFavorite: (id: string) => void
 }
 
@@ -17,6 +18,8 @@ export function GroupSection({ group, onAddToCart, onToggleFavorite }: GroupSect
   const [imagesLoaded, setImagesLoaded] = useState(false)
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set())
   const [isExpanded, setIsExpanded] = useState(true)
+  const [selectedProduct, setSelectedProduct] = useState<Item | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   useEffect(() => {
     const images = [
@@ -47,6 +50,21 @@ export function GroupSection({ group, onAddToCart, onToggleFavorite }: GroupSect
 
     images.forEach(loadImage)
   }, [group])
+
+  const handleAddToCart = (product: Item) => {
+    // Se o produto não precisa de customização, adiciona direto
+    if (
+      product.attributes.item_type !== 'weight' && 
+      !product.attributes.extra?.data?.length && 
+      !product.attributes.prepare_method?.data?.length && 
+      !product.attributes.steps?.data?.length
+    ) {
+      onAddToCart(product.id)
+    } else {
+      setSelectedProduct(product)
+      setIsModalOpen(true)
+    }
+  }
 
   if (!imagesLoaded) {
     return (
@@ -153,7 +171,7 @@ export function GroupSection({ group, onAddToCart, onToggleFavorite }: GroupSect
               >
                 <ProductCard
                   product={item}
-                  onAddToCart={onAddToCart}
+                  onAddToCart={() => handleAddToCart(item)}
                   onToggleFavorite={onToggleFavorite}
                 />
               </motion.div>
@@ -161,6 +179,18 @@ export function GroupSection({ group, onAddToCart, onToggleFavorite }: GroupSect
           </motion.div>
         )}
       </AnimatePresence>
+
+      {selectedProduct && (
+        <ProductModal
+          product={selectedProduct}
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onAddToCart={(options) => {
+            onAddToCart(selectedProduct.id, options)
+            setIsModalOpen(false)
+          }}
+        />
+      )}
     </motion.section>
   )
-} 
+}

@@ -11,7 +11,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { AuthModal } from '@/app/(client)/client-auth/(auth)/components/auth-modal'
-import CartDrawer from '../../client-auth/(auth)/components/cart-drawer'
+import CartDrawer from './components/cart-drawer'
 import { useCatalog } from '@/app/hooks/use-catalog'
 import logoHeader from "@/public/img/logo.svg";
 import { Group, Item } from '@/app/types/client-catalog'
@@ -94,38 +94,43 @@ export default function CatalogPage() {
     }))
     .filter((group: Group) => group.items.length > 0)
 
-  const addToCart = (productId: string) => {
-    if (!isAuthenticated) {
-      setIsAuthModalOpen(true)
-      return
-    }
-
-    const product = allItems.find(item => item.id === productId)
-    if (!product) return
-
-    setCartItems(prev => {
-      const existing = prev.find(item => item.id === productId)
-      if (existing) {
-        return prev.map(item => 
-          item.id === productId 
-            ? {...item, quantity: item.quantity + 1} 
-            : item
-        )
-      }
-      return [...prev, {id: productId, quantity: 1, product}]
-    })
-
-    const cartItem = {
-      id: product.id,
-      name: product.attributes.name,
-      price: parseFloat(product.attributes.price),
-      quantity: 1,
-      image: product.attributes.image_url || '',
-      storeSlug: slug
-    }
-    
-    addItem(cartItem)
+const addToCart = (productId: string, options?: any) => {
+  if (!isAuthenticated) {
+    setIsAuthModalOpen(true)
+    return
   }
+
+  const product = allItems.find(item => item.id === productId)
+  if (!product) return
+
+  // Calcular preço base - usar preço com desconto se disponível
+  let price = product.attributes.price_with_discount 
+    ? parseFloat(product.attributes.price_with_discount)
+    : parseFloat(product.attributes.price)
+
+  if (options?.weight && product.attributes.item_type === 'weight') {
+    price = price * options.weight
+  }
+
+  // Adicionar preço dos extras
+  if (options?.extras) {
+    options.extras.forEach((extra: { price: number }) => {
+      price += extra.price
+    })
+  }
+
+  const cartItem = {
+    id: product.id,
+    name: product.attributes.name,
+    price: price,
+    quantity: 1,
+    image: product.attributes.image_url || '',
+    storeSlug: slug,
+    options: options || null
+  }
+  
+  addItem(cartItem)
+}
 
   const toggleFavorite = (productId: string) => {
     const updatedGroups = groups.map((group: Group) => ({
