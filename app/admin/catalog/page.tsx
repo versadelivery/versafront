@@ -86,7 +86,7 @@ export default function CatalogPage() {
 
   return (
     <ProtectedRoute>
-      <div className="w-full px-0 sm:px-8 lg:px-24">
+      <div className="w-full px-0 sm:px-4 lg:px-6">
       <Header 
         title={activeTab === 'catalog' ? 'CATÁLOGO' : 'ESTOQUE'}
         description={activeTab === 'catalog' 

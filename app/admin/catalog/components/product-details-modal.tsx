@@ -18,50 +18,60 @@ export function ProductDetailsModal({ isOpen, onOpenChange, product, onEdit }: P
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl bg-white">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold flex items-center gap-2">
-            <Info className="w-6 h-6 text-primary" />
+      <DialogContent className="max-w-2xl w-[95vw] sm:w-[90vw] md:w-[80vw] lg:w-[70vw] xl:w-[60vw] bg-white max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="top-0 z-10">
+          <DialogTitle className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+            <Info className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
             DETALHES DO PRODUTO
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6 bg-white">
+          {product.attributes.image_url && (
+            <div className="relative w-full h-32 sm:h-40 md:h-48 rounded-lg overflow-hidden">
+              <img 
+                src={product.attributes.image_url} 
+                alt={product.attributes.name}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <Tag className="w-5 h-5 text-primary" />
+              <h3 className="text-base sm:text-lg font-semibold flex items-center gap-2">
+                <Tag className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                 Informações Básicas
               </h3>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">Nome</p>
-                <p className="font-medium">{product.attributes.name}</p>
+                <p className="font-medium text-sm sm:text-base">{product.attributes.name}</p>
               </div>
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">Descrição</p>
-                <p className="font-medium">{product.attributes.description || "Sem descrição"}</p>
+                <p className="font-medium text-sm sm:text-base">{product.attributes.description || "Sem descrição"}</p>
               </div>
             </div>
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-primary" />
+            <h3 className="text-base sm:text-lg font-semibold flex items-center gap-2">
+              <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
               Preços
             </h3>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">Preço Base</p>
-                <p className="font-medium">R$ {parseFloat(product.attributes.price).toFixed(2)}</p>
+                <p className="font-medium text-sm sm:text-base">R$ {parseFloat(product.attributes.price).toFixed(2)}</p>
               </div>
               {hasDiscount && (
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Preço com Desconto</p>
-                  <p className="font-medium text-green-600">R$ {parseFloat(product.attributes.price_with_discount || "0").toFixed(2)}</p>
+                  <p className="font-medium text-sm sm:text-base text-green-600">R$ {parseFloat(product.attributes.price_with_discount || "0").toFixed(2)}</p>
                 </div>
               )}
             </div>
@@ -70,23 +80,23 @@ export function ProductDetailsModal({ isOpen, onOpenChange, product, onEdit }: P
           {/* Medidas */}
           {product.attributes.item_type === "weight" && (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <Scale className="w-5 h-5 text-primary" />
+              <h3 className="text-base sm:text-lg font-semibold flex items-center gap-2">
+                <Scale className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                 Medidas
               </h3>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Unidade</p>
-                  <p className="font-medium">{product.attributes.unit_of_measurement}</p>
+                  <p className="font-medium text-sm sm:text-base">{product.attributes.unit_of_measurement}</p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Peso Mínimo</p>
-                  <p className="font-medium">{product.attributes.min_weight} {product.attributes.unit_of_measurement}</p>
+                  <p className="font-medium text-sm sm:text-base">{product.attributes.min_weight} {product.attributes.unit_of_measurement}</p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Peso Máximo</p>
-                  <p className="font-medium">{product.attributes.max_weight} {product.attributes.unit_of_measurement}</p>
+                  <p className="font-medium text-sm sm:text-base">{product.attributes.max_weight} {product.attributes.unit_of_measurement}</p>
                 </div>
               </div>
             </div>
@@ -95,16 +105,16 @@ export function ProductDetailsModal({ isOpen, onOpenChange, product, onEdit }: P
           {/* Adicionais */}
           {hasExtras && (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <Plus className="w-5 h-5 text-primary" />
+              <h3 className="text-base sm:text-lg font-semibold flex items-center gap-2">
+                <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                 Adicionais
               </h3>
 
               <div className="space-y-2">
                 {product.attributes.extra.data.map((extra) => (
                   <div key={extra.id} className="flex items-center justify-between p-2 bg-muted/50 rounded-md">
-                    <span className="font-medium">{extra.attributes.name}</span>
-                    <span className="text-primary">+ R$ {parseFloat(extra.attributes.price).toFixed(2)}</span>
+                    <span className="font-medium text-sm sm:text-base">{extra.attributes.name}</span>
+                    <span className="text-primary text-sm sm:text-base">+ R$ {parseFloat(extra.attributes.price).toFixed(2)}</span>
                   </div>
                 ))}
               </div>
@@ -114,16 +124,16 @@ export function ProductDetailsModal({ isOpen, onOpenChange, product, onEdit }: P
           {/* Modos de Preparo */}
           {hasPrepareMethods && (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <Clock className="w-5 h-5 text-primary" />
+              <h3 className="text-base sm:text-lg font-semibold flex items-center gap-2">
+                <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                 Modos de Preparo
               </h3>
 
               <div className="space-y-2">
                 {product.attributes.prepare_method.data.map((method) => (
                   <div key={method.id} className="flex items-center gap-2 p-2 bg-muted/50 rounded-md">
-                    <Check className="w-4 h-4 text-primary" />
-                    <span>{method.attributes.name}</span>
+                    <Check className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
+                    <span className="text-sm sm:text-base">{method.attributes.name}</span>
                   </div>
                 ))}
               </div>
@@ -133,20 +143,20 @@ export function ProductDetailsModal({ isOpen, onOpenChange, product, onEdit }: P
           {/* Etapas */}
           {hasSteps && (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <Minus className="w-5 h-5 text-primary" />
+              <h3 className="text-base sm:text-lg font-semibold flex items-center gap-2">
+                <Minus className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                 Etapas
               </h3>
 
               <div className="space-y-4">
                 {product.attributes.steps.data.map((step) => (
                   <div key={step.id} className="space-y-2">
-                    <div className="font-medium text-primary">{step.attributes.name}</div>
+                    <div className="font-medium text-primary text-sm sm:text-base">{step.attributes.name}</div>
                     <div className="space-y-1 pl-4">
                       {step.attributes.options.data.map((option) => (
                         <div key={option.id} className="flex items-center gap-2">
                           <Check className="w-3 h-3 text-muted-foreground" />
-                          <span>{option.attributes.name}</span>
+                          <span className="text-sm sm:text-base">{option.attributes.name}</span>
                         </div>
                       ))}
                     </div>
