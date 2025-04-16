@@ -9,30 +9,23 @@ const settingsCards = [
   {
     href: "/admin/settings/general",
     icon: Settings,
-    title: "Configurações Gerais",
+    title: "Informações Gerais",
     description: "Configure as configurações básicas do sistema",
     iconBgColor: "bg-blue-500"
   },
   {
     href: "/admin/settings/users",
     icon: Users,
-    title: "Configurações de Usuários",
+    title: "Gerenciamento de Usuários",
     description: "Gerencie permissões e acessos dos usuários",
     iconBgColor: "bg-emerald-600"
   },
   {
     href: "/admin/settings/delivery",
     icon: Truck,
-    title: "Configurações de Delivery",
+    title: "Taxas de Entrega",
     description: "Configure a taxa de entrega e as zonas de entrega",
     iconBgColor: "bg-red-500"
-  },
-  {
-    href: "/admin/settings/integrations",
-    icon: LinkIcon,
-    title: "Configurações de Integração",
-    description: "Gerencie integrações com outros sistemas",
-    iconBgColor: "bg-yellow-500"
   },
 ];
 

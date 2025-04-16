@@ -22,7 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowUp, ArrowDown, Edit, Trash2, Plus, CheckCircle2, Clock } from "lucide-react";
+import { ArrowUp, ArrowDown, Edit, Trash2, Plus, CheckCircle2, Clock, Truck, DollarSign, Package, Gift, AlertCircle, MapPin, Building2, Info } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DeleteConfirmation } from "@/components/ui/delete-confirmation";
 import { Switch } from "@/components/ui/switch";
@@ -51,16 +51,26 @@ export default function DeliverySettingsPage() {
 
   const [deliveryType, setDeliveryType] = useState<string>("to_be_agreed");
   const [fixedFee, setFixedFee] = useState<string>("");
+  const [hasFreeDelivery, setHasFreeDelivery] = useState<boolean>(false);
+  const [freeDeliveryThreshold, setFreeDeliveryThreshold] = useState<string>("");
   const [bulkAdjustValue, setBulkAdjustValue] = useState<string>("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [currentNeighborhood, setCurrentNeighborhood] = useState<Neighborhood | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [errors, setErrors] = useState<{
+    fixedFee?: string;
+    freeDeliveryThreshold?: string;
+    neighborhoodValue?: string;
+    neighborhoodFreeDeliveryThreshold?: string;
+  }>({});
 
   useEffect(() => {
     if (deliveryConfig) {
       setDeliveryType(deliveryConfig.delivery_fee_kind);
       setFixedFee(deliveryConfig.amount.toString());
+      setHasFreeDelivery(deliveryConfig.min_value_free_delivery !== null);
+      setFreeDeliveryThreshold(deliveryConfig.min_value_free_delivery?.toString() || "");
     }
   }, [deliveryConfig]);
 
@@ -83,6 +93,17 @@ export default function DeliverySettingsPage() {
 
   const handleAddNeighborhood = () => {
     if (!currentNeighborhood) return;
+
+    const newErrors: typeof errors = {};
+    
+    if (currentNeighborhood.hasFreeDelivery && currentNeighborhood.freeDeliveryThreshold <= currentNeighborhood.value) {
+      newErrors.neighborhoodFreeDeliveryThreshold = "O valor mínimo para frete grátis deve ser maior que o valor da taxa";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
 
     if (isEditing && currentNeighborhood.id) {
       updateNeighborhood({
@@ -122,9 +143,21 @@ export default function DeliverySettingsPage() {
   };
 
   const handleSaveDeliveryConfig = () => {
+    const newErrors: typeof errors = {};
+    
+    if (hasFreeDelivery && parseFloat(freeDeliveryThreshold) <= parseFloat(fixedFee)) {
+      newErrors.freeDeliveryThreshold = "O valor mínimo para frete grátis deve ser maior que o valor da taxa";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
     updateDeliveryConfig({
       delivery_fee_kind: deliveryType as "to_be_agreed" | "fixed" | "per_neighborhood",
-      amount: parseFloat(fixedFee) || 0
+      amount: parseFloat(fixedFee) || 0,
+      min_value_free_delivery: hasFreeDelivery ? parseFloat(freeDeliveryThreshold) : null
     });
   };
 
@@ -183,21 +216,85 @@ export default function DeliverySettingsPage() {
             </div>
 
             {deliveryType === "fixed" ? (
-              <div className="space-y-1 max-w-md">
-                <Label htmlFor="fixedFee" className="text-muted-foreground">
-                  Valor da Taxa Fixa
-                </Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                    R$&nbsp;
-                  </span>
-                  <Input
-                    id="fixedFee"
-                    value={fixedFee}
-                    onChange={(e) => setFixedFee(e.target.value)}
-                    placeholder=" 0,00"
-                    className="h-12 text-base border-gray-300 dark:border-gray-700 focus-visible:ring-primary pl-12"
-                  />
+              <div className="space-y-6">
+                <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <Truck className="w-5 h-5 text-primary" />
+                  <div>
+                    <h3 className="font-medium">Taxa de Entrega Fixa</h3>
+                    <p className="text-sm text-muted-foreground">Configure o valor fixo cobrado para todas as entregas</p>
+                  </div>
+                </div>
+
+                <div className="space-y-1 max-w-md">
+                  <Label htmlFor="fixedFee" className="text-muted-foreground flex items-center gap-2">
+                    <DollarSign className="w-4 h-4" />
+                    Valor da Taxa Fixa
+                  </Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                      R$&nbsp;
+                    </span>
+                    <Input
+                      id="fixedFee"
+                      value={fixedFee}
+                      onChange={(e) => setFixedFee(e.target.value)}
+                      placeholder=" 0,00"
+                      className="h-12 text-base border-gray-300 dark:border-gray-700 focus-visible:ring-primary pl-12"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-3">
+                      <Gift className="w-5 h-5 text-primary" />
+                      <div className="space-y-1">
+                        <Label htmlFor="freeDelivery" className="text-sm font-medium">Taxa Gratuita</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Ative para oferecer taxa gratuita a partir de um valor mínimo
+                        </p>
+                      </div>
+                    </div>
+                    <Switch
+                      id="freeDelivery"
+                      checked={hasFreeDelivery}
+                      onCheckedChange={setHasFreeDelivery}
+                    />
+                  </div>
+                  
+                  {hasFreeDelivery && (
+                    <div className="space-y-2 pl-1">
+                      <Label htmlFor="freeDeliveryThreshold" className="text-sm font-medium flex items-center gap-2">
+                        <Package className="w-4 h-4" />
+                        Valor Mínimo para Taxa Gratuita
+                      </Label>
+                      <div className="space-y-1">
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                            R$&nbsp;
+                          </span>
+                          <Input
+                            id="freeDeliveryThreshold"
+                            type="number"
+                            value={freeDeliveryThreshold}
+                            onChange={(e) => setFreeDeliveryThreshold(e.target.value)}
+                            placeholder=" Ex: 50,00"
+                            className="h-11 pl-12"
+                          />
+                        </div>
+                        {errors.freeDeliveryThreshold && (
+                          <p className="text-sm text-red-500 flex items-center gap-1">
+                            <AlertCircle className="w-4 h-4" />
+                            {errors.freeDeliveryThreshold}
+                          </p>
+                        )}
+                        <p className="text-sm text-muted-foreground flex items-center gap-1">
+                          <Info className="w-4 h-4" />
+                          A taxa de entrega será gratuita quando o valor do pedido for igual ou maior que este valor
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ) : deliveryType === "to_be_agreed" ? (
@@ -208,9 +305,18 @@ export default function DeliverySettingsPage() {
               </div>
             ) : (
               <div className="space-y-6">
+                <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <MapPin className="w-5 h-5 text-primary" />
+                  <div>
+                    <h3 className="font-medium">Taxa por Bairro</h3>
+                    <p className="text-sm text-muted-foreground">Configure valores diferentes de taxa de entrega para cada bairro</p>
+                  </div>
+                </div>
+
                 <div className="flex flex-col md:flex-row md:items-end gap-4">
                   <div className="flex-1">
-                    <Label className="text-muted-foreground">
+                    <Label className="text-muted-foreground flex items-center gap-2">
+                      <ArrowUp className="w-4 h-4" />
                       Aumentar/Diminuir todos os bairros em R$
                     </Label>
                     <div className="relative mt-1">
@@ -246,9 +352,24 @@ export default function DeliverySettingsPage() {
                   <Table>
                     <TableHeader className="bg-gray-50 dark:bg-gray-800">
                       <TableRow className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                        <TableHead className="font-medium">Bairro</TableHead>
-                        <TableHead className="font-medium">Valor</TableHead>
-                        <TableHead className="font-medium">Frete Grátis</TableHead>
+                        <TableHead className="font-medium">
+                          <div className="flex items-center gap-2">
+                            <Building2 className="w-4 h-4" />
+                            Bairro
+                          </div>
+                        </TableHead>
+                        <TableHead className="font-medium">
+                          <div className="flex items-center gap-2">
+                            <DollarSign className="w-4 h-4" />
+                            Valor
+                          </div>
+                        </TableHead>
+                        <TableHead className="font-medium">
+                          <div className="flex items-center gap-2">
+                            <Gift className="w-4 h-4" />
+                            Taxa Gratuita
+                          </div>
+                        </TableHead>
                         <TableHead className="text-right font-medium">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -266,7 +387,10 @@ export default function DeliverySettingsPage() {
                                   <CheckCircle2 className="w-4 h-4" />
                                   A partir de R$ {neighborhood.min_value_free_delivery.toFixed(2)}
                                 </span>
-                              : <span className="text-muted-foreground">Não</span>
+                              : <span className="text-muted-foreground inline-flex items-center gap-1">
+                                  <Clock className="w-4 h-4" />
+                                  Não
+                                </span>
                             }
                           </TableCell>
                           <TableCell className="text-right">
@@ -342,13 +466,17 @@ export default function DeliverySettingsPage() {
       <Dialog open={isDialogOpen} onOpenChange={resetForm}>
         <DialogContent className="sm:max-w-md bg-white">
           <DialogHeader>
-            <DialogTitle className="text-xl font-semibold">
+            <DialogTitle className="text-xl font-semibold flex items-center gap-2">
+              <MapPin className="w-5 h-5" />
               {isEditing ? "Editar Bairro" : "Cadastrar Novo Bairro"}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-6 py-4">
             <div className="space-y-2">
-              <Label htmlFor="neighborhoodName" className="text-sm font-medium">Nome do Bairro</Label>
+              <Label htmlFor="neighborhoodName" className="text-sm font-medium flex items-center gap-2">
+                <Building2 className="w-4 h-4" />
+                Nome do Bairro
+              </Label>
               <Input
                 id="neighborhoodName"
                 value={currentNeighborhood?.name || ""}
@@ -363,7 +491,10 @@ export default function DeliverySettingsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="neighborhoodValue" className="text-sm font-medium">Valor da Entrega</Label>
+              <Label htmlFor="neighborhoodValue" className="text-sm font-medium flex items-center gap-2">
+                <DollarSign className="w-4 h-4" />
+                Valor da Entrega
+              </Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                   R$&nbsp;
@@ -385,12 +516,15 @@ export default function DeliverySettingsPage() {
             </div>
             
             <div className="space-y-4 pt-2">
-              <div className="flex items-center justify-between p-4 bg-gray-200 dark:bg-gray-800 rounded-lg">
-                <div className="space-y-1">
-                  <Label htmlFor="freeDelivery" className="text-sm font-medium">Frete Grátis</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Ative para oferecer frete grátis a partir de um valor mínimo
-                  </p>
+              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-3">
+                  <Gift className="w-5 h-5 text-primary" />
+                  <div className="space-y-1">
+                    <Label htmlFor="freeDelivery" className="text-sm font-medium">Taxa Gratuita</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Ative para oferecer taxa gratuita a partir de um valor mínimo
+                    </p>
+                  </div>
                 </div>
                 <Switch
                   id="freeDelivery"
@@ -407,24 +541,39 @@ export default function DeliverySettingsPage() {
               
               {currentNeighborhood?.hasFreeDelivery && (
                 <div className="space-y-2 pl-1">
-                  <Label htmlFor="freeDeliveryThreshold" className="text-sm font-medium">Valor Mínimo para Frete Grátis</Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                      R$&nbsp;
-                    </span>
-                    <Input
-                      id="freeDeliveryThreshold"
-                      type="number"
-                      value={currentNeighborhood?.freeDeliveryThreshold || ""}
-                      onChange={(e) =>
-                        setCurrentNeighborhood({
-                          ...currentNeighborhood!,
-                          freeDeliveryThreshold: parseFloat(e.target.value) || 0,
-                        })
-                      }
-                      placeholder=" Ex: 50,00"
-                      className="h-11 pl-12"
-                    />
+                  <Label htmlFor="freeDeliveryThreshold" className="text-sm font-medium flex items-center gap-2">
+                    <Package className="w-4 h-4" />
+                    Valor Mínimo para Taxa Gratuita
+                  </Label>
+                  <div className="space-y-1">
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                        R$&nbsp;
+                      </span>
+                      <Input
+                        id="freeDeliveryThreshold"
+                        type="number"
+                        value={currentNeighborhood?.freeDeliveryThreshold || ""}
+                        onChange={(e) =>
+                          setCurrentNeighborhood({
+                            ...currentNeighborhood!,
+                            freeDeliveryThreshold: parseFloat(e.target.value) || 0,
+                          })
+                        }
+                        placeholder=" Ex: 50,00"
+                        className="h-11 pl-12"
+                      />
+                    </div>
+                    {errors.neighborhoodFreeDeliveryThreshold && (
+                      <p className="text-sm text-red-500 mt-1 flex items-center gap-1">
+                        <AlertCircle className="w-4 h-4" />
+                        {errors.neighborhoodFreeDeliveryThreshold}
+                      </p>
+                    )}
+                    <p className="text-sm text-muted-foreground flex items-center gap-1">
+                      <Info className="w-4 h-4" />
+                      A taxa de entrega será gratuita quando o valor do pedido for igual ou maior que este valor
+                    </p>
                   </div>
                 </div>
               )}
