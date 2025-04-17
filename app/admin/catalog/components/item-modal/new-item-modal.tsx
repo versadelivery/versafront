@@ -279,174 +279,69 @@ export function NewItemModal({ isOpen, onOpenChange, groups = [], onSave, editin
 
   const onSubmit = async (data: ItemFormValues) => {
     try {
-      console.log('=== LOGS DO MODAL ===');
-      console.log('1. Dados do formulário:', {
-        ...data,
-        extras,
-        prepareMethods,
-        hasExtras,
-        hasPrepareMethods
-      });
-  
       const formData = new FormData();
       
+      // Dados básicos
       formData.append('name', data.name);
       formData.append('description', data.description || '');
       formData.append('catalog_group_id', data.catalog_group_id);
-      formData.append('price', data.price.toString());
-      formData.append('priority', data.priority.toString());
       formData.append('item_type', data.item_type);
       
-      formData.append('price_with_discount', hasDiscount ? (data.price_with_discount || '') : '');
-  
-      if (data.item_type === 'weight') {
-        formData.append('unit_of_measurement', data.unit_of_measurement || '');
-        formData.append('min_weight', data.min_weight?.toString() || '');
-        formData.append('max_weight', data.max_weight?.toString() || '');
-        formData.append('measure_interval', data.measure_interval?.toString() || '');
+      // Tratamento de valores numéricos
+      formData.append('price', parseFloat(data.price.toString()).toString());
+      formData.append('priority', parseInt(data.priority.toString()).toString());
+      
+      // Preço com desconto
+      if (hasDiscount && data.price_with_discount) {
+        formData.append('price_with_discount', parseFloat(data.price_with_discount.toString()).toString());
       }
-  
+
+      // Dados de peso
+      if (data.item_type === 'weight') {
+        formData.append('unit_of_measurement', data.unit_of_measurement || 'kg');
+        if (data.min_weight) formData.append('min_weight', parseFloat(data.min_weight.toString()).toString());
+        if (data.max_weight) formData.append('max_weight', parseFloat(data.max_weight.toString()).toString());
+        if (data.measure_interval) formData.append('measure_interval', parseFloat(data.measure_interval.toString()).toString());
+      }
+
+      // Imagem
       if (data.image) {
         formData.append('image', data.image);
-      }
-      if (data.removeImage) {
+      } else if (data.removeImage) {
         formData.append('remove_image', 'true');
       }
-  
-      if (hasExtras) {
-        if (editingItem?.attributes.extra?.data?.length) {
-          editingItem.attributes.extra.data.forEach((extra: ExtraData, index: number) => {
-            formData.append(`catalog_item_extras_attributes[${index}][id]`, extra.id);
-            formData.append(`catalog_item_extras_attributes[${index}][_destroy]`, 'true');
-          });
-      
-          extras.forEach((extra, newIndex) => {
-            const originalIndex = editingItem?.attributes?.extra?.data?.findIndex(
-              (e: ExtraData) => e.attributes.name === extra.name && parseFloat(e.attributes.price) === extra.price
-            ) ?? -1;
-      
-            if (originalIndex === -1) {
-              const extraDataLength = editingItem?.attributes?.extra?.data?.length ?? 0;
-              formData.append(`catalog_item_extras_attributes[${newIndex + extraDataLength}][name]`, extra.name);
-              formData.append(`catalog_item_extras_attributes[${newIndex + extraDataLength}][price]`, extra.price.toString());
-            } else {
-              const extraId = editingItem?.attributes?.extra?.data?.[originalIndex]?.id;
-              if (extraId) {
-                formData.append(`catalog_item_extras_attributes[${originalIndex}][id]`, extraId);
-                formData.append(`catalog_item_extras_attributes[${originalIndex}][name]`, extra.name);
-                formData.append(`catalog_item_extras_attributes[${originalIndex}][price]`, extra.price.toString());
-                formData.append(`catalog_item_extras_attributes[${originalIndex}][_destroy]`, 'false');
-              }
-            }
-          });
-        } else {
-          extras.forEach((extra, index) => {
-            formData.append(`catalog_item_extras_attributes[${index}][name]`, extra.name);
-            formData.append(`catalog_item_extras_attributes[${index}][price]`, extra.price.toString());
-          });
-        }
-      } else if (editingItem?.attributes.extra?.data?.length) {
-        editingItem.attributes.extra.data.forEach((extra: ExtraData, index: number) => {
-          formData.append(`catalog_item_extras_attributes[${index}][id]`, extra.id);
-          formData.append(`catalog_item_extras_attributes[${index}][_destroy]`, 'true');
+
+      // Extras
+      if (hasExtras && extras.length > 0) {
+        extras.forEach((extra, index) => {
+          formData.append(`catalog_item_extras_attributes[${index}][name]`, extra.name);
+          formData.append(`catalog_item_extras_attributes[${index}][price]`, parseFloat(extra.price.toString()).toString());
         });
       }
-  
-      if (hasPrepareMethods) {
-        if (editingItem?.attributes.prepare_method?.data?.length) {
-          editingItem.attributes.prepare_method.data.forEach((method: PrepareMethodData, index: number) => {
-            formData.append(`catalog_item_prepare_methods_attributes[${index}][id]`, method.id);
-            formData.append(`catalog_item_prepare_methods_attributes[${index}][_destroy]`, 'true');
-          });
-      
-          prepareMethods.forEach((method, newIndex) => {
-            const originalIndex = editingItem?.attributes?.prepare_method?.data?.findIndex(
-              (m: PrepareMethodData) => m.attributes.name === method.name
-            ) ?? -1;
-      
-            if (originalIndex === -1) {
-              const methodDataLength = editingItem?.attributes?.prepare_method?.data?.length ?? 0;
-              formData.append(`catalog_item_prepare_methods_attributes[${newIndex + methodDataLength}][name]`, method.name);
-            } else {
-              const methodId = editingItem?.attributes?.prepare_method?.data?.[originalIndex]?.id;
-              if (methodId) {
-                formData.append(`catalog_item_prepare_methods_attributes[${originalIndex}][id]`, methodId);
-                formData.append(`catalog_item_prepare_methods_attributes[${originalIndex}][name]`, method.name);
-                formData.append(`catalog_item_prepare_methods_attributes[${originalIndex}][_destroy]`, 'false');
-              }
-            }
-          });
-        } else {
-          prepareMethods.forEach((method, index) => {
-            formData.append(`catalog_item_prepare_methods_attributes[${index}][name]`, method.name);
-          });
-        }
-      } else if (editingItem?.attributes.prepare_method?.data?.length) {
-        editingItem.attributes.prepare_method.data.forEach((method: PrepareMethodData, index: number) => {
-          formData.append(`catalog_item_prepare_methods_attributes[${index}][id]`, method.id);
-          formData.append(`catalog_item_prepare_methods_attributes[${index}][_destroy]`, 'true');
+
+      // Métodos de preparo
+      if (hasPrepareMethods && prepareMethods.length > 0) {
+        prepareMethods.forEach((method, index) => {
+          formData.append(`catalog_item_prepare_methods_attributes[${index}][name]`, method.name);
         });
       }
-  
-      if (hasSteps) {
-        if (editingItem?.attributes.steps?.data?.length) {
-          editingItem.attributes.steps.data.forEach((step: any, index: number) => {
-            formData.append(`catalog_item_steps_attributes[${index}][id]`, step.id);
-            formData.append(`catalog_item_steps_attributes[${index}][_destroy]`, 'true');
-          });
 
-          steps.forEach((step, newIndex) => {
-            const originalIndex = editingItem?.attributes?.steps?.data?.findIndex(
-              (s: any) => s.attributes.name === step.name
-            ) ?? -1;
-
-            if (originalIndex === -1) {
-              const stepDataLength = editingItem?.attributes?.steps?.data?.length ?? 0;
-              formData.append(`catalog_item_steps_attributes[${newIndex + stepDataLength}][name]`, step.name);
-              
-              step.options.forEach((option, optionIndex) => {
-                formData.append(`catalog_item_steps_attributes[${newIndex + stepDataLength}][catalog_item_step_options_attributes][${optionIndex}][name]`, option.name);
-              });
-            } else {
-              const stepId = editingItem?.attributes?.steps?.data?.[originalIndex]?.id;
-              if (stepId) {
-                formData.append(`catalog_item_steps_attributes[${originalIndex}][id]`, stepId);
-                formData.append(`catalog_item_steps_attributes[${originalIndex}][name]`, step.name);
-                formData.append(`catalog_item_steps_attributes[${originalIndex}][_destroy]`, 'false');
-
-                step.options.forEach((option, optionIndex) => {
-                  formData.append(`catalog_item_steps_attributes[${originalIndex}][catalog_item_step_options_attributes][${optionIndex}][name]`, option.name);
-                });
-              }
-            }
+      // Passos
+      if (hasSteps && steps.length > 0) {
+        steps.forEach((step, index) => {
+          formData.append(`catalog_item_steps_attributes[${index}][name]`, step.name);
+          step.options.forEach((option, optionIndex) => {
+            formData.append(`catalog_item_steps_attributes[${index}][catalog_item_step_options_attributes[${optionIndex}][name]`, option.name);
           });
-        } else {
-          steps.forEach((step, index) => {
-            formData.append(`catalog_item_steps_attributes[${index}][name]`, step.name);
-            
-            step.options.forEach((option, optionIndex) => {
-              formData.append(`catalog_item_steps_attributes[${index}][catalog_item_step_options_attributes][${optionIndex}][name]`, option.name);
-            });
-          });
-        }
-      } else if (editingItem?.attributes.steps?.data?.length) {
-        editingItem.attributes.steps.data.forEach((step: any, index: number) => {
-          formData.append(`catalog_item_steps_attributes[${index}][id]`, step.id);
-          formData.append(`catalog_item_steps_attributes[${index}][_destroy]`, 'true');
         });
       }
-  
+
+      // ID para edição
       if (editingItem) {
         formData.append('id', editingItem.id);
       }
-  
-      console.log('4. FormData final:');
-      for (const [key, value] of formData.entries()) {
-        console.log(`${key}: ${value}`);
-      }
-      
+
       await onSave(formData);
-      
       onOpenChange(false);
       reset();
       setPreviewImage(null);

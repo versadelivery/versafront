@@ -17,6 +17,9 @@ import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Skeleton } from '@/components/ui/skeleton'
 import Image from 'next/image'
+import { useDelivery } from '@/app/hooks/use-delivery'
+
+type DeliveryOption = 'delivery' | 'pickup'
 
 interface CartItemWithExtras {
   id: string;
@@ -37,9 +40,10 @@ export default function CheckoutPage() {
   const storeSlug = params.slug as string
   const { isAuthenticated, isLoading: isAuthLoading } = useAuth()
   const { items, removeFromCart: removeItem, updateItemQuantity: updateQuantity, clearCart } = useCart()
+  const { deliveryConfig, neighborhoods, isLoading: isLoadingDelivery } = useDelivery()
   
   const [paymentMethod, setPaymentMethod] = useState('credit')
-  const [deliveryOption, setDeliveryOption] = useState('delivery')
+  const [deliveryOption, setDeliveryOption] = useState<DeliveryOption>('delivery')
   const [address, setAddress] = useState('')
   const [complement, setComplement] = useState('')
   const [reference, setReference] = useState('')
@@ -49,6 +53,8 @@ export default function CheckoutPage() {
   const [cartItems, setCartItems] = useState<CartItemWithExtras[]>([])
   const [isExpanded, setIsExpanded] = useState<Record<string, boolean>>({})
   const [estimatedTime, setEstimatedTime] = useState<number>(45) // Tempo estimado em minutos
+  const [selectedNeighborhood, setSelectedNeighborhood] = useState<string>('')
+  const [deliveryFee, setDeliveryFee] = useState<number>(0)
 
   useEffect(() => {
     if (isAuthLoading) return;
@@ -98,7 +104,9 @@ export default function CheckoutPage() {
 
   const calculateTotal = () => {
     const subtotal = calculateSubtotal()
-    const deliveryFee = deliveryOption === 'delivery' ? 5 : 0
+    const deliveryFee = deliveryOption === 'delivery' && selectedNeighborhood 
+      ? neighborhoods.find(n => n.id === selectedNeighborhood)?.amount || 0
+      : 0
     return subtotal + deliveryFee
   }
 
@@ -125,7 +133,7 @@ export default function CheckoutPage() {
     try {
       await new Promise(resolve => setTimeout(resolve, 1500))
       clearCart()
-      router.push(`/catalog/${storeSlug}/order-confirmation`)
+      router.push(`/catalog/${storeSlug}/checkout/order-confirmation`)
     } catch (error) {
       console.error('Erro ao enviar pedido:', error)
       setIsSubmitting(false)
@@ -212,6 +220,28 @@ export default function CheckoutPage() {
                     disabled={deliveryOption === 'pickup'}
                   />
                 </div>
+
+                {deliveryOption === 'delivery' && (
+                  <div>
+                    <Label htmlFor="neighborhood" className="mb-2 block font-medium">
+                      Bairro
+                    </Label>
+                    <select
+                      id="neighborhood"
+                      value={selectedNeighborhood}
+                      onChange={(e) => setSelectedNeighborhood(e.target.value)}
+                      className="w-full rounded-md border border-gray-200 px-3 py-2 focus:border-primary focus:ring-primary/20"
+                      disabled={deliveryOption !== 'delivery'}
+                    >
+                      <option value="">Selecione um bairro</option>
+                      {neighborhoods.map((neighborhood) => (
+                        <option key={neighborhood.id} value={neighborhood.id}>
+                          {neighborhood.name} - R$ {neighborhood.amount.toFixed(2)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -256,7 +286,7 @@ export default function CheckoutPage() {
             <CardContent className="pt-6">
               <RadioGroup 
                 value={deliveryOption} 
-                onValueChange={setDeliveryOption}
+                onValueChange={(value: string) => setDeliveryOption(value as DeliveryOption)}
                 className="grid grid-cols-2 gap-4"
               >
                 <div>
@@ -283,23 +313,9 @@ export default function CheckoutPage() {
                 </div>
               </RadioGroup>
 
-              {deliveryOption === 'delivery' && (
-                <div className="mt-6 p-4 bg-primary/5 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Timer className="h-5 w-5 text-primary" />
-                    <div>
-                      <p className="text-sm font-medium">Tempo estimado de entrega</p>
-                      <p className="text-sm text-muted-foreground">
-                        {estimatedTime} minutos
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
 
-          {/* Payment Method */}
           <Card className="overflow-hidden border-0 shadow-md hover:shadow-lg transition-shadow duration-300 bg-gradient-to-br from-white to-gray-50">
             <CardHeader className="py-4 bg-gradient-to-r from-primary/10 to-primary/5">
               <CardTitle className="flex items-center gap-2 text-primary">
@@ -517,10 +533,12 @@ export default function CheckoutPage() {
                   <span className="text-muted-foreground">Subtotal</span>
                   <span className="font-medium">R$ {calculateSubtotal().toFixed(2)}</span>
                 </div>
-                {deliveryOption === 'delivery' && (
+                {deliveryOption === 'delivery' && selectedNeighborhood && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Taxa de entrega</span>
-                    <span className="font-medium">R$ 5,00</span>
+                    <span className="font-medium">
+                      R$ {neighborhoods.find(n => n.id === selectedNeighborhood)?.amount.toFixed(2)}
+                    </span>
                   </div>
                 )}
                 <div className="flex justify-between">
