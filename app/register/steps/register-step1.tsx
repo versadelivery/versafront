@@ -1,8 +1,8 @@
 "use client";
 
-import { AuthFormInput } from "@/components/auth/auth-form-input";
-import { AuthButton } from "@/components/auth/auth-button";
-import { AuthFormFooter } from "@/components/auth/auth-form-footer";
+import { AuthFormInput } from "@/app/components/auth/auth-form-input";
+import { AuthButton } from "@/app/components/auth/auth-button";
+import { AuthFormFooter } from "@/app/components/auth/auth-form-footer";
 import { RegisterStep1Props } from "@/app/types/utils";
 
 export function RegisterStep1({ 

@@ -1,8 +1,8 @@
 "use client";
 
-import ProtectedRoute from "@/components/protected-route";
-import { Header } from "../catalog/components/catalog-header";
-import { AdminDashboardCard } from "@/components/admin/card";
+import ProtectedRoute from "@/app/components/protected-route";
+import { Header } from "../../components/catalog/catalog-header";
+import { AdminDashboardCard } from "@/app/components/admin/card";
 import { Settings, Users, Bell, Link as LinkIcon, Truck } from "lucide-react";
 
 const settingsCards = [

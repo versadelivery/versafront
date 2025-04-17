@@ -1,8 +1,8 @@
 "use client";
 
-import { Header } from "@/components/admin/header";
-import { Footer } from "@/components/footer";
-import ProtectedRoute from "@/components/protected-route";
+import { Header } from "@/app/components/admin/header";
+import { Footer } from "@/app/components/footer";
+import ProtectedRoute from "@/app/components/protected-route";
 
 export default function CatalogLayout({
   children,

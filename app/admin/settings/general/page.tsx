@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Header } from "../../catalog/components/catalog-header";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
+import { Header } from "../../../components/catalog/catalog-header";
+import { Card } from "@/app/components/ui/card";
+import { Input } from "@/app/components/ui/input";
+import { Textarea } from "@/app/components/ui/textarea";
+import { Label } from "@/app/components/ui/label";
+import { Button } from "@/app/components/ui/button";
 import { ImageIcon, Upload, MapPin, Phone, Mail, Globe } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
+import { Separator } from "@/app/components/ui/separator";
 import { useShop } from "../../../hooks/use-shop";
 import { ShopAttributes } from "@/app/services/shop";
 

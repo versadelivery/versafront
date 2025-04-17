@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { AuthLayout } from "@/components/auth/auth-layout";
-import { AuthBreadcrumb } from "@/components/auth/auth-breadcrumb";
-import { RegisterForm } from "@/components/auth/register-form";
+import { AuthLayout } from "@/app/components/auth/auth-layout";
+import { AuthBreadcrumb } from "@/app/components/auth/auth-breadcrumb";
+import { RegisterForm } from "@/app/components/auth/register-form";
 import cesta from "@/public/img/breads.png";
 import { registerShop } from "../services/auth-service";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { registerStep1Schema, registerStep2Schema, RegisterFormData } from "@/app/validations/auth-schemas";
+import { registerStep1Schema, registerStep2Schema, RegisterFormData } from "@/app/schemas/auth-schemas";
 import { z } from "zod";
 import { formatPhone } from "../utils/format-phone";
 

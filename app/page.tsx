@@ -1,13 +1,13 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@/app/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
 import logoHero from "@/public/img/logo_hero.svg"
 import meat from "@/public/img/meat_img.png"
 import bannerImg from "@/public/img/banner_image.jpg"
-import { Header } from "@/components/landing/header";
-import { Footer } from "@/components/footer";
+import { Header } from "@/app/components/landing/header";
+import { Footer } from "@/app/components/footer";
 
 export default function Home() {
 

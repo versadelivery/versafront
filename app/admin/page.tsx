@@ -1,12 +1,12 @@
 "use client";
 
-import ProtectedRoute from "@/components/protected-route";
-import { Header } from "@/components/admin/header";
-import { AdminBanner } from "@/components/admin/admin-banner";
-import { UrlCard } from "@/components/admin/url-card";
-import { Footer } from "@/components/footer";
-import { AdminDashboardCard } from "@/components/admin/card";
-import { dashboardCards } from "./config/dashboard-cards";
+import ProtectedRoute from "@/app/components/protected-route";
+import { Header } from "@/app/components/admin/header";
+import { AdminBanner } from "@/app/components/admin/admin-banner";
+import { UrlCard } from "@/app/components/admin/url-card";
+import { Footer } from "@/app/components/footer";
+import { AdminDashboardCard } from "@/app/components/admin/card";
+import { dashboardCards } from "../config/dashboard-cards";
 import bannerImg from "@/public/img/hero-admin.jpg";
 
 export default function AdminDashboard() {

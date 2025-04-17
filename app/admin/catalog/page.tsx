@@ -1,15 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import ProtectedRoute from "@/components/protected-route";
-import { Header } from "./components/catalog-header";
-import { Tabs } from "./components/tabs";
-import { ActionBar } from "./components/action-bar";
-import { ProductGroup } from "./components/product-group";
-import { GroupModal } from "./components/group-modal";
-import { NewItemModal } from "./components/item-modal/new-item-modal";
-import { CatalogTab, UICatalogGroup, UICatalogItem } from "@/app/types/catalog";
-import { StockContent } from "./components/stock-content";
+import ProtectedRoute from "@/app/components/protected-route";
+import { Header } from "../../components/catalog/catalog-header";
+import { ActionBar } from "../../components/catalog/action-bar";
+import { ProductGroup } from "../../components/catalog/product-group";
+import { GroupModal } from "../../components/catalog/group-modal";
+import { NewItemModal } from "../../components/catalog/item-modal/new-item-modal";
+import { UICatalogGroup, UICatalogItem } from "@/app/types/catalog";
 import { useGroups, useCreateGroup, useUpdateGroup, useDeleteGroup } from "@/app/hooks/use-group";
 import { useCreateItem, useDeleteItem, useUpdateItem } from "@/app/hooks/use-item";
 import { Loader2 } from "lucide-react";
@@ -19,7 +17,6 @@ import { useQueryClient } from "@tanstack/react-query";
 
 export default function CatalogPage() {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<CatalogTab>('catalog');
   const [isNewGroupOpen, setIsNewGroupOpen] = useState(false);
   const [isNewItemOpen, setIsNewItemOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<UICatalogGroup | null>(null);
@@ -88,20 +85,15 @@ export default function CatalogPage() {
     <ProtectedRoute>
       <div className="w-full px-0 sm:px-4 lg:px-6">
       <Header 
-        title={activeTab === 'catalog' ? 'CATÁLOGO' : 'ESTOQUE'}
-        description={activeTab === 'catalog' 
-          ? 'Gerencie seu catálogo, estoque e disponibilidade dos itens' 
-          : 'Controle de matéria prima e insumos'}
+        title="CATÁLOGO"
+        description="Gerencie seu catálogo, estoque e disponibilidade dos itens"
       />
         
         <div className="flex-1 overflow-hidden bg-white">
-          <Tabs activeTab={activeTab} setActiveTab={setActiveTab} />
-          
           <div className="h-full overflow-y-auto">
-            {activeTab === 'catalog' ? (
-              <div className="space-y-4">
-                <div className="w-full">
-                  <ActionBar 
+            <div className="space-y-4">
+              <div className="w-full">
+                <ActionBar 
                     onNewGroup={() => {
                       setEditingGroup(null);
                       setIsNewGroupOpen(true);
@@ -182,12 +174,9 @@ export default function CatalogPage() {
                   )}
                 </div>
               </div>
-            ) : (
-              <StockContent />
-            )}
+            </div>
           </div>
         </div>
-      </div>
     </ProtectedRoute>
   );
 }

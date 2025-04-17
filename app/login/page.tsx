@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { AuthLayout } from "@/components/auth/auth-layout";
-import { LoginForm } from "@/components/auth/login-form";
+import { AuthLayout } from "@/app/components/auth/auth-layout";
+import { LoginForm } from "@/app/components/auth/login-form";
 import cesta from "@/public/img/cesta.png";
-import { loginSchema, LoginFormData } from "@/app/validations/auth-schemas";
+import { loginSchema, LoginFormData } from "@/app/schemas/auth-schemas";
 import { useAuth } from "../hooks/use-auth";
 import { z } from "zod";
 

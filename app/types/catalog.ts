@@ -137,8 +137,6 @@ export interface CatalogData {
   data: CatalogGroup[];
 }
 
-export type CatalogTab = 'catalog' | 'stock';
-
 export interface GroupData {
   name: string;
   description: string;
