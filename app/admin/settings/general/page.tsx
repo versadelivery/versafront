@@ -85,7 +85,7 @@ export default function GeneralSettingsPage() {
       <Header 
         title="CONFIGURAÇÕES GERAIS"
         description="Configure as informações básicas do seu estabelecimento"
-        className="mb-4 -mt-12"
+        className="mb-4"
       />
       
       <div className="w-full max-w-7xl mx-auto p-0 md:p-4 lg:p-6 bg-white">

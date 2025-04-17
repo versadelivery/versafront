@@ -120,30 +120,30 @@ export function GroupModal({ isOpen, onOpenChange, editingGroup, onSave, onDelet
   return (
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !isLoading && onOpenChange(open)}>
-        <DialogContent className="w-full max-w-[95vw] p-4 sm:p-6 md:p-8 bg-white rounded-sm">
-          <DialogHeader className="mb-4">
-            <DialogTitle className="text-lg sm:text-xl md:text-2xl font-semibold">
+        <DialogContent className="font-outfit w-full max-w-[95vw] p-6 md:p-8 bg-background rounded-lg">
+          <DialogHeader className="mb-6">
+            <DialogTitle className="font-outfit text-xl md:text-2xl font-semibold">
               {editingGroup ? 'Editar grupo' : 'Novo grupo'}
             </DialogTitle>
-            <DialogDescription className="text-sm">
+            <DialogDescription className="font-outfit text-base text-muted-foreground">
               {editingGroup ? 'Atualize as informações do grupo' : 'Adicione um novo grupo ao seu catálogo'}
             </DialogDescription>
           </DialogHeader>
           
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
                 control={form.control}
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-sm font-bold text-foreground">
+                    <FormLabel className="font-outfit text-sm font-semibold text-foreground">
                       NOME DO GRUPO
                     </FormLabel>
                     <FormControl>
                       <Input 
                         placeholder="Digite o nome do grupo"
-                        className="py-4 text-sm placeholder:text-foreground/40"
+                        className="font-outfit py-4 text-base placeholder:text-muted-foreground"
                         {...field}
                       />
                     </FormControl>
@@ -157,16 +157,16 @@ export function GroupModal({ isOpen, onOpenChange, editingGroup, onSave, onDelet
                 name="priority"
                 render={({ field }) => (
                   <FormItem>
-                    <div className="flex items-center gap-1 mb-1">
-                      <FormLabel className="text-sm font-bold text-foreground">
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <FormLabel className="font-outfit text-sm font-semibold text-foreground">
                         PRIORIDADE
                       </FormLabel>
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Info className="w-4 h-4 text-foreground/60" />
+                            <Info className="w-4 h-4 text-muted-foreground" />
                           </TooltipTrigger>
-                          <TooltipContent className="max-w-[200px] text-sm">
+                          <TooltipContent className="font-outfit max-w-[200px] text-sm">
                             <p>Ordem de exibição no catálogo</p>
                           </TooltipContent>
                         </Tooltip>
@@ -178,7 +178,7 @@ export function GroupModal({ isOpen, onOpenChange, editingGroup, onSave, onDelet
                         placeholder="0" 
                         min="0" 
                         max="100"
-                        className="py-4 text-sm"
+                        className="font-outfit py-4 text-base"
                         {...field}
                         value={field.value?.toString() || ''}
                         onChange={(e) => field.onChange(Number(e.target.value))}
@@ -190,7 +190,7 @@ export function GroupModal({ isOpen, onOpenChange, editingGroup, onSave, onDelet
               />
               
               <FormItem>
-                <FormLabel className="text-sm font-bold text-foreground block mb-2">
+                <FormLabel className="font-outfit text-sm font-semibold text-foreground block mb-2">
                   IMAGEM DO GRUPO
                 </FormLabel>
                 <ImageUpload
@@ -206,13 +206,13 @@ export function GroupModal({ isOpen, onOpenChange, editingGroup, onSave, onDelet
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-sm font-bold text-foreground">
+                    <FormLabel className="font-outfit text-sm font-semibold text-foreground">
                       DESCRIÇÃO
                     </FormLabel>
                     <FormControl>
                       <Input 
                         placeholder="Digite a descrição do grupo"
-                        className="py-4 text-sm placeholder:text-foreground/40"
+                        className="font-outfit py-4 text-base placeholder:text-muted-foreground"
                         {...field}
                       />
                     </FormControl>
@@ -221,13 +221,13 @@ export function GroupModal({ isOpen, onOpenChange, editingGroup, onSave, onDelet
                 )}
               />
               
-              <div className="flex flex-col-reverse sm:flex-row justify-between gap-2 mt-4">
-                <div className="flex gap-2 w-full sm:w-auto">
+              <div className="flex flex-col-reverse sm:flex-row justify-between gap-3 mt-6">
+                <div className="flex gap-3 w-full sm:w-auto">
                   {editingGroup && onDelete && (
                     <Button 
                       variant="destructive" 
                       onClick={() => setIsDeleteDialogOpen(true)}
-                      className="rounded-xs gap-2 bg-red-500 hover:bg-red-600 w-full sm:w-auto"
+                      className="font-outfit rounded-lg gap-2 w-full sm:w-auto"
                       disabled={isLoading}
                       size="lg"
                       type="button"
@@ -240,7 +240,7 @@ export function GroupModal({ isOpen, onOpenChange, editingGroup, onSave, onDelet
                   <Button 
                     variant="outline" 
                     onClick={() => onOpenChange(false)} 
-                    className="rounded-xs border-none bg-foreground/10 w-full sm:w-auto"
+                    className="font-outfit rounded-lg border-none bg-muted hover:bg-muted/80 w-full sm:w-auto"
                     disabled={isLoading}
                     size="lg"
                     type="button"
@@ -250,17 +250,16 @@ export function GroupModal({ isOpen, onOpenChange, editingGroup, onSave, onDelet
                 </div>
                 
                 <Button 
-                  className="rounded-xs bg-primary hover:bg-primary/80 text-white border-none w-full sm:w-auto"
+                  type="submit" 
+                  className="font-outfit rounded-lg w-full sm:w-auto"
                   disabled={isLoading}
                   size="lg"
-                  type="submit"
                 >
                   {isLoading ? (
-                    <span className="flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      {editingGroup ? 'Salvando...' : 'Criando...'}
-                    </span>
-                  ) : editingGroup ? 'Salvar' : 'Criar'}
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    editingGroup ? 'Salvar alterações' : 'Criar grupo'
+                  )}
                 </Button>
               </div>
             </form>
@@ -273,7 +272,7 @@ export function GroupModal({ isOpen, onOpenChange, editingGroup, onSave, onDelet
         onOpenChange={setIsDeleteDialogOpen}
         onConfirm={handleDelete}
         isLoading={isLoading}
-        type="Item"
+        type="grupo"
       />
     </>
   );

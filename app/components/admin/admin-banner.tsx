@@ -1,20 +1,20 @@
-import Image, { StaticImageData } from "next/image";
 import { ReactNode } from "react";
 import { useShop } from "@/app/hooks/use-shop";
+import Image from "next/image";
+import { StaticImageData } from "next/image";
 
-export function AdminBanner({ 
-  bannerImg,
-  children 
-}: { 
+interface AdminBannerProps {
   bannerImg: StaticImageData;
-  children?: ReactNode 
-}) {
+  children?: ReactNode;
+}
+
+export function AdminBanner({ bannerImg, children }: AdminBannerProps) {
   const { shop } = useShop();
   const shopImage = shop?.image_url;
 
   return (
     <div className="relative">
-      <div className="h-96 w-full bg-black overflow-hidden lg:rounded-b-[80px] rounded-b-md">
+      <div className="h-96 w-full bg-background overflow-hidden lg:rounded-b-[80px] rounded-b-md">
         <Image
           src={bannerImg}
           alt="Background"
@@ -28,14 +28,13 @@ export function AdminBanner({
           <Image 
             src={shopImage}
             alt="Store Logo" 
-            className="h-32 w-32"
+            className="h-32 w-32 rounded-full object-cover"
             width={800}
             height={800}
-
           />
         ) : (
-          <div className="h-32 w-32 bg-gray-200 rounded-full flex items-center justify-center">
-            <span className="text-gray-500 text-2xl font-bold">
+          <div className="h-32 w-32 bg-muted rounded-full flex items-center justify-center">
+            <span className="text-muted-foreground text-2xl font-bold">
               {shop?.name?.charAt(0)}
             </span>
           </div>

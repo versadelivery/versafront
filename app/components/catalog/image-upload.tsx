@@ -29,7 +29,7 @@ export function ImageUpload({
     <div className="flex flex-col items-center gap-4">
       {previewImage && !hasRemovedImage && (
         <div className="relative">
-          <div className="w-32 h-32 relative rounded-xs overflow-hidden">
+          <div className="w-32 h-32 relative rounded-lg overflow-hidden border border-border">
             <Image
               src={previewImage}
               alt="Preview"
@@ -46,17 +46,17 @@ export function ImageUpload({
                 fileInputRef.current.value = '';
               }
             }}
-            className="absolute -top-2 -right-2 bg-gray-800 rounded-full p-1 w-8 h-8 flex items-center justify-center cursor-pointer"
+            className="absolute -top-2 -right-2 bg-background/80 backdrop-blur-sm rounded-full p-1.5 w-8 h-8 flex items-center justify-center cursor-pointer border border-border hover:bg-background"
           >
-            <X className="w-4 text-white" />
+            <X className="w-4 h-4 text-muted-foreground" />
           </button>
         </div>
       )}
       <div className="flex items-center justify-center w-full">
-        <label className="flex flex-col items-center justify-center w-full h-12 sm:h-14 border-2 border-gray-300 border-dashed rounded-xs cursor-pointer bg-gray-50 hover:bg-gray-100">
+        <label className="flex flex-col items-center justify-center w-full h-12 sm:h-14 border-2 border-border border-dashed rounded-lg cursor-pointer bg-muted hover:bg-muted/80 transition-colors">
           <div className="flex flex-col items-center justify-center pt-2 pb-3">
-            <Camera className="w-5 h-5 text-foreground" />
-            <span className="text-xs sm:text-sm text-foreground/60 mt-1">
+            <Camera className="w-5 h-5 text-muted-foreground" />
+            <span className="font-outfit text-sm text-muted-foreground mt-1">
               {previewImage && !hasRemovedImage ? 'Alterar imagem' : 'Adicionar imagem'}
             </span>
           </div>

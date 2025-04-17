@@ -1,27 +1,49 @@
-import { Card } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
 import { Copy, ExternalLink } from "lucide-react";
-import { useShop } from "@/app/hooks/use-shop";
+import { useState } from "react";
+import { toast } from "sonner";
 
-export function UrlCard({ url }: { url: string }) {
-  const { shop } = useShop();
-  const shopSlug = shop?.slug;
+interface UrlCardProps {
+  title?: string;
+  url: string;
+}
+
+export function UrlCard({ title, url }: UrlCardProps) {
+  const [isCopied, setIsCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(url);
+    setIsCopied(true);
+    toast.success("URL copiada com sucesso!");
+    setTimeout(() => setIsCopied(false), 2000);
+  };
 
   return (
-    <Card className="bg-white py-4 lg:px-12 px-4 mb-8 border-none rounded-lg shadow-lg flex items-center justify-center">
-      <div className="flex flex-row items-center justify-between w-full">
-        <div className="flex flex-row items-center justify-center gap-4">
-          <p className="text-sm lg:text-lg">{`${url}/${shopSlug}`}</p>
+    <div className="bg-background rounded-lg p-6 border border-border">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1">
+          <h3 className="font-outfit text-lg font-semibold mb-2">{title}</h3>
+          <p className="font-outfit text-sm text-muted-foreground break-all">{url}</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="ghost" size="icon" className="p-0 hover:bg-transparent">
-            <Copy className="h-6 w-6 text-gray-600" />
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleCopy}
+            className="text-muted-foreground hover:text-primary"
+          >
+            <Copy className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" className="p-0 hover:bg-transparent">
-            <ExternalLink className="h-6 w-6 text-gray-600" />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => window.open(url, "_blank")}
+            className="text-muted-foreground hover:text-primary"
+          >
+            <ExternalLink className="h-4 w-4" />
           </Button>
         </div>
       </div>
-    </Card>
+    </div>
   );
 }

@@ -13,7 +13,7 @@ export default function SettingsLayout({
     <ProtectedRoute>
       <div className="min-h-screen bg-white">
         <Header />
-        <main className="max-w-full mx-auto p-6 pt-48">
+        <main className="max-w-full mx-auto p-6">
           {children}
         </main>
         <Footer />

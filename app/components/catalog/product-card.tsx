@@ -19,8 +19,8 @@ export function ProductCard({ product, groupName, onEdit }: ProductCardProps) {
   
   if (!product || !product.attributes) {
     return (
-      <div className="overflow-hidden bg-[#212121]/10 rounded-xs shadow-none p-4">
-        <p className="text-red-500">Erro ao carregar produto</p>
+      <div className="overflow-hidden bg-background rounded-lg shadow-sm p-4">
+        <p className="text-destructive font-outfit">Erro ao carregar produto</p>
       </div>
     );
   }
@@ -44,10 +44,10 @@ export function ProductCard({ product, groupName, onEdit }: ProductCardProps) {
   return (
     <>
       <div 
-        className="bg-white rounded-xs shadow-sm p-4 border border-gray-100 hover:border-primary/20 transition-colors cursor-pointer"
+        className="bg-background rounded-lg shadow-sm p-4 border border-border hover:border-primary/30 transition-all duration-300 cursor-pointer hover:shadow-md"
         onClick={() => setIsDetailsModalOpen(true)}
       >
-        <div className="relative w-full aspect-square lg:h-48 bg-muted/50 hover:scale-105 duration-300">
+        <div className="relative w-full aspect-square bg-muted rounded-lg overflow-hidden group">
           {isImageLoading && (
             <Skeleton className="absolute inset-0 w-full h-full" />
           )}
@@ -57,7 +57,7 @@ export function ProductCard({ product, groupName, onEdit }: ProductCardProps) {
               alt={attributes.name || "Produto"}
               fill
               className={cn(
-                "object-cover transition-opacity duration-300",
+                "object-cover transition-all duration-300 group-hover:scale-105",
                 isImageLoading ? "opacity-0" : "opacity-100"
               )}
               onLoadingComplete={() => setIsImageLoading(false)}
@@ -75,37 +75,37 @@ export function ProductCard({ product, groupName, onEdit }: ProductCardProps) {
                 e.stopPropagation();
                 onEdit(product);
               }}
-              className="absolute top-2 right-2 bg-white/80 hover:bg-white"
+              className="absolute top-2 right-2 bg-background/80 hover:bg-background backdrop-blur-sm"
             >
               <Edit2 className="w-4 h-4" />
             </Button>
           )}
         </div>
         
-        <div className="p-3 space-y-2">
-          <div className="space-y-1">
-            <h3 className="font-semibold text-sm leading-tight break-words">{attributes.name || "Sem nome"}</h3>
+        <div className="p-3 space-y-3">
+          <div className="space-y-1.5">
+            <h3 className="font-outfit font-semibold text-base leading-tight break-words">{attributes.name || "Sem nome"}</h3>
             {attributes.description && (
-              <p className="text-xs text-muted-foreground line-clamp-2">{attributes.description}</p>
+              <p className="font-outfit text-sm text-muted-foreground line-clamp-2">{attributes.description}</p>
             )}
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             {hasDiscount ? (
               <>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Preço original</span>
-                  <span className="line-through text-muted-foreground">
+                  <span className="font-outfit text-muted-foreground">Preço original</span>
+                  <span className="font-outfit line-through text-muted-foreground">
                     R$ {originalPrice.toFixed(2)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Preço com desconto</span>
+                  <span className="font-outfit text-sm font-medium">Preço com desconto</span>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-sm font-medium text-primary">
+                    <span className="font-outfit text-sm font-semibold text-primary">
                       R$ {discountPrice.toFixed(2)}
                     </span>
-                    <span className="text-xs font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
+                    <span className="font-outfit text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
                       -{discountPercentage}%
                     </span>
                   </div>
@@ -113,23 +113,23 @@ export function ProductCard({ product, groupName, onEdit }: ProductCardProps) {
               </>
             ) : (
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Preço</span>
-                <span className="text-sm font-medium">
+                <span className="font-outfit text-sm text-muted-foreground">Preço</span>
+                <span className="font-outfit text-sm font-semibold">
                   R$ {originalPrice.toFixed(2)}
                 </span>
               </div>
             )}
           </div>
 
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <Tag className="w-3 h-3" />
-              <span>Prioridade: {attributes.priority || "0"}</span>
+          <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t border-border">
+            <div className="flex items-center gap-1.5">
+              <Tag className="w-3.5 h-3.5" />
+              <span className="font-outfit">Prioridade: {attributes.priority || "0"}</span>
             </div>
             {isWeightType && weightInfo && (
-              <div className="flex items-center gap-1">
-                <Scale className="w-3 h-3" />
-                <span>
+              <div className="flex items-center gap-1.5">
+                <Scale className="w-3.5 h-3.5" />
+                <span className="font-outfit">
                   {weightInfo.min}{weightInfo.unit} - {weightInfo.max}{weightInfo.unit}
                 </span>
               </div>

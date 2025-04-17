@@ -59,19 +59,19 @@ export function ProductGroup({ group, onEdit, onEditItem }: ProductGroupProps) {
   };
 
   return (
-    <div className="bg-white rounded-xs shadow-sm p-4 sm:p-6 border border-gray-100">
-      <div className="flex items-start justify-between mb-6">
-        <div className="flex items-start gap-4">
+    <div className="bg-background rounded-lg shadow-sm p-6 border border-border">
+      <div className="flex items-start justify-between mb-8">
+        <div className="flex items-start gap-5">
           <Button 
             variant="ghost" 
             size="icon"
             onClick={() => onEdit(group)}
-            className="text-gray-500 hover:text-primary self-center"
+            className="text-muted-foreground hover:text-primary self-center"
           >
             <Edit2 className="w-5 h-5" />
           </Button>
           {group.image && (
-            <div className="w-16 h-16 sm:w-20 sm:h-20 relative rounded-xs overflow-hidden">
+            <div className="w-20 h-20 relative rounded-lg overflow-hidden border border-border">
               <Image
                 src={group.image}
                 alt={group.name}
@@ -81,15 +81,15 @@ export function ProductGroup({ group, onEdit, onEditItem }: ProductGroupProps) {
             </div>
           )}
           <div className="flex-1">
-            <h2 className="text-xl sm:text-2xl font-bold">{group.name}</h2>
-            <p className="text-sm sm:text-base text-foreground">{group.description}</p>
-            <p className="text-sm sm:text-base text-foreground/40">Prioridade: {group.priority}</p>
+            <h2 className="font-outfit text-2xl font-bold">{group.name}</h2>
+            <p className="font-outfit text-base text-muted-foreground mt-1">{group.description}</p>
+            <p className="font-outfit text-sm text-muted-foreground mt-1">Prioridade: {group.priority}</p>
           </div>
         </div>
       </div>
       
       {group?.products && group.products.length > 0 ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {[...group.products]
             .sort((a, b) => getProductPriority(b) - getProductPriority(a))
             .map((product, index) => {
@@ -107,8 +107,8 @@ export function ProductGroup({ group, onEdit, onEditItem }: ProductGroupProps) {
             })}
         </div>
       ) : (
-        <div className="text-center py-4 text-gray-500">
-          Nenhum produto cadastrado neste grupo
+        <div className="text-center py-8 text-muted-foreground">
+          <p className="font-outfit">Nenhum produto cadastrado neste grupo</p>
         </div>
       )}
     </div>

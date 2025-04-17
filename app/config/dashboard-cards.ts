@@ -1,4 +1,4 @@
-import { ShoppingCart, Utensils, Settings, Target, BarChart3, Headset } from "lucide-react";
+import { ShoppingCart, Utensils, Settings, Target, BarChart3, Headset, BookOpen } from "lucide-react";
 
 export const dashboardCards = [
   {
@@ -10,9 +10,9 @@ export const dashboardCards = [
   },
   {
     href: "/admin/catalog",
-    icon: Utensils,
-    title: "Cardápio",
-    description: "Gerencie seu cardápio",
+    icon: BookOpen,
+    title: "Catálogo",
+    description: "Gerencie seu catálogo",
     iconBgColor: "bg-emerald-600"
   },
   {
@@ -41,7 +41,7 @@ export const dashboardCards = [
     href: "#suporte",
     icon: Headset,
     title: "Suporte",
-    description: "Área de atendimento e auxílio ao cliente",
+    description: "Área de atendimento e auxílio ao lojista",
     iconBgColor: "bg-yellow-500"
   }
 ];

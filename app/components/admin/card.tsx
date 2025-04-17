@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Card } from "@/app/components/ui/card";
 import { LucideIcon, ArrowRight, Settings } from "lucide-react";
+import { Button } from "@/app/components/ui/button";
 
 type ActionIconType = "arrow" | "settings" | "edit";
 
@@ -24,23 +25,27 @@ export function AdminDashboardCard({
   actionIcon = "arrow",
 }: AdminDashboardCardProps) {
   return (
-    <Link href={href}>
-      <Card className="bg-white rounded-sm p-12 shadow-lg border-none h-full relative">
-        <div className="absolute top-8 right-8">
-          {actionIcon === "arrow" ? (
-            <ArrowRight className="h-5 w-5 text-gray-400" />
-          ) : (
-            <Settings className="h-5 w-5 text-gray-400" />
-          )}
-        </div>
-        <div className="flex flex-col items-start text-center h-full">
-          <div className={`${iconBgColor} p-4 rounded-lg mb-4`}>
+    <Link href={href} className="block">
+      <div className="bg-background rounded-lg p-6 border border-border hover:border-primary/30 transition-all duration-300 hover:shadow-md">
+        <div className="flex items-start gap-4">
+          <div className={`p-3 rounded-lg ${iconBgColor}`}>
             <Icon className="h-8 w-8 text-white" />
           </div>
-          <h3 className="text-xl font-semibold mb-2 text-start">{title}</h3>
-          <p className="text-gray-600 text-sm text-start">{description}</p>
+          <div className="flex-1">
+            <h3 className="font-outfit text-lg font-semibold mb-2">{title}</h3>
+            <p className="font-outfit text-sm text-muted-foreground mb-4">{description}</p>
+            <Button 
+              variant="ghost" 
+              className="font-outfit text-primary hover:text-primary/80 p-0 h-auto"
+            >
+              <span className="flex items-center gap-1">
+                Acessar
+                <ArrowRight className="w-4 h-4" />
+              </span>
+            </Button>
+          </div>
         </div>
-      </Card>
+      </div>
     </Link>
   );
 }

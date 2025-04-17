@@ -29,19 +29,22 @@ export function DeleteConfirmation({
 }: DeleteConfirmationProps) {
   return (
     <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
+      <AlertDialogContent className="font-outfit">
         <AlertDialogHeader>
-          <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-          <AlertDialogDescription>
+          <AlertDialogTitle className="font-outfit text-xl">Confirmar exclusão</AlertDialogTitle>
+          <AlertDialogDescription className="font-outfit text-base text-muted-foreground">
             Tem certeza que deseja excluir este {type}? Esta ação não pode ser desfeita.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel className="border-none bg-foreground/10" disabled={isLoading}>
+          <AlertDialogCancel 
+            className="font-outfit border-none bg-muted hover:bg-muted/80" 
+            disabled={isLoading}
+          >
             Cancelar
           </AlertDialogCancel>
           <AlertDialogAction 
-            className="bg-red-500 hover:bg-red-600" 
+            className="font-outfit bg-destructive hover:bg-destructive/90 text-destructive-foreground" 
             onClick={onConfirm} 
             disabled={isLoading}
           >

@@ -8,8 +8,10 @@ import { Footer } from "@/app/components/footer";
 import { AdminDashboardCard } from "@/app/components/admin/card";
 import { dashboardCards } from "../config/dashboard-cards";
 import bannerImg from "@/public/img/hero-admin.jpg";
-
+import { useShop } from "@/app/hooks/use-shop";
 export default function AdminDashboard() {
+  const { shop } = useShop();
+
   return (
     <ProtectedRoute>
       <main className="min-h-screen bg-[#f5f5f5]">
@@ -18,7 +20,7 @@ export default function AdminDashboard() {
           <AdminBanner bannerImg={bannerImg}/>
 
         <div className="max-w-2xl mx-auto px-4 -mt-10 z-20 relative border-none">
-          <UrlCard url="www.versadelivery.com.br" />
+          <UrlCard url={`https://versadelivery.com.br/${shop?.slug}`} />
         </div>
 
         <div className="max-w-full mx-auto p-12">

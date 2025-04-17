@@ -646,7 +646,7 @@ export function NewItemModal({ isOpen, onOpenChange, groups = [], onSave, editin
                   )}
                 />
 
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                <FormItem className="flex flex-row items-center justify-between rounded-lg p-4 bg-muted/40">
                   <div className="space-y-0.5">
                     <FormLabel className="text-base">O produto está com desconto?</FormLabel>
                   </div>
@@ -699,7 +699,7 @@ export function NewItemModal({ isOpen, onOpenChange, groups = [], onSave, editin
               <div className="space-y-4">
                 <h3 className="text-sm font-bold text-foreground">ADICIONAIS E MODOS DE PREPARO</h3>
 
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                <FormItem className="flex flex-row items-center justify-between rounded-lg p-4 bg-muted/40">
                   <div className="space-y-0.5">
                     <FormLabel className="text-base">O produto tem adicionais?</FormLabel>
                   </div>
@@ -757,7 +757,7 @@ export function NewItemModal({ isOpen, onOpenChange, groups = [], onSave, editin
                   </div>
                 )}
 
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                <FormItem className="flex flex-row items-center justify-between rounded-lg p-4 bg-muted/40">
                   <div className="space-y-0.5">
                     <FormLabel className="text-base">O produto tem modos de preparo?</FormLabel>
                   </div>
@@ -805,7 +805,7 @@ export function NewItemModal({ isOpen, onOpenChange, groups = [], onSave, editin
               <div className="space-y-4">
                 <h3 className="text-sm font-bold text-foreground">ETAPAS DO ITEM</h3>
 
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                <FormItem className="flex flex-row items-center justify-between rounded-lg p-4 bg-muted/40">
                   <div className="space-y-0.5">
                     <FormLabel className="text-base">O item tem etapas?</FormLabel>
                   </div>
@@ -820,7 +820,7 @@ export function NewItemModal({ isOpen, onOpenChange, groups = [], onSave, editin
                 {hasSteps && (
                   <div className="space-y-4">
                     {steps.map((step, stepIndex) => (
-                      <div key={stepIndex} className="space-y-3 border border-gray-200 rounded-lg p-4 bg-gray-50">
+                      <div key={stepIndex} className="space-y-3 border border-gray-200 rounded-lg p-4 bg-muted/40">
                         <div className="flex gap-2 items-start">
                           <div className="flex-1 space-y-1">
                             <label className="text-sm font-medium text-gray-700">Nome da etapa</label>

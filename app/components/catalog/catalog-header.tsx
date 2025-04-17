@@ -10,13 +10,16 @@ interface HeaderProps {
 export function Header({ title, description, className }: HeaderProps) {
   return (
     <>
-      <div className={`flex items-center gap-4 mb-2 ${className}`}>
-        <Link href="/admin" className="text-gray-500 hover:text-primary transition-colors cursor-pointer">
+      <div className={`flex items-center gap-4 mb-3 ${className}`}>
+        <Link 
+          href="/admin" 
+          className="text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+        >
           <ArrowLeft className="w-6 h-6" />
         </Link>
-        <h1 className="text-2xl font-bold">{title}</h1>
+        <h1 className="font-outfit text-2xl font-bold">{title}</h1>
       </div>
-      <p className="text-gray-500 mb-6 sm:mb-8">{description}</p>
+      <p className="font-outfit text-base text-muted-foreground mb-8">{description}</p>
     </>
   );
 }

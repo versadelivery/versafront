@@ -174,7 +174,7 @@ export default function DeliverySettingsPage() {
       <Header
         title="CONFIGURAÇÕES DE ENTREGA"
         description="Configure as taxas e regras de entrega do seu estabelecimento"
-        className="mb-4 -mt-12"
+        className="mb-4"
       />
 
       <div className="w-full max-w-7xl mx-auto p-0 md:p-4 lg:p-6 bg-white">
