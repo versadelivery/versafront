@@ -49,7 +49,7 @@ export default function CartDrawer({ isCartOpen, setIsCartOpen, cartItems, allIt
     
     if (isAuthenticated) {
       setIsCartOpen(false);
-      router.push(`/catalog/${slug}/checkout`);
+      router.push(`/${slug}/checkout`);
     } else {
       setIsCartOpen(false);
     }

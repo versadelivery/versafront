@@ -3,7 +3,7 @@
 import ProtectedRoute from "@/app/components/protected-route";
 import { Header } from "../../components/catalog/catalog-header";
 import { AdminDashboardCard } from "@/app/components/admin/card";
-import { Settings, Users, Bell, Link as LinkIcon, Truck } from "lucide-react";
+import { Settings, Users, Bell, Link as LinkIcon, Truck, CreditCard } from "lucide-react";
 
 const settingsCards = [
   {
@@ -26,6 +26,13 @@ const settingsCards = [
     title: "Taxas de Entrega",
     description: "Configure a taxa de entrega e as zonas de entrega",
     iconBgColor: "bg-red-500"
+  },
+  {
+    href: "/admin/settings/payment",
+    icon: CreditCard,
+    title: "Meios de Pagamento",
+    description: "Configure os meios de pagamento disponíveis",
+    iconBgColor: "bg-purple-500"
   },
 ];
 

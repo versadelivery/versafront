@@ -11,12 +11,12 @@ import { ScrollArea } from '@/app/components/ui/scroll-area'
 import { Tabs, TabsList, TabsTrigger } from '@/app/components/ui/tabs'
 import { Button } from '@/app/components/ui/button'
 import { AuthModal } from '@/app/components/client-auth/(auth)/auth-modal'
-import CartDrawer from '../../../components/client-catalog/cart-drawer'
+import CartDrawer from '../../components/client-catalog/cart-drawer'
 import { useCatalog } from '@/app/hooks/use-catalog'
 import logoHeader from "@/public/img/logo.svg";
 import { Group, Item } from '@/app/types/client-catalog'
 import Image from 'next/image'
-import { useCart } from '../../../contexts/CartContext'
+import { useCart } from '../../contexts/CartContext'
 import { useAuth } from '@/app/hooks/useClientAuth'
 
 export default function CatalogPage() {
@@ -168,7 +168,7 @@ const addToCart = (productId: string, options?: any) => {
     }
     
     if (isAuthenticated) {
-      router.push(`/catalog/${slug}/checkout`);
+      router.push(`/${slug}/checkout`);
     } else {
       setIsAuthModalOpen(true);
     }

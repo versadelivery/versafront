@@ -8,7 +8,7 @@ import { Label } from '@/app/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/app/components/ui/card'
 import { Separator } from '@/app/components/ui/separator'
 import { Badge } from '@/app/components/ui/badge'
-import { useCart } from '../../../../hooks/useCart'
+import { useCart } from '../../../hooks/useCart'
 import { useParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/app/hooks/useClientAuth'
 import { useState, useEffect } from 'react'
@@ -60,7 +60,7 @@ export default function CheckoutPage() {
     if (isAuthLoading) return;
     
     if (!isAuthenticated) {
-      router.push(`/catalog/${storeSlug}`)
+      router.push(`/${storeSlug}`)
       return
     }
 
@@ -130,10 +130,29 @@ export default function CheckoutPage() {
   const handleSubmitOrder = async () => {
     setIsSubmitting(true)
     
+    const orderData = {
+      items: cartItems,
+      deliveryOption,
+      address: deliveryOption === 'delivery' ? {
+        street: address,
+        complement,
+        reference,
+        neighborhood: selectedNeighborhood
+      } : null,
+      paymentMethod,
+      changeFor: paymentMethod === 'cash' ? changeFor : null,
+      total: calculateTotal(),
+      subtotal: calculateSubtotal(),
+      deliveryFee: deliveryOption === 'delivery' ? neighborhoods.find(n => n.id === selectedNeighborhood)?.amount || 0 : 0,
+      estimatedTime: deliveryOption === 'delivery' ? estimatedTime : 20
+    }
+
+    console.log('Dados do pedido:', orderData)
+    
     try {
       await new Promise(resolve => setTimeout(resolve, 1500))
       clearCart()
-      router.push(`/catalog/${storeSlug}/checkout/order-confirmation`)
+      router.push(`/${storeSlug}/checkout/order-confirmation`)
     } catch (error) {
       console.error('Erro ao enviar pedido:', error)
       setIsSubmitting(false)
@@ -181,7 +200,7 @@ export default function CheckoutPage() {
             Volte ao cardápio para começar seu pedido.
           </p>
           <Button 
-            onClick={() => router.push(`/catalog/${storeSlug}`)}
+            onClick={() => router.push(`/${storeSlug}`)}
             className="gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -197,84 +216,6 @@ export default function CheckoutPage() {
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Left Column - Order Details */}
         <div className="lg:w-2/3 space-y-6">
-          {/* Delivery Address */}
-          <Card className="overflow-hidden border-0 shadow-md hover:shadow-lg transition-shadow duration-300 bg-gradient-to-br from-white to-gray-50">
-            <CardHeader className="py-4 bg-gradient-to-r from-primary/10 to-primary/5">
-              <CardTitle className="flex items-center gap-2 text-primary">
-                <MapPin className="h-5 w-5" />
-                <span>Endereço de entrega</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="address" className="mb-2 block font-medium">
-                    Endereço completo
-                  </Label>
-                  <Input
-                    id="address"
-                    placeholder="Rua, número, bairro"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    className="border-gray-200 focus:border-primary focus:ring-primary/20"
-                    disabled={deliveryOption === 'pickup'}
-                  />
-                </div>
-
-                {deliveryOption === 'delivery' && (
-                  <div>
-                    <Label htmlFor="neighborhood" className="mb-2 block font-medium">
-                      Bairro
-                    </Label>
-                    <select
-                      id="neighborhood"
-                      value={selectedNeighborhood}
-                      onChange={(e) => setSelectedNeighborhood(e.target.value)}
-                      className="w-full rounded-md border border-gray-200 px-3 py-2 focus:border-primary focus:ring-primary/20"
-                      disabled={deliveryOption !== 'delivery'}
-                    >
-                      <option value="">Selecione um bairro</option>
-                      {neighborhoods.map((neighborhood) => (
-                        <option key={neighborhood.id} value={neighborhood.id}>
-                          {neighborhood.name} - R$ {neighborhood.amount.toFixed(2)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="complement" className="mb-2 block font-medium">
-                      Complemento
-                    </Label>
-                    <Input
-                      id="complement"
-                      placeholder="Apartamento, bloco, etc."
-                      value={complement}
-                      onChange={(e) => setComplement(e.target.value)}
-                      className="border-gray-200 focus:border-primary focus:ring-primary/20"
-                      disabled={deliveryOption === 'pickup'}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="reference" className="mb-2 block font-medium">
-                      Ponto de referência
-                    </Label>
-                    <Input
-                      id="reference"
-                      placeholder="Ex: Próximo ao mercado"
-                      value={reference}
-                      onChange={(e) => setReference(e.target.value)}
-                      className="border-gray-200 focus:border-primary focus:ring-primary/20"
-                      disabled={deliveryOption === 'pickup'}
-                    />
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Delivery Options */}
           <Card className="overflow-hidden border-0 shadow-md hover:shadow-lg transition-shadow duration-300 bg-gradient-to-br from-white to-gray-50">
             <CardHeader className="py-4 bg-gradient-to-r from-primary/10 to-primary/5">
@@ -297,7 +238,14 @@ export default function CheckoutPage() {
                   >
                     <Truck className="h-6 w-6 mb-2 text-primary" />
                     <span>Entrega</span>
-                    <span className="text-sm text-muted-foreground">Taxa: R$ 5,00</span>
+                    <span className="text-sm text-muted-foreground">
+                      {deliveryConfig?.delivery_fee_kind === 'fixed' 
+                        ? `Taxa: R$ ${deliveryConfig.amount.toFixed(2).replace('.', ',')}`
+                        : deliveryConfig?.delivery_fee_kind === 'per_neighborhood'
+                          ? 'Taxa por bairro'
+                          : 'Taxa a combinar'
+                      }
+                    </span>
                   </Label>
                 </div>
                 <div>
@@ -315,6 +263,92 @@ export default function CheckoutPage() {
 
             </CardContent>
           </Card>
+
+          {/* Delivery Address */}
+          {deliveryOption !== 'pickup' && (
+            <Card className="overflow-hidden border-0 shadow-md hover:shadow-lg transition-shadow duration-300 bg-gradient-to-br from-white to-gray-50">
+              <CardHeader className="py-4 bg-gradient-to-r from-primary/10 to-primary/5">
+                <CardTitle className="flex items-center gap-2 text-primary">
+                  <MapPin className="h-5 w-5" />
+                  <span>Endereço de entrega</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="address" className="mb-2 block font-medium">
+                      Endereço completo
+                    </Label>
+                    <Input
+                      id="address"
+                      placeholder="Rua, número, bairro"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      className="border-gray-200 focus:border-primary focus:ring-primary/20"
+                    />
+                  </div>
+
+                    <div>
+                      <Label htmlFor="neighborhood" className="mb-2 block font-medium">
+                        Bairro
+                      </Label>
+                      {deliveryConfig?.delivery_fee_kind === 'per_neighborhood' ? (
+                        <select
+                          id="neighborhood"
+                          value={selectedNeighborhood}
+                          onChange={(e) => setSelectedNeighborhood(e.target.value)}
+                          className="w-full rounded-md border border-gray-200 px-3 py-2 focus:border-primary focus:ring-primary/20"
+                          disabled={deliveryOption !== 'delivery'}
+                        >
+                          <option value="">Selecione um bairro</option>
+                          {neighborhoods.map((neighborhood) => (
+                            <option key={neighborhood.id} value={neighborhood.id}>
+                              {neighborhood.name} - R$ {neighborhood.amount.toFixed(2).replace('.', ',')}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <Input
+                          id="neighborhood"
+                          placeholder="Digite o bairro"
+                          value={selectedNeighborhood}
+                          onChange={(e) => setSelectedNeighborhood(e.target.value)}
+                          className="w-full rounded-md border border-gray-200 px-3 py-2 focus:border-primary focus:ring-primary/20"
+                          disabled={deliveryOption !== 'delivery'}
+                        />
+                      )}
+                    </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="complement" className="mb-2 block font-medium">
+                        Complemento
+                      </Label>
+                      <Input
+                        id="complement"
+                        placeholder="Apartamento, bloco, etc."
+                        value={complement}
+                        onChange={(e) => setComplement(e.target.value)}
+                        className="border-gray-200 focus:border-primary focus:ring-primary/20"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="reference" className="mb-2 block font-medium">
+                        Ponto de referência
+                      </Label>
+                      <Input
+                        id="reference"
+                        placeholder="Ex: Próximo ao mercado"
+                        value={reference}
+                        onChange={(e) => setReference(e.target.value)}
+                        className="border-gray-200 focus:border-primary focus:ring-primary/20"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <Card className="overflow-hidden border-0 shadow-md hover:shadow-lg transition-shadow duration-300 bg-gradient-to-br from-white to-gray-50">
             <CardHeader className="py-4 bg-gradient-to-r from-primary/10 to-primary/5">
@@ -438,11 +472,11 @@ export default function CheckoutPage() {
                       <p className="text-sm text-muted-foreground">
                         {item.priceWithDiscount ? (
                           <>
-                            <span className="text-primary font-medium">R$ {item.priceWithDiscount.toFixed(2)}</span>
-                            <span className="line-through text-xs ml-2">R$ {item.price.toFixed(2)}</span>
+                            <span className="text-primary font-medium">R$ {item.priceWithDiscount.toFixed(2).replace('.', ',')}</span>
+                            <span className="line-through text-xs ml-2">R$ {item.price.toFixed(2).replace('.', ',')}</span>
                           </>
                         ) : (
-                          <span className="font-medium">R$ {item.price.toFixed(2)}</span>
+                          <span className="font-medium">R$ {item.price.toFixed(2).replace('.', ',')}</span>
                         )}
                       </p>
                       
@@ -531,30 +565,39 @@ export default function CheckoutPage() {
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span className="font-medium">R$ {calculateSubtotal().toFixed(2)}</span>
+                  <span className="font-medium">R$ {calculateSubtotal().toFixed(2).replace('.', ',')}</span>
                 </div>
                 {deliveryOption === 'delivery' && selectedNeighborhood && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Taxa de entrega</span>
                     <span className="font-medium">
-                      R$ {neighborhoods.find(n => n.id === selectedNeighborhood)?.amount.toFixed(2)}
+                      R$ {neighborhoods.find(n => n.id === selectedNeighborhood)?.amount.toFixed(2).replace('.', ',')}
                     </span>
                   </div>
                 )}
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Descontos</span>
-                  <span className="text-green-500 font-medium">- R$ 0,00</span>
-                </div>
+                {cartItems.some(item => item.priceWithDiscount) && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Descontos</span>
+                    <span className="text-green-500 font-medium">
+                      - R$ {cartItems.reduce((sum, item) => {
+                        if (item.priceWithDiscount) {
+                          return sum + ((item.price - item.priceWithDiscount) * item.quantity);
+                        }
+                        return sum;
+                      }, 0).toFixed(2).replace('.', ',')}
+                    </span>
+                  </div>
+                )}
               </div>
               
               <Separator className="my-4" />
               
               <div className="flex justify-between font-medium text-lg">
                 <span>Total</span>
-                <span className="text-primary">R$ {calculateTotal().toFixed(2)}</span>
+                <span className="text-primary">R$ {calculateTotal().toFixed(2).replace('.', ',')}</span>
               </div>
               
-              <div className="text-sm text-muted-foreground bg-gray-50 p-3 rounded-lg">
+              {/* <div className="text-sm text-muted-foreground bg-gray-50 p-3 rounded-lg">
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-primary" />
                   <span>
@@ -564,7 +607,7 @@ export default function CheckoutPage() {
                     </span>
                   </span>
                 </div>
-              </div>
+              </div> */}
             </CardContent>
             <CardFooter className="pt-4">
               <Button 
