@@ -278,76 +278,68 @@ export function NewItemModal({ isOpen, onOpenChange, groups = [], onSave, editin
   };
 
   const onSubmit = async (data: ItemFormValues) => {
+    const formData = new FormData();
+    
+    // Adiciona os campos básicos
+    formData.append('name', data.name);
+    formData.append('description', data.description || '');
+    formData.append('catalog_group_id', data.catalog_group_id);
+    formData.append('price', data.price.toString());
+    formData.append('priority', data.priority.toString());
+    formData.append('item_type', data.item_type);
+    
+    if (data.item_type === 'weight') {
+      formData.append('unit_of_measurement', data.unit_of_measurement || 'kg');
+      formData.append('min_weight', data.min_weight?.toString() || '0');
+      formData.append('max_weight', data.max_weight?.toString() || '0');
+      formData.append('measure_interval', data.measure_interval?.toString() || '0');
+    }
+    
+    if (data.price_with_discount) {
+      formData.append('price_with_discount', data.price_with_discount);
+    }
+    
+    if (data.image) {
+      formData.append('image', data.image);
+    }
+    
+    if (data.removeImage) {
+      formData.append('remove_image', 'true');
+    }
+    
+    // Adiciona os extras
+    if (hasExtras && extras.length > 0) {
+      formData.append('has_extras', 'true');
+      extras.forEach((extra, index) => {
+        formData.append(`catalog_item_extras_attributes[${index}][name]`, extra.name);
+        formData.append(`catalog_item_extras_attributes[${index}][price]`, extra.price.toString());
+      });
+    }
+    
+    // Adiciona os métodos de preparo
+    if (hasPrepareMethods && prepareMethods.length > 0) {
+      formData.append('has_prepare_methods', 'true');
+      prepareMethods.forEach((method, index) => {
+        formData.append(`catalog_item_prepare_methods_attributes[${index}][name]`, method.name);
+      });
+    }
+    
+    // Adiciona as etapas
+    if (hasSteps && steps.length > 0) {
+      formData.append('has_steps', 'true');
+      steps.forEach((step, stepIndex) => {
+        formData.append(`catalog_item_steps_attributes[${stepIndex}][name]`, step.name);
+        step.options.forEach((option, optionIndex) => {
+          formData.append(`catalog_item_steps_attributes[${stepIndex}][options_attributes][${optionIndex}][name]`, option.name);
+        });
+      });
+    }
+    
     try {
-      const formData = new FormData();
-      
-      // Dados básicos
-      formData.append('name', data.name);
-      formData.append('description', data.description || '');
-      formData.append('catalog_group_id', data.catalog_group_id);
-      formData.append('item_type', data.item_type);
-      
-      // Tratamento de valores numéricos
-      formData.append('price', parseFloat(data.price.toString()).toString());
-      formData.append('priority', parseInt(data.priority.toString()).toString());
-      
-      // Preço com desconto
-      if (hasDiscount && data.price_with_discount) {
-        formData.append('price_with_discount', parseFloat(data.price_with_discount.toString()).toString());
-      }
-
-      // Dados de peso
-      if (data.item_type === 'weight') {
-        formData.append('unit_of_measurement', data.unit_of_measurement || 'kg');
-        if (data.min_weight) formData.append('min_weight', parseFloat(data.min_weight.toString()).toString());
-        if (data.max_weight) formData.append('max_weight', parseFloat(data.max_weight.toString()).toString());
-        if (data.measure_interval) formData.append('measure_interval', parseFloat(data.measure_interval.toString()).toString());
-      }
-
-      // Imagem
-      if (data.image) {
-        formData.append('image', data.image);
-      } else if (data.removeImage) {
-        formData.append('remove_image', 'true');
-      }
-
-      // Extras
-      if (hasExtras && extras.length > 0) {
-        extras.forEach((extra, index) => {
-          formData.append(`catalog_item_extras_attributes[${index}][name]`, extra.name);
-          formData.append(`catalog_item_extras_attributes[${index}][price]`, parseFloat(extra.price.toString()).toString());
-        });
-      }
-
-      // Métodos de preparo
-      if (hasPrepareMethods && prepareMethods.length > 0) {
-        prepareMethods.forEach((method, index) => {
-          formData.append(`catalog_item_prepare_methods_attributes[${index}][name]`, method.name);
-        });
-      }
-
-      // Passos
-      if (hasSteps && steps.length > 0) {
-        steps.forEach((step, index) => {
-          formData.append(`catalog_item_steps_attributes[${index}][name]`, step.name);
-          step.options.forEach((option, optionIndex) => {
-            formData.append(`catalog_item_steps_attributes[${index}][catalog_item_step_options_attributes[${optionIndex}][name]`, option.name);
-          });
-        });
-      }
-
-      // ID para edição
-      if (editingItem) {
-        formData.append('id', editingItem.id);
-      }
-
       await onSave(formData);
-      onOpenChange(false);
-      reset();
-      setPreviewImage(null);
     } catch (error) {
       console.error('Erro ao salvar item:', error);
-      toast.error("Erro ao salvar item");
+      toast.error('Erro ao salvar item');
     }
   };
 
@@ -376,7 +368,7 @@ export function NewItemModal({ isOpen, onOpenChange, groups = [], onSave, editin
   return (
     <>
       <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-        <DialogContent className="w-full h-full sm:h-auto max-w-[95vw] sm:max-w-[800px] p-4 sm:p-6 md:p-8 bg-white rounded-sm max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-full h-full sm:h-auto max-w-[95vw] sm:max-w-[1200px] p-4 sm:p-6 md:p-8 bg-white rounded-sm max-h-[90vh] overflow-y-auto">
           <DialogHeader className="mb-4">
             <DialogTitle className="text-lg sm:text-xl md:text-2xl font-semibold">
               {editingItem ? 'Editar item' : 'Novo item'}

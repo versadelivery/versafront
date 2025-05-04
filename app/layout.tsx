@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { Outfit } from "next/font/google";
+import { Montserrat } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 import { Toaster } from "sonner";
 import { Providers } from "./providers";
 
-const outfit = Outfit({
-  variable: "--font-outfit",
+const montserrat = Montserrat({
+  variable: "--font-montserrat",
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
 });
@@ -61,7 +61,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${outfit.variable} ${antarcticanMono.variable} antialiased bg-white`}
+        className={`${montserrat.variable} ${antarcticanMono.variable} antialiased bg-white`}
       >
         <Toaster position="top-center" />
         <Providers>

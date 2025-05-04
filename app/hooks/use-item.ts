@@ -47,14 +47,17 @@ export function useUpdateItem() {
       const processedFormData = new FormData();
       
       for (const [key, value] of formData.entries()) {
-        processedFormData.append(key, value);
+        if (key.startsWith('catalog_item_steps_attributes')) {
+          processedFormData.append(key, value);
+        } else {
+          processedFormData.append(key, value);
+        }
       }
       
-      console.log('FormData processado:', Object.fromEntries(processedFormData.entries()));
       return await updateCatalogItem({ id, formData: processedFormData });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['catalog-items'] });
+      queryClient.invalidateQueries({ queryKey: ['catalog-groups'] });
     },
     onError: (error) => {
       if (axios.isAxiosError(error)) {

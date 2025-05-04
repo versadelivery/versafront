@@ -1,182 +1,90 @@
-"use client";
-
-import { useState } from "react";
-import ProtectedRoute from "@/app/components/protected-route";
+"use client"
+import ProtectedRoute from "@/app/components/protected-route"
 import { Header } from "../../components/catalog/catalog-header";
-import { ActionBar } from "../../components/catalog/action-bar";
-import { ProductGroup } from "../../components/catalog/product-group";
-import { GroupModal } from "../../components/catalog/group-modal";
-import { NewItemModal } from "../../components/catalog/item-modal/new-item-modal";
-import { UICatalogGroup, UICatalogItem } from "@/app/types/catalog";
-import { useGroups, useCreateGroup, useUpdateGroup, useDeleteGroup } from "@/app/hooks/use-group";
-import { useCreateItem, useDeleteItem, useUpdateItem } from "@/app/hooks/use-item";
-import { Loader2 } from "lucide-react";
-import { GroupFormValues } from "@/app/schemas/group-schema";
-import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import GroupModal from "./group-modal";
+import { NewItemModal } from "./item-modal";
+import { ActionBar } from "@/app/admin/catalog/action-bar";
+import { useCatalogGroup } from "./useCatalogGroup";
+import { ItemCard } from "@/app/components/catalog/item-card";
 
-export default function CatalogPage() {
-  const queryClient = useQueryClient();
-  const [isNewGroupOpen, setIsNewGroupOpen] = useState(false);
-  const [isNewItemOpen, setIsNewItemOpen] = useState(false);
-  const [editingGroup, setEditingGroup] = useState<UICatalogGroup | null>(null);
-  const [editingItem, setEditingItem] = useState<UICatalogItem | null>(null);
-  
-  const { data: groups = [], isLoading, error } = useGroups();
-  
-  const createGroupMutation = useCreateGroup();
-  const updateGroupMutation = useUpdateGroup();
-  const deleteGroupMutation = useDeleteGroup();
-  const createItemMutation = useCreateItem();
-  const updateItemMutation = useUpdateItem();
-  const deleteItemMutation = useDeleteItem();
+interface CatalogResponse {
+  data: {
+    id: string;
+    type: string;
+    attributes: {
+      name: string;
+      description: string;
+      priority: number;
+      image_url: string | null;
+      items: {
+        data: {
+          id: string;
+          type: string;
+          attributes: {
+            name: string;
+            description: string;
+            item_type: string;
+            unit_of_measurement: string | null;
+            price: number;
+            price_with_discount: number | null;
+            measure_interval: number | null;
+            min_weight: number | null;
+            max_weight: number | null;
+            priority: number;
+            image_url: string | null;
+          };
+        };
+      }[];
+    };
+  }[];
+}
 
-  const handleSaveGroup = async (values: GroupFormValues) => {
-    const formData = new FormData();
-    formData.append('name', values.name);
-    formData.append('description', values.description || '');
-    formData.append('priority', values.priority.toString());
+function CatalogPage() {
+  const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
+  const [isItemModalOpen, setIsItemModalOpen] = useState(false);
+  const { getCatalog } = useCatalogGroup();
 
-    if (values.removeImage) {
-      formData.append('image', '');
-    } else if (values.image) {
-      formData.append('image', values.image);
-    } else if (editingGroup?.image) {
-      formData.append('image_url', editingGroup.image);
-    }
-    if (editingGroup) {
-      await updateGroupMutation.mutateAsync({ id: editingGroup.id, formData });
-    } else {
-      await createGroupMutation.mutateAsync(formData as never);
-    }
-    queryClient.invalidateQueries({ queryKey: ['catalog-groups'] });
-  };
-
-  const handleDeleteGroup = async (id: string) => {
-    await deleteGroupMutation.mutateAsync(id);
-    queryClient.invalidateQueries({ queryKey: ['catalog-groups'] });
-  };
-
-  const handleDeleteItem = async (id: string) => {
-    await deleteItemMutation.mutateAsync(id);
-    queryClient.invalidateQueries({ queryKey: ['catalog-groups'] });
-  };
-
-  const handleItemModalClose = (success: boolean) => {
-    setIsNewItemOpen(false);
-    setEditingItem(null);
-    if (success) {
-      queryClient.invalidateQueries({ queryKey: ['catalog-groups'] });
-      toast.success(editingItem ? "Item atualizado com sucesso!" : "Item criado com sucesso!");
-    }
-  };
-
-  const handleOpenNewItemModal = () => {
-    setEditingItem(null); 
-    setIsNewItemOpen(true);
-  };
-
-  const handleOpenEditItemModal = (item: UICatalogItem) => {
-    setEditingItem(item);
-    setIsNewItemOpen(true);
-  };
+  useEffect(() => {
+    console.log(getCatalog);
+  }, [getCatalog]);
 
   return (
     <ProtectedRoute>
-      <div className="w-full px-0 sm:px-4 lg:px-6">
-      <Header 
-        title="CATÁLOGO"
-        description="Gerencie seu catálogo, estoque e disponibilidade dos itens"
-      />
-        
-        <div className="flex-1 overflow-hidden bg-white">
-          <div className="h-full overflow-y-auto">
-            <div className="space-y-4">
-              <div className="w-full">
-                <ActionBar 
-                    onNewGroup={() => {
-                      setEditingGroup(null);
-                      setIsNewGroupOpen(true);
-                    }}
-                    onNewItem={handleOpenNewItemModal}
-                  />
-                  
-                  <NewItemModal 
-                    isOpen={isNewItemOpen} 
-                    onOpenChange={(open) => {
-                      if (!open) {
-                        handleItemModalClose(false);
-                      }
-                    }}
-                    groups={groups}
-                    editingItem={editingItem}
-                    onDelete={handleDeleteItem}
-                    onSave={async (formData) => {
-                      try {
-                        if (editingItem) {
-                          await updateItemMutation.mutateAsync({ id: editingItem.id, formData });
-                          handleItemModalClose(true);
-                        } else {
-                          await createItemMutation.mutateAsync(formData);
-                          handleItemModalClose(true);
-                        }
-                      } catch (error) {
-                        toast.error("Erro ao salvar item");
-                      }
-                    }}
-                  />
-
-                  <GroupModal
-                    isOpen={isNewGroupOpen}
-                    onOpenChange={(open) => {
-                      if (!open) {
-                        setIsNewGroupOpen(false);
-                        setEditingGroup(null);
-                      } else {
-                        setIsNewGroupOpen(true);
-                      }
-                    }}
-                    editingGroup={editingGroup}
-                    onSave={handleSaveGroup}
-                    onDelete={handleDeleteGroup}
-                  />
-
-                  {isLoading ? (
-                    <div className="flex items-center justify-center h-32">
-                      <Loader2 className="w-8 h-8 animate-spin" />
-                    </div>
-                  ) : error ? (
-                    <div className="flex items-center justify-center h-32">
-                      <p className="text-red-500">Erro ao carregar grupos</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {[...groups]
-                        .sort((a, b) => b.priority - a.priority)
-                        .map((group) => {
-                          if (!group || !group.products) {
-                            return null;
-                          }
-                          
-                          return (
-                            <ProductGroup 
-                              key={group.id} 
-                              group={group} 
-                              onEdit={(group) => {
-                                setEditingGroup(group);
-                                setIsNewGroupOpen(true);
-                              }}
-                              onEditItem={handleOpenEditItemModal}
-                            />
-                          );
-                        })}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+      <div className="w-full px-0 sm:px-4 lg:px-6 h-screen">
+          <Header 
+            title="CATÁLOGO"
+            description="Gerencie seu catálogo, estoque e disponibilidade dos itens"
+          />
+          <ActionBar onNewGroup={() => setIsGroupModalOpen(true)} onNewItem={() => setIsItemModalOpen(true)} />
+          <GroupModal isOpen={isGroupModalOpen} onOpenChange={setIsGroupModalOpen} />
+          <NewItemModal isOpen={isItemModalOpen} onOpenChange={setIsItemModalOpen} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {(getCatalog as unknown as CatalogResponse)?.data?.map((group) => (
+              group.attributes.items.map((item) => (
+                <ItemCard 
+                  key={item.data.id} 
+                  item={{
+                    id: parseInt(item.data.id),
+                    catalog_group_id: parseInt(group.id),
+                    name: item.data.attributes.name,
+                    description: item.data.attributes.description,
+                    item_type: item.data.attributes.item_type,
+                    unit_of_measurement: item.data.attributes.unit_of_measurement || undefined,
+                    price: item.data.attributes.price,
+                    price_with_discount: item.data.attributes.price_with_discount || undefined,
+                    measure_interval: item.data.attributes.measure_interval || undefined,
+                    min_weight: item.data.attributes.min_weight || undefined,
+                    max_weight: item.data.attributes.max_weight || undefined,
+                    image: item.data.attributes.image_url || undefined
+                  }} 
+                />
+              ))
+            ))}
           </div>
-        </div>
+      </div>
     </ProtectedRoute>
-  );
+  )
 }
+
+export default CatalogPage

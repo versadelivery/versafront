@@ -9,6 +9,15 @@ export const prepareMethodSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
 });
 
+export const stepOptionSchema = z.object({
+  name: z.string().min(1, "Nome é obrigatório"),
+});
+
+export const stepSchema = z.object({
+  name: z.string().min(1, "Nome é obrigatório"),
+  options: z.array(stepOptionSchema),
+});
+
 export const itemSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
   description: z.string().optional(),
@@ -30,6 +39,8 @@ export const itemSchema = z.object({
   catalog_item_extras_attributes: z.array(extraSchema).optional(),
   has_prepare_methods: z.boolean().optional(),
   catalog_item_prepare_methods_attributes: z.array(prepareMethodSchema).optional(),
+  has_steps: z.boolean().optional(),
+  catalog_item_steps_attributes: z.array(stepSchema).optional(),
 }).refine((data) => {
   if (data.item_type === 'weight') {
     return data.unit_of_measurement && data.min_weight && data.max_weight && data.measure_interval;
