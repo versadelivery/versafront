@@ -39,8 +39,7 @@ interface CatalogItemExtra {
 export interface Item{
   name: string;
     description: string;
-    item_type: 'unit' | 'weight';
-    unit_of_measurement: string | null;
+    item_type: 'unit' | 'weight_per_g' | 'weight_per_kg';
     price: number;
     price_with_discount: number | null;
     measure_interval: number | null;
@@ -57,6 +56,40 @@ export interface Item{
     steps: {
       data: CatalogItemStep[];
     };
+}
+
+export interface CatalogItemAttributes {
+  name: string;
+  description: string;
+  item_type: string;
+  price: number;
+  price_with_discount: number;
+  measure_interval: number | null;
+  min_weight: number | null;
+  max_weight: number | null;
+  priority: number;
+  image_url: string;
+  group?: {
+    data: any;
+  };
+  extra: {
+    data: CatalogItemExtra[];
+  };
+  prepare_method: {
+    data: CatalogItemPrepareMethod[];
+  };
+  steps: {
+    data: CatalogItemStep[];
+  };
+}
+
+
+export interface CatalogItemResponse {
+  data: {
+    id: string;
+    type: 'catalog_item_with_group';
+    attributes: CatalogItemAttributes
+  }
 }
 
 interface CatalogItem {
@@ -79,12 +112,22 @@ interface CatalogGroup {
   };
 }
 
-interface CatalogResponse {
+export interface CatalogResponse {
   data: CatalogGroup[];
 }
 
 export async function getCatalog(): Promise<CatalogResponse> {
   const response = await api.get('/catalog_groups/');
+  return response.data;
+}
+
+export async function getCatalogItem(id: string): Promise<CatalogItemResponse> {
+  const response = await api.get(`/catalog_items/${id}`);
+  return response.data;
+}
+
+export async function getCatalogGroup(id: string): Promise<CatalogGroup> {
+  const response = await api.get(`/catalog_groups/${id}`);
   return response.data;
 }
 

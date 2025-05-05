@@ -43,9 +43,22 @@ export default function GroupModal({ isOpen, onOpenChange }: { isOpen: boolean, 
     }
   }
 
-  const handleRemoveImage = () => {
-    form.setValue('image', undefined)
-    setPreviewImage(null)
+  const handleChangeImageClick = () => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = 'image/*'
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0]
+      if (file) {
+        form.setValue('image', file)
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          setPreviewImage(reader.result as string)
+        }
+        reader.readAsDataURL(file)
+      }
+    }
+    input.click()
   }
 
   const onSubmit = (data: any) => {
@@ -54,7 +67,6 @@ export default function GroupModal({ isOpen, onOpenChange }: { isOpen: boolean, 
     formData.append('priority', data.priority.toString());
     formData.append('image', data.image);
     formData.append('description', data.description);
-    console.log(data.image)
     createCatalogGroup(formData)
     onOpenChange(false)
     form.reset()
@@ -83,39 +95,29 @@ export default function GroupModal({ isOpen, onOpenChange }: { isOpen: boolean, 
           <div className="flex gap-4">
             <FormField
               control={form.control}
-              name="priority"
-              render={({ field }) => (
-                <FormItem className="flex-1">
-                  <FormLabel className="flex items-center gap-1 font-outfit text-sm font-bold text-foreground">PRIORIDADE DO GRUPO <Info size={16} /></FormLabel>
-                  <FormControl>
-                    <Input {...field} type="number" min={1} className="border border-gray-300 h-12" placeholder="Ex: 1" />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
               name="image"
               render={({ field: { onChange, ...rest } }) => (
                 <FormItem className="flex-1">
                   <FormLabel className="font-outfit text-sm font-bold text-foreground">IMAGEM</FormLabel>
                   <div className="flex flex-col gap-2">
                     {previewImage ? (
-                      <div className="relative">
+                      <div className="flex items-center justify-center flex-col gap-2 w-[200px]">
                         <Image
                           src={previewImage}
                           alt="Preview"
                           width={200}
                           height={200}
-                          className="rounded-lg object-cover"
+                          className="rounded-xs object-cover w-[200px] h-[200px]"
                         />
                         <button
                           type="button"
-                          onClick={handleRemoveImage}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 cursor-pointer"
+                          onClick={handleChangeImageClick}
+                          className="cursor-pointer w-[200px] text-sm font-semibold h-10 bg-muted-foreground text-white rounded-xs flex items-center justify-center gap-2 hover:bg-muted-foreground/80 transition-colors"
                         >
-                          <X size={16} />
+                          TROCAR
+                          <Camera size={16} />
                         </button>
+                        <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} name={rest.name} ref={rest.ref} />
                       </div>
                     ) : (
                       <label className="flex h-12 items-center gap-2 border rounded cursor-pointer hover:bg-gray-100 max-w-48">
@@ -127,6 +129,18 @@ export default function GroupModal({ isOpen, onOpenChange }: { isOpen: boolean, 
                       </label>
                     )}
                   </div>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="priority"
+              render={({ field }) => (
+                <FormItem className="flex-1">
+                  <FormLabel className="flex items-center gap-1 font-outfit text-sm font-bold text-foreground">PRIORIDADE DO GRUPO <Info size={16} /></FormLabel>
+                  <FormControl>
+                    <Input {...field} type="number" min={1} className="border border-gray-300 h-12" placeholder="Ex: 1" />
+                  </FormControl>
                 </FormItem>
               )}
             />

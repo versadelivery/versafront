@@ -9,14 +9,12 @@ export function useDelivery() {
     queryKey: ["delivery-config"],
     queryFn: async () => {
       const data = await deliveryService.getDeliveryConfig();
-      console.log("GET Delivery Config:", data);
       return data;
     },
   });
 
   const { mutate: updateDeliveryConfig, isPending: isUpdatingConfig } = useMutation({
     mutationFn: async (data: Omit<DeliveryConfig, "id" | "neighborhoods">) => {
-      console.log("PUT Delivery Config:", data);
       return deliveryService.updateDeliveryConfig(data);
     },
     onSuccess: () => {
@@ -30,7 +28,6 @@ export function useDelivery() {
 
   const { mutate: createNeighborhood, isPending: isCreatingNeighborhood } = useMutation({
     mutationFn: async (data: Omit<DeliveryNeighborhood, "id">) => {
-      console.log("POST Neighborhood:", data);
       return deliveryService.createNeighborhood(data);
     },
     onSuccess: () => {
@@ -44,7 +41,6 @@ export function useDelivery() {
 
   const { mutate: updateNeighborhood, isPending: isUpdatingNeighborhood } = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<DeliveryNeighborhood> }) => {
-      console.log("PUT Neighborhood:", { id, data });
       return deliveryService.updateNeighborhood(id, data);
     },
     onSuccess: () => {
@@ -58,7 +54,6 @@ export function useDelivery() {
 
   const { mutate: deleteNeighborhood, isPending: isDeletingNeighborhood } = useMutation({
     mutationFn: async (id: string) => {
-      console.log("DELETE Neighborhood:", id);
       return deliveryService.deleteNeighborhood(id);
     },
     onSuccess: () => {

@@ -36,10 +36,6 @@ export default function CatalogPage() {
   const { items: persistedItems, addItem, updateQuantity, removeItem, getItemsByStore } = useCart()
   const { isAuthenticated, logout } = useAuth()
 
-  useEffect(() => {
-    console.log('Itens do carrinho no localStorage:', persistedItems);
-  }, [persistedItems]);
-
   const totalCartItems = cartItems.reduce((sum: number, item: {id: string, quantity: number}) => sum + item.quantity, 0)
 
   useEffect(() => {

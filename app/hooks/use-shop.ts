@@ -13,7 +13,6 @@ export function useShop() {
   const { mutate: updateShop, isPending: isUpdating } = useMutation({
     mutationFn: (data: Partial<ShopAttributes>) => {
       const payload = { shop: data };
-      console.log("Dados enviados para atualização:", payload);
       return shopService.updateShop(payload);
     },
     onSuccess: () => {

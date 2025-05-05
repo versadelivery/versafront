@@ -36,7 +36,6 @@ export const shopService = {
         }
       }
     });
-    console.log(formData);
     const response = await api.put<ShopResponse>("/shops", formData, {
       headers: {
         "Content-Type": "multipart/form-data",

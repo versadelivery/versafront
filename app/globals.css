@@ -51,7 +51,8 @@
   --card-foreground: #1A1A1A;
   --popover: #FFFFFF;
   --popover-foreground: #1A1A1A;
-  --primary: #2C5530;
+  /* --primary: #2C5530; */
+  --primary: #009246;
   --primary-foreground: #FFFFFF;
   --secondary: #F5F5F5;
   --secondary-foreground: #1A1A1A;
@@ -62,7 +63,8 @@
   --destructive: #DC2626;
   --border: #E5E5E5;
   --input: #FFFFFF;
-  --ring: #2C5530;
+  /* --ring: #2C5530; */
+  --ring: #009246;
   --chart-1: #2C5530;
   --chart-2: #4A7850;
   --chart-3: #1A1A1A;

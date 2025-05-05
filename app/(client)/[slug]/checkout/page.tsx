@@ -146,8 +146,6 @@ export default function CheckoutPage() {
       deliveryFee: deliveryOption === 'delivery' ? neighborhoods.find(n => n.id === selectedNeighborhood)?.amount || 0 : 0,
       estimatedTime: deliveryOption === 'delivery' ? estimatedTime : 20
     }
-
-    console.log('Dados do pedido:', orderData)
     
     try {
       await new Promise(resolve => setTimeout(resolve, 1500))

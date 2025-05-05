@@ -6,52 +6,19 @@ import GroupModal from "./group-modal";
 import { NewItemModal } from "./item-modal";
 import { ActionBar } from "@/app/admin/catalog/action-bar";
 import { useCatalogGroup } from "./useCatalogGroup";
-import { ItemCard } from "@/app/components/catalog/item-card";
+import { ItemCard } from "@/app/admin/catalog/item-card";
+import { CatalogResponse } from "./catalog-service";
+import { Loader2 } from "lucide-react";
 
-interface CatalogResponse {
-  data: {
-    id: string;
-    type: string;
-    attributes: {
-      name: string;
-      description: string;
-      priority: number;
-      image_url: string | null;
-      items: {
-        data: {
-          id: string;
-          type: string;
-          attributes: {
-            name: string;
-            description: string;
-            item_type: string;
-            unit_of_measurement: string | null;
-            price: number;
-            price_with_discount: number | null;
-            measure_interval: number | null;
-            min_weight: number | null;
-            max_weight: number | null;
-            priority: number;
-            image_url: string | null;
-          };
-        };
-      }[];
-    };
-  }[];
-}
 
 function CatalogPage() {
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
-  const { getCatalog } = useCatalogGroup();
-
-  useEffect(() => {
-    console.log(getCatalog);
-  }, [getCatalog]);
+  const { getCatalog, isLoading } = useCatalogGroup();
 
   return (
     <ProtectedRoute>
-      <div className="w-full px-0 sm:px-4 lg:px-6 h-screen">
+      <div className="flex flex-col h-full">
           <Header 
             title="CATÁLOGO"
             description="Gerencie seu catálogo, estoque e disponibilidade dos itens"
@@ -59,29 +26,39 @@ function CatalogPage() {
           <ActionBar onNewGroup={() => setIsGroupModalOpen(true)} onNewItem={() => setIsItemModalOpen(true)} />
           <GroupModal isOpen={isGroupModalOpen} onOpenChange={setIsGroupModalOpen} />
           <NewItemModal isOpen={isItemModalOpen} onOpenChange={setIsItemModalOpen} />
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {isLoading ? (
+            <div className="flex justify-center w-full">
+              <Loader2 className="h-10 w-10 animate-spin" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 w-full">
             {(getCatalog as unknown as CatalogResponse)?.data?.map((group) => (
               group.attributes.items.map((item) => (
-                <ItemCard 
-                  key={item.data.id} 
-                  item={{
+                <div key={item.data.id} className="min-h-[400px]">
+                  <ItemCard 
+                    key={item.data.id} 
+                    item={{
                     id: parseInt(item.data.id),
                     catalog_group_id: parseInt(group.id),
                     name: item.data.attributes.name,
                     description: item.data.attributes.description,
-                    item_type: item.data.attributes.item_type,
-                    unit_of_measurement: item.data.attributes.unit_of_measurement || undefined,
+                    item_type: item.data.attributes.item_type as 'unit' | 'weight_per_kg' | 'weight_per_g',
                     price: item.data.attributes.price,
-                    price_with_discount: item.data.attributes.price_with_discount || undefined,
-                    measure_interval: item.data.attributes.measure_interval || undefined,
-                    min_weight: item.data.attributes.min_weight || undefined,
-                    max_weight: item.data.attributes.max_weight || undefined,
-                    image: item.data.attributes.image_url || undefined
+                    price_with_discount: item.data.attributes.price_with_discount as number,
+                    measure_interval: item.data.attributes.measure_interval as number,
+                    min_weight: item.data.attributes.min_weight as number,
+                    max_weight: item.data.attributes.max_weight as number,
+                    image: item.data.attributes.image_url as string,
+                    catalog_item_extras_attributes: item.data.attributes.extra.data as unknown as any[],
+                    catalog_item_prepare_methods_attributes: item.data.attributes.prepare_method.data as unknown as any[],
+                    catalog_item_steps_attributes: item.data.attributes.steps.data as unknown as any[]
                   }} 
                 />
+                </div>
               ))
             ))}
-          </div>
+            </div>
+          )}
       </div>
     </ProtectedRoute>
   )

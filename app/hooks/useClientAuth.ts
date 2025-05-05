@@ -38,9 +38,6 @@ export function useAuth() {
       localStorage.setItem('customer', JSON.stringify(data.customer))
       setCustomer(data.customer)
       setIsAuthenticated(true)
-      console.log(localStorage.getItem('customer'))
-      console.log(localStorage.getItem('token'))
-      console.log(isAuthenticated)
     },
     onError: (error) => {
       toast.error('Erro ao fazer login')

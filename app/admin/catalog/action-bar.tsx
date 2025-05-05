@@ -26,7 +26,7 @@ export function ActionBar({ onNewGroup, onNewItem }: ActionBarProps) {
           className="font-outfit rounded-xs py-6 flex items-center justify-center gap-2 bg-muted hover:bg-muted/80 border-none shadow-none text-muted-foreground text-base lg:flex-1 opacity-60"
         >
           <Filter className="w-4 h-4" />
-          <span className="whitespace-nowrap">Todas categorias</span>
+          <span className="whitespace-nowrap">Grupos</span>
         </Button>
         
         <Button 

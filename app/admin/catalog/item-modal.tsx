@@ -34,12 +34,17 @@ const itemSchema = z.object({
   catalog_group_id: z.string().min(0, { message: 'Grupo é obrigatório' }),
   image: z.instanceof(File).optional(),
   price: z.number().min(0, { message: 'Preço é obrigatório' }),
-  item_type: z.enum(['unit', 'weight_kg', 'weight_g'], { message: 'Tipo de unidade é obrigatório' }),
+  item_type: z.enum(['unit', 'weight_per_kg', 'weight_per_g'], { message: 'Tipo de unidade é obrigatório' }),
   min_weight: z.number().min(0).optional(),
   max_weight: z.number().min(0).optional(),
   measure_interval: z.number().min(0).optional(),
   price_with_discount: z.number().min(0).optional(),
-  catalog_item_extras_attributes: z.array(z.object({ name: z.string(), price: z.number() })).optional(),
+  catalog_item_extras_attributes: z.array(
+    z.object({ 
+      name: z.string().min(1, { message: 'Nome do adicional é obrigatório' }), 
+      price: z.number().min(0.01, { message: 'Preço deve ser maior que zero' })
+    })
+  ).optional(),
   catalog_item_prepare_methods_attributes: z.array(z.object({ name: z.string() })).optional(),
   catalog_item_steps_attributes: z.array(z.object({ name: z.string(), catalog_item_step_options_attributes: z.array(z.object({ name: z.string() })) })).optional(),
 });
@@ -55,6 +60,7 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
   const [hasSteps, setHasSteps] = useState(false);
   const [steps, setSteps] = useState<{ name: string; options: { name: string }[] }[]>([]);
 
+  
   const handlePriceChange = (value: string) => {
     const numValue = parseFloat(value.replace(/\D/g, '')) / 100 || 0
     return numValue
@@ -67,15 +73,15 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
   const handleAddStepOption = (stepIndex: number) => {
     setSteps(prev => prev.map((step, i) => i === stepIndex ? { ...step, options: [...step.options, { name: '' }] } : step));
   }
-
+  
   const handleRemoveStepOption = (stepIndex: number, optionIndex: number) => {
     setSteps(prev => prev.map((step, i) => i === stepIndex ? { ...step, options: step.options.filter((_, j) => j !== optionIndex) } : step));
   }
-
+  
   const formatPrice = (price: number) => {
     return price.toFixed(2).replace('.', ',')
   }
-
+  
   const form = useForm({
     defaultValues: {
       name: '',
@@ -84,13 +90,36 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
       image: undefined,
       price: 0,
       price_with_discount: 0,
-      item_type: 'unit',
+      item_type: 'unit' as 'unit' | 'weight_per_kg' | 'weight_per_g',
       min_weight: 0,
       max_weight: 0,
       measure_interval: 0,
     },
     resolver: zodResolver(itemSchema)
   });
+
+  useEffect(() => {
+    if (hasDiscount) {
+      form.setValue('price_with_discount', form.getValues('price_with_discount') as number);
+    } else {
+      form.setValue('price_with_discount', undefined);
+    }
+    if (hasExtras) {
+      form.setValue('catalog_item_extras_attributes', extras);
+    } else {
+      form.setValue('catalog_item_extras_attributes', undefined);
+    }
+    if (hasPrepareMethods) {
+      form.setValue('catalog_item_prepare_methods_attributes', prepareMethods);
+    } else {
+      form.setValue('catalog_item_prepare_methods_attributes', undefined);
+    }
+    if (hasSteps) {
+      form.setValue('catalog_item_steps_attributes', steps.map(step => ({ ...step, catalog_item_step_options_attributes: step.options.map(option => ({ name: option.name })) })));
+    } else {
+      form.setValue('catalog_item_steps_attributes', undefined);
+    }
+  }, [hasExtras, hasPrepareMethods, hasSteps, hasDiscount]);
 
   useEffect(() => {
     if (catalog?.data[0]?.id) {
@@ -134,9 +163,33 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
     }
   }
 
-  const handleRemoveImage = () => {
-    setPreviewImage(null);
-  };
+  const handleChangeImageClick = () => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = 'image/*'
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0]
+      if (file) {
+        form.setValue('image', file)
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          setPreviewImage(reader.result as string)
+        }
+        reader.readAsDataURL(file)
+      }
+    }
+    input.click()
+  }
+
+  const handleDiscountToggle = (checked: boolean) => {
+    setHasDiscount(checked);
+    if (checked) {
+      form.setValue('price_with_discount', form.getValues('price'));
+    } else {
+      form.setValue('price_with_discount', undefined);
+    }
+  }
+  
 
   const handleExtraChange = (index: number, field: keyof { name: string; price: number }, value: string | number) => {
     setExtras(prev => prev.map((extra, i) => i === index ? { ...extra, [field]: value } : extra));
@@ -153,6 +206,14 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
     setExtras(prev => [...prev, { name: '', price: 0 }]);
   };
 
+  const handleHasDiscountToggle = (checked: boolean) => {
+    setHasDiscount(checked);
+    if (checked) {
+      form.setValue('price_with_discount', form.getValues('price'));
+    } else {
+      form.setValue('price_with_discount', undefined);
+    }
+  }
   const handleExtrasToggle = (checked: boolean) => {
     setHasExtras(checked);
     if (checked) {
@@ -194,10 +255,10 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
     formData.append('name', data.name);
     formData.append('description', data.description);
     formData.append('item_type', data.item_type);
-    formData.append('unit_of_measurement', data.item_type === 'weight_kg' ? 'kg' : data.item_type === 'weight_g' ? 'g' : '');
+    formData.append('unit_of_measurement', data.item_type === 'weight_per_kg' ? 'weight_per_kg' : data.item_type === 'weight_per_g' ? 'weight_per_g' : '');
     formData.append('price', data.price.toString());
     formData.append('catalog_group_id', data.catalog_group_id);
-    if (data.hasDiscount && data.price_with_discount) {
+    if (hasDiscount) {
       formData.append('price_with_discount', data.price_with_discount.toString());
     }
     if (data.measure_interval) {
@@ -212,31 +273,25 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
     if (data.image) {
       formData.append('image', data.image);
     }
-    if (extras.length > 0) {
-      formData.append('catalog_item_extras_attributes', JSON.stringify(extras));
+    if (hasExtras && extras.length > 0) {
+      extras.forEach((extra, index) => {
+        formData.append(`catalog_item_extras_attributes[${index}][name]`, extra.name);
+        formData.append(`catalog_item_extras_attributes[${index}][price]`, extra.price.toString());
+      });
     }
-    if (prepareMethods.length > 0) {
-      formData.append('catalog_item_prepare_methods_attributes', JSON.stringify(prepareMethods));
+    if (hasPrepareMethods) {
+      prepareMethods.forEach((method, index) => {
+        formData.append(`catalog_item_prepare_methods_attributes[${index}][name]`, method.name);
+      });
     }
-    if (steps.length > 0) {
-      formData.append('catalog_item_steps_attributes', JSON.stringify(steps));
+    if (hasSteps) {
+      steps.forEach((step, index) => {
+        formData.append(`catalog_item_steps_attributes[${index}][name]`, step.name);
+        step.options.forEach((option, optionIndex) => {
+          formData.append(`catalog_item_steps_attributes[${index}][catalog_item_step_options_attributes][${optionIndex}][name]`, option.name);
+        });
+      });
     }
-    console.log({
-      catalog_group_id: formData.get('catalog_group_id'),
-      name: formData.get('name'),
-      description: formData.get('description'),
-      item_type: formData.get('item_type'),
-      unit_of_measurement: formData.get('unit_of_measurement'),
-      price: formData.get('price'),
-      price_with_discount: formData.get('price_with_discount'),
-      min_weight: formData.get('min_weight'),
-      max_weight: formData.get('max_weight'),
-      measure_interval: formData.get('measure_interval'),
-      image: formData.get('image'),
-      catalog_item_extras_attributes: formData.get('catalog_item_extras_attributes'),
-      catalog_item_prepare_methods_attributes: formData.get('catalog_item_prepare_methods_attributes'),
-      catalog_item_steps_attributes: formData.get('catalog_item_steps_attributes'),
-    })
     createCatalogItem(formData);
     onOpenChange(false);
     form.reset();
@@ -301,6 +356,44 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
             <div className="flex flex-row gap-4 w-full">
               <FormField
                 control={form.control}
+                name="image"
+                render={({ field: { onChange, ...rest } }) => (
+                  <FormItem className="flex-1">
+                    <FormLabel className="text-sm font-bold text-foreground">IMAGEM</FormLabel>
+                    <div className="flex flex-col gap-2">
+                      {previewImage ? (
+                        <div className="flex items-center justify-center flex-col gap-2 w-[200px]">
+                          <Image
+                            src={previewImage}
+                            alt="Preview"
+                            width={200}
+                            height={200}
+                            className="rounded-xs object-cover w-[200px] h-[200px]"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleChangeImageClick}
+                            className="cursor-pointer w-[200px] text-sm font-semibold h-10 bg-muted-foreground text-white rounded-xs flex items-center justify-center gap-2 hover:bg-muted-foreground/80 transition-colors"
+                          >
+                            TROCAR
+                            <Camera size={16} />
+                          </button>
+                        </div>
+                      ) : (
+                        <label className="flex h-12 items-center gap-2 border rounded cursor-pointer hover:bg-gray-100 max-w-48">
+                          <div className="w-12 h-full bg-black flex items-center justify-center rounded-l">
+                            <Camera size={32} className="text-white" />
+                          </div>
+                          <span className="font-semibold pl-4">Procurar</span>
+                          <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} name={rest.name} ref={rest.ref} />
+                        </label>
+                      )}
+                    </div>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
                 name="catalog_group_id"
                 render={({ field }) => (
                   <FormItem className="flex-1 w-full">
@@ -331,43 +424,6 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
                   </FormItem>
                 )}
               />
-            <FormField
-              control={form.control}
-              name="image"
-              render={({ field: { onChange, ...rest } }) => (
-                <FormItem className="flex-1">
-                  <FormLabel className="text-sm font-bold text-foreground">IMAGEM</FormLabel>
-                  <div className="flex flex-col gap-2">
-                    {previewImage ? (
-                      <div className="relative flex items-center justify-center">
-                        <Image
-                          src={previewImage}
-                          alt="Preview"
-                          width={200}
-                          height={200}
-                          className="rounded-lg object-cover"
-                        />
-                        <button
-                          type="button"
-                          onClick={handleRemoveImage}
-                          className="absolute top-2 right-2 bg-white/90 text-red-500 rounded-full p-2 hover:bg-white cursor-pointer border border-red-500/20 shadow-sm"
-                        >
-                          <X size={18} />
-                        </button>
-                      </div>
-                    ) : (
-                      <label className="flex h-12 items-center gap-2 border rounded cursor-pointer hover:bg-gray-100 max-w-48">
-                        <div className="w-12 h-full bg-black flex items-center justify-center rounded-l">
-                          <Camera size={32} className="text-white" />
-                        </div>
-                        <span className="font-semibold pl-4">Procurar</span>
-                        <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} name={rest.name} ref={rest.ref} />
-                      </label>
-                    )}
-                  </div>
-                </FormItem>
-              )}
-            />
             </div>
 
             <div className="flex flex-row gap-4 w-full">
@@ -387,8 +443,8 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="unit">Unidade</SelectItem>
-                        <SelectItem value="weight_kg">Peso por kg</SelectItem>
-                        <SelectItem value="weight_g">Peso por g</SelectItem>
+                        <SelectItem value="weight_per_kg">Peso por kg</SelectItem>
+                        <SelectItem value="weight_per_g">Peso por g</SelectItem>
                       </SelectContent>
                     </Select>
                   </FormItem>
@@ -396,7 +452,7 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
               />
             </div>
 
-            {(itemType === 'weight_kg' || itemType === 'weight_g') && (
+            {(itemType === 'weight_per_kg' || itemType === 'weight_per_g') && (
               <>
                 <FormField
                   control={form.control}
@@ -469,7 +525,7 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-sm font-bold text-foreground">
-                    PREÇO {itemType === 'weight_kg' ? 'POR KG' : itemType === 'weight_g' ? 'POR GRAMA' : ''}
+                    PREÇO {itemType === 'weight_per_kg' ? 'POR KG' : itemType === 'weight_per_g' ? 'POR GRAMA' : ''}
                   </FormLabel>
                   <FormControl>
                     <div className="relative">
@@ -495,16 +551,33 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
                 <FormControl>
                   <Switch
                     checked={hasDiscount}
-                    onCheckedChange={setHasDiscount}
+                    onCheckedChange={handleHasDiscountToggle}
                   />
                 </FormControl>
               </FormItem>
 
-              <PriceInput
+              <FormField
                 control={form.control}
                 name="price_with_discount"
-                label="PREÇO COM DESCONTO"
-                disabled={!hasDiscount}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-bold text-foreground">
+                      PREÇO COM DESCONTO
+                    </FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2">R$</span>
+                        <Input
+                          placeholder="0,00"
+                          value={formatPrice(field.value as number)}
+                          onChange={(e) => field.onChange(handlePriceChange(e.target.value))}
+                          className="pl-10 h-12 border border-black/30"
+                          disabled={!hasDiscount}
+                        />
+                      </div>
+                    </FormControl>
+                  </FormItem>
+                )}
               />
             </div>
 

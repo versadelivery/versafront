@@ -1,8 +1,23 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getCatalog, createCatalogGroup, updateCatalogGroup, deleteCatalogGroup, createCatalogItem } from "./catalog-service";
+import { getCatalog, createCatalogGroup, updateCatalogGroup, deleteCatalogGroup, createCatalogItem, getCatalogItem, getCatalogGroup, CatalogItemResponse } from "./catalog-service";
 import { toast } from "sonner";
 
-export const useCatalogGroup = () => {
+export const useCatalogItem = (id: string) => {
+  const queryClient = useQueryClient();
+
+  const catalogItemQuery = useQuery<CatalogItemResponse>({
+    queryKey: ["catalog-item", id],
+    queryFn: () => getCatalogItem(id),
+    enabled: !!id,
+  });
+
+  return {
+    catalogItem: catalogItemQuery.data,
+    isLoadingCatalogItem: catalogItemQuery.isLoading,
+  };
+};
+
+export const useCatalogGroup = (id?: string) => {
   const queryClient = useQueryClient();
 
   const { data: catalog, isLoading, error } = useQuery({
@@ -14,7 +29,7 @@ export const useCatalogGroup = () => {
     queryKey: ["catalog"],
     queryFn: getCatalog,
   });
-
+  
   const createCatalogGroupMutation = useMutation({
     mutationFn: createCatalogGroup,
     onSuccess: () => {
@@ -72,5 +87,6 @@ export const useCatalogGroup = () => {
     createCatalogItem: createCatalogItemMutation.mutate,
     isCreatingItem: createCatalogItemMutation.isPending,
     getCatalog: getCatalogQuery.data,
+    isLoadingCatalog: getCatalogQuery.isLoading
   };
 };
