@@ -10,7 +10,7 @@ import { dashboardCards } from "../config/dashboard-cards";
 import bannerImg from "@/public/img/hero-admin.jpg";
 import { useShop } from "@/app/hooks/use-shop";
 export default function AdminDashboard() {
-  const { shop } = useShop();
+  const { shop, isLoading } = useShop();
 
   return (
     <ProtectedRoute>
@@ -20,7 +20,7 @@ export default function AdminDashboard() {
           <AdminBanner bannerImg={bannerImg}/>
 
         <div className="max-w-2xl mx-auto px-4 -mt-10 z-20 relative border-none">
-          <UrlCard url={`https://versadelivery.com.br/${shop?.slug}`} />
+          <UrlCard url={`https://versadelivery.com.br/${shop?.slug}`} isLoading={isLoading} />
         </div>
 
         <div className="max-w-full mx-auto p-12">

@@ -24,6 +24,9 @@ export function ItemDetailsModal({ id, isOpen, onClose }: ItemDetailsModalProps)
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="flex justify-center items-center h-full">
+          <DialogHeader>
+            <DialogTitle>Carregando...</DialogTitle>
+          </DialogHeader>
           <Loader2 className="h-10 w-10 animate-spin" />
         </DialogContent>
       </Dialog>

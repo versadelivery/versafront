@@ -1,8 +1,8 @@
 import { Input } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
-import { Plus, Trash2, Loader2, Edit, Check, X } from "lucide-react";
-import React, { useEffect, useState, useRef } from "react";
-import { useDestroyItems, useEditStep } from "./useCatalogGroup";
+import { Plus, Trash2, Loader2 } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { useDestroyItems } from "./useCatalogGroup";
 
 interface StepOptionInputProps {
   value: string;
@@ -15,88 +15,23 @@ interface StepOptionInputProps {
 }
 
 function StepOptionInput({ value, onChange, onRemove, placeholder, id, stepId, optionId }: StepOptionInputProps) {
-  const [isEditing, setIsEditing] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [updateOptionName, setUpdateOptionName] = useState<string | null>(null)
   const { destroyStepItem, isDestroyingStepItem } = useDestroyItems(id, stepId, optionId)
-  const { updateStepOption, isUpdatingStepOption } = useEditStep({ 
-    id: id || '', 
-    stepId: stepId || '', 
-    optionId: optionId || '', 
-    name: updateOptionName || value 
-  })
-
-  useEffect(() => {
-    if (isEditing && inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [isEditing]);
-
-  const handleUpdateStepOption = (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (updateOptionName !== null) {
-      updateStepOption();
-      onChange({ target: { value: updateOptionName } } as React.ChangeEvent<HTMLInputElement>);
-      setIsEditing(false);
-    }
-  };
-
-  const handleCancelEdit = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsEditing(false);
-    setUpdateOptionName(value);
-  };
 
   return (
     <div className="flex items-center gap-2 bg-white p-2 rounded-md border border-gray-100">
       <span className="w-6 h-6 flex items-center justify-center mr-2">
-        <Button variant="ghost" size="icon" onClick={(e) => {
-          e.preventDefault();
-          setUpdateOptionName(value);
-          setIsEditing(true);
-        }}>
-          <Edit className="w-4 h-4" />
-        </Button>
+        <span className="w-1 h-1 rounded-full border-2 border-gray-400 block" />
       </span>
-      <Input
-        ref={inputRef}
+      <input
         type="text"
-        value={updateOptionName || value}
-        onChange={(e) => {
-          setUpdateOptionName(e.target.value)
-          onChange(e)
-        }}
-        disabled={!isEditing}
+        value={value}
+        onChange={onChange}
         placeholder={placeholder || "Ex: Mista"}
         className="flex-1 border-0 focus-visible:ring-0 bg-transparent outline-none text-base placeholder:text-gray-400"
       />
-      {isEditing && (
-        <>
-          <button
-            type="button"
-            onClick={handleUpdateStepOption}
-            className="cursor-pointer ml-2 text-blue-500 hover:text-blue-700 hover:bg-black/10 rounded-md p-2"
-            disabled={isUpdatingStepOption}
-          >
-            {isUpdatingStepOption ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Check className="w-4 h-4" />
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={handleCancelEdit}
-            className="cursor-pointer ml-2 text-gray-500 hover:text-gray-700 hover:bg-black/10 rounded-md p-2"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </>
-      )}
       <button
         type="button"
-        onClick={(e) => {
-          e.preventDefault();
+        onClick={() => {
           destroyStepItem()
           onRemove()
         }}
@@ -112,6 +47,8 @@ function StepOptionInput({ value, onChange, onRemove, placeholder, id, stepId, o
     </div>
   );
 }
+
+
 
 interface Step {
   name: string;
@@ -138,39 +75,16 @@ export function ItemSteps({
   onStepOptionChange,
   onAddStepOption,
   onRemoveStepOption,
-  id,
+  id, 
 }: ItemStepsProps) {
   const [stepId, setStepId] = useState<string | null>(null)
-  const [updateStepId, setUpdateStepId] = useState<string | null>(null)
-  const [editingStepIndex, setEditingStepIndex] = useState<number | null>(null);
-  const stepInputRef = useRef<HTMLInputElement>(null);
   const { destroyStep, isDestroyingStep } = useDestroyItems(id || '', stepId || '', '')
-  const [stepName, setStepName] = useState<string | null>(null)
-  const { updateStep, isUpdatingStep } = useEditStep({ 
-    id: id || '', 
-    stepId: updateStepId || '', 
-    name: stepName || '' 
-  })
-  
-  function viewStepId(idName: string | undefined) {
-    console.log(idName)
-  }
-  
+
   useEffect(() => {
     if (stepId) {
       destroyStep()
     }
   }, [stepId])
-
-  useEffect(() => {
-    if (editingStepIndex !== null && stepInputRef.current) {
-      stepInputRef.current.focus();
-    }
-  }, [editingStepIndex]);
-
-  const handleUpdateStep = (stepIndex: number) => {
-    setEditingStepIndex(null);
-  };
 
   const handleRemoveStepOption = (stepIndex: number, optionIndex: number) => {
     const currentStep = steps[stepIndex];
@@ -188,49 +102,12 @@ export function ItemSteps({
           <div className="flex gap-2 items-start">
             <div className="flex-1 space-y-1">
               <label className="text-sm font-medium text-gray-700">Nome da etapa</label>
-              <div className="flex items-center gap-2">
-                <Input
-                  ref={stepInputRef}
-                  placeholder="Ex: Primeira metade da pizza"
-                  value={step.name}
-                  disabled={editingStepIndex !== stepIndex}
-                  onChange={(e) => {
-                    onStepChange(stepIndex, 'name', e.target.value)
-                    setStepName(e.target.value)
-                  }}
-                  className="bg-white"
-                />
-                  <>
-                    {editingStepIndex === stepIndex ? (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          setUpdateStepId(step.id || '')
-                          setStepName(step.name)
-                          updateStep()
-                        }}
-                        disabled={isUpdatingStep}
-                      >
-                        {isUpdatingStep ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Check className="w-4 h-4" />
-                        )}
-                      </Button>
-                    ) : (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setEditingStepIndex(stepIndex)}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </>
-              </div>
+              <Input
+                placeholder="Ex: Primeira metade da pizza"
+                value={step.name}
+                onChange={(e) => onStepChange(stepIndex, 'name', e.target.value)}
+                className="bg-white"
+              />
             </div>
             <Button
               type="button"

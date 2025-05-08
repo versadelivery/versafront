@@ -3,6 +3,7 @@ import { Button } from "@/app/components/ui/button";
 import Image from "next/image";
 import { useState } from "react";
 import { ItemDetailsModal } from "./item-details-modal";
+import { EditItemModal } from "./edit-item-modal";
 
 interface ItemCardProps {
   item: {
@@ -77,15 +78,17 @@ export function ItemCard({ item }: ItemCardProps) {
         )}
 
         <div className="p-4 space-y-4">
-          <div>
+          <div className="max-w-xs overflow-hidden">
             <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-              <Package className="h-4 w-4" />
-              {item.name}
+              <Package className="h-4 w-4 flex-shrink-0" />
+              <span className="whitespace-normal break-all">{item.name}</span>
             </h3>
             {item.description && (
               <p className="text-sm text-gray-600 mt-2 flex items-start gap-2">
                 <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                {item.description}
+                <span className="break-words whitespace-normal">
+                  {item.description}
+                </span>
               </p>
             )}
           </div>
@@ -95,14 +98,14 @@ export function ItemCard({ item }: ItemCardProps) {
               <span className="text-lg font-bold text-gray-900">
                 R$ {item.price_with_discount ? item.price_with_discount.toFixed(2).replace('.', ',') : item.price.toFixed(2).replace('.', ',')}
                 <span className="text-xs text-gray-500 ml-1">
-                  {item.item_type === 'weight_per_g' ? 'por g' : 'por kg'}
+                  {item.item_type === 'weight_per_g' ? 'por g' : item.item_type === 'weight_per_kg' ? 'por kg' : ''}
                 </span>
               </span>
               {item.price_with_discount && (
                 <span className="text-sm text-gray-500 line-through">
                   R$ {item.price.toFixed(2).replace('.', ',')} 
                   <span className="text-xs text-gray-500 ml-1">
-                    {item.item_type === 'weight_per_g' ? 'por g' : 'por kg'}
+                    {item.item_type === 'weight_per_g' ? 'por g' : item.item_type === 'weight_per_kg' ? 'por kg' : ''}
                   </span>
                 </span>
               )}
@@ -174,6 +177,11 @@ export function ItemCard({ item }: ItemCardProps) {
         id={item.id}
         isOpen={isDetailsModalOpen}
         onClose={handleCloseDetails}
+      />
+      <EditItemModal 
+        id={item.id.toString()}
+        isOpen={isEditing}
+        onOpenChange={setIsEditing}
       />
     </>
   );

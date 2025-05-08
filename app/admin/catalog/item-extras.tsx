@@ -1,9 +1,13 @@
 import { Button } from "@/app/components/ui/button"
 import { Input } from "@/app/components/ui/input"
-import { Trash2 } from "lucide-react"
-interface Extra {
+import { Trash2, Loader2, Check, Edit } from "lucide-react"
+import { useDestroyItems, useEditStep } from "./useCatalogGroup"
+import { useState, useEffect } from "react"
+
+export interface Extra {
   name: string
   price: number
+  id?: any
 }
 
 interface ItemExtrasProps {
@@ -11,16 +15,44 @@ interface ItemExtrasProps {
   onExtraChange: (index: number, field: keyof Extra, value: string | number) => void
   onRemoveExtra: (index: number) => void
   onAddExtra: () => void
+  itemId?: string
 }
 
-export function ItemExtras({ extras, onExtraChange, onRemoveExtra, onAddExtra }: ItemExtrasProps) {
+export function ItemExtras({ extras, onExtraChange, onRemoveExtra, onAddExtra, itemId }: ItemExtrasProps) {
+  const [editingIndex, setEditingIndex] = useState<number | null>(null)
+  const [extraId, setExtraId] = useState<string | null>(null)
+  const [extraName, setExtraName] = useState<string | null>(null)
+  const [extraPrice, setExtraPrice] = useState<number | null>(null)
+  const [changed, setChanged] = useState(false)
+  const { destroyExtra, isDestroyingExtra } = useDestroyItems(extraId || '', itemId || '', '')
+  const { updateExtra, isUpdatingExtra } = useEditStep({ 
+    id: itemId || '', 
+    stepId: extraId || '', 
+    name: extraName || '',
+    price: extraPrice || 0
+  })
+
+  const handleEdit = (index: number) => {
+    setEditingIndex(index)
+    setExtraName(extras[index].name)
+    setExtraPrice(extras[index].price)
+    setChanged(false)
+  }
+
   const handlePriceChange = (index: number, value: string) => {
     const numValue = parseFloat(value.replace(/\D/g, '')) / 100 || 0
+    if (editingIndex === index) {
+      setExtraPrice(numValue)
+      setChanged(true)
+    }
     onExtraChange(index, 'price', numValue)
   }
 
-  const formatPrice = (price: number) => {
-    return price.toFixed(2).replace('.', ',')
+  const formatPrice = (price: number | undefined | null) => {
+    if (!price && price !== 0) {
+      return '0,00';
+    }
+    return price.toFixed(2).replace('.', ',');
   }
 
   return (
@@ -30,8 +62,14 @@ export function ItemExtras({ extras, onExtraChange, onRemoveExtra, onAddExtra }:
           <div className="flex-1 flex gap-4 items-center">
             <Input
               placeholder="Ex: Molho cheddar"
-              value={extra.name}
-              onChange={(e) => onExtraChange(index, 'name', e.target.value)}
+              value={editingIndex === index ? (extraName as string) : extra.name}
+              onChange={(e) => {
+                e.preventDefault()
+                setChanged(true)
+                setExtraId(extra.id || '')
+                setExtraName(e.target.value)
+              }}
+              disabled={editingIndex !== index}
               className="h-12 border border-black/30"
               required
             />
@@ -39,21 +77,70 @@ export function ItemExtras({ extras, onExtraChange, onRemoveExtra, onAddExtra }:
               <span className="absolute left-3 top-1/2 -translate-y-1/2">R$</span>
               <Input
                 placeholder="0,00"
-                value={formatPrice(extra.price)}
-                onChange={(e) => handlePriceChange(index, e.target.value)}
+                value={formatPrice(editingIndex === index ? (extraPrice as number) : extra.price)}
+                onChange={(e) => {
+                  e.preventDefault()
+                  handlePriceChange(index, e.target.value)
+                  setExtraPrice(parseFloat(e.target.value.replace(/\D/g, '')) / 100 || 0)
+                  setExtraId(extra.id || '')
+                  setChanged(true)
+                }}
+                disabled={editingIndex !== index}
                 className="pl-10 h-12 border border-black/30"
                 required
               />
             </div>
           </div>
-          <button
+          {editingIndex === index ? (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={(e) => {
+                e.preventDefault()
+                if (!changed) return
+                updateExtra()
+                onExtraChange(index, 'name', extraName || '')
+                onExtraChange(index, 'price', extraPrice || 0)
+                setEditingIndex(null)
+                setChanged(false)
+              }}
+              disabled={isUpdatingExtra || !changed}
+            >
+              {isUpdatingExtra ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Check className="w-5 h-5" />
+              )}
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={(e) => {
+                e.preventDefault()
+                handleEdit(index)
+              }}
+            >
+              <Edit className="w-5 h-5" />
+            </Button>
+          )}
+          <Button
             type="button"
-            onClick={() => extras.length > 1 && onRemoveExtra(index)}
-            className="text-red-500 hover:bg-black/10 p-2 rounded"
-            disabled={extras.length <= 1}
+            className="cursor-pointer bg-transparent text-red-500 hover:text-red-700 hover:bg-black/10 rounded-md p-2"
+            onClick={() => {
+              setExtraId(extra.id)
+              console.log("item deletado:", extra.id)
+              destroyExtra()
+              extras.length > 1 && onRemoveExtra(index)
+            }}
+            disabled={extras.length <= 1 || isDestroyingExtra}
           >
-            <Trash2 className="w-5 h-5" />
-          </button>
+            {isDestroyingExtra ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <Trash2 className="w-5 h-5" />
+            )}
+          </Button>
         </div>
       ))}
       <Button type="button" onClick={onAddExtra} variant="outline" className="w-full">

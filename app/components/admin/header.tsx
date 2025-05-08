@@ -92,7 +92,7 @@ export function Header() {
               variant="ghost"
               size="icon"
               onClick={handleSignOut}
-              className="text-black hover:text-destructive"
+              className="text-black hover:text-white hover:bg-black hover:p-6 transition-all duration-500"
             >
               <LogOut className="h-5 w-5" />
             </Button>

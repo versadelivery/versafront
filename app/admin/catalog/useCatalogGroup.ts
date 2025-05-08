@@ -1,6 +1,138 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getCatalog, createCatalogGroup, updateCatalogGroup, deleteCatalogGroup, createCatalogItem, getCatalogItem, getCatalogGroup, CatalogItemResponse } from "./catalog-service";
+import { getCatalog, createCatalogGroup, updateCatalogGroup, deleteCatalogGroup, createCatalogItem, getCatalogItem, getCatalogGroup, CatalogItemResponse, destroyExtra, destroyStep, destroyPrepareMethod, deleteCatalogItem, destroyStepOption, updateStep, updateStepOption, updatePrepareMethod, updateExtra } from "./catalog-service";
 import { toast } from "sonner";
+
+
+interface EditStepProps {
+  id: string;
+  stepId: string;
+  name: string;
+  optionId?: string;
+  price?: number;
+}
+
+export const useEditStep = ({ id, stepId, name, optionId, price }: EditStepProps) => {
+  const queryClient = useQueryClient();
+
+  const { data: item, isLoading } = useQuery({
+    queryKey: ["catalog-item", id],
+    queryFn: () => getCatalogItem(id),
+  });
+
+  const updateExtraMutation = useMutation({
+    mutationFn: () => updateExtra(id, stepId, name, price || 0),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['catalog-item', id] });
+      toast.success("Extra atualizado com sucesso");
+    },
+    onError: () => {
+      toast.error("Erro ao atualizar extra");
+    },
+  });
+
+  const updatePrepareMethodMutation = useMutation({
+    mutationFn: () => updatePrepareMethod(id, stepId, name),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['catalog-item', id] });
+      toast.success("Método de preparo atualizado com sucesso");
+    },
+    onError: () => {
+      toast.error("Erro ao atualizar método de preparo");
+    },
+  });
+
+  const updateStepMutation = useMutation({
+    mutationFn: () => updateStep(id, stepId, name),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['catalog-item', id] });
+      toast.success("Etapa atualizada com sucesso");
+    },
+    onError: () => {
+      toast.error("Erro ao atualizar etapa");
+    },
+  });
+
+  const updateStepOptionMutation = useMutation({
+    mutationFn: () => updateStepOption(id, stepId, optionId as string, name),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['catalog-item', id] });
+      toast.success("Opção atualizada com sucesso");
+    },
+    onError: () => {
+      toast.error("Erro ao atualizar opção");
+    },
+  });
+
+  return {
+    item,
+    isLoading,
+    updateStep: updateStepMutation.mutate,
+    isUpdatingStep: updateStepMutation.isPending,
+    updateStepOption: updateStepOptionMutation.mutate,
+    isUpdatingStepOption: updateStepOptionMutation.isPending,
+    updatePrepareMethod: updatePrepareMethodMutation.mutate,
+    isUpdatingPrepareMethod: updatePrepareMethodMutation.isPending,
+    updateExtra: updateExtraMutation.mutate,
+    isUpdatingExtra: updateExtraMutation.isPending,
+  };
+}
+export const useDestroyItems = (id: string, itemId: string, optionId: string) => {
+  const queryClient = useQueryClient();
+  
+  const destroyExtraMutation = useMutation({
+    mutationFn: () => destroyExtra(id, itemId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['catalog-item', id] });
+      toast.success("Extra deletado com sucesso");
+    },
+    onError: () => {
+      toast.error("Erro ao deletar extra");
+    },
+  });
+
+  const destroyStepItemMutation = useMutation({
+    mutationFn: () => destroyStepOption(id, itemId, optionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['catalog-item', id] });
+      toast.success("Opção deletada com sucesso");
+    },
+    onError: () => {
+      toast.error("Erro ao deletar opção");
+    },
+  });
+  const destroyStepMutation = useMutation({
+    mutationFn: () => destroyStep(id, itemId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['catalog-item', id] });
+      toast.success("Etapa deletada com sucesso");
+    },
+    onError: () => {
+      toast.error("Erro ao deletar Etapa");
+    },
+  });
+
+  const destroyPrepareMethodMutation = useMutation({
+    mutationFn: () => destroyPrepareMethod(id, itemId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['catalog-item', id] });
+      toast.success("Método de preparo deletado com sucesso");
+    },
+    onError: () => {
+      toast.error("Erro ao deletar método de preparo");
+    },
+  });
+  
+  return {
+    destroyExtra: destroyExtraMutation.mutate,
+    destroyStep: destroyStepMutation.mutate,
+    destroyPrepareMethod: destroyPrepareMethodMutation.mutate,
+    isDestroyingExtra: destroyExtraMutation.isPending,
+    isDestroyingStep: destroyStepMutation.isPending,
+    isDestroyingPrepareMethod: destroyPrepareMethodMutation.isPending,    
+    destroyStepItem: destroyStepItemMutation.mutate,
+    isDestroyingStepItem: destroyStepItemMutation.isPending,
+  };
+}
 
 export const useCatalogItem = (id: string) => {
   const queryClient = useQueryClient();
@@ -11,9 +143,21 @@ export const useCatalogItem = (id: string) => {
     enabled: !!id,
   });
 
+  const deleteCatalogItemMutation = useMutation({
+    mutationFn: () => deleteCatalogItem(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['catalog-item', id] });
+      toast.success("Item deletado com sucesso");
+    },
+    onError: () => {
+      toast.error("Erro ao deletar item");
+    },
+  });
   return {
     catalogItem: catalogItemQuery.data,
     isLoadingCatalogItem: catalogItemQuery.isLoading,
+    deleteCatalogItem: deleteCatalogItemMutation.mutate,
+    isDeletingCatalogItem: deleteCatalogItemMutation.isPending,
   };
 };
 

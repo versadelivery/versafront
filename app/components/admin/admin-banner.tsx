@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { useShop } from "@/app/hooks/use-shop";
 import Image from "next/image";
 import { StaticImageData } from "next/image";
+import { Loader2 } from "lucide-react";
 
 interface AdminBannerProps {
   bannerImg: StaticImageData;
@@ -9,7 +10,7 @@ interface AdminBannerProps {
 }
 
 export function AdminBanner({ bannerImg, children }: AdminBannerProps) {
-  const { shop } = useShop();
+  const { shop, isLoading } = useShop();
   const shopImage = shop?.image_url;
 
   return (
@@ -25,13 +26,17 @@ export function AdminBanner({ bannerImg, children }: AdminBannerProps) {
       
       <div className="absolute top-1/2 left-1/2 transform mt-8 -translate-x-1/2 -translate-y-1/2 z-10">
         {shopImage ? (
-          <Image 
-            src={shopImage}
-            alt="Store Logo" 
-            className="h-32 w-32 rounded-full object-cover"
-            width={800}
-            height={800}
-          />
+          isLoading ? (
+            <Loader2 className="h-32 w-32 rounded-full object-cover" />
+          ) : (
+            <Image 
+              src={shopImage}
+              alt="Store Logo" 
+              className="h-32 w-32 rounded-full object-cover"
+              width={800}
+              height={800}
+            />
+          )
         ) : (
           <div className="h-32 w-32 bg-muted rounded-full flex items-center justify-center">
             <span className="text-muted-foreground text-2xl font-bold">
