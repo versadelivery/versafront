@@ -25,18 +25,18 @@ export function AdminDashboardCard({
   actionIcon = "arrow",
 }: AdminDashboardCardProps) {
   return (
-    <Link href={href} className="block">
-      <div className="bg-background rounded-lg p-6 border border-border hover:border-primary/30 transition-all duration-300 hover:shadow-md">
-        <div className="flex items-start gap-4">
-          <div className={`p-3 rounded-lg ${iconBgColor}`}>
-            <Icon className="h-8 w-8 text-white" />
+    <Link href={href} className="block h-full">
+      <div className="bg-background rounded-lg p-6 border border-border hover:border-primary/30 transition-all duration-300 hover:shadow-md h-full flex flex-col">
+        <div className="flex items-start gap-4 flex-1">
+          <div className={`p-3 rounded-lg ${iconBgColor} shrink-0`}>
+            <Icon className="h-6 w-6 text-white" />
           </div>
-          <div className="flex-1">
-            <h3 className="font-outfit text-lg font-semibold mb-2">{title}</h3>
-            <p className="font-outfit text-sm text-muted-foreground mb-4">{description}</p>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-outfit text-lg font-semibold mb-2 truncate">{title}</h3>
+            <p className="font-outfit text-sm text-muted-foreground mb-4 line-clamp-2">{description}</p>
             <Button 
               variant="ghost" 
-              className="font-outfit text-primary hover:text-primary/80 p-0 h-auto"
+              className="font-outfit text-primary hover:text-primary/80 p-0 h-auto mt-auto"
             >
               <span className="flex items-center gap-1">
                 Acessar

@@ -9,24 +9,29 @@ interface HeaderProps {
 
 export function Header({ title, description, className }: HeaderProps) {
   return (
-    <div className={`space-y-4 my-12 ${className}`}>
-      <div className="flex items-center gap-4">
-        <Link 
-          href="/admin" 
-          className="group flex items-center gap-2 text-muted-foreground hover:text-primary transition-all duration-300 p-2 rounded-lg hover:bg-primary/10"
-        >
-          <ArrowLeft className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
-          <span className="text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            Voltar
-          </span>
-        </Link>
-        <h1 className="font-outfit text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-          {title}
-        </h1>
+    <div className={`max-w-4xl mx-auto px-4 py-8 ${className}`}>
+      <div className="flex flex-col gap-6">
+        <div className="flex items-center justify-between">
+          <Link 
+            href="/admin" 
+            className="group flex items-center gap-3 text-muted-foreground hover:text-primary transition-all duration-300 px-4 py-2 rounded-lg hover:bg-primary/10"
+          >
+            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform duration-300" />
+            <span className="text-sm font-medium">
+              Voltar
+            </span>
+          </Link>
+        </div>
+        
+        <div className="space-y-4">
+          <h1 className="font-outfit text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
+            {title}
+          </h1>
+          <p className="font-outfit text-lg text-muted-foreground pl-4 border-l-4 border-primary/30 max-w-2xl">
+            {description}
+          </p>
+        </div>
       </div>
-      <p className="font-outfit text-base text-muted-foreground pl-4 border-l-2 border-primary/20">
-        {description}
-      </p>
     </div>
   );
 }
