@@ -141,16 +141,11 @@ export function GroupSection({ group, onAddToCart, onToggleFavorite }: GroupSect
           <h3 className="text-xl font-semibold text-gray-900">{group.name}</h3>
           <p className="text-gray-500">{group.description}</p>
         </div>
-        <motion.div
-          animate={{ rotate: isExpanded ? 0 : 180 }}
-          transition={{ duration: 0.2 }}
-        >
-          {isExpanded ? (
-            <ChevronUp className="h-6 w-6 text-gray-400" />
-          ) : (
-            <ChevronDown className="h-6 w-6 text-gray-400" />
-          )}
-        </motion.div>
+        {isExpanded ? (
+          <ChevronUp className="h-6 w-6 text-gray-400 transition-transform duration-200" />
+        ) : (
+          <ChevronDown className="h-6 w-6 text-gray-400 transition-transform duration-200" />
+        )}
       </motion.div>
 
       <AnimatePresence>

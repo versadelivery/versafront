@@ -6,6 +6,7 @@ export interface ShopResponse {
       cellphone: string
       name: string
       slug: string
+      image_url?: string | null
       catalog_groups: {
         data: Array<{
           id: string
@@ -79,6 +80,7 @@ export interface ShopResponse {
 }
 
 export interface Group {
+  storeName: string
   id: string
   name: string
   description: string
@@ -86,6 +88,7 @@ export interface Group {
   order: number
   isActive: boolean
   items: Item[]
+  cellphone: string
 }
 
 export interface Item {

@@ -9,6 +9,7 @@ interface ModalProps {
   title?: string;
   children: React.ReactNode;
   className?: string;
+  hideTitle?: boolean;
 }
 
 export function Modal({
@@ -17,13 +18,14 @@ export function Modal({
   title,
   children,
   className,
+  hideTitle = false,
 }: ModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className={cn("sm:max-w-[425px]", className)}>
+      <DialogContent className={cn("sm:max-w-[425px] rounded-sm", className)}>
         {title && (
           <DialogHeader>
-            <DialogTitle>{title}</DialogTitle>
+            <DialogTitle className={hideTitle ? "hidden" : ""}>{title}</DialogTitle>
           </DialogHeader>
         )}
         {children}

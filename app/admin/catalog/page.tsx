@@ -7,14 +7,12 @@ import { NewItemModal } from "./item-modal";
 import { ActionBar } from "@/app/admin/catalog/action-bar";
 import { useCatalogGroup } from "./useCatalogGroup";
 import { ItemCard } from "@/app/admin/catalog/item-card";
-import { CatalogResponse } from "./catalog-service";
-import { Loader2 } from "lucide-react";
-
+import { Loader2, Plus } from "lucide-react";
 
 function CatalogPage() {
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
-  const { getCatalog, isLoading } = useCatalogGroup();
+  const { isLoading, catalog } = useCatalogGroup();
 
   return (
     <ProtectedRoute>
@@ -32,7 +30,7 @@ function CatalogPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 w-full">
-            {(getCatalog as unknown as CatalogResponse)?.data?.map((group) => (
+            {catalog?.data?.map((group) => (
               group.attributes.items.map((item) => (
                 <div key={item.data.id} className="min-h-[400px]">
                   <ItemCard 

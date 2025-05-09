@@ -23,7 +23,9 @@ export default function CatalogPage() {
   const params = useParams()
   const router = useRouter()
   const slug = params.slug as string
-  
+  const [storeName, setStoreName] = useState<string>('')
+  const [storeImage, setStoreImage] = useState<string>('')
+  const [cellphone, setCellphone] = useState<string>('')
   const { data: groups = [], isLoading } = useCatalog(slug) as { data: Group[], isLoading: boolean }
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
@@ -35,7 +37,7 @@ export default function CatalogPage() {
   const [allItems, setAllItems] = useState<Item[]>([])
   const { items: persistedItems, addItem, updateQuantity, removeItem, getItemsByStore } = useCart()
   const { isAuthenticated, logout } = useAuth()
-
+  
   const totalCartItems = cartItems.reduce((sum: number, item: {id: string, quantity: number}) => sum + item.quantity, 0)
 
   useEffect(() => {
@@ -57,7 +59,7 @@ export default function CatalogPage() {
       setCartItems(mappedItems)
     }
   }, [allItems, slug, getItemsByStore])
-
+  
   useEffect(() => {
     if (groups.length > 0) {
       const items = groups.flatMap((group: Group) => group.items)
@@ -65,8 +67,25 @@ export default function CatalogPage() {
     }
   }, [groups])
 
+  useEffect(() => {
+    if (groups.length > 0) {
+      setStoreName(groups[0].storeName as never)
+      setCellphone(groups[0].cellphone as never)
+    }
+  }, [groups])
+
+  if (storeName) {
+    document.title = `${storeName} - Versa`
+  }
+
+  function handleLogin() {
+    setIsAuthModalOpen(false)
+    router.refresh()
+
+  }
+
   const filteredGroups = groups
-    .filter((group: Group) => 
+  .filter((group: Group) => 
       selectedGroups.length === 0 || selectedGroups.includes(group.id)
     )
     .map((group: Group) => ({
@@ -99,7 +118,6 @@ const addToCart = (productId: string, options?: any) => {
   const product = allItems.find(item => item.id === productId)
   if (!product) return
 
-  // Calcular preço base - usar preço com desconto se disponível
   let price = product.attributes.price_with_discount 
     ? parseFloat(product.attributes.price_with_discount)
     : parseFloat(product.attributes.price)
@@ -108,7 +126,6 @@ const addToCart = (productId: string, options?: any) => {
     price = price * options.weight
   }
 
-  // Adicionar preço dos extras
   if (options?.extras) {
     options.extras.forEach((extra: { price: number }) => {
       price += extra.price
@@ -173,14 +190,14 @@ const addToCart = (productId: string, options?: any) => {
   return (
     <div className="flex flex-col h-screen">
       <header className="sticky top-0 z-50 w-full shadow-lg bg-black backdrop-blur p-2">
-        <div className="container flex h-14 items-center justify-between px-4">
-          <div className="flex items-center md:min-w-[120px] md:justify-end">
+        <div className="container mx-auto flex h-14 items-center justify-between px-4 max-w-7xl">
+          <div className="flex items-center md:min-w-[120px] md:justify-center">
             <div className="hidden md:block">
               <Image src={logoHeader} alt="Versa" width={120} />
             </div>
           </div>
 
-          <div className="flex flex-1 justify-center px-2">
+          <div className="flex flex-1 justify-center px-4">
             <div className="relative w-full max-w-md">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
@@ -193,7 +210,7 @@ const addToCart = (productId: string, options?: any) => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 md:min-w-[120px] md:justify-start">
+          <div className="flex items-center gap-2 md:min-w-[120px] md:justify-center">
             {isAuthenticated ? (
               <>
                 <Button
@@ -258,7 +275,7 @@ const addToCart = (productId: string, options?: any) => {
                   onClick={() => setSelectedGroups([])}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     selectedGroups.length === 0 
-                      ? 'bg-primary text-white shadow-sm' 
+                      ? 'bg-white text-primary shadow-sm' 
                       : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
                   }`}
                 >
@@ -271,7 +288,7 @@ const addToCart = (productId: string, options?: any) => {
                     onClick={() => setSelectedGroups([group.id])}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                       selectedGroups.includes(group.id) 
-                        ? 'bg-primary text-white shadow-sm' 
+                        ? 'bg-white text-primary shadow-sm' 
                         : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
                     }`}
                   >
@@ -283,7 +300,7 @@ const addToCart = (productId: string, options?: any) => {
           </ScrollArea>
           </div>
           
-          {!isLoading && (
+          {/* {!isLoading && (
             <div className="hidden lg:block w-72 flex-shrink-0">
               <Filters
                 selectedGroups={selectedGroups}
@@ -293,20 +310,23 @@ const addToCart = (productId: string, options?: any) => {
                 groups={groups}
               />
             </div>
-          )}
+          )} */}
           
           <div className="flex-1 min-w-0">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
               <div className="space-y-1">
                 <h2 className="text-2xl font-bold text-gray-900">
-                  {selectedGroups.length === 0 ? 'Todos os produtos' : groups.find(g => g.id === selectedGroups[0])?.name}
+                  {selectedGroups.length === 0 ? storeName : groups.find(g => g.id === selectedGroups[0])?.name}
                 </h2>
+                <p className="text-sm text-gray-500">
+                  {cellphone}
+                </p>
                 <p className="text-sm text-gray-500">
                   {allItems.length} {allItems.length === 1 ? 'produto' : 'produtos'} encontrados
                 </p>
               </div>
               
-              <div className="flex items-center gap-2 w-full sm:w-auto">
+              {/* <div className="flex items-center gap-2 w-full sm:w-auto">
                 <span className="text-sm text-gray-600 whitespace-nowrap">Ordenar por:</span>
                 <Select value={sortOption} onValueChange={setSortOption}>
                   <SelectTrigger className="w-full sm:w-[180px]">
@@ -319,7 +339,7 @@ const addToCart = (productId: string, options?: any) => {
                     <SelectItem value="rating">Melhores avaliações</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
+              </div> */}
             </div>
             
             {isLoading ? (
@@ -374,7 +394,10 @@ const addToCart = (productId: string, options?: any) => {
 
       <AuthModal
         isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
+        onClose={() => {
+          setIsAuthModalOpen(false)
+          router.refresh()
+        }}
       />
 
       <CartDrawer

@@ -1,7 +1,7 @@
 import { Input } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
 import { Plus, Trash2, Loader2, Edit, Check, X } from "lucide-react";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useDestroyItems, useEditStep } from "./useCatalogGroup";
 
 interface StepOptionInputProps {
@@ -32,29 +32,42 @@ function StepOptionInput({ value, onChange, onRemove, placeholder, id, stepId, o
     }
   }, [isEditing]);
 
-  const handleUpdateStepOption = (e: React.MouseEvent) => {
+  const handleUpdateStepOption = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     if (updateOptionName !== null) {
       updateStepOption();
       onChange({ target: { value: updateOptionName } } as React.ChangeEvent<HTMLInputElement>);
       setIsEditing(false);
     }
-  };
+  }, [onChange, updateOptionName, updateStepOption]);
 
-  const handleCancelEdit = (e: React.MouseEvent) => {
+  const handleCancelEdit = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     setIsEditing(false);
     setUpdateOptionName(value);
-  };
+  }, [value]);
+
+  const handleStartEdit = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setUpdateOptionName(value);
+    setIsEditing(true);
+  }, [value]);
+
+  const handleRemove = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    destroyStepItem();
+    onRemove();
+  }, [destroyStepItem, onRemove]);
+
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setUpdateOptionName(e.target.value);
+    onChange(e);
+  }, [onChange]);
 
   return (
     <div className="flex items-center gap-2 bg-white p-2 rounded-md border border-gray-100">
       <span className="w-6 h-6 flex items-center justify-center mr-2">
-        <Button variant="ghost" size="icon" onClick={(e) => {
-          e.preventDefault();
-          setUpdateOptionName(value);
-          setIsEditing(true);
-        }}>
+        <Button variant="ghost" size="icon" onClick={handleStartEdit}>
           <Edit className="w-4 h-4" />
         </Button>
       </span>
@@ -62,10 +75,7 @@ function StepOptionInput({ value, onChange, onRemove, placeholder, id, stepId, o
         ref={inputRef}
         type="text"
         value={updateOptionName || value}
-        onChange={(e) => {
-          setUpdateOptionName(e.target.value)
-          onChange(e)
-        }}
+        onChange={handleInputChange}
         disabled={!isEditing}
         placeholder={placeholder || "Ex: Mista"}
         className="flex-1 border-0 focus-visible:ring-0 bg-transparent outline-none text-base placeholder:text-gray-400"
@@ -95,11 +105,7 @@ function StepOptionInput({ value, onChange, onRemove, placeholder, id, stepId, o
       )}
       <button
         type="button"
-        onClick={(e) => {
-          e.preventDefault();
-          destroyStepItem()
-          onRemove()
-        }}
+        onClick={handleRemove}
         className="cursor-pointer ml-2 text-red-500 hover:text-red-700 hover:bg-balck/10 rounded-md p-2"
         tabIndex={-1}
       >
@@ -151,16 +157,12 @@ export function ItemSteps({
     stepId: updateStepId || '', 
     name: stepName || '' 
   })
-  
-  function viewStepId(idName: string | undefined) {
-    console.log(idName)
-  }
-  
+
   useEffect(() => {
     if (stepId) {
       destroyStep()
     }
-  }, [stepId])
+  }, [stepId, destroyStep])
 
   useEffect(() => {
     if (editingStepIndex !== null && stepInputRef.current) {
@@ -168,116 +170,122 @@ export function ItemSteps({
     }
   }, [editingStepIndex]);
 
-  const handleUpdateStep = (stepIndex: number) => {
+  const handleUpdateStep = useCallback((stepIndex: number) => {
     setEditingStepIndex(null);
-  };
+  }, []);
 
-  const handleRemoveStepOption = (stepIndex: number, optionIndex: number) => {
+  const handleRemoveStepOption = useCallback((stepIndex: number, optionIndex: number) => {
     const currentStep = steps[stepIndex];
     if (currentStep.options.length === 1) {
       onRemoveStep(stepIndex);
     } else {
       onRemoveStepOption(stepIndex, optionIndex);
     }
-  };
+  }, [onRemoveStep, onRemoveStepOption, steps]);
 
-  return (
-    <div className="space-y-4">
-      {steps.map((step, stepIndex) => (
-        <div key={stepIndex} className="space-y-3 border border-gray-200 rounded-lg p-4 bg-muted/40">
-          <div className="flex gap-2 items-start">
-            <div className="flex-1 space-y-1">
-              <label className="text-sm font-medium text-gray-700">Nome da etapa</label>
-              <div className="flex items-center gap-2">
-                <Input
-                  ref={stepInputRef}
-                  placeholder="Ex: Primeira metade da pizza"
-                  value={step.name}
-                  disabled={editingStepIndex !== stepIndex}
-                  onChange={(e) => {
-                    onStepChange(stepIndex, 'name', e.target.value)
-                    setStepName(e.target.value)
+  const handleStepChange = useCallback((stepIndex: number, value: string) => {
+    onStepChange(stepIndex, 'name', value);
+    setStepName(value);
+  }, [onStepChange]);
+
+  const handleRemoveStep = useCallback((stepIndex: number, stepId: string) => {
+    setStepId(stepId);
+    onRemoveStep(stepIndex);
+  }, [onRemoveStep]);
+
+  const renderStep = useCallback((step: Step, stepIndex: number) => (
+    <div key={stepIndex} className="space-y-3 border border-gray-200 rounded-lg p-4 bg-muted/40">
+      <div className="flex gap-2 items-start">
+        <div className="flex-1 space-y-1">
+          <label className="text-sm font-medium text-gray-700">Nome da etapa</label>
+          <div className="flex items-center gap-2">
+            <Input
+              ref={stepInputRef}
+              placeholder="Ex: Primeira metade da pizza"
+              value={step.name}
+              disabled={editingStepIndex !== stepIndex}
+              onChange={(e) => handleStepChange(stepIndex, e.target.value)}
+              className="bg-white"
+            />
+            <>
+              {editingStepIndex === stepIndex ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    setUpdateStepId(step.id || '')
+                    setStepName(step.name)
+                    updateStep()
                   }}
-                  className="bg-white"
-                />
-                  <>
-                    {editingStepIndex === stepIndex ? (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          setUpdateStepId(step.id || '')
-                          setStepName(step.name)
-                          updateStep()
-                        }}
-                        disabled={isUpdatingStep}
-                      >
-                        {isUpdatingStep ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Check className="w-4 h-4" />
-                        )}
-                      </Button>
-                    ) : (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setEditingStepIndex(stepIndex)}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </>
-              </div>
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => {
-                setStepId(step.id || '')
-                onRemoveStep(stepIndex)
-              }}
-              className="cursor-pointer shrink-0 text-gray-500 hover:text-red-500"
-            >
-              {isDestroyingStep ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                  disabled={isUpdatingStep}
+                >
+                  {isUpdatingStep ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Check className="w-4 h-4" />
+                  )}
+                </Button>
               ) : (
-                <Trash2 className="w-4 h-4" />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setEditingStepIndex(stepIndex)}
+                >
+                  <Edit className="w-4 h-4" />
+                </Button>
               )}
-            </Button>
-          </div>
-          <div className="space-y-3 pl-4 border-l-2 border-gray-200">
-            <div className="flex items-center justify-between">
-              <h4 className="text-sm font-medium text-gray-600">Itens desta etapa</h4>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => onAddStepOption(stepIndex)}
-                className="text-xs"
-              >
-                Novo item
-              </Button>
-            </div>
-            <div className="space-y-2">
-              {step.options.map((option, optionIndex) => (
-                <StepOptionInput
-                  key={optionIndex}
-                  value={option.name}
-                  onChange={(e) => onStepOptionChange(stepIndex, optionIndex, e.target.value)}
-                  onRemove={() => handleRemoveStepOption(stepIndex, optionIndex)}
-                  optionId={option.id as never}
-                  stepId={step.id as never}
-                  id={id as never}
-                />
-              ))}
-            </div>
+            </>
           </div>
         </div>
-      ))}
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={() => handleRemoveStep(stepIndex, step.id || '')}
+          className="cursor-pointer shrink-0 text-gray-500 hover:text-red-500"
+        >
+          {isDestroyingStep ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Trash2 className="w-4 h-4" />
+          )}
+        </Button>
+      </div>
+      <div className="space-y-3 pl-4 border-l-2 border-gray-200">
+        <div className="flex items-center justify-between">
+          <h4 className="text-sm font-medium text-gray-600">Itens desta etapa</h4>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => onAddStepOption(stepIndex)}
+            className="text-xs"
+          >
+            Novo item
+          </Button>
+        </div>
+        <div className="space-y-2">
+          {step.options.map((option, optionIndex) => (
+            <StepOptionInput
+              key={option.id}
+              value={option.name}
+              onChange={(e) => onStepOptionChange(stepIndex, optionIndex, e.target.value)}
+              onRemove={() => handleRemoveStepOption(stepIndex, optionIndex)}
+              optionId={option.id as never}
+              stepId={step.id as never}
+              id={id as never}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  ), [editingStepIndex, handleRemoveStep, handleRemoveStepOption, handleStepChange, id, isDestroyingStep, isUpdatingStep, onAddStepOption, onStepOptionChange, updateStep]);
+
+  const stepsList = useMemo(() => (
+    <div className="space-y-4">
+      {steps.map((step, stepIndex) => renderStep(step, stepIndex))}
       <Button
         type="button"
         variant="outline"
@@ -288,5 +296,7 @@ export function ItemSteps({
         Nova etapa
       </Button>
     </div>
-  );
+  ), [onAddStep, renderStep, steps]);
+
+  return stepsList;
 } 

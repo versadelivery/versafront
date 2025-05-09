@@ -9,8 +9,13 @@ import { Label } from '@/app/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/app/components/ui/radio-group'
 import { ScrollArea } from '@/app/components/ui/scroll-area'
 import { Badge } from '@/app/components/ui/badge'
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle, Package, Scale, Plus, ChefHat, ListChecks, ShoppingCart, Info, Clock } from 'lucide-react'
 import { Alert, AlertDescription } from '@/app/components/ui/alert'
+import { useAuth } from '@/app/hooks/useClientAuth'
+import { AuthModal } from '@/app/components/client-auth/(auth)/auth-modal'
+import { Separator } from '@/app/components/ui/separator'
+import { Card, CardContent } from '@/app/components/ui/card'
+import Image from 'next/image'
 
 interface ProductModalProps {
   product: any
@@ -25,412 +30,313 @@ interface ProductModalProps {
 }
 
 export function ProductModal({ product, isOpen, onClose, onAddToCart }: ProductModalProps) {
+  const { isAuthenticated } = useAuth()
   const [currentStep, setCurrentStep] = useState(0)
-  const [selectedWeight, setSelectedWeight] = useState<number | null>(null)
+  const [selectedWeight, setSelectedWeight] = useState<number | undefined>(undefined)
   const [selectedExtras, setSelectedExtras] = useState<{id: string; name: string; price: number}[]>([])
-  const [selectedPrepareMethod, setSelectedPrepareMethod] = useState<string | null>(null)
+  const [selectedPrepareMethod, setSelectedPrepareMethod] = useState<string[]>([])
   const [selectedSteps, setSelectedSteps] = useState<Record<string, string>>({})
   const [validationError, setValidationError] = useState<string | null>(null)
+  const [showAuthModal, setShowAuthModal] = useState(false)
+  const [showProductModal, setShowProductModal] = useState(false)
 
   // Reset state when modal closes
   useEffect(() => {
     if (!isOpen) {
       setCurrentStep(0)
-      setSelectedWeight(null)
+      setSelectedWeight(undefined)
       setSelectedExtras([])
-      setSelectedPrepareMethod(null)
+      setSelectedPrepareMethod([])
       setSelectedSteps({})
       setValidationError(null)
+      setShowAuthModal(false)
+      setShowProductModal(false)
     }
   }, [isOpen])
 
-  const weightOptions = () => {
-    if (!['kg', 'g'].includes(product.attributes.unit_of_measurement) || 
-        !product.attributes.measure_interval) return []
-    
-    const interval = parseFloat(product.attributes.measure_interval)
-    const min = parseFloat(product.attributes.min_weight || '0')
-    const max = parseFloat(product.attributes.max_weight || '0')
-    
-    const options = []
-    for (let weight = min; weight <= max; weight += interval) {
-      options.push(weight)
-    }
-    return options
-  }
-
-  const calculateTotalPrice = () => {
-    let total = product.attributes.price_with_discount 
-      ? parseFloat(product.attributes.price_with_discount)
-      : parseFloat(product.attributes.price);
-    
-    if (selectedWeight && ['kg', 'g'].includes(product.attributes.unit_of_measurement)) {
-      total = total * selectedWeight
-    }
-    
-    selectedExtras.forEach(extra => {
-      total += extra.price
-    })
-    
-    return total.toFixed(2)
-  }
-
-  const validateCurrentStep = () => {
-    setValidationError(null)
-    
-    const stepType = getCurrentStepType(currentStep)
-    
-    if (typeof stepType === 'object' && stepType.type === 'step') {
-      if (!selectedSteps[stepType.data.id]) {
-        setValidationError('Por favor, selecione uma opção')
-        return false
-      }
-    } else {
-      switch(stepType) {
-        case 'weight':
-          if (!selectedWeight) {
-            setValidationError('Por favor, selecione um peso')
-            return false
-          }
-          break
-        case 'prepare_method':
-          if (!selectedPrepareMethod) {
-            setValidationError('Por favor, selecione um método de preparo')
-            return false
-          }
-          break
-      }
-    }
-    
-    return true
-  }
-
-  const handleNext = () => {
-    if (!validateCurrentStep()) return
-
-    if (currentStep < totalSteps() - 1) {
-      setCurrentStep(currentStep + 1)
-    } else {
-      onAddToCart({
-        weight: selectedWeight || undefined,
-        extras: selectedExtras.length > 0 ? selectedExtras : undefined,
-        prepareMethod: selectedPrepareMethod || undefined,
-        steps: Object.keys(selectedSteps).length > 0 ? selectedSteps : undefined
-      })
-      onClose()
-    }
-  }
-
-  const handleBack = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1)
-    } else {
-      onClose()
-    }
-  }
-
-  const hasWeightSelection = ['kg', 'g'].includes(product.attributes.unit_of_measurement) && 
-                           product.attributes.measure_interval
-  const hasExtras = product.attributes.extra?.data?.length
-  const hasPrepareMethod = product.attributes.prepare_method?.data?.length
-  const hasSteps = product.attributes.steps?.data?.length
-
-  const totalSteps = () => {
-    let steps = 0
-    if (hasWeightSelection) steps++
-    if (hasExtras) steps++
-    if (hasPrepareMethod) steps++
-    if (hasSteps) steps += product.attributes.steps.data.length
-    return Math.max(steps, 1)
-  }
-
-  const getCurrentStepType = (stepIndex: number) => {
-    let stepsProcessed = 0
-
-    if (hasWeightSelection) {
-      if (stepIndex === stepsProcessed) return 'weight'
-      stepsProcessed++
+  const handleAddToCart = () => {
+    if (!isAuthenticated) {
+      setShowAuthModal(true)
+      return
     }
 
-    if (hasExtras) {
-      if (stepIndex === stepsProcessed) return 'extras'
-      stepsProcessed++
+    // Validar se há peso selecionado para produtos por peso
+    if (['kg', 'g'].includes(product.attributes.unit_of_measurement) && !selectedWeight) {
+      setValidationError('Por favor, selecione o peso desejado')
+      return
     }
 
-    if (hasPrepareMethod) {
-      if (stepIndex === stepsProcessed) return 'prepare_method'
-      stepsProcessed++
+    // Validar se há método de preparo selecionado
+    if (product.attributes.prepare_method?.data?.length > 0 && selectedPrepareMethod.length === 0) {
+      setValidationError('Por favor, selecione um método de preparo')
+      return
     }
 
-    if (hasSteps) {
-      const stepData = product.attributes.steps.data[stepIndex - stepsProcessed]
-      if (stepData) return { type: 'step', data: stepData }
-    }
-
-    return 'confirmation'
-  }
-
-  const renderStep = () => {
-    const stepType = getCurrentStepType(currentStep)
-
-    if (typeof stepType === 'object' && stepType.type === 'step') {
-      const stepData = stepType.data
-      return (
-        <div className="space-y-4">
-          <h3 className="font-medium text-lg">{stepData.attributes.name}</h3>
-          <p className="text-sm text-gray-500 mb-4">{stepData.attributes.description}</p>
-          <RadioGroup
-            value={selectedSteps[stepData.id] || ''}
-            onValueChange={(value) => {
-              setSelectedSteps({
-                ...selectedSteps,
-                [stepData.id]: value
-              })
-            }}
-            className="space-y-3"
-          >
-            {stepData.attributes.options.data.map((option: any) => (
-              <div key={option.id} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors">
-                <RadioGroupItem value={option.id} id={`option-${option.id}`} />
-                <Label htmlFor={`option-${option.id}`} className="flex-1 cursor-pointer">
-                  <div className="flex justify-between items-center">
-                    <span>{option.attributes.name}</span>
-                    {option.attributes.price > 0 && (
-                      <Badge variant="secondary">+ R$ {option.attributes.price}</Badge>
-                    )}
-                  </div>
-                  {option.attributes.description && (
-                    <p className="text-sm text-gray-500 mt-1">{option.attributes.description}</p>
-                  )}
-                </Label>
-              </div>
-            ))}
-          </RadioGroup>
-        </div>
+    // Validar se todas as etapas foram preenchidas
+    if (product.attributes.steps?.data?.length > 0) {
+      const allStepsFilled = product.attributes.steps.data.every((step: any) => 
+        selectedSteps[step.id]
       )
+      if (!allStepsFilled) {
+        setValidationError('Por favor, complete todas as etapas de personalização')
+        return
+      }
     }
 
-    switch(stepType) {
-      case 'weight':
-        return (
-          <div className="space-y-4">
-            <h3 className="font-medium text-lg">Selecione a quantidade</h3>
-            <p className="text-sm text-gray-500 mb-4">
-              Escolha o peso desejado para o produto
-            </p>
-            <Select 
-              value={selectedWeight?.toString() || ''}
-              onValueChange={(value) => setSelectedWeight(parseFloat(value))}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder={`Selecione o peso (${product.attributes.unit_of_measurement})`} />
-              </SelectTrigger>
-              <SelectContent>
-                {weightOptions().map((weight) => (
-                  <SelectItem key={weight} value={weight.toString()}>
-                    {weight} {product.attributes.unit_of_measurement} - R$ {(parseFloat(product.attributes.price) * weight).toFixed(2)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+    onAddToCart({
+      weight: selectedWeight,
+      extras: selectedExtras,
+      prepareMethod: selectedPrepareMethod[0],
+      steps: selectedSteps
+    })
+    onClose()
+  }
+
+  const renderProductDetails = () => {
+    return (
+      <div className="space-y-6">
+        {product.attributes.image_url && (
+          <div className="relative h-64 w-full rounded-lg overflow-hidden">
+            <Image
+              src={product.attributes.image_url}
+              alt={product.attributes.name}
+              fill
+              className="object-cover"
+            />
           </div>
-        )
-      
-      case 'extras':
-        return (
-          <div className="space-y-4">
-            <h3 className="font-medium text-lg">Adicionais</h3>
-            <p className="text-sm text-gray-500 mb-4">
-              Selecione os adicionais que deseja incluir no seu pedido
-            </p>
-            <div className="space-y-3">
-              {product.attributes.extra.data.map((extra: any) => (
-                <div key={extra.id} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors">
-                  <Checkbox
-                    id={`extra-${extra.id}`}
-                    checked={selectedExtras.some(e => e.id === extra.id)}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        setSelectedExtras([...selectedExtras, {
-                          id: extra.id,
-                          name: extra.attributes.name,
-                          price: parseFloat(extra.attributes.price)
-                        }])
-                      } else {
-                        setSelectedExtras(selectedExtras.filter(e => e.id !== extra.id))
-                      }
-                    }}
-                  />
-                  <Label htmlFor={`extra-${extra.id}`} className="flex-1 cursor-pointer">
-                    <div className="flex justify-between items-center">
-                      <span>{extra.attributes.name}</span>
-                      <Badge variant="secondary">+ R$ {extra.attributes.price}</Badge>
-                    </div>
-                    {extra.attributes.description && (
-                      <p className="text-sm text-gray-500 mt-1">{extra.attributes.description}</p>
-                    )}
-                  </Label>
+        )}
+
+        {/* Informações Básicas */}
+        <div className="space-y-4">
+          <div>
+            <h3 className="text-xl font-semibold text-gray-800">{product.attributes.name}</h3>
+            {product.attributes.description && (
+              <p className="text-gray-600 mt-2 flex items-start gap-2">
+                <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                {product.attributes.description}
+              </p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <h4 className="font-medium text-gray-700">Preço</h4>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold text-gray-900">
+                  R$ {product.attributes.price.toFixed(2).replace('.', ',')}
+                </span>
+              </div>
+            </div>
+
+            {['kg', 'g'].includes(product.attributes.unit_of_measurement) && (
+              <div className="space-y-2">
+                <h4 className="font-medium text-gray-700 flex items-center gap-2">
+                  <Scale className="h-4 w-4" />
+                  Peso
+                </h4>
+                <div className="space-y-1">
+                  {product.attributes.min_weight && product.attributes.max_weight && (
+                    <p className="text-gray-600">
+                      {product.attributes.min_weight} - {product.attributes.max_weight} {product.attributes.unit_of_measurement}
+                    </p>
+                  )}
+                  {product.attributes.measure_interval && (
+                    <p className="text-gray-600 flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      Intervalo: {product.attributes.measure_interval} {product.attributes.unit_of_measurement}
+                    </p>
+                  )}
                 </div>
-              ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Seleção de Peso */}
+        {['kg', 'g'].includes(product.attributes.unit_of_measurement) && (
+          <div className="space-y-2">
+            <h4 className="font-medium text-gray-700 flex items-center gap-2">
+              <Scale className="h-4 w-4" />
+              Selecione o Peso
+            </h4>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min={product.attributes.min_weight}
+                max={product.attributes.max_weight}
+                step={product.attributes.measure_interval}
+                value={selectedWeight || ''}
+                onChange={(e) => setSelectedWeight(Number(e.target.value))}
+                className="w-32 px-3 py-2 border rounded-md"
+              />
+              <span className="text-gray-600">{product.attributes.unit_of_measurement}</span>
             </div>
           </div>
-        )
-      
-      case 'prepare_method':
-        return (
-          <div className="space-y-4">
-            <h3 className="font-medium text-lg">Modo de preparo</h3>
-            <p className="text-sm text-gray-500 mb-4">
-              Escolha como deseja que seu produto seja preparado
-            </p>
+        )}
+
+        {/* Adicionais */}
+        {product.attributes.extra?.data?.length > 0 && (
+          <div className="space-y-2">
+            <h4 className="font-medium text-gray-700 flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Adicionais Disponíveis
+            </h4>
+            <ul className="grid grid-cols-2 gap-2">
+              {product.attributes.extra.data.map((extra: any) => (
+                <li key={extra.id} className="text-gray-600 bg-gray-50 p-2 rounded-md flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id={`extra-${extra.id}`}
+                      checked={selectedExtras.some(e => e.id === extra.id)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedExtras([...selectedExtras, {
+                            id: extra.id,
+                            name: extra.attributes.name,
+                            price: extra.attributes.price
+                          }])
+                        } else {
+                          setSelectedExtras(selectedExtras.filter(e => e.id !== extra.id))
+                        }
+                      }}
+                    />
+                    <div>
+                      <span className="font-medium">{extra.attributes.name}</span>
+                      {extra.attributes.description && (
+                        <p className="text-sm text-muted-foreground">{extra.attributes.description}</p>
+                      )}
+                    </div>
+                  </div>
+                  <Badge variant="secondary">+ R$ {extra.attributes.price}</Badge>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Métodos de Preparo */}
+        {product.attributes.prepare_method?.data?.length > 0 && (
+          <div className="space-y-2">
+            <h4 className="font-medium text-gray-700 flex items-center gap-2">
+              <ChefHat className="h-4 w-4" />
+              Métodos de Preparo
+            </h4>
             <RadioGroup
-              value={selectedPrepareMethod || ''}
-              onValueChange={setSelectedPrepareMethod}
-              className="space-y-3"
+              value={selectedPrepareMethod[0]}
+              onValueChange={(value) => setSelectedPrepareMethod([value])}
+              className="grid grid-cols-2 gap-2"
             >
               {product.attributes.prepare_method.data.map((method: any) => (
-                <div key={method.id} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+                <div key={method.id} className="flex items-center space-x-2">
                   <RadioGroupItem value={method.id} id={`method-${method.id}`} />
-                  <Label htmlFor={`method-${method.id}`} className="flex-1 cursor-pointer">
+                  <Label htmlFor={`method-${method.id}`} className="flex-1">
                     <div className="flex justify-between items-center">
-                      <span>{method.attributes.name}</span>
+                      <div>
+                        <span className="font-medium">{method.attributes.name}</span>
+                        {method.attributes.description && (
+                          <p className="text-sm text-muted-foreground">{method.attributes.description}</p>
+                        )}
+                      </div>
                       {method.attributes.price > 0 && (
                         <Badge variant="secondary">+ R$ {method.attributes.price}</Badge>
                       )}
                     </div>
-                    {method.attributes.description && (
-                      <p className="text-sm text-gray-500 mt-1">{method.attributes.description}</p>
-                    )}
                   </Label>
                 </div>
               ))}
             </RadioGroup>
           </div>
-        )
-      
-      case 'confirmation':
-      default:
-        return (
-          <div className="space-y-4">
-            <h3 className="font-medium text-lg">Resumo do pedido</h3>
-            <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
-              <div className="flex justify-between items-center">
-                <span className="font-medium">Produto:</span>
-                <span>{product.attributes.name}</span>
-              </div>
-              
-              {selectedWeight && (
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">Quantidade:</span>
-                  <span>
-                    {selectedWeight} {product.attributes.unit_of_measurement}
-                  </span>
-                </div>
-              )}
-              
-              {selectedExtras.length > 0 && (
-                <div>
-                  <p className="font-medium mb-2">Adicionais:</p>
-                  <ul className="space-y-2">
-                    {selectedExtras.map(extra => (
-                      <li key={extra.id} className="flex justify-between items-center">
-                        <span>+ {extra.name}</span>
-                        <Badge variant="secondary">+ R$ {extra.price.toFixed(2)}</Badge>
-                      </li>
+        )}
+
+        {/* Etapas de Personalização */}
+        {product.attributes.steps?.data?.length > 0 && (
+          <div className="space-y-2">
+            <h4 className="font-medium text-gray-700 flex items-center gap-2">
+              <ListChecks className="h-4 w-4" />
+              Opções de Personalização
+            </h4>
+            <ol className="space-y-2">
+              {product.attributes.steps.data.map((step: any) => (
+                <li key={step.id} className="text-gray-600 bg-gray-50 p-2 rounded-md">
+                  <div className="font-medium">{step.attributes.name}</div>
+                  {step.attributes.description && (
+                    <p className="text-sm text-muted-foreground">{step.attributes.description}</p>
+                  )}
+                  <RadioGroup
+                    value={selectedSteps[step.id]}
+                    onValueChange={(value) => setSelectedSteps({ ...selectedSteps, [step.id]: value })}
+                    className="space-y-2 mt-2"
+                  >
+                    {step.attributes.options.data.map((option: any) => (
+                      <div key={option.id} className="flex items-center space-x-2">
+                        <RadioGroupItem value={option.id} id={`option-${option.id}`} />
+                        <Label htmlFor={`option-${option.id}`} className="flex-1">
+                          <div className="flex justify-between items-center">
+                            <span>{option.attributes.name}</span>
+                            {option.attributes.price > 0 && (
+                              <Badge variant="secondary">+ R$ {option.attributes.price}</Badge>
+                            )}
+                          </div>
+                        </Label>
+                      </div>
                     ))}
-                  </ul>
-                </div>
-              )}
-              
-              {selectedPrepareMethod && (
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">Preparo:</span>
-                  <span>
-                    {product.attributes.prepare_method.data.find((m: any) => m.id === selectedPrepareMethod)?.attributes.name}
-                  </span>
-                </div>
-              )}
-              
-              {Object.keys(selectedSteps).length > 0 && (
-                <div>
-                  <p className="font-medium mb-2">Opções escolhidas:</p>
-                  <ul className="space-y-2">
-                    {product.attributes.steps.data.map((step: any) => {
-                      const selectedOption = step.attributes.options.data.find(
-                        (opt: any) => opt.id === selectedSteps[step.id]
-                      )
-                      return selectedOption ? (
-                        <li key={step.id} className="flex justify-between items-center">
-                          <span>{step.attributes.name}:</span>
-                          <span>{selectedOption.attributes.name}</span>
-                        </li>
-                      ) : null
-                    })}
-                  </ul>
-                </div>
-              )}
-              
-              <div className="pt-4 border-t">
-                <div className="flex justify-between items-center font-bold text-lg">
-                  <span>Total:</span>
-                  <span>R$ {calculateTotalPrice()}</span>
-                </div>
-              </div>
-            </div>
+                  </RadioGroup>
+                </li>
+              ))}
+            </ol>
           </div>
-        )
-    }
+        )}
+
+        {validationError && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{validationError}</AlertDescription>
+          </Alert>
+        )}
+
+        <Separator />
+
+        {/* Botão de Adicionar ao Carrinho */}
+        <div className="flex justify-center">
+          <Button 
+            size="lg" 
+            className="w-full max-w-md"
+            onClick={handleAddToCart}
+          >
+            <ShoppingCart className="mr-2 h-5 w-5" />
+            Adicionar ao Carrinho
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md max-h-[90vh]">
-        <DialogHeader>
-          <DialogTitle className="text-center text-xl">Personalize seu pedido</DialogTitle>
-        </DialogHeader>
-        
-        <ScrollArea className="max-h-[60vh] px-4">
-          <div className="py-4">
-            {validationError && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{validationError}</AlertDescription>
-              </Alert>
-            )}
-            {renderStep()}
-          </div>
-        </ScrollArea>
-        
-        <div className="flex flex-col gap-4 px-4">
-          <div className="flex justify-center gap-2">
-            {Array.from({ length: totalSteps() }).map((_, i) => (
-              <div 
-                key={i}
-                className={`h-2 w-2 rounded-full transition-colors ${
-                  i === currentStep ? 'bg-primary' : 'bg-gray-200'
-                }`}
-              />
-            ))}
-          </div>
+    <>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="rounded-xs sm:h-auto max-w-[95vw] sm:max-w-[720px] p-4 sm:p-6 md:p-8 bg-white rounded-sm max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#212121] [&::-webkit-scrollbar-thumb]:rounded-sm [&::-webkit-scrollbar]:px-2">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Detalhes do Produto
+            </DialogTitle>
+          </DialogHeader>
           
-          <div className="flex justify-between gap-3">
-            <Button 
-              variant="outline" 
-              onClick={handleBack}
-              className={currentStep === 0 ? "invisible" : ""}
-            >
-              Voltar
-            </Button>
-            
-            <Button 
-              onClick={handleNext}
-              className="flex-1"
-            >
-              {currentStep < totalSteps() - 1 ? 'Próximo' : 'Adicionar ao carrinho'}
-            </Button>
+          <div className="space-y-6">
+            {renderProductDetails()}
           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+
+      <AuthModal 
+        isOpen={showAuthModal} 
+        onClose={() => {
+          setShowAuthModal(false)
+          if (!isAuthenticated) {
+            onClose()
+          }
+        }} 
+      />
+    </>
   )
 }

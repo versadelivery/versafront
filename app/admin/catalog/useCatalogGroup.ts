@@ -33,7 +33,8 @@ export const useEditStep = ({ id, stepId, name, optionId, price }: EditStepProps
   const updatePrepareMethodMutation = useMutation({
     mutationFn: () => updatePrepareMethod(id, stepId, name),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['catalog-item', id] });
+      queryClient.invalidateQueries({ queryKey: ['catalog-item'] });
+      queryClient.invalidateQueries({ queryKey: ['catalog'] });
       toast.success("Método de preparo atualizado com sucesso");
     },
     onError: () => {
@@ -164,14 +165,12 @@ export const useCatalogItem = (id: string) => {
 export const useCatalogGroup = (id?: string) => {
   const queryClient = useQueryClient();
 
-  const { data: catalog, isLoading, error } = useQuery({
-    queryKey: ["catalog-groups"],
-    queryFn: getCatalog,
-  });
-
-  const getCatalogQuery = useQuery({
+  const { data: catalog, isLoading, error, refetch } = useQuery({
     queryKey: ["catalog"],
     queryFn: getCatalog,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    refetchOnReconnect: true,
   });
   
   const createCatalogGroupMutation = useMutation({
@@ -230,7 +229,8 @@ export const useCatalogGroup = (id?: string) => {
     isDeletingGroup: deleteCatalogGroupMutation.isPending,
     createCatalogItem: createCatalogItemMutation.mutate,
     isCreatingItem: createCatalogItemMutation.isPending,
-    getCatalog: getCatalogQuery.data,
-    isLoadingCatalog: getCatalogQuery.isLoading
+    getCatalog: catalog,
+    isLoadingCatalog: isLoading,
+    refetchCatalog: refetch,
   };
 };

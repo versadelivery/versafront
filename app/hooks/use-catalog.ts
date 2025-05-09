@@ -17,7 +17,12 @@ export function useCatalog(slug: string) {
           notFound()
         }
 
+        const storeName = data.data.attributes.name
+        const cellphone = data.data.attributes.cellphone || ''
+
         return data.data.attributes.catalog_groups.data.map(group => ({
+          storeName: storeName,
+          cellphone: cellphone,
           id: group.id,
           type: group.type,
           name: group.attributes.name,
