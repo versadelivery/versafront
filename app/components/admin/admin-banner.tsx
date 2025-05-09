@@ -15,7 +15,7 @@ export function AdminBanner({ bannerImg, children }: AdminBannerProps) {
 
   return (
     <div className="relative">
-      <div className="h-96 w-full bg-background overflow-hidden lg:rounded-b-[80px] rounded-b-md">
+      <div className="h-96 w-full bg-black overflow-hidden lg:rounded-b-[80px] rounded-b-md">
         <Image
           src={bannerImg}
           alt="Background"
