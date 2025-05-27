@@ -59,9 +59,9 @@ export function ItemCard({ item }: ItemCardProps) {
         </Button>
 
         {item.price_with_discount && (
-          <div className="absolute top-2 left-2 px-2 py-1 rounded-md z-10 bg-red-500 text-primary-foreground">
+          <div className="absolute top-2 left-2 px-2 py-1 rounded-full z-10 bg-primary text-primary-foreground">
             <span className="text-sm font-semibold">
-              -{((item.price - item.price_with_discount) / item.price * 100).toFixed(2)}%
+              - {((item.price - item.price_with_discount) / item.price * 100).toFixed(2)}%
             </span>
           </div>
         )}

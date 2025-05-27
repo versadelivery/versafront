@@ -34,6 +34,8 @@ export interface AuthLayoutProps {
   title: string;
   imageSrc: string | StaticImageData;
   imagePosition?: "left" | "right";
+  headerDisplay?: boolean;
+  imageDisplay?: boolean;
 }
 
 export interface AuthFormFooterProps {

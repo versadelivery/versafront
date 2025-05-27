@@ -10,11 +10,12 @@ export function AuthLayout({
   children,
   title,
   imageSrc,
-  imagePosition = "right"
+  imagePosition = "right",
+  headerDisplay = true
 }: AuthLayoutProps) {
   return (
     <main className="min-h-screen bg-[#f5f5f5] overflow-x-hidden">
-      <Header alwaysOpaque={true} />
+      {headerDisplay && <Header alwaysOpaque={true} />}
 
       <div className={`max-w-7xl min-h-screen mx-auto px-4 pt-24 pb-48 flex relative ${imagePosition === "right" ? "lg:justify-start justify-center" : "justify-center"}`}>
         {imagePosition === "left" && (

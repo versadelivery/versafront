@@ -691,10 +691,17 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
                 ADICIONAIS?
               </FormLabel>
               <FormControl className="cursor-pointer">
+              <div onClick={(e) => e.preventDefault()}>
                 <Switch
                   checked={hasExtras}
-                  onCheckedChange={handleExtrasToggle}
+                  onCheckedChange={(checked) => {
+                    if (checked || extras.length === 0) {
+                      handleExtrasToggle(checked);
+                    }
+                  }}
+                  disabled={hasExtras && extras.length > 0}
                 />
+              </div>
               </FormControl>
             </FormItem>
 
@@ -713,10 +720,17 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
                 MODO DE PREPARO?
               </FormLabel>
               <FormControl className="cursor-pointer">
+              <div onClick={(e) => e.preventDefault()}>
                 <Switch
                   checked={hasPrepareMethods}
-                  onCheckedChange={handlePrepareMethodsToggle}
+                  onCheckedChange={(checked) => {
+                    if (checked || prepareMethods.length === 0) {
+                      handlePrepareMethodsToggle(checked);
+                    }
+                  }}
+                  disabled={hasPrepareMethods && prepareMethods.length > 0}
                 />
+              </div>
               </FormControl>
             </FormItem>
 
@@ -735,10 +749,17 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
                 ETAPAS?
               </FormLabel>
               <FormControl className="cursor-pointer">
+              <div onClick={(e) => e.preventDefault()}>
                 <Switch
                   checked={hasSteps}
-                  onCheckedChange={handleStepsToggle}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      handleStepsToggle(true);
+                    }
+                  }}
+                  disabled={hasSteps && steps.length > 0}
                 />
+              </div>
               </FormControl>
             </FormItem>
 

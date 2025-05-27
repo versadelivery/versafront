@@ -9,7 +9,7 @@ interface HeaderProps {
 
 export function Header({ title, description, className }: HeaderProps) {
   return (
-    <div className={`max-w-4xl mx-auto px-4 py-8 ${className}`}>
+    <div className={`max-w-4xl px-4 py-8 ${className}`}>
       <div className="flex flex-col gap-6">
         <div className="flex items-center justify-between">
           <Link 

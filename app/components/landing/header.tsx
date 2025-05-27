@@ -18,9 +18,10 @@ import logoHeader from "@/public/img/logo.svg";
 
 interface HeaderProps {
   alwaysOpaque?: boolean;
+  className?: string;
 }
 
-export function Header({ alwaysOpaque = false }: HeaderProps) {
+export function Header({ alwaysOpaque = false, className }: HeaderProps) {
   const [scrolled, setScrolled] = useState(false);
 
   const scrollToSection = (sectionId: string) => {
@@ -57,7 +58,7 @@ export function Header({ alwaysOpaque = false }: HeaderProps) {
   const isOpaque = alwaysOpaque || scrolled;
 
   return (
-    <nav className={`fixed w-full z-50 transition-all duration-300 ${isOpaque ? "bg-black/80 backdrop-blur-sm" : "bg-transparent backdrop-blur-sm"}`}>
+    <nav className={`fixed w-full z-50 transition-all duration-300 ${isOpaque ? "bg-black/80 backdrop-blur-sm" : "bg-transparent backdrop-blur-sm"} ${className}`}>
       <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
         <div className="flex justify-start">
           <Link href="/">

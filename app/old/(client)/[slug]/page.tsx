@@ -3,20 +3,18 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Search, LogIn, LogOut, ShoppingCart, CheckCircle } from 'lucide-react'
-import { Filters } from '@/app/components/client-catalog/filters'
 import { GroupSection } from '@/app/components/client-catalog/group-section'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/components/ui/select'
 import { Skeleton } from '@/app/components/ui/skeleton'
 import { ScrollArea } from '@/app/components/ui/scroll-area'
 import { Tabs, TabsList, TabsTrigger } from '@/app/components/ui/tabs'
 import { Button } from '@/app/components/ui/button'
 import { AuthModal } from '@/app/components/client-auth/(auth)/auth-modal'
-import CartDrawer from '../../components/client-catalog/cart-drawer'
+import CartDrawer from '@/app/components/client-catalog/cart-drawer'
 import { useCatalog } from '@/app/hooks/use-catalog'
 import logoHeader from "@/public/img/logo.svg";
 import { Group, Item } from '@/app/types/client-catalog'
 import Image from 'next/image'
-import { useCart } from '../../contexts/CartContext'
+import { useCart } from '@/app/contexts/CartContext'
 import { useAuth } from '@/app/hooks/useClientAuth'
 
 export default function CatalogPage() {
@@ -24,7 +22,6 @@ export default function CatalogPage() {
   const router = useRouter()
   const slug = params.slug as string
   const [storeName, setStoreName] = useState<string>('')
-  const [storeImage, setStoreImage] = useState<string>('')
   const [cellphone, setCellphone] = useState<string>('')
   const { data: groups = [], isLoading } = useCatalog(slug) as { data: Group[], isLoading: boolean }
   const [isCartOpen, setIsCartOpen] = useState(false)
@@ -78,11 +75,6 @@ export default function CatalogPage() {
     document.title = `${storeName} - Versa`
   }
 
-  function handleLogin() {
-    setIsAuthModalOpen(false)
-    router.refresh()
-
-  }
 
   const filteredGroups = groups
   .filter((group: Group) => 
