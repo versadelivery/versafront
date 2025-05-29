@@ -6,10 +6,9 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/hooks/use-auth";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/app/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
-import { useEffect } from "react";
 import { useShop } from "@/app/hooks/use-shop";
 import Image from "next/image";
-import logo_inline from "@/public/logo/logo-inline.svg";
+import logo_inline from "@/public/logo/logo-inline-black.svg";
 import Link from "next/link";
 
 export function Header() {

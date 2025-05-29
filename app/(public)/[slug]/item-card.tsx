@@ -37,7 +37,7 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onClick, className }) => {
         trigger={
           <div 
             onClick={handleClick}
-            className={`bg-white rounded-xl shadow-sm hover:shadow-md overflow-hidden cursor-pointer transition-all duration-300 flex flex-col h-full group ${className}`}
+            className={`bg-white rounded-xs shadow-sm hover:shadow-md overflow-hidden cursor-pointer transition-all duration-300 flex flex-col h-full group ${className}`}
           >
             <div className="relative pt-[75%] overflow-hidden">
               {attributes.image_url ? (
@@ -59,14 +59,14 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onClick, className }) => {
                 <div className="absolute top-3 right-3 bg-primary text-white text-xs font-bold px-2 py-1 rounded-full shadow-md">
                   {Math.round(
                     ((attributes.price - (attributes.price_with_discount || 0)) / attributes.price * 100)
-                  )} OFF
+                  )}% Desconto
                 </div>
               )}
             </div>
             
             <div className="p-3 sm:p-4 flex flex-col flex-grow">
               <div className="flex-grow">
-                <h3 className="font-bold text-base sm:text-lg text-gray-900 line-clamp-2 mb-1 sm:mb-2 break-words">
+                <h3 className="font-bold text-base sm:text-lg text-gray-900 line-clamp-2 mb-1 sm:mb-2 hover:break-words">
                   {attributes.name}
                 </h3>
                 

@@ -88,7 +88,7 @@ export default function AuthPage() {
                     type="text"
                     {...registerForm("name" as any)}
                     placeholder="John Doe"
-                    className="rounded-xs bg-transparent w-full p-8 border pr-10 placeholder:text-foreground/40"
+                    className="rounded-xs bg-transparent w-full p-8 border border-black/10 pr-10 placeholder:text-foreground/40"
                   />
                   {(errors as any).name && (
                     <p className="mt-1 text-sm text-red-600">
@@ -103,7 +103,7 @@ export default function AuthPage() {
                     type="tel"
                     {...registerForm("cellphone" as any)}
                     placeholder="(00) 00000-0000"
-                    className="rounded-xs bg-transparent w-full p-8 border pr-10 placeholder:text-foreground/40"
+                    className="rounded-xs bg-transparent w-full p-8 border border-black/10 pr-10 placeholder:text-foreground/40"
                   />
                   {(errors as any).cellphone && (
                     <p className="mt-1 text-sm text-red-600">
@@ -120,7 +120,7 @@ export default function AuthPage() {
                 type="email"
                 {...registerForm("email")}
                 placeholder="johndoe@mail.com"
-                className="rounded-xs bg-transparent w-full p-8 border pr-10 placeholder:text-foreground/40"
+                className="rounded-xs bg-transparent w-full p-8 border border-black/10 pr-10 placeholder:text-foreground/40"
               />
               {errors.email && (
                 <p className="mt-1 text-sm text-red-600">
@@ -136,7 +136,7 @@ export default function AuthPage() {
                   type={showPassword ? "text" : "password"}
                   {...registerForm("password")}
                   placeholder="••••••••"
-                  className="rounded-xs bg-transparent w-full p-8 border pr-10 placeholder:text-foreground/40"
+                  className="rounded-xs bg-transparent w-full p-8 border border-black/10 pr-10 placeholder:text-foreground/40"
                 />
                 <Button
                   type="button"
@@ -167,7 +167,7 @@ export default function AuthPage() {
                     type={showConfirmPassword ? "text" : "password"}
                     {...registerForm("confirmPassword" as any)}
                     placeholder="••••••••"
-                    className="rounded-xs bg-transparent w-full p-8 border pr-10 placeholder:text-foreground/40"
+                    className="rounded-xs bg-transparent w-full p-8 border border-black/10 pr-10 placeholder:text-foreground/40"
                   />
                   <Button
                     type="button"

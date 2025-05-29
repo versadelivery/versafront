@@ -1,12 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
-import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
 import { motion } from "framer-motion";
-import { ArrowLeft, Compass, HomeIcon, Map } from "lucide-react";
-import logoHero from "@/public/img/logo_green.svg"
+import { Compass, Map } from "lucide-react";
+import logoHero from "@/public/logo/logo-inline-black.svg";
 import Image from "next/image";
 
 export default function NotFound() {
@@ -71,8 +69,8 @@ export default function NotFound() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <div className="mx-auto lg:mx-0 w-24 h-24 mb-6 flex items-center justify-center rounded-lg text-primary">
-                <Image src={logoHero} alt="Versa Delivery" className="w-24 h-24" />
+              <div className="mx-auto lg:mx-0 -mb-12 flex items-center justify-center rounded-lg text-primary">
+                <Image src={logoHero} width={256} height={256} alt="Versa Delivery" />
               </div>
 
               <h1 className="text-4xl md:text-6xl font-bold mb-4 tracking-tight">
@@ -122,22 +120,10 @@ export default function NotFound() {
               >
                 A loja que você está procurando parece ter desaparecido no espaço digital. Talvez ela esteja em uma aventura ou tomando um descanso bem-desejado.
               </motion.p>
-
-              <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
-                <Button asChild size="lg" className="group">
-                  <Link href="/">
-                    <HomeIcon className="mr-2 h-4 w-4 group-hover:animate-pulse" />
-                    Voltar para a home
-                    {countdown > 0 && (
-                      <span className="ml-2 text-xs opacity-70">({countdown}s)</span>
-                    )}
-                  </Link>
-                </Button>
-              </div>
             </motion.div>
           </div>
 
-          <div className="lg:w-1/2">
+          <div className="lg:w-1/2 pb-12">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -209,7 +195,6 @@ function IllustrationNotFound() {
                 <Map className="w-12 h-12 md:w-16 md:h-16 text-primary opacity-90" />
                 <div className="absolute inset-0 border-2 border-primary/20 rounded-full" />
                 
-                {/* Compass directions */}
                 {['N', 'E', 'S', 'W'].map((dir, i) => (
                   <div 
                     key={dir}
