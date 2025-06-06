@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { loginUser } from '../services/auth-service'
+import { loginUser, registerShop } from '../services/auth-service'
 import { LoginData, LoginResponse, UserData } from '../types/utils'
 import { getToken, setToken, removeToken } from '../lib/auth'
 
@@ -18,6 +18,14 @@ export function useAuth() {
 
     setIsLoading(false)
   }, [])
+
+  const register = async (data: any)=> {
+    const response = await registerShop(data)
+    setToken(response.token)
+    setUser(response.user)
+    router.push('/admin')
+    return response
+  }
 
   const login = async (data: LoginData): Promise<LoginResponse> => {
     try {

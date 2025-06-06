@@ -5,7 +5,7 @@ import { AuthLayout } from "@/app/components/auth/auth-layout";
 import { AuthBreadcrumb } from "@/app/components/auth/auth-breadcrumb";
 import { RegisterForm } from "@/app/components/auth/register-form";
 import cesta from "@/public/img/breads.png";
-import { registerShop } from "../services/auth-service";
+import { registerShop } from "@/app/services/auth-service";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { registerStep1Schema, registerStep2Schema, RegisterFormData } from "@/app/schemas/auth-schemas";
@@ -125,7 +125,7 @@ export default function Register() {
     try {
       await registerShop(payload);
       toast.success("Cadastro realizado com sucesso!");
-      router.push("/login");
+      router.push("/admin");
     } catch (error) {
       toast.error("Erro ao cadastrar. Por favor, tente novamente.");
       console.error("Registration error:", error);

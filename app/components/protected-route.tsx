@@ -18,7 +18,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }, [router]);
 
   if (isAuthenticated === null) {
-    return null; // Mostra nada enquanto verifica a autenticação
+    return null;
   }
 
   if (!isAuthenticated) {

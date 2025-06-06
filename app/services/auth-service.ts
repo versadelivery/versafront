@@ -28,3 +28,8 @@ export const loginUser = async (data: LoginData): Promise<LoginResponse> => {
     user: response.data.user
   }
 }
+
+export const registerShop = async (data: any)=> {
+  const response = await api.post(API_ENDPOINTS.SHOPS, data)
+  return response.data
+}
