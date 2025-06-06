@@ -6,7 +6,6 @@ import { Button } from "@/app/components/ui/button";
 import { 
   Menu, 
   X, 
-  ArrowRight,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import Image from "next/image";
