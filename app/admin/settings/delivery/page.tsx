@@ -68,7 +68,7 @@ export default function DeliverySettingsPage() {
   useEffect(() => {
     if (deliveryConfig) {
       setDeliveryType(deliveryConfig.delivery_fee_kind);
-      setFixedFee(deliveryConfig.amount.toString());
+      setFixedFee(deliveryConfig.amount?.toString() || "");
       setHasFreeDelivery(deliveryConfig.min_value_free_delivery !== null);
       setFreeDeliveryThreshold(deliveryConfig.min_value_free_delivery?.toString() || "");
     }
