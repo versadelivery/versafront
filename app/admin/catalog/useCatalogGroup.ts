@@ -166,7 +166,7 @@ export const useCatalogGroup = (id?: string) => {
   const queryClient = useQueryClient();
 
   const { data: catalog, isLoading, error, refetch } = useQuery({
-    queryKey: ["catalog"],
+    queryKey: ["catalog-groups"],
     queryFn: getCatalog,
     refetchOnWindowFocus: true,
     refetchOnMount: true,
