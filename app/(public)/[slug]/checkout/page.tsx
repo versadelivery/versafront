@@ -101,14 +101,14 @@ export default function CheckoutPage() {
           name: extra.attributes.name,
           price: parseFloat(extra.attributes.price)
         } : null
-      }).filter((extra): extra is { id: string; name: string; price: number } => extra !== null) || [],
+      }).filter((extra: any): extra is { id: string; name: string; price: number } => extra !== null) || [],
       prepareMethods: item.selectedMethods?.map((methodId: string) => {
         const method = item.attributes.prepare_method.data.find((m: any) => m.id === methodId)
         return method ? {
           id: method.id,
           name: method.attributes.name
         } : null
-      }).filter((method): method is { id: string; name: string } => method !== null) || [],
+      }).filter((method: any): method is { id: string; name: string } => method !== null) || [],
       steps: item.attributes.steps.data.map((step: any) => {
         const selectedOptionId = item.selectedOptions?.[step.id]
         const selectedOption = selectedOptionId ? step.attributes.options.data.find((o: any) => o.id === selectedOptionId) : null
