@@ -1,28 +1,35 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Button } from "@/app/components/ui/button";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/app/components/ui/drawer";
-import { Menu } from "lucide-react";
-import Image from "next/image";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { Button } from "@/app/components/ui/button";
+import { 
+  Menu, 
+  X, 
+} from "lucide-react";
+import { motion } from "framer-motion";
+import Image from "next/image";
 import logoHeader from "@/public/img/logo.svg";
 
-interface HeaderProps {
-  alwaysOpaque?: boolean;
-  className?: string;
-}
-
-export function Header({ alwaysOpaque = false, className }: HeaderProps) {
+const Header = () => {
+  const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 10) {
+        setScrolled(true);
+      } else {
+        setScrolled(false);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const toggleMenu = () => setIsOpen(!isOpen);
+  const closeMenu = () => setIsOpen(false);
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
@@ -40,25 +47,18 @@ export function Header({ alwaysOpaque = false, className }: HeaderProps) {
         }, 500);
       }
     }
+    closeMenu();
   };
 
-  useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 10) {
-        setScrolled(true);
-      } else {
-        setScrolled(false);
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  });
-
-  const isOpaque = alwaysOpaque || scrolled;
+  const navLinks = [
+    { name: "HOME", href: "#home" },
+    { name: "SOBRE", href: "#sobre" },
+    { name: "RECURSOS", href: "#recursos" },
+    { name: "FAQ", href: "#faq" },
+  ];
 
   return (
-    <nav className={`fixed w-full z-50 transition-all duration-300 ${isOpaque ? "bg-black/80 backdrop-blur-sm" : "bg-transparent backdrop-blur-sm"} ${className}`}>
+    <nav className={`fixed w-full z-50 transition-all duration-300 ${scrolled ? "bg-black/80 backdrop-blur-sm" : "bg-transparent backdrop-blur-sm"}`}>
       <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
         <div className="flex justify-start">
           <Link href="/">
@@ -67,18 +67,15 @@ export function Header({ alwaysOpaque = false, className }: HeaderProps) {
         </div>
 
         <div className="font-antarctican-mono hidden md:flex justify-center gap-8">
-          <Button 
-            onClick={() => scrollToSection('home')} 
-            className="cursor-pointer bg-transparent hover:bg-transparent text-white hover:text-gray-300"
-          >
-            HOME
-          </Button>
-          <Button 
-            onClick={() => scrollToSection('sobre')} 
-            className="cursor-pointer bg-transparent hover:bg-transparent text-white hover:text-gray-300"
-          >
-            SOBRE
-          </Button>
+          {navLinks.map((link, index) => (
+            <Button 
+              key={index}
+              onClick={() => scrollToSection(link.href.replace('#', ''))}
+              className="cursor-pointer bg-transparent hover:bg-transparent text-white hover:text-gray-300"
+            >
+              {link.name}
+            </Button>
+          ))}
         </div>
 
         <div className="flex justify-end items-center gap-4">
@@ -86,60 +83,57 @@ export function Header({ alwaysOpaque = false, className }: HeaderProps) {
             <Link href="/login">
               <Button
                 variant="outline"
-                className="cursor-pointer rounded-none font-antarctican-mono bg-transparent border-white text-white hover:bg-white hover:text-black"
-                >
+                className="w-full font-antarctican-mono bg-transparent border-white text-white hover:bg-white hover:text-black text-lg font-semibold py-5 px-8 rounded-xs shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all duration-300 group"
+              >
                 ASSINE AGORA
               </Button>
             </Link>
           </div>
           
-          <Drawer direction="right">
-            <DrawerTrigger asChild>
-              <Button className="bg-transparent md:hidden text-white mr-8">
-                <Menu />
-              </Button>
-            </DrawerTrigger>
-            <DrawerContent className="h-full top-0 right-0 left-auto mt-0 w-[300px] rounded-none bg-black/95 border-l border-gray-800">
-              <div className="flex flex-col h-full p-6">
-                <DrawerHeader className="px-0 pt-0">
-                  <DrawerTitle className="text-white text-2xl">Menu</DrawerTitle>
-                </DrawerHeader>
-                
-                <div className="flex-1 flex flex-col gap-6 mt-24">
-                  <DrawerClose asChild>
-                  <Button 
-                      onClick={() => scrollToSection('home')}
-                      className="bg-transparent text-white hover:text-gray-300 text-lg font-medium transition-colors py-2 text-left"
-                    >
-                      HOME
-                    </Button>
-                  </DrawerClose>
-                  
-                  <DrawerClose asChild>
-                    <Button 
-                      onClick={() => scrollToSection('sobre')}
-                      className="bg-transparent text-white hover:text-gray-300 text-lg font-medium transition-colors py-2 text-left"
-                    >
-                      SOBRE
-                    </Button>
-                  </DrawerClose>
-                </div>
-                
-                <DrawerFooter className="mb-80 px-0 pb-0">
-                  <DrawerClose asChild>
-                    <Button 
-                      variant="outline" 
-                      className="rounded-none bg-transparent border-white text-white hover:bg-white hover:text-black w-full py-6 text-lg mt-4"
-                    >
-                      ASSINE AGORA
-                    </Button>
-                  </DrawerClose>
-                </DrawerFooter>
-              </div>
-            </DrawerContent>
-          </Drawer>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={toggleMenu}
+            className="bg-transparent md:hidden text-white mr-8"
+          >
+            {isOpen ? <X size={24} /> : <Menu size={24} />}
+          </Button>
         </div>
       </div>
+
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          exit={{ opacity: 0, height: 0 }}
+          transition={{ duration: 0.3 }}
+          className="md:hidden bg-black/95 backdrop-blur-md"
+        >
+          <div className="container mx-auto px-4 py-4">
+            <nav className="flex flex-col space-y-4">
+              {navLinks.map((link, index) => (
+                <Button 
+                  key={index}
+                  onClick={() => scrollToSection(link.href.replace('#', ''))}
+                  className="bg-transparent text-white hover:text-gray-300 text-lg font-medium transition-colors py-2 text-left"
+                >
+                  {link.name}
+                </Button>
+              ))}
+              <Link href="/login" onClick={closeMenu}>
+                <Button 
+                  variant="outline" 
+                  className="rounded-none bg-transparent border-white text-white hover:bg-white hover:text-black w-full py-6 text-lg mt-4"
+                >
+                  ASSINE AGORA
+                </Button>
+              </Link>
+            </nav>
+          </div>
+        </motion.div>
+      )}
     </nav>
   );
-}
+};
+
+export default Header;

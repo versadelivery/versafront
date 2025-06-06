@@ -1,12 +1,12 @@
 "use client";
 
-import Header from "@/app/landing/header";
-import Hero from "@/app/landing/hero";
-import Features from "@/app/landing/features";
-import About from "@/app/landing/about";
-import FAQ from "@/app/landing/FAQ";
-import CallToAction from "@/app/landing/call-to-action";
-import Footer from "@/app/landing/footer";
+import Header from "@/app/components/landing/header";
+import Hero from "@/app/components/landing/hero";
+import Features from "@/app/components/landing/features";
+import About from "@/app/components/landing/about";
+import FAQ from "@/app/components/landing/FAQ";
+import CallToAction from "@/app/components/landing/call-to-action";
+import Footer from "@/app/components/landing/footer";
 
 export default function Home() {
   return (
