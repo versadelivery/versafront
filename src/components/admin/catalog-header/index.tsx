@@ -1,13 +1,8 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { Props } from "./types";
 
-interface HeaderProps {
-  title: string;
-  description: string;
-  className?: string;
-}
-
-export default function CatalogHeader({ title, description, className }: HeaderProps) {
+export default function AdminHeader({ title, description, className }: Props) {
   return (
     <div className={`max-w-4xl px-4 py-8 ${className}`}>
       <div className="flex flex-col gap-6">

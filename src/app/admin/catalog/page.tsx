@@ -1,7 +1,7 @@
 "use client"
 
 import ProtectedRoute from "@/components/protected-route"
-import CatalogHeader from "@/components/admin/catalog/catalog-header";
+import AdminHeader from "@/components/admin/catalog-header";
 import { useState } from "react";
 import GroupModal from "@/components/admin/catalog/group-modal-create";
 import { NewItemModal } from "@/components/admin/catalog/item-modal";
@@ -27,7 +27,7 @@ function CatalogPage() {
   return (
     <ProtectedRoute>
       <div className="flex flex-col h-full">
-          <CatalogHeader
+          <AdminHeader
             title="CATÁLOGO"
             description="Gerencie seu catálogo, estoque e disponibilidade dos itens"
           />
