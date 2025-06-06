@@ -136,7 +136,6 @@ export function ItemExtras({ extras, onExtraChange, onRemoveExtra, onAddExtra, i
         type="button"
         className="cursor-pointer bg-transparent text-red-500 hover:text-red-700 hover:bg-black/10 rounded-md p-2"
         onClick={() => handleRemoveExtra(index, extra.id || '')}
-        disabled={extras.length <= 1 || isDestroyingExtra}
       >
         {isDestroyingExtra ? (
           <Loader2 className="w-5 h-5 animate-spin" />

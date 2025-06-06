@@ -4,10 +4,10 @@ import { notFound, useParams } from 'next/navigation';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useShopBySlug } from './use-slug';
-import StoreHeader from './teste/store-header';
-import ProductGrid from './teste/product-grid';
-import CategoryNavigation from './teste/category-navigation';
-import SearchBar from './teste/search-bar';
+import StoreHeader from './components/store-header';
+import ProductGrid from './components/product-grid';
+import CategoryNavigation from './components/category-navigation';
+import SearchBar from './components/search-bar';
 
 export default function StoreCatalog() {
   const params = useParams();

@@ -173,6 +173,12 @@ export const useCatalogGroup = (id?: string) => {
     refetchOnReconnect: true,
   });
   
+  const { data: catalogGroup, isLoading: isLoadingGroup, error: errorGroup, refetch: refetchGroup } = useQuery({
+    queryKey: ["catalog-group", id],
+    queryFn: () => getCatalogGroup(id as any),
+    enabled: !!id,
+  });
+
   const createCatalogGroupMutation = useMutation({
     mutationFn: createCatalogGroup,
     onSuccess: () => {
@@ -232,5 +238,9 @@ export const useCatalogGroup = (id?: string) => {
     getCatalog: catalog,
     isLoadingCatalog: isLoading,
     refetchCatalog: refetch,
-  };
+    catalogGroup,
+    isLoadingGroup,
+    errorGroup,
+    refetchGroup,
+    };
 };

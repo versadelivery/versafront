@@ -89,7 +89,7 @@ export function CartDrawer() {
                     const discountedPrice = item.attributes.price_with_discount || originalPrice
 
                     return (
-                      <div key={`${item.id}-${JSON.stringify(item.selectedExtras)}`} className="flex gap-4 pb-4 border-b">
+                      <div key={`${item.id}-${JSON.stringify(item.selectedExtras)}-${JSON.stringify(item.selectedMethods)}-${JSON.stringify(item.selectedOptions)}-${item.weight || ''}`} className="flex gap-4 pb-4 border-b">
                         <div className="w-20 h-20 bg-gray-100 rounded-xs overflow-hidden">
                           {item.attributes.image_url ? (
                             <img 

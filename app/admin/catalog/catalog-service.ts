@@ -126,7 +126,7 @@ export async function getCatalogItem(id: string): Promise<CatalogItemResponse> {
   return response.data;
 }
 
-export async function getCatalogGroup(id: string): Promise<CatalogGroup> {
+export async function getCatalogGroup(id: string) {
   const response = await api.get(`/catalog_groups/${id}`);
   return response.data;
 }
