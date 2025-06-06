@@ -7,6 +7,7 @@ import { RegisterForm } from "@/app/components/auth/register-form";
 import cesta from "@/public/img/breads.png";
 import { registerShop } from "@/app/services/auth-service";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/app/hooks/use-auth";
 import { toast } from "sonner";
 import { registerStep1Schema, registerStep2Schema, RegisterFormData } from "@/app/schemas/auth-schemas";
 import { z } from "zod";
@@ -14,6 +15,7 @@ import { formatPhone } from "../utils/format-phone";
 
 export default function Register() {
   const router = useRouter();
+  const { register } = useAuth();
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<RegisterFormData>({
@@ -123,9 +125,8 @@ export default function Register() {
     };
 
     try {
-      await registerShop(payload);
+      await register(payload);
       toast.success("Cadastro realizado com sucesso!");
-      router.push("/admin");
     } catch (error) {
       toast.error("Erro ao cadastrar. Por favor, tente novamente.");
       console.error("Registration error:", error);

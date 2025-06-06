@@ -55,6 +55,7 @@ export function useAuth() {
     isAuthenticated: isAuthenticated(),
     login,
     logout,
+    register,
     token: getToken()
   }
 }
