@@ -4,14 +4,11 @@ import { useRef } from "react";
 import Link from "next/link";
 import { Button } from "@/app/components/ui/button";
 import { motion, useInView } from "framer-motion";
-import { 
-  CheckCircle, 
+import {  
   LayoutGrid, 
   Clock, 
-  Code, 
   Headset, 
   ShieldCheck,
-  Settings,
   Users,
   TrendingUp
 } from "lucide-react";
