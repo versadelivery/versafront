@@ -92,7 +92,7 @@ export default function GroupModalEdit({ isOpen, onOpenChange, editingGroup }: G
     
     updateCatalogGroup(formData);
     onOpenChange(false);
-    form.reset();
+    // form.reset();
     setPreviewImage(null);
   }
 
