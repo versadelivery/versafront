@@ -1,7 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getCatalog, createCatalogGroup, updateCatalogGroup, deleteCatalogGroup, createCatalogItem, getCatalogItem, getCatalogGroup, CatalogItemResponse, destroyExtra, destroyStep, destroyPrepareMethod, deleteCatalogItem, destroyStepOption, updateStep, updateStepOption, updatePrepareMethod, updateExtra } from "./catalog-service";
+import { getCatalogGroup, getCatalog, createCatalogGroup, updateCatalogGroup, deleteCatalogGroup } from "@/api/requests/catalog/requests";
+import { CatalogItemResponse } from "@/api/requests/catalog_item/types";
+import { getCatalogItem, createCatalogItem, destroyExtra, destroyStep, destroyPrepareMethod, deleteCatalogItem, destroyStepOption, updateStep, updateStepOption, updatePrepareMethod, updateExtra } from "@/api/requests/catalog_item/requests";
 import { toast } from "sonner";
-
 
 interface EditStepProps {
   id: string;
@@ -242,5 +243,5 @@ export const useCatalogGroup = (id?: string) => {
     isLoadingGroup,
     errorGroup,
     refetchGroup,
-    };
+  };
 };

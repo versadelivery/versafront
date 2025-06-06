@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Info, Camera, X, Loader2 } from 'lucide-react'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useCatalogGroup } from '../../../app/admin/catalog/useCatalogGroup'
+import { useCatalogGroup } from '../../../hooks/useCatalogGroup'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 

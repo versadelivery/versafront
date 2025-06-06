@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Trash2, Loader2 } from "lucide-react"
-import { useDestroyItems } from "../../../app/admin/catalog/useCatalogGroup"
+import { useDestroyItems } from "../../../hooks/useCatalogGroup"
 import { useState, useEffect } from "react"
 
 export interface PrepareMethod {

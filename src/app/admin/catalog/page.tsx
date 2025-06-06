@@ -6,7 +6,7 @@ import { useState } from "react";
 import GroupModal from "@/components/admin/catalog/group-modal-create";
 import { NewItemModal } from "@/components/admin/catalog/item-modal";
 import { ActionBar } from "@/components/admin/catalog/action-bar";
-import { useCatalogGroup } from "./useCatalogGroup";
+import { useCatalogGroup } from "@/hooks/useCatalogGroup";
 import { ItemCard } from "@/components/admin/catalog/item-card";
 import { Edit2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";

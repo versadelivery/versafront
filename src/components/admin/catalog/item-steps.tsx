@@ -2,7 +2,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2, Loader2, Edit, Check, X } from "lucide-react";
 import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
-import { useDestroyItems, useEditStep } from "../../../app/admin/catalog/useCatalogGroup";
+import { useDestroyItems, useEditStep } from "../../../hooks/useCatalogGroup";
 
 interface StepOptionInputProps {
   value: string;

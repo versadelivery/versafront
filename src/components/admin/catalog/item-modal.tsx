@@ -16,7 +16,7 @@ import { Switch } from "@/components/ui/switch";
 import { ItemExtras, Extra } from "./item-extras-create"
 import { ItemPrepareMethods, PrepareMethod } from "./item-prepare-methods-create"
 import { ItemSteps } from "./item-steps-create";
-import { useCatalogGroup } from "../../../app/admin/catalog/useCatalogGroup";
+import { useCatalogGroup } from "../../../hooks/useCatalogGroup";
 interface NewItemModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
