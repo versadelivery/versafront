@@ -1,4 +1,4 @@
-import api from '@/lib/api'
+import api from '@/api/config'
 import { LoginInput, RegisterInput } from '../schemas/client-auth/auth.schema'
 
 export interface AuthResponse {

@@ -1,4 +1,4 @@
-import api from "@/lib/api";
+import api from "@/api/config";
 import { ClientAuthData, ClientData, ShopData } from "./types";
 
 export async function fetchShopBySlug(slug: string) {

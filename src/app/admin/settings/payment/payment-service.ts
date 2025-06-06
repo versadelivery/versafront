@@ -1,4 +1,4 @@
-import api from "@/lib/api";
+import api from "@/api/config";
 
 export type ShopPaymentConfig = {
   data: {

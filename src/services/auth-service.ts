@@ -1,7 +1,7 @@
-import api from "@/lib/api"
-import { API_ENDPOINTS } from "../constants/api"
-import { LoginData } from "../types/utils"
-import { RegisterFormData } from "../schemas/client-auth/client-auth-schema"
+import api from "@/api/config"
+import { API_ENDPOINTS } from "@/api/routes"
+import { LoginData } from "@/types/utils"
+import { RegisterFormData } from "@/schemas/client-auth/client-auth-schema"
 
 interface UserData {
   email: string

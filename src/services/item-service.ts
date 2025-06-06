@@ -1,4 +1,4 @@
-import api from "@/lib/api";
+import api from "@/api/config";
 import { CatalogItem } from "../types/catalog";
 
 export const createCatalogItem = async (formData: FormData) => {

@@ -1,4 +1,4 @@
-import api from "@/lib/api";
+import api from "@/api/config";
 import { GroupData } from "../types/catalog";
 
 export const getCatalogGroups = async () => {

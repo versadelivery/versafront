@@ -5,4 +5,4 @@ export const API_ENDPOINTS = {
   LOGIN: "/login/",
   CATALOG: "/catalog_groups/",
   CATALOG_ITEMS: "/catalog_items/"
-};
+};  
