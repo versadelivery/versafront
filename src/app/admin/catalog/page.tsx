@@ -1,4 +1,5 @@
 "use client"
+
 import ProtectedRoute from "@/components/protected-route"
 import CatalogHeader from "@/components/admin/catalog/catalog-header";
 import { useState } from "react";
