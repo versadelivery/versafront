@@ -129,11 +129,19 @@ export function CartDrawer() {
                                 <Badge variant="secondary" className="text-xs">
                                   {Math.round(((originalPrice - discountedPrice) / originalPrice) * 100)}% OFF
                                 </Badge>
+                                <Badge variant="outline" className="text-xs">
+                                  {item.attributes.item_type === 'weight_per_kg' ? '/kg' : '/un'}
+                                </Badge>
                               </>
                             ) : (
-                              <span className="text-sm font-medium text-primary">
-                                {formatPrice(originalPrice)}
-                              </span>
+                              <>
+                                <span className="text-sm font-medium text-primary">
+                                  {formatPrice(originalPrice)}
+                                </span>
+                                <Badge variant="outline" className="text-xs">
+                                  {item.attributes.item_type === 'weight_per_kg' ? '/kg' : '/un'}
+                                </Badge>
+                              </>
                             )}
                           </div>
 

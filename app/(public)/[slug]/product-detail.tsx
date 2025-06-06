@@ -146,7 +146,7 @@ export default function ProductModal({ product, trigger }: ProductModalProps) {
     selectedExtras.forEach(extraId => {
       const extra = attributes.extra.data.find(e => e.id === extraId);
       if (extra) {
-        total += parseFloat(extra.attributes.price) * (isWeightBased ? weight : quantity);
+        total += parseFloat(extra.attributes.price);
       }
     });
 
@@ -439,7 +439,7 @@ export default function ProductModal({ product, trigger }: ProductModalProps) {
                         <li key={extraId} className="flex justify-between">
                           <span>+ {extra.attributes.name}</span>
                           <span className="text-primary">
-                            +{formatPrice(parseFloat(extra.attributes.price) * (isWeightBased ? weight : quantity))}
+                            +{formatPrice(parseFloat(extra.attributes.price))}
                           </span>
                         </li>
                       );

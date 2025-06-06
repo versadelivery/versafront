@@ -157,11 +157,10 @@ export default function CheckoutPage() {
   }
 
   const calculateTotal = () => {
-    const subtotal = calculateSubtotal()
     const deliveryFee = deliveryOption === 'delivery' && selectedNeighborhood 
       ? neighborhoods.find(n => n.id === selectedNeighborhood)?.amount || 0
       : 0
-    return subtotal + deliveryFee
+    return totalPrice + deliveryFee
   }
 
   const handleQuantityChange = (itemId: string, newQuantity: number) => {
@@ -184,22 +183,6 @@ export default function CheckoutPage() {
   const handleSubmitOrder = async () => {
     setIsSubmitting(true)
     
-    const orderData = {
-      items: cartItems,
-      deliveryOption,
-      address: deliveryOption === 'delivery' ? {
-        street: address,
-        complement,
-        reference,
-        neighborhood: selectedNeighborhood
-      } : null,
-      paymentMethod,
-      changeFor: paymentMethod === 'cash' ? changeFor : null,
-      total: calculateTotal(),
-      subtotal: calculateSubtotal(),
-      deliveryFee: deliveryOption === 'delivery' ? neighborhoods.find(n => n.id === selectedNeighborhood)?.amount || 0 : 0,
-    }
-    
     try {
       await new Promise(resolve => setTimeout(resolve, 1500))
       clearCart()
@@ -213,9 +196,7 @@ export default function CheckoutPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex flex-col lg:flex-row gap-8">
-        {/* Left Column - Order Details */}
         <div className="lg:w-2/3 space-y-6">
-          {/* Delivery Options */}
           <Card className="overflow-hidden border-0 shadow-md hover:shadow-lg transition-shadow duration-300 bg-gradient-to-br from-white to-gray-50">
             <CardHeader className="py-4 bg-gradient-to-r from-primary/10 to-primary/5">
               <CardTitle className="flex items-center gap-2 text-primary">
@@ -263,7 +244,6 @@ export default function CheckoutPage() {
             </CardContent>
           </Card>
 
-          {/* Delivery Address */}
           {deliveryOption !== 'pickup' && (
             <Card className="overflow-hidden border-0 shadow-md hover:shadow-lg transition-shadow duration-300 bg-gradient-to-br from-white to-gray-50">
               <CardHeader className="py-4 bg-gradient-to-r from-primary/10 to-primary/5">
@@ -475,7 +455,8 @@ export default function CheckoutPage() {
                             <span className="line-through text-xs ml-2">R$ {item.price.toFixed(2).replace('.', ',')}</span>
                           </>
                         ) : (
-                          <span className="font-medium">R$ {item.price.toFixed(2).replace('.', ',')}</span>
+                          // <span className="font-medium">R$ {item.price.toFixed(2).replace('.', ',')}</span>
+                          <span className="font-medium">R$ {item.totalPrice.toFixed(2).replace('.', ',')}</span>
                         )}
                       </p>
                       
@@ -595,7 +576,6 @@ export default function CheckoutPage() {
           </Card>
         </div>
 
-        {/* Right Column - Order Summary */}
         <div className="lg:w-1/3 space-y-6">
           <Card className="sticky top-6 overflow-hidden border-0 shadow-md hover:shadow-lg transition-shadow duration-300 bg-gradient-to-br from-white to-gray-50">
             <CardHeader className="py-4 bg-gradient-to-r from-primary/10 to-primary/5">
@@ -605,7 +585,7 @@ export default function CheckoutPage() {
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span className="font-medium">R$ {calculateSubtotal().toFixed(2).replace('.', ',')}</span>
+                  <span className="font-medium">R$ {totalPrice.toFixed(2).replace('.', ',')}</span>
                 </div>
                 {deliveryOption === 'delivery' && selectedNeighborhood && (
                   <div className="flex justify-between">
@@ -636,18 +616,6 @@ export default function CheckoutPage() {
                 <span>Total</span>
                 <span className="text-primary">R$ {calculateTotal().toFixed(2).replace('.', ',')}</span>
               </div>
-              
-              {/* <div className="text-sm text-muted-foreground bg-gray-50 p-3 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-primary" />
-                  <span>
-                    {deliveryOption === 'delivery' ? 'Entrega' : 'Retirada'} estimada para{' '}
-                    <span className="font-medium">
-                      {format(new Date(Date.now() + (deliveryOption === 'delivery' ? estimatedTime : 20) * 60 * 1000), 'HH:mm', { locale: ptBR })}
-                    </span>
-                  </span>
-                </div>
-              </div> */}
             </CardContent>
             <CardFooter className="pt-4">
               <Button 
