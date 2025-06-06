@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Trash2, Loader2, Check, Edit } from "lucide-react"
-import { useDestroyItems, useEditStep } from "./useCatalogGroup"
+import { useDestroyItems, useEditStep } from "../../../app/admin/catalog/useCatalogGroup"
 import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 
 export interface PrepareMethod {

@@ -7,7 +7,7 @@ interface HeaderProps {
   className?: string;
 }
 
-export function Header({ title, description, className }: HeaderProps) {
+export default function CatalogHeader({ title, description, className }: HeaderProps) {
   return (
     <div className={`max-w-4xl px-4 py-8 ${className}`}>
       <div className="flex flex-col gap-6">

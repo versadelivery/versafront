@@ -2,7 +2,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2, Loader2 } from "lucide-react";
 import React, { useEffect, useState } from "react";
-import { useDestroyItems } from "./useCatalogGroup";
+import { useDestroyItems } from "../../../app/admin/catalog/useCatalogGroup";
 
 interface StepOptionInputProps {
   value: string;

@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useCatalogItem } from "./useCatalogGroup";
+import { useCatalogItem } from "../../../app/admin/catalog/useCatalogGroup";
 
 interface ItemDetailsModalProps {
   id: number;

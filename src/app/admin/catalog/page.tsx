@@ -1,15 +1,15 @@
 "use client"
 import ProtectedRoute from "@/components/protected-route"
-import { Header } from "@/components/catalog/catalog-header";
+import CatalogHeader from "@/components/admin/catalog/catalog-header";
 import { useState } from "react";
-import GroupModal from "./group-modal-create";
-import { NewItemModal } from "./item-modal";
-import { ActionBar } from "./action-bar";
+import GroupModal from "@/components/admin/catalog/group-modal-create";
+import { NewItemModal } from "@/components/admin/catalog/item-modal";
+import { ActionBar } from "@/components/admin/catalog/action-bar";
 import { useCatalogGroup } from "./useCatalogGroup";
-import { ItemCard } from "./item-card";
+import { ItemCard } from "@/components/admin/catalog/item-card";
 import { Edit2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import GroupModalEdit from "./group-modal";
+import GroupModalEdit from "@/components/admin/catalog/group-modal";
 
 function CatalogPage() {
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
@@ -26,7 +26,7 @@ function CatalogPage() {
   return (
     <ProtectedRoute>
       <div className="flex flex-col h-full">
-          <Header 
+          <CatalogHeader
             title="CATÁLOGO"
             description="Gerencie seu catálogo, estoque e disponibilidade dos itens"
           />

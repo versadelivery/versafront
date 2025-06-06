@@ -16,10 +16,10 @@ import { Switch } from "@/components/ui/switch";
 import { ItemExtras, Extra } from "./item-extras";
 import { ItemPrepareMethods, PrepareMethod } from "./item-prepare-methods";
 import { ItemSteps } from "./item-steps";
-import { useCatalogGroup } from "./useCatalogGroup";
-import { useCatalogItem } from "./useCatalogGroup";
+import { useCatalogGroup } from "../../../app/admin/catalog/useCatalogGroup";
+import { useCatalogItem } from "../../../app/admin/catalog/useCatalogGroup";
 import { toast } from "sonner";
-import { updateCatalogItem } from "./catalog-service";
+import { updateCatalogItem } from "../../../app/admin/catalog/catalog-service";
 
 interface EditItemModalProps {
   id: string;
