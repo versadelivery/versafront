@@ -5,7 +5,6 @@ import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/app/components/ui/dialog";
 import { Button } from "@/app/components/ui/button";
-import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
 import { Separator } from "@/app/components/ui/separator";
 import { Slider } from "@/app/components/ui/slider";
@@ -20,7 +19,6 @@ import {
 import { Badge } from "@/app/components/ui/badge";
 import { CatalogItem } from "./types";
 import { formatPrice } from "./format-price";
-import { formatCurrency } from "@/lib/utils";
 import { PlusCircle, Utensils, Minus, Plus, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useClient } from "./client-context";
 import { useCart } from "./cart/cart-context";
@@ -33,7 +31,7 @@ interface ProductModalProps {
 
 type StepType = 'quantity' | 'extras' | 'methods' | 'options' | 'review';
 
-export default function ProductModal({ product, trigger, className }: ProductModalProps) {
+export default function ProductModal({ product, trigger }: ProductModalProps) {
   const router = useRouter();
   const { client } = useClient();
   const { slug } = useParams();
@@ -173,6 +171,10 @@ export default function ProductModal({ product, trigger, className }: ProductMod
   };
 
   const startCustomization = () => {
+    if (!client) {
+      router.push(`/${slug as string}/auth`);
+      return;
+    }
     setCurrentStep(stepsAvailable[0]);
   };
 
@@ -294,7 +296,7 @@ export default function ProductModal({ product, trigger, className }: ProductMod
                     </div>
                   </div>
                   <span className="text-sm font-medium text-primary">
-                    +{formatCurrency(parseFloat(extra.attributes.price))}
+                    +{formatPrice(parseFloat(extra.attributes.price))}
                   </span>
                 </div>
               ))}
@@ -437,7 +439,7 @@ export default function ProductModal({ product, trigger, className }: ProductMod
                         <li key={extraId} className="flex justify-between">
                           <span>+ {extra.attributes.name}</span>
                           <span className="text-primary">
-                            +{formatCurrency(parseFloat(extra.attributes.price) * (isWeightBased ? weight : quantity))}
+                            +{formatPrice(parseFloat(extra.attributes.price) * (isWeightBased ? weight : quantity))}
                           </span>
                         </li>
                       );
@@ -525,10 +527,10 @@ export default function ProductModal({ product, trigger, className }: ProductMod
 
       <DialogTitle className="sr-only">{attributes.name}</DialogTitle>
 
-      <DialogContent className="sm:max-w-[550px] p-0 overflow-hidden rounded-xl w-[98vw] max-h-[95vh] flex flex-col max-sm:p-0">
+      <DialogContent className="sm:max-w-[550px] p-0 overflow-hidden rounded-xl w-[98vw] max-h-full flex flex-col max-sm:p-0">
         <div className="flex flex-col h-full">
           <div className="relative">
-            <div className="aspect-video bg-muted max-h-[250px] sm:max-h-[350px] w-full">
+            <div className="aspect-video bg-muted max-h-[150px] sm:max-h-[250px] w-full">
               {attributes.image_url ? (
                 <Image 
                   src={attributes.image_url}
@@ -573,7 +575,7 @@ export default function ProductModal({ product, trigger, className }: ProductMod
 
               {isWeightBased && (
                 <Badge variant="outline" className="ml-2 bg-muted/50">
-                  {formatCurrency(attributes.price)}/kg
+                  {formatPrice(attributes.price)}/kg
                 </Badge>
               )}
             </div>
@@ -598,7 +600,7 @@ export default function ProductModal({ product, trigger, className }: ProductMod
                   size="lg" 
                   onClick={startCustomization}
                 >
-                  Personalizar Agora
+                  Iniciar pedido
                 </Button>
               </div>
             ) : (

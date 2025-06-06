@@ -7,7 +7,7 @@ import { useCart } from './cart-context'
 import { formatPrice } from '../format-price'
 import { Input } from '@/app/components/ui/input'
 import { ScrollArea } from '@/app/components/ui/scroll-area'
-import { useRouter } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { CartButton } from './cart-button'
 import { useState } from 'react'
 import { Badge } from '@/app/components/ui/badge'
@@ -33,9 +33,11 @@ export function CartDrawer() {
   } = useCart()
   const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
+  const params = useParams()
+  const slug = params.slug as string
 
   const handleCheckout = () => {
-    router.push('/checkout')
+    router.push(`/${slug}/checkout`)
   }
 
   const getPrepareMethodName = (item: CartItem) => {

@@ -166,7 +166,7 @@ export const useCatalogGroup = (id?: string) => {
   const queryClient = useQueryClient();
 
   const { data: catalog, isLoading, error, refetch } = useQuery({
-    queryKey: ["catalog"],
+    queryKey: ["catalog-groups"],
     queryFn: getCatalog,
     refetchOnWindowFocus: true,
     refetchOnMount: true,
@@ -174,7 +174,7 @@ export const useCatalogGroup = (id?: string) => {
   });
   
   const { data: catalogGroup, isLoading: isLoadingGroup, error: errorGroup, refetch: refetchGroup } = useQuery({
-    queryKey: ["catalog-group", id],
+    queryKey: ["catalog-groups", id],
     queryFn: () => getCatalogGroup(id as any),
     enabled: !!id,
   });
@@ -215,7 +215,7 @@ export const useCatalogGroup = (id?: string) => {
   const createCatalogItemMutation = useMutation({
     mutationFn: (formData: FormData) => createCatalogItem(formData),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['catalog'] });
+      queryClient.invalidateQueries({ queryKey: ['catalog-groups'] });
       toast.success("Item criado com sucesso");
     },
     onError: () => {

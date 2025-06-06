@@ -1,6 +1,7 @@
 import api from "../lib/api"
 import { API_ENDPOINTS } from "../constants/api"
 import { LoginData } from "../types/utils"
+import { RegisterFormData } from "../schemas/client-auth/client-auth-schema"
 
 interface UserData {
   email: string
@@ -29,7 +30,7 @@ export const loginUser = async (data: LoginData): Promise<LoginResponse> => {
   }
 }
 
-export const registerShop = async (data: any)=> {
+export const registerShop = async (data: any) => {
   const response = await api.post(API_ENDPOINTS.SHOPS, data)
   return response.data
 }
