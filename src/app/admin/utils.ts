@@ -1,4 +1,4 @@
-import { ShoppingCart, Utensils, Settings, Target, BarChart3, Headset, BookOpen } from "lucide-react";
+import { ShoppingCart, Settings, Target, BarChart3, Headset, BookOpen } from "lucide-react";
 
 export const dashboardCards = [
   {
