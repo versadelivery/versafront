@@ -10,10 +10,10 @@ export function AuthFormInput({
   name,
   value,
   onChange,
-  onBlur,
   placeholder,
   label,
   required = true,
+  disabled = false,
   showPasswordToggle = false,
   error
 }: AuthFormInputProps & {
@@ -30,12 +30,12 @@ export function AuthFormInput({
           name={name}
           value={value}
           onChange={onChange}
-          onBlur={onBlur}
           placeholder={placeholder}
           className={`rounded-sm bg-transparent w-full p-8 border pr-10 placeholder:text-foreground/40 ${
             error ? "border-red-500" : ""
           }`}
           required={required}
+          disabled={disabled}
         />
         {showPasswordToggle && (
           <button

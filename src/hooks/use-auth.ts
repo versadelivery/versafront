@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { loginUser, registerShop } from '../services/auth-service'
-import { LoginData, LoginResponse, UserData } from '../types/utils'
-import { getToken, setToken, removeToken } from '../lib/auth'
+import { LoginData, LoginResponse, RegisterData, UserData } from '../types/utils'
+import { getToken, setToken, removeToken, removeUser } from '../lib/auth'
+import { toast } from 'sonner'
 
 export function useAuth() {
   const [user, setUser] = useState<UserData | null>(null)
@@ -15,16 +16,20 @@ export function useAuth() {
       setIsLoading(false)
       return
     }
-
     setIsLoading(false)
   }, [])
 
-  const register = async (data: any)=> {
-    const response = await registerShop(data)
-    setToken(response.token)
-    setUser(response.user)
-    router.push('/admin')
-    return response
+  const register = async (data: RegisterData)=> {
+    try {
+      const response = await registerShop(data)
+      setToken(response.token)
+      setUser(response.user)
+      toast.success('Loja cadastrada com sucesso')
+      router.push('/admin')
+      return response
+    } catch (error) {
+      toast.error('Erro ao cadastrar loja')
+    }
   }
 
   const login = async (data: LoginData): Promise<LoginResponse> => {
@@ -32,16 +37,19 @@ export function useAuth() {
       const response = await loginUser(data)
       setToken(response.token)
       setUser(response.user)
+      toast.success('Login realizado com sucesso')
       router.push('/admin')
       return response
     } catch (error) {
+      toast.error('Erro ao fazer login')
       throw error
     }
   }
 
   const logout = () => {
     removeToken()
-    setUser(null)
+    removeUser()
+    toast.success('Logout realizado com sucesso')
     router.push('/login')
   }
 

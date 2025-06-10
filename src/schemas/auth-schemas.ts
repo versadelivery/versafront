@@ -36,11 +36,23 @@ export const registerStep2Schema = baseStep2Schema.refine(
   }
 );
 
-export const registerSchema = registerStep1Schema.extend({
-  userName: baseStep2Schema.shape.userName,
-  userEmail: baseStep2Schema.shape.userEmail,
-  userPassword: baseStep2Schema.shape.userPassword
+export const registerSchema = z.object({
+  shop: z.object({
+    name: z.string().min(1, "Nome do estabelecimento é obrigatório"),
+    cellphone: z.string().min(1, "Telefone é obrigatório")
+  }),
+  shop_user: z.object({
+    name: z.string().min(1, "Nome é obrigatório"),
+    email: z.string().email("Email inválido"),
+    password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
+    confirmPassword: z.string()
+  })
+}).refine((data) => data.shop_user.password === data.shop_user.confirmPassword, {
+  message: "As senhas não coincidem",
+  path: ["shop_user", "confirmPassword"]
 });
+
+export type RegisterFormData = z.infer<typeof registerSchema>;
 
 export const loginSchema = z.object({
   email: z.string()

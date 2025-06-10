@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
       'localhost',
     ],
   },
+  typescript: {
+    ignoreBuildErrors: false,
+  },
   /* config options here */
 };
 

@@ -1,24 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { toast } from "sonner";
 import { AuthLayout } from "@/components/auth/auth-layout";
-import { LoginForm } from "@/components/auth/login-form";
 import cesta from "../../../public/img/cesta.png";
 import { loginSchema, LoginFormData } from "@/schemas/auth-schemas";
 import { useAuth } from "@/hooks/use-auth";
 import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { Loader2 } from "lucide-react";
+import { AuthFormInput } from "@/components/auth/auth-form-input";
 
 export default function Login() {
   const { login } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<LoginFormData>({
     email: "",
     password: ""
   });
-  const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Partial<LoginFormData>>({});
-  const [touched, setTouched] = useState<Record<string, boolean>>({});
-
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -26,53 +26,36 @@ export default function Login() {
       ...prev,
       [name]: value
     }));
-    
     if (errors[name as keyof LoginFormData]) {
-      setErrors(prev => ({ ...prev, [name]: undefined }));
+      setErrors(prev => ({
+        ...prev,
+        [name]: undefined
+      }));
     }
-  };
-
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    const { name } = e.target;
-    setTouched(prev => ({ ...prev, [name]: true }));
-    validateForm();
-  };
-
-  const validateForm = () => {
-    try {
-      loginSchema.parse(formData);
-      setErrors({});
-      return true;
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        const newErrors: Partial<LoginFormData> = {};
-        error.errors.forEach(err => {
-          const path = err.path[0] as keyof LoginFormData;
-          newErrors[path] = err.message;
-        });
-        setErrors(newErrors);
-      }
-      return false;
-    }
-  };
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!validateForm()) return;
-    
     setIsLoading(true);
-
     try {
-      await login({email: formData.email, password: formData.password});
-      toast.success("Login realizado com sucesso!");
+      const validatedData = loginSchema.parse(formData);
+      await login(validatedData);
     } catch (error) {
-      toast.error("Credenciais inválidas. Por favor, tente novamente.");
-      console.error("Login error:", error);
+      if (error instanceof z.ZodError) {
+        const formattedErrors: Partial<LoginFormData> = {};
+        error.errors.forEach((err) => {
+          if (err.path[0]) {
+            formattedErrors[err.path[0] as keyof LoginFormData] = err.message;
+          }
+        });
+        setErrors(formattedErrors);
+      } else {
+        console.error(error)
+      }
     } finally {
       setIsLoading(false);
     }
-  };
+  }
 
   return (
     <AuthLayout 
@@ -80,15 +63,41 @@ export default function Login() {
       imageSrc={cesta} 
       imagePosition="left"
     >
-      <LoginForm
-        formData={formData}
-        handleChange={handleChange}
-        handleBlur={handleBlur}
-        isLoading={isLoading}
-        onSubmit={handleSubmit}
-        errors={errors}
-        touched={touched}
-      />
+      <div className="w-full flex flex-col justify-center mb-4">
+        <AuthFormInput
+          type="email"
+          name="email"
+          placeholder="Email"
+          value={formData.email}
+          onChange={handleChange}
+          disabled={isLoading}
+          label="Email"
+          error={errors.email}
+        />
+      </div>
+      <div className="w-full flex flex-col justify-center mb-4">
+        <AuthFormInput
+          type="password"
+          name="password"
+          placeholder="Senha"
+          value={formData.password}
+          onChange={handleChange}
+          disabled={isLoading}
+          label="Senha"
+          error={errors.password}showPasswordToggle
+        />
+      </div>
+      <Button
+        type="submit"
+        className="w-full mt-4 mb-4 text-lg font-bold py-8"
+        onClick={handleSubmit}
+        disabled={isLoading}
+      >
+        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Entrar"}
+      </Button>
+      <p className="text-md text-center mt-4">
+        Não tem uma conta? <Link href="/register" className="text-primary">Cadastre-se</Link>
+      </p>
     </AuthLayout>
   );
 }

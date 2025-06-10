@@ -1,5 +1,26 @@
 import { StaticImageData } from "next/image";
 
+export interface UserData {
+  email: string
+  name: string
+  role: string
+  shop: {
+    type: string
+    attributes: {
+      cellphone: string
+      name: string
+      slug: string
+    }
+  }
+}
+
+export interface ShopData {
+  name: string
+  cellphone: string
+}
+
+
+
 interface RegisterFormData {
   storeName: string;
   storePhone: string;
@@ -58,6 +79,7 @@ export interface AuthFormInputProps {
   required?: boolean;
   showPasswordToggle?: boolean;
   error?: string;
+  disabled?: boolean;
 }
 
 export interface LoginFormProps {
@@ -85,6 +107,18 @@ export interface RegisterData {
     email: string;
     password: string;
   };
+}
+
+
+export interface ShopUserData {
+  name: string
+  email: string
+  password: string
+}
+
+export type LoginResponse = {
+  token: string
+  user: UserData
 }
 
 export interface LoginData {
@@ -134,8 +168,3 @@ export interface UserData {
     };
   };
 }
-
-export type LoginResponse = {
-  token: string;
-  user: UserData;
-};

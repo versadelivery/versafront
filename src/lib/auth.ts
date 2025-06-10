@@ -1,4 +1,5 @@
 const TOKEN_KEY = 'auth_token'
+const USER_KEY = 'user'
 
 export const getToken = (): string | null => {
   if (typeof window === 'undefined') return null
@@ -14,4 +15,9 @@ export const removeToken = (): void => {
   if (typeof window === 'undefined') return
   localStorage.removeItem(TOKEN_KEY)
   localStorage.clear()
+}
+
+export const removeUser = (): void => {
+  if (typeof window === 'undefined') return
+  localStorage.removeItem(USER_KEY)
 }
