@@ -1,16 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Header } from "@/components/catalog/catalog-header";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { ImageIcon, Upload, MapPin, Phone, Mail, Globe } from "lucide-react";
+import { ImageIcon, Upload, MapPin, Phone } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useShop } from "@/hooks/use-shop";
 import { ShopAttributes } from "@/services/shop";
+import AdminHeader from "@/components/admin/catalog-header";
 
 export default function GeneralSettingsPage() {
   const { shop, isLoading, updateShop, isUpdating } = useShop();
@@ -82,7 +82,7 @@ export default function GeneralSettingsPage() {
 
   return (
     <div className="w-full px-0 sm:px-4 lg:px-6">
-      <Header 
+      <AdminHeader 
         title="CONFIGURAÇÕES GERAIS"
         description="Configure as informações básicas do seu estabelecimento"
         className="mb-4"

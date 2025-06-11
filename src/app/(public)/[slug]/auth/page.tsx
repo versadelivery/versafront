@@ -11,7 +11,7 @@ import { loginSchema, registerSchema } from "./auth-schema";
 import { Loader2, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { z } from "zod";
 import Image from "next/image";
-import logoGreen from "../../../../public/img/logo_green.svg";
+import logoGreen from "@/public/img/logo_green.svg";
 import { useRouter } from "next/navigation";
 
 type AuthMode = "login" | "register";

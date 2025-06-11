@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Header } from "@/components/catalog/catalog-header";
+import AdminHeader from "@/components/admin/catalog-header";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -171,7 +171,7 @@ export default function DeliverySettingsPage() {
 
   return (
     <div className="w-full px-0 sm:px-4 lg:px-6 min-h-screen pb-20">
-      <Header
+      <AdminHeader
         title="CONFIGURAÇÕES DE ENTREGA"
         description="Configure as taxas e regras de entrega do seu estabelecimento"
         className="mb-4"

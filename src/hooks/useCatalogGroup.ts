@@ -16,7 +16,7 @@ export const useEditStep = ({ id, stepId, name, optionId, price }: EditStepProps
   const queryClient = useQueryClient();
 
   const { data: item, isLoading } = useQuery({
-    queryKey: ["catalog-item", id],
+    queryKey: ["catalog", id],
     queryFn: () => getCatalogItem(id),
   });
 
@@ -34,7 +34,6 @@ export const useEditStep = ({ id, stepId, name, optionId, price }: EditStepProps
   const updatePrepareMethodMutation = useMutation({
     mutationFn: () => updatePrepareMethod(id, stepId, name),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['catalog-item'] });
       queryClient.invalidateQueries({ queryKey: ['catalog'] });
       toast.success("Método de preparo atualizado com sucesso");
     },
@@ -46,7 +45,7 @@ export const useEditStep = ({ id, stepId, name, optionId, price }: EditStepProps
   const updateStepMutation = useMutation({
     mutationFn: () => updateStep(id, stepId, name),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['catalog-item', id] });
+      queryClient.invalidateQueries({ queryKey: ['catalog', id] });
       toast.success("Etapa atualizada com sucesso");
     },
     onError: () => {
@@ -57,7 +56,7 @@ export const useEditStep = ({ id, stepId, name, optionId, price }: EditStepProps
   const updateStepOptionMutation = useMutation({
     mutationFn: () => updateStepOption(id, stepId, optionId as string, name),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['catalog-item', id] });
+      queryClient.invalidateQueries({ queryKey: ['catalog', id] });
       toast.success("Opção atualizada com sucesso");
     },
     onError: () => {
@@ -84,7 +83,7 @@ export const useDestroyItems = (id: string, itemId: string, optionId: string) =>
   const destroyExtraMutation = useMutation({
     mutationFn: () => destroyExtra(id, itemId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['catalog-item', id] });
+      queryClient.invalidateQueries({ queryKey: ['catalog', id] });
       toast.success("Extra deletado com sucesso");
     },
     onError: () => {
@@ -95,7 +94,7 @@ export const useDestroyItems = (id: string, itemId: string, optionId: string) =>
   const destroyStepItemMutation = useMutation({
     mutationFn: () => destroyStepOption(id, itemId, optionId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['catalog-item', id] });
+      queryClient.invalidateQueries({ queryKey: ['catalog', id] });
       toast.success("Opção deletada com sucesso");
     },
     onError: () => {
@@ -105,7 +104,7 @@ export const useDestroyItems = (id: string, itemId: string, optionId: string) =>
   const destroyStepMutation = useMutation({
     mutationFn: () => destroyStep(id, itemId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['catalog-item', id] });
+      queryClient.invalidateQueries({ queryKey: ['catalog', id] });
       toast.success("Etapa deletada com sucesso");
     },
     onError: () => {
@@ -116,7 +115,7 @@ export const useDestroyItems = (id: string, itemId: string, optionId: string) =>
   const destroyPrepareMethodMutation = useMutation({
     mutationFn: () => destroyPrepareMethod(id, itemId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['catalog-item', id] });
+      queryClient.invalidateQueries({ queryKey: ['catalog', id] });
       toast.success("Método de preparo deletado com sucesso");
     },
     onError: () => {
@@ -140,7 +139,7 @@ export const useCatalogItem = (id: string) => {
   const queryClient = useQueryClient();
 
   const catalogItemQuery = useQuery<CatalogItemResponse>({
-    queryKey: ["catalog-item", id],
+    queryKey: ["catalog", id],
     queryFn: () => getCatalogItem(id),
     enabled: !!id,
   });
@@ -148,7 +147,7 @@ export const useCatalogItem = (id: string) => {
   const deleteCatalogItemMutation = useMutation({
     mutationFn: () => deleteCatalogItem(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['catalog-item', id] });
+      queryClient.invalidateQueries({ queryKey: ['catalog', id] });
       toast.success("Item deletado com sucesso");
     },
     onError: () => {
@@ -167,7 +166,7 @@ export const useCatalogGroup = (id?: string) => {
   const queryClient = useQueryClient();
 
   const { data: catalog, isLoading, error, refetch } = useQuery({
-    queryKey: ["catalog-groups"],
+    queryKey: ["catalog"],
     queryFn: getCatalog,
     refetchOnWindowFocus: true,
     refetchOnMount: true,
@@ -175,7 +174,7 @@ export const useCatalogGroup = (id?: string) => {
   });
   
   const { data: catalogGroup, isLoading: isLoadingGroup, error: errorGroup, refetch: refetchGroup } = useQuery({
-    queryKey: ["catalog-groups", id],
+    queryKey: ["catalog", id],
     queryFn: () => getCatalogGroup(id as any),
     enabled: !!id,
   });
@@ -183,7 +182,7 @@ export const useCatalogGroup = (id?: string) => {
   const createCatalogGroupMutation = useMutation({
     mutationFn: createCatalogGroup,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["catalog-groups"] });
+      queryClient.invalidateQueries({ queryKey: ["catalog"] });
       toast.success("Grupo criado com sucesso");
     },
     onError: () => {
@@ -194,7 +193,7 @@ export const useCatalogGroup = (id?: string) => {
   const updateCatalogGroupMutation = useMutation({
     mutationFn: updateCatalogGroup,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["catalog-groups"] });
+      queryClient.invalidateQueries({ queryKey: ["catalog"] });
       toast.success("Grupo atualizado com sucesso");
     },
     onError: () => {
@@ -205,7 +204,7 @@ export const useCatalogGroup = (id?: string) => {
   const deleteCatalogGroupMutation = useMutation({
     mutationFn: deleteCatalogGroup,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["catalog-groups"] });
+      queryClient.invalidateQueries({ queryKey: ["catalog"] });
       toast.success("Grupo deletado com sucesso");
     },
     onError: () => {
@@ -216,7 +215,7 @@ export const useCatalogGroup = (id?: string) => {
   const createCatalogItemMutation = useMutation({
     mutationFn: (formData: FormData) => createCatalogItem(formData),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['catalog-groups'] });
+      queryClient.invalidateQueries({ queryKey: ['catalog'] });
       toast.success("Item criado com sucesso");
     },
     onError: () => {

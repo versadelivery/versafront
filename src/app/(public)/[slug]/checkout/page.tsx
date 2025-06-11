@@ -52,8 +52,7 @@ export default function CheckoutPage() {
   const router = useRouter()
   const params = useParams()
   const storeSlug = params.slug as string
-  const { client } = useClient()
-  // const { items, removeFromCart: removeItem, updateItemQuantity: updateQuantity, clearCart } = useCart()
+  const { client,paymentMethods } = useClient()
   const { 
     items, 
     totalItems, 
@@ -78,7 +77,7 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     console.log("items", items)
-    
+    console.log("paymentMethods", paymentMethods)
     if (!client) {
       router.push(`/${storeSlug}`)
       return

@@ -1,8 +1,9 @@
 import api from "@/api/config";
-import { ClientAuthData, ClientData, ShopData } from "./types";
+import { ClientAuthData, ClientData } from "./types";
+import { ShopResponse } from "@/types/client-catalog";
 
 export async function fetchShopBySlug(slug: string) {
-  const response = await api.get<ShopData>(`/customers/shops/${slug}`);
+  const response = await api.get<ShopResponse>(`/customers/shops/${slug}`);
   return response.data;
 }
 

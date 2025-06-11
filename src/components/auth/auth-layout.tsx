@@ -3,7 +3,7 @@
 import Header from "@/components/landing/header";
 import { Footer } from "@/components/footer";
 import Image from "next/image";
-import logoGreen from "../../../public/img/logo_green.svg";
+import logoGreen from "@/public/img/logo_green.svg";
 import { AuthLayoutProps } from "@/types/utils";
 
 export function AuthLayout({

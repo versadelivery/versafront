@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Header } from "@/components/catalog/catalog-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Loader2, CreditCard, Wallet, QrCode } from "lucide-react";
 import { usePayment } from "./usePayment";
+import AdminHeader from "@/components/admin/catalog-header";
 
 interface PaymentMethod {
   id: string;
@@ -110,7 +110,7 @@ export default function PaymentSettingsPage() {
 
   return (
     <div className="w-full px-0 sm:px-4 lg:px-6 min-h-screen pb-20">
-      <Header
+      <AdminHeader
         title="CONFIGURAÇÕES DE PAGAMENTO"
         description="Gerencie os meios de pagamento disponíveis no seu estabelecimento"
         className="mb-4"

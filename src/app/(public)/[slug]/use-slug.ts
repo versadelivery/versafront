@@ -6,9 +6,15 @@ import { useClient } from "./client-context";
 import { useRouter } from "next/navigation";
 
 export function useShopBySlug(slug: string) {
+  const { setShop } = useClient();
+  
   return useQuery({
     queryKey: ["shop", slug],
-    queryFn: () => fetchShopBySlug(slug),
+    queryFn: async () => {
+      const data = await fetchShopBySlug(slug);
+      setShop(data);
+      return data;
+    },
     retry: false,
     staleTime: 1000 * 60 * 60 * 24
   });

@@ -19,6 +19,7 @@ import { ItemSteps } from "./item-steps";
 import { useCatalogGroup, useCatalogItem } from "@/hooks/useCatalogGroup";
 import { toast } from "sonner";
 import { updateCatalogItem } from "@/api/requests/catalog_item/requests";
+import { DeleteConfirmation } from "@/components/ui/delete-confirmation";
 
 interface EditItemModalProps {
   id: string;
@@ -74,6 +75,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
   const [initialData, setInitialData] = useState<any>(null);
   const [hasChanges, setHasChanges] = useState(false);
   const [isFullyLoaded, setIsFullyLoaded] = useState(false);
+  const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !isLoadingCatalogItem && catalogItem) {
@@ -83,8 +85,9 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
     }
   }, [isLoading, isLoadingCatalogItem, catalogItem]);
 
-  const handleDeleteItem = () => {
-    deleteCatalogItem();
+  const handleDeleteItem = async () => {
+    await deleteCatalogItem();
+    setIsDeleteConfirmationOpen(false);
     onOpenChange(false);
   }
 
@@ -397,7 +400,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
   if (!isFullyLoaded) {
     return (
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="rounded-xs sm:h-auto max-w-[95vw] sm:max-w-[720px] p-4 sm:p-6 md:p-8 bg-white rounded-sm max-h-[90vh] overflow-y-auto">
+        <DialogContent className="rounded-xs sm:h-auto max-w-[95vw] sm:max-w-[720px] p-4 sm:p-6 md:p-8 bg-white max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Carregando...</DialogTitle>
           </DialogHeader>
@@ -411,7 +414,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="rounded-xs sm:h-auto max-w-[95vw] sm:max-w-[720px] p-4 sm:p-6 md:p-8 bg-white rounded-sm max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#212121] [&::-webkit-scrollbar-thumb]:rounded-sm [&::-webkit-scrollbar]:px-2">
+      <DialogContent className="rounded-xs sm:h-auto max-w-[95vw] sm:max-w-[720px] p-4 sm:p-6 md:p-8 bg-white max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#212121] [&::-webkit-scrollbar-thumb]:rounded-sm [&::-webkit-scrollbar]:px-2">
         <DialogHeader>
           <DialogTitle className="text-start text-xl md:text-2xl font-bold">
             EDITAR ITEM
@@ -432,7 +435,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
                     NOME
                   </FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Ex: Hamburguer" className="border border-black/30 border-[0.5px] h-12 placeholder:text-gray-400" />
+                    <Input {...field} placeholder="Ex: Hamburguer" className="border-black/30 border-[0.5px] h-12 placeholder:text-gray-400" />
                   </FormControl>
                 </FormItem>
               )}
@@ -447,13 +450,13 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
                     DESCRIÇÃO
                   </FormLabel>
                   <FormControl>
-                    <Textarea {...field} placeholder="Digite a descrição do item" className="border border-black/30 border-[0.5px] h-12 placeholder:text-gray-400" />
+                    <Textarea {...field} placeholder="Digite a descrição do item" className="border-black/30 border-[0.5px] h-12 placeholder:text-gray-400" />
                   </FormControl>
                 </FormItem>
               )}
             />
 
-            <hr className="border-black/30 border-[0,1px] my-12 w-full" />
+            <hr className="border-black/30 border-[0.1px] my-12 w-full" />
 
             <div className="flex flex-row gap-4 w-full">
               <FormField
@@ -507,7 +510,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
                       value={field.value}
                     >
                       <FormControl className="w-full h-12">
-                        <SelectTrigger className="border border-black/30 border-[0.5px] h-12">
+                        <SelectTrigger className="border-black/30 border-[0.5px] h-12">
                           <SelectValue placeholder={isLoading ? "Carregando grupos..." : "Selecione um grupo"} className="w-full p-4 h-12 placeholder:text-gray-400" />
                         </SelectTrigger>
                       </FormControl>
@@ -539,7 +542,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
                     </FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl className="w-1/2 h-12">
-                        <SelectTrigger className="border border-black/30 border-[0.5px] h-12">
+                        <SelectTrigger className="border-black/30 border-[0.5px] h-12">
                           <SelectValue placeholder="Selecione o tipo de unidade" className="placeholder:text-gray-400" />
                         </SelectTrigger>
                       </FormControl>
@@ -570,7 +573,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
                           type="number"
                           {...field}
                           onChange={(e) => field.onChange(Number(e.target.value))}
-                          className="border border-black/30 border-[0.5px] h-12 placeholder:text-gray-400"
+                          className="border-black/30 border-[0.5px] h-12 placeholder:text-gray-400"
                         />
                       </FormControl>
                     </FormItem>
@@ -591,7 +594,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
                           type="number"
                           {...field}
                           onChange={(e) => field.onChange(Number(e.target.value))}
-                          className="border border-black/30 border-[0.5px] h-12 placeholder:text-gray-400"
+                          className="border-black/30 border-[0.5px] h-12 placeholder:text-gray-400"
                         />
                       </FormControl>
                     </FormItem>
@@ -612,7 +615,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
                           min="0"
                           {...field}
                           onChange={(e) => field.onChange(Number(e.target.value))}
-                          className="border border-black/30 border-[0.5px] h-12 placeholder:text-gray-400"
+                          className="border-black/30 border-[0.5px] h-12 placeholder:text-gray-400"
                         />
                       </FormControl>
                     </FormItem>
@@ -636,7 +639,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
                         placeholder="0,00"
                         value={formatPrice(field.value)}
                         onChange={(e) => field.onChange(handlePriceChange(e.target.value))}
-                        className="pl-10 h-12 border border-black/30"
+                        className="pl-10 h-12 border-black/30"
                         required
                       />
                     </div>
@@ -673,7 +676,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
                           placeholder="0,00"
                           value={formatPrice(field.value as number)}
                           onChange={(e) => field.onChange(handlePriceChange(e.target.value))}
-                          className="pl-10 h-12 border border-black/30"
+                          className="pl-10 h-12 border-black/30"
                           disabled={!hasDiscount}
                         />
                       </div>
@@ -683,7 +686,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
               />
             </div>
 
-            <hr className="border-black/30 border-[0,1px] my-12 w-full" />
+            <hr className="border-black/30 border-[0.1px] my-12 w-full" />
 
             <FormItem className="cursor-pointer flex flex-row items-center justify-between rounded-lg p-4 bg-muted/40">
               <FormLabel className="cursor-pointer text-sm font-bold text-foreground w-full">
@@ -776,16 +779,23 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
             )}
 
             <DialogFooter className="flex flex-row justify-end gap-4 mt-8 border-t border-black/30 pt-4">
-              <Button type="button" variant="outline" className="w-32 bg-red-500 text-white" onClick={() => handleDeleteItem()} disabled={isDeletingCatalogItem}>
+              <Button type="button" variant="outline" className="w-32 bg-red-500 text-white rounded-xs" onClick={() => handleDeleteItem()} disabled={isDeletingCatalogItem}>
                 {isDeletingCatalogItem ? <Loader2 className="animate-spin" /> : 'DELETAR'}
               </Button>
-              <Button type="submit" className="w-32" disabled={isUpdating || !hasChanges}>
+              <Button type="submit" className="w-32 rounded-xs" disabled={isUpdating || !hasChanges}>
                 {isUpdating ? <Loader2 className="animate-spin" /> : 'ATUALIZAR'}
               </Button>
             </DialogFooter>
           </form>
         </Form>
       </DialogContent>
+      <DeleteConfirmation
+        isOpen={isDeleteConfirmationOpen}
+        onOpenChange={setIsDeleteConfirmationOpen}
+        onConfirm={handleDeleteItem}
+        isLoading={isDeletingCatalogItem}
+        type="item"
+      />
     </Dialog>
   );
 }
