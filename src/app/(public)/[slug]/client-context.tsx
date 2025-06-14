@@ -3,6 +3,9 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { ClientData } from "./types";
 import { ShopResponse } from "@/types/client-catalog";
+import { DeliveryConfig } from "@/services/delivery-service";
+import { useShopBySlug } from "./use-slug";
+import { useParams } from "next/navigation";
 
 interface PaymentMethod {
   id: string;
@@ -15,6 +18,33 @@ interface PaymentMethod {
   };
 }
 
+interface ShopPaymentConfig {
+  cash: boolean;
+  debit: boolean;
+  credit: boolean;
+  manual_pix: boolean;
+}
+
+interface DeliveryNeighborhood {
+  id: number;
+  name: string;
+  amount: number;
+  min_value_free_delivery: number | null;
+}
+
+interface ShopDeliveryConfig {
+  delivery_fee_kind: string;
+  amount: number;
+  min_value_free_delivery: number | null;
+  shop_delivery_neighborhoods: {
+    data: {
+      id: string;
+      type: string;
+      attributes: DeliveryNeighborhood;
+    }[];
+  };
+}
+
 interface ClientContextData {
   client: ClientData | null;
   setClient: (client: ClientData | null) => void;
@@ -23,6 +53,10 @@ interface ClientContextData {
   setShop: (shop: ShopResponse | null) => void;
   paymentMethods: PaymentMethod[];
   setPaymentMethods: (methods: PaymentMethod[]) => void;
+  shopPaymentConfig: ShopPaymentConfig | null;
+  setShopPaymentConfig: (config: ShopPaymentConfig | null) => void;
+  shopDeliveryConfig: ShopDeliveryConfig  | null;
+  setShopDeliveryConfig: (config: ShopDeliveryConfig | null) => void;
 }
 
 const ClientContext = createContext<ClientContextData>({} as ClientContextData);
@@ -32,12 +66,13 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [shop, setShop] = useState<ShopResponse | null>(null);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [shopPaymentConfig, setShopPaymentConfig] = useState<ShopPaymentConfig | null>(null);
+  const [shopDeliveryConfig, setShopDeliveryConfig] = useState<ShopDeliveryConfig | null>(null);
 
   useEffect(() => {
     const storedClient = localStorage.getItem("client");
     const token = localStorage.getItem("client_token");
-    const storedShop = localStorage.getItem("shop");
-    const storedPaymentMethods = localStorage.getItem("payment_methods");
+    const storedShop = JSON.parse(localStorage.getItem("shop") || "{}");
 
     if (storedClient && token) {
       try {
@@ -58,24 +93,19 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
         setIsAuthenticated(false);
       }
     }
-
-    if (storedShop) {
+    
+    if (storedShop.data) {
       try {
-        const parsedShop = JSON.parse(storedShop);
-        setShop(parsedShop);
+        setShop(storedShop);
+        setShopDeliveryConfig(storedShop.data.attributes.shop_delivery_config.data.attributes)
+        setShopPaymentConfig(storedShop.data.attributes.shop_payment_config.data.attributes)
+        console.log("shopDeliveryConfig", shopDeliveryConfig)
+        console.log("shopPaymentConfig", shopPaymentConfig)
       } catch (error) {
         localStorage.removeItem("shop");
         setShop(null);
-      }
-    }
-
-    if (storedPaymentMethods) {
-      try {
-        const parsedPaymentMethods = JSON.parse(storedPaymentMethods);
-        setPaymentMethods(parsedPaymentMethods);
-      } catch (error) {
-        localStorage.removeItem("payment_methods");
-        setPaymentMethods([]);
+        setShopDeliveryConfig(null);
+        setShopPaymentConfig(null);
       }
     }
   }, []);
@@ -103,6 +133,24 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const handleSetShopPaymentConfig = (config: ShopPaymentConfig | null) => {
+    setShopPaymentConfig(config);
+    if (config) {
+      localStorage.setItem("shop_payment_config", JSON.stringify(config));
+    } else {
+      localStorage.removeItem("shop_payment_config");
+    }
+  };
+
+  const handleSetShopDeliveryConfig = (config: ShopDeliveryConfig | null) => {
+    setShopDeliveryConfig(config);
+    if (config) {
+      localStorage.setItem("shop_delivery_config", JSON.stringify(config));
+    } else {
+      localStorage.removeItem("shop_delivery_config");
+    }
+  };
+
   return (
     <ClientContext.Provider value={{ 
       client, 
@@ -111,7 +159,11 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
       shop,
       setShop: handleSetShop,
       paymentMethods,
-      setPaymentMethods: handleSetPaymentMethods
+      setPaymentMethods: handleSetPaymentMethods,
+      shopPaymentConfig,
+      setShopPaymentConfig: handleSetShopPaymentConfig,
+      shopDeliveryConfig,
+      setShopDeliveryConfig: handleSetShopDeliveryConfig
     }}>
       {children}
     </ClientContext.Provider>

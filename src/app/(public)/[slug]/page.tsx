@@ -1,7 +1,7 @@
 "use client"
 
 import { notFound, useParams } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useShopBySlug } from './use-slug';
 import StoreHeader from './components/store-header';

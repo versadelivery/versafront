@@ -13,7 +13,9 @@ import { useParams, useRouter } from 'next/navigation'
 import { useClient } from '../client-context'
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useDelivery } from '@/hooks/use-delivery'
+import { CreateOrderRequest, Order } from '@/types/order'
+import { createOrder } from '@/services/order-service'
+import { useShopBySlug } from '../use-slug'
 
 type DeliveryOption = 'delivery' | 'pickup'
 
@@ -52,18 +54,17 @@ export default function CheckoutPage() {
   const router = useRouter()
   const params = useParams()
   const storeSlug = params.slug as string
-  const { client,paymentMethods } = useClient()
+  const { client, shop, shopDeliveryConfig, shopPaymentConfig } = useClient()
+
   const { 
     items, 
-    totalItems, 
     totalPrice, 
     removeItem, 
     updateItemQuantity,
     clearCart
   } = useCart()
-  const { deliveryConfig, neighborhoods, isLoading: isLoadingDelivery } = useDelivery()
   
-  const [paymentMethod, setPaymentMethod] = useState('credit')
+  const [paymentMethod, setPaymentMethod] = useState('credit_card')
   const [deliveryOption, setDeliveryOption] = useState<DeliveryOption>('delivery')
   const [address, setAddress] = useState('')
   const [complement, setComplement] = useState('')
@@ -74,14 +75,9 @@ export default function CheckoutPage() {
   const [cartItems, setCartItems] = useState<CartItemWithExtras[]>([])
   const [isExpanded, setIsExpanded] = useState<Record<string, boolean>>({})
   const [selectedNeighborhood, setSelectedNeighborhood] = useState<string>('')
-
+  const [order, setOrder] = useState<Order | null>(null)
+  
   useEffect(() => {
-    console.log("items", items)
-    console.log("paymentMethods", paymentMethods)
-    if (!client) {
-      router.push(`/${storeSlug}`)
-      return
-    }
     
     const mappedItems = items.map((item: any) => ({
       id: item.id,
@@ -139,6 +135,12 @@ export default function CheckoutPage() {
     setIsExpanded(expandedState)
   }, [client, storeSlug, items, router])
 
+  useEffect(() => {
+    if (!isLoading && !client) {
+      router.push(`/${storeSlug}`)
+    }
+  }, [isLoading, client, storeSlug, router])
+
   const toggleItemExpansion = (itemId: string) => {
     setIsExpanded(prev => ({
       ...prev,
@@ -155,7 +157,7 @@ export default function CheckoutPage() {
 
   const calculateTotal = () => {
     const deliveryFee = deliveryOption === 'delivery' && selectedNeighborhood 
-      ? neighborhoods.find(n => n.id === selectedNeighborhood)?.amount || 0
+      ? shopDeliveryConfig?.shop_delivery_neighborhoods.data.find(n => n.id === selectedNeighborhood)?.attributes.amount || 0
       : 0
     return totalPrice + deliveryFee
   }
@@ -180,10 +182,29 @@ export default function CheckoutPage() {
   const handleSubmitOrder = async () => {
     setIsSubmitting(true)
     
+    const orderData: CreateOrderRequest = {
+        "order": {
+            "shop_id": Number(shop?.data.id),
+            "withdrawal": deliveryOption === 'pickup' ? true : false,
+            "payment_method": paymentMethod as 'manual_pix' | 'credit' | 'debit' | 'cash',
+            "address": {
+                "address": address,
+                "neighborhood": selectedNeighborhood,
+                "complement": complement,
+                "reference": reference
+            },
+            "items": cartItems.map(item => ({
+              catalog_item_id: Number(item.id),
+              quantity: item.quantity,
+              observation: ''
+            }))
+        }
+    }
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      clearCart()
-      router.push(`/${storeSlug}/checkout/order-confirmation`)
+      const response = await createOrder(orderData)
+      console.log("response", response)
+      setOrder(response)
     } catch (error) {
       console.error('Erro ao enviar pedido:', error)
       setIsSubmitting(false)
@@ -216,9 +237,9 @@ export default function CheckoutPage() {
                     <Truck className="h-6 w-6 mb-2 text-primary" />
                     <span>Entrega</span>
                     <span className="text-sm text-muted-foreground">
-                      {deliveryConfig?.delivery_fee_kind === 'fixed' 
-                        ? `Taxa: R$ ${deliveryConfig.amount.toFixed(2).replace('.', ',')}`
-                        : deliveryConfig?.delivery_fee_kind === 'per_neighborhood'
+                      {shopDeliveryConfig?.delivery_fee_kind === 'fixed' 
+                        ? `Taxa: R$ ${shopDeliveryConfig.amount.toFixed(2).replace('.', ',')}`
+                        : shopDeliveryConfig?.delivery_fee_kind === 'per_neighborhood'
                           ? 'Taxa por bairro'
                           : 'Taxa a combinar'
                       }
@@ -268,7 +289,7 @@ export default function CheckoutPage() {
                       <Label htmlFor="neighborhood" className="mb-2 block font-medium">
                         Bairro
                       </Label>
-                      {deliveryConfig?.delivery_fee_kind === 'per_neighborhood' ? (
+                      {shopDeliveryConfig?.delivery_fee_kind.toLowerCase() === 'per_neighborhood' ? (
                         <select
                           id="neighborhood"
                           value={selectedNeighborhood}
@@ -277,9 +298,9 @@ export default function CheckoutPage() {
                           disabled={deliveryOption !== 'delivery'}
                         >
                           <option value="">Selecione um bairro</option>
-                          {neighborhoods.map((neighborhood) => (
+                          {shopDeliveryConfig?.shop_delivery_neighborhoods.data.map((neighborhood) => (
                             <option key={neighborhood.id} value={neighborhood.id}>
-                              {neighborhood.name} - R$ {neighborhood.amount.toFixed(2).replace('.', ',')}
+                              {neighborhood.attributes.name} - R$ {neighborhood.attributes.amount.toFixed(2).replace('.', ',')}
                             </option>
                           ))}
                         </select>
@@ -360,7 +381,7 @@ export default function CheckoutPage() {
                   </Label>
                 </div>
                 <div>
-                  <RadioGroupItem value="pix" id="pix" className="peer sr-only" />
+                  <RadioGroupItem value="manual_pix" id="pix" className="peer sr-only" />
                   <Label
                     htmlFor="pix"
                     className="flex items-center gap-3 rounded-md border-2 border-muted bg-white cursor-pointer p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary transition-all duration-200"
@@ -582,13 +603,13 @@ export default function CheckoutPage() {
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span className="font-medium">R$ {totalPrice.toFixed(2).replace('.', ',')}</span>
+                  <span className="font-medium">R$ {totalPrice.toFixed(2).replace('.', ',') || 0}</span>
                 </div>
                 {deliveryOption === 'delivery' && selectedNeighborhood && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Taxa de entrega</span>
                     <span className="font-medium">
-                      R$ {neighborhoods.find(n => n.id === selectedNeighborhood)?.amount.toFixed(2).replace('.', ',')}
+                      R$ {shopDeliveryConfig?.shop_delivery_neighborhoods.data.find(n => n.id === selectedNeighborhood)?.attributes.amount.toFixed(2).replace('.', ',')}
                     </span>
                   </div>
                 )}

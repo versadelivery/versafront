@@ -4,5 +4,6 @@ export const API_ENDPOINTS = {
   SHOPS: "/shops/",
   LOGIN: "/login/",
   CATALOG: "/catalog_groups/",
-  CATALOG_ITEMS: "/catalog_items/"
+  CATALOG_ITEMS: "/catalog_items/",
+  ORDERS: "/customers/orders/"
 };  

@@ -13,6 +13,7 @@ export function useShopBySlug(slug: string) {
     queryFn: async () => {
       const data = await fetchShopBySlug(slug);
       setShop(data);
+      localStorage.setItem("shop", JSON.stringify(data));
       return data;
     },
     retry: false,

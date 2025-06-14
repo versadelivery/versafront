@@ -11,7 +11,7 @@ import { loginSchema, registerSchema } from "./auth-schema";
 import { Loader2, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { z } from "zod";
 import Image from "next/image";
-import logoGreen from "@/public/img/logo_green.svg";
+import logoInline from "@/public/logo/logo-inline-black.svg";
 import { useRouter } from "next/navigation";
 
 type AuthMode = "login" | "register";
@@ -63,7 +63,7 @@ export default function AuthPage() {
         Voltar
       </Button>
       <div className="mb-2 text-center flex flex-col items-center">
-        <Image src={logoGreen} width={260} alt="Versa Delivery" className="mb-4" />
+        <Image src={logoInline} width={260} alt="Versa Delivery" className="-mb-16" />
       </div>
       <div className="w-full max-w-lg space-y-6 bg-white px-8 rounded-xs flex flex-col items-center">
         <div className="text-center w-full">
