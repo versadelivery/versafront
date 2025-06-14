@@ -16,6 +16,13 @@ export default function StoreCatalog() {
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
+  useEffect(() => {
+    if (shop) {
+      localStorage.removeItem("shop");
+      localStorage.setItem("shop", JSON.stringify(shop));
+    }
+  }, [shop]);
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen bg-background">

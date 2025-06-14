@@ -148,13 +148,6 @@ export default function CheckoutPage() {
     }))
   }
 
-  const calculateSubtotal = () => {
-    return cartItems.reduce((sum, item) => {
-      const price = item.priceWithDiscount || item.price
-      return sum + (price * item.quantity)
-    }, 0)
-  }
-
   const calculateTotal = () => {
     const deliveryFee = deliveryOption === 'delivery' && selectedNeighborhood 
       ? shopDeliveryConfig?.shop_delivery_neighborhoods.data.find(n => n.id === selectedNeighborhood)?.attributes.amount || 0
@@ -289,7 +282,7 @@ export default function CheckoutPage() {
                       <Label htmlFor="neighborhood" className="mb-2 block font-medium">
                         Bairro
                       </Label>
-                      {shopDeliveryConfig?.delivery_fee_kind.toLowerCase() === 'per_neighborhood' ? (
+                      {shopDeliveryConfig?.delivery_fee_kind === 'per_neighborhood' ? (
                         <select
                           id="neighborhood"
                           value={selectedNeighborhood}
@@ -360,7 +353,7 @@ export default function CheckoutPage() {
                 onValueChange={setPaymentMethod}
                 className="grid grid-cols-1 md:grid-cols-2 gap-4"
               >
-                <div>
+                {shopPaymentConfig?.credit && <div>
                   <RadioGroupItem value="credit" id="credit" className="peer sr-only" />
                   <Label
                     htmlFor="credit"
@@ -369,8 +362,8 @@ export default function CheckoutPage() {
                     <CreditCard className="h-5 w-5 text-primary" />
                     <span>Cartão de crédito</span>
                   </Label>
-                </div>
-                <div>
+                </div>}
+                {shopPaymentConfig?.debit && <div>
                   <RadioGroupItem value="debit" id="debit" className="peer sr-only" />
                   <Label
                     htmlFor="debit"
@@ -379,7 +372,8 @@ export default function CheckoutPage() {
                     <CreditCard className="h-5 w-5 text-primary" />
                     <span>Cartão de débito</span>
                   </Label>
-                </div>
+                </div>}
+                {shopPaymentConfig?.manual_pix &&
                 <div>
                   <RadioGroupItem value="manual_pix" id="pix" className="peer sr-only" />
                   <Label
@@ -390,7 +384,8 @@ export default function CheckoutPage() {
                     <span>PIX</span>
                   </Label>
                 </div>
-                <div>
+                }
+                {shopPaymentConfig?.cash && <div>
                   <RadioGroupItem value="cash" id="cash" className="peer sr-only" />
                   <Label
                     htmlFor="cash"
@@ -399,7 +394,7 @@ export default function CheckoutPage() {
                     <Wallet className="h-5 w-5 text-primary" />
                     <span>Dinheiro</span>
                   </Label>
-                </div>
+                </div>}
               </RadioGroup>
 
               {paymentMethod === 'cash' && (
@@ -605,11 +600,16 @@ export default function CheckoutPage() {
                   <span className="text-muted-foreground">Subtotal</span>
                   <span className="font-medium">R$ {totalPrice.toFixed(2).replace('.', ',') || 0}</span>
                 </div>
-                {deliveryOption === 'delivery' && selectedNeighborhood && (
+                {deliveryOption === 'delivery' && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Taxa de entrega</span>
                     <span className="font-medium">
-                      R$ {shopDeliveryConfig?.shop_delivery_neighborhoods.data.find(n => n.id === selectedNeighborhood)?.attributes.amount.toFixed(2).replace('.', ',')}
+                      {shopDeliveryConfig?.delivery_fee_kind === 'fixed' 
+                        ? `R$ ${shopDeliveryConfig.amount.toFixed(2).replace('.', ',')}`
+                        : shopDeliveryConfig?.delivery_fee_kind === 'per_neighborhood' && selectedNeighborhood
+                          ? `R$ ${shopDeliveryConfig?.shop_delivery_neighborhoods.data.find(n => n.id === selectedNeighborhood)?.attributes.amount.toFixed(2).replace('.', ',')}`
+                          : 'Taxa a combinar'
+                      }
                     </span>
                   </div>
                 )}

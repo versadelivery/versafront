@@ -72,7 +72,17 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const storedClient = localStorage.getItem("client");
     const token = localStorage.getItem("client_token");
-    const storedShop = JSON.parse(localStorage.getItem("shop") || "{}");
+    let storedShop = null;
+    
+    try {
+      const shopData = localStorage.getItem("shop");
+      if (shopData) {
+        storedShop = JSON.parse(shopData);
+      }
+    } catch (error) {
+      console.error("Erro ao recuperar dados da loja:", error);
+      localStorage.removeItem("shop");
+    }
 
     if (storedClient && token) {
       try {
@@ -94,7 +104,7 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
       }
     }
     
-    if (storedShop.data) {
+    if (storedShop && storedShop.data) {
       try {
         setShop(storedShop);
         setShopDeliveryConfig(storedShop.data.attributes.shop_delivery_config.data.attributes)
