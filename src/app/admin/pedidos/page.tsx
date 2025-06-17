@@ -6,8 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   Clock, 
-  User, 
-  DollarSign, 
   Truck, 
   CheckCircle, 
   XCircle, 
@@ -15,13 +13,14 @@ import {
   ChefHat, 
   Bell,
   Copy,
-  Printer,
-  MoreHorizontal,
+  SquarePen,
   ChevronDown,
   ChevronUp,
   ArrowRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import OrderDetailsModal from '@/components/admin/order-details-modal';
+import { formatPrice } from '@/app/(public)/[slug]/format-price';
 
 interface Order {
   id: string;
@@ -136,6 +135,17 @@ const statusConfig = {
   }
 };
 
+const mapOrderStatus = (status: Order['status']) => {
+  const statusMap = {
+    recebidos: 'processing',
+    aceitos: 'processing',
+    em_analise: 'processing',
+    em_preparo: 'preparing',
+    prontos: 'in_transit'
+  };
+  return statusMap[status] || 'processing';
+};
+
 export default function OrderManagement() {
   const [orders, setOrders] = useState<Order[]>(mockOrders);
   const [expandedColumns, setExpandedColumns] = useState<Record<string, boolean>>({
@@ -146,6 +156,7 @@ export default function OrderManagement() {
     prontos: true
   });
   const [isMobile, setIsMobile] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -200,12 +211,16 @@ export default function OrderManagement() {
           : o
       ));
     };
+
+    const handleOpenOrderDetails = () => {
+      setSelectedOrderId(order.id);
+    };
     
     return (
       <Card className={cn("mb-4 rounded-xs shadow border-0", config.bgColor)}>
         <CardContent className="p-4">
           <div className="flex justify-between items-center mb-2">
-            <div className={cn("text-xs font-medium", isPronto && "text-white")}>
+            <div className={cn("text-xs font-medium", isPronto && "text-white", order.paymentStatus === 'pending' ? 'text-red-500' : 'text-green-500')}>
               {order.paymentStatus === 'pending' ? 'Aguardando pagamento' : 'Pago'}
             </div>
             <div className="flex items-center gap-2">
@@ -221,7 +236,7 @@ export default function OrderManagement() {
           </div>
           <div className={cn("flex items-center gap-2 mb-2", isPronto && "text-white")}>
             <div className={cn("font-bold text-lg", isPronto ? "text-white" : "text-green-600")}>
-              R$ {order.amount.toFixed(2)}
+              {formatPrice(order.amount)}
             </div>
             <span className={cn("text-xs", isPronto ? "text-white" : "text-gray-500")}>{order.time}</span>
           </div>
@@ -234,7 +249,7 @@ export default function OrderManagement() {
                 <select
                   value={order.deliveryPerson || ''}
                   onChange={handleDeliveryPersonChange}
-                  className="border rounded-xs px-2 py-1 text-sm bg-white"
+                  className="border rounded-xs px-2 py-1 text-sm bg-white w-[100px]"
                 >
                   <option value="">Selecione um entregador</option>
                   {mockDeliveryPeople.map(deliveryPerson => (
@@ -255,12 +270,12 @@ export default function OrderManagement() {
             <div className="flex gap-2">
               {order.status !== 'prontos' && (
                 <Button variant="outline" size="sm" className="flex-1 rounded-xs">
-                  <Printer className="w-4 h-4 mr-1" />
+                  <SquarePen className="w-4 h-4 mr-1" />
                   EDITAR
                 </Button>
               )}
-              <Button variant="outline" size="sm">
-                <Copy className="w-4 h-4" />
+              <Button variant="outline" size="sm" className={cn("rounded-xs", isPronto && "border-none")}>
+                <Copy className="w-4 h-4"/>
               </Button>
             </div>
 
@@ -344,7 +359,7 @@ export default function OrderManagement() {
                   </Button>
                   <Button 
                     variant="outline"
-                    className="w-full rounded-lg"
+                    className="w-full rounded-xs"
                     onClick={() => updateOrderStatus(order.id, 'prontos')}
                   >
                     PRONTO
@@ -386,11 +401,11 @@ export default function OrderManagement() {
               <div className="space-y-2">
                 <div className="grid grid-cols-2 gap-2">
                   <Button variant="outline" className="w-full rounded-xs">
-                    <Truck className="w-4 h-4 mr-1" />
+                    <Truck className="w-3 h-3" />
                     SAIU
                   </Button>
                   <Button variant="outline" className="w-full rounded-xs">
-                    <CheckCircle className="w-4 h-4 mr-1" />
+                    <CheckCircle className="w-2 h-2" />
                     ENTREGUE
                   </Button>
                 </div>
@@ -401,7 +416,11 @@ export default function OrderManagement() {
               </div>
             )}
 
-            <Button variant="outline" className="w-full rounded-xs">
+            <Button 
+              variant="outline" 
+              className="w-full rounded-xs"
+              onClick={handleOpenOrderDetails}
+            >
               DETALHES DO PEDIDO ↗
             </Button>
           </div>
@@ -409,6 +428,8 @@ export default function OrderManagement() {
       </Card>
     );
   };
+
+  const selectedOrder = orders.find(order => order.id === selectedOrderId);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -464,38 +485,77 @@ export default function OrderManagement() {
             })}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
             {Object.entries(statusConfig).map(([status, config]) => {
               const statusOrders = getOrdersByStatus(status as Order['status']);
+              const isExpanded = expandedColumns[status];
               
               return (
                 <div key={status} className="bg-white rounded-2xl shadow-sm">
-                  <div className="p-4 flex flex-col items-center border-b-0">
-                    <div className="flex items-center gap-2 mb-1">
+                  <button
+                    onClick={() => toggleColumn(status)}
+                    className="w-full p-4 flex items-center justify-between text-center border-b-0"
+                  >
+                    <div className="flex items-center gap-2 mx-auto">
                       {config.icon}
-                      <h2 className="font-bold text-base text-gray-800">{config.title}</h2>
+                      <h2 className="font-bold text-base text-gray-800">
+                        {config.title} ({statusOrders.length})
+                      </h2>
                     </div>
-                    <div className="text-xs text-gray-500">
-                      {statusOrders.length} pedido{statusOrders.length !== 1 ? 's' : ''}
-                    </div>
-                  </div>
+                    {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                  </button>
                   
-                  <div className="p-4 max-h-[80vh] overflow-y-auto">
-                    {statusOrders.map(order => (
-                      <OrderCard key={order.id} order={order} />
-                    ))}
-                    {statusOrders.length === 0 && (
-                      <div className="text-center py-8 text-gray-500">
-                        Nenhum pedido
-                      </div>
-                    )}
-                  </div>
+                  {isExpanded && (
+                    <div className="p-4 max-h-[80vh] overflow-y-auto">
+                      {statusOrders.map(order => (
+                        <OrderCard key={order.id} order={order} />
+                      ))}
+                      {statusOrders.length === 0 && (
+                        <div className="text-center py-8 text-gray-500">
+                          Nenhum pedido
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}
           </div>
         )}
       </div>
+
+      {selectedOrder && (
+        <OrderDetailsModal
+          open={!!selectedOrderId}
+          onOpenChange={(open) => !open && setSelectedOrderId(null)}
+          order={{
+            id: selectedOrder.id,
+            date: new Date().toISOString(),
+            status: mapOrderStatus(selectedOrder.status),
+            payment_status: selectedOrder.paymentStatus,
+            total: selectedOrder.amount,
+            withdrawal: selectedOrder.deliveryType === 'pickup',
+            payment_method: 'credit',
+            items: [
+              {
+                id: '1',
+                catalog_item_id: 1,
+                name: 'Produto Exemplo',
+                price: selectedOrder.amount,
+                quantity: 1
+              }
+            ],
+            shop: {
+              name: 'Loja Exemplo',
+              phone: '(11) 99999-9999'
+            },
+            customer: {
+              name: selectedOrder.customerName,
+              phone: '(11) 99999-9999'
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
