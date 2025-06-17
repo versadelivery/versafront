@@ -1,13 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/order-dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
 import { 
   Clock8, 
   SquarePen, 
   Trash2,
   X,
+  Check,
 } from 'lucide-react';
 
 interface OrderItem {
@@ -82,6 +84,80 @@ export default function OrderDetailsModal({ open, onOpenChange, order }: OrderDe
   const deliveryFee = order.withdrawal ? 0 : 3.00;
   const subtotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
+  const [editingField, setEditingField] = useState<{
+    type: 'customer' | 'order' | 'financial' | 'item';
+    field: string;
+    value: string | number;
+  } | null>(null);
+
+  const handleEdit = (type: 'customer' | 'order' | 'financial' | 'item', field: string, value: string | number) => {
+    setEditingField({ type, field, value });
+  };
+
+  const handleSave = () => {
+    // TODO: Implementar lógica de salvamento
+    setEditingField(null);
+  };
+
+  const handleCancel = () => {
+    setEditingField(null);
+  };
+
+  const renderEditableField = (
+    type: 'customer' | 'order' | 'financial' | 'item',
+    field: string,
+    value: string | number,
+    label: string
+  ) => {
+    const isEditing = editingField?.type === type && editingField?.field === field;
+    const isItemPrice = type === 'item' && field.startsWith('price_');
+
+    return (
+      <div className={`flex items-center justify-between ${isItemPrice ? '' : ''}`}>
+        {label && <span className="font-medium text-gray-900">{label}:</span>}
+        <div className="flex items-center gap-2">
+          {isEditing ? (
+            <div className={`flex items-center gap-2 ${isItemPrice ? 'bg-primary text-white px-3 py-1 rounded-xs text-sm font-medium' : ''}`}>
+              <Input
+                value={editingField.value}
+                onChange={(e) => setEditingField({ ...editingField, value: e.target.value })}
+                className={`h-8 w-24 ${isItemPrice ? 'text-black' : ''}`}
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleSave}
+                className="h-6 w-6 text-green-500"
+              >
+                <Check className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleCancel}
+                className="h-6 w-6 text-red-500"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <>
+              <span className={isItemPrice ? 'bg-primary text-white px-3 py-1 rounded-xs text-sm font-medium' : 'text-gray-700'}>{value}</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleEdit(type, field, value)}
+                className="h-4 w-4 text-[#575757]"
+              >
+                <SquarePen className="h-3 w-3" />
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-7xl h-full p-4">
@@ -109,47 +185,13 @@ export default function OrderDetailsModal({ open, onOpenChange, order }: OrderDe
                   Informações do <span className="font-bold text-gray-700">Cliente</span>
                 </h3>
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-gray-900">NOME:</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-700">{order.customer.name}</span>
-                      <Button variant="ghost" size="icon" className="h-4 w-4 text-[#575757]">
-                        <SquarePen className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-gray-900">TELEFONE:</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-700">{order.customer.phone}</span>
-                      <Button variant="ghost" size="icon" className="h-4 w-4 text-[#575757]">
-                        <SquarePen className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
+                  {renderEditableField('customer', 'name', order.customer.name, 'NOME')}
+                  {renderEditableField('customer', 'phone', order.customer.phone, 'TELEFONE')}
 
                   {!order.withdrawal && order.address && (
                     <>
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-gray-900">ENDEREÇO:</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-gray-700">{order.address.address}</span>
-                          <Button variant="ghost" size="icon" className="h-4 w-4 text-[#575757]">
-                            <SquarePen className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-gray-900">BAIRRO:</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-gray-700">{order.address.neighborhood}</span>
-                          <Button variant="ghost" size="icon" className="h-4 w-4 text-[#575757]">
-                            <SquarePen className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
+                      {renderEditableField('customer', 'address', order.address.address, 'ENDEREÇO')}
+                      {renderEditableField('customer', 'neighborhood', order.address.neighborhood, 'BAIRRO')}
                     </>
                   )}
                 </div>
@@ -160,35 +202,9 @@ export default function OrderDetailsModal({ open, onOpenChange, order }: OrderDe
                   Informações do <span className="font-bold text-gray-700">Pedido</span>
                 </h3>
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-gray-900">FORMA DE PAGAMENTO:</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-700">{paymentInfo.label}</span>
-                      <Button variant="ghost" size="icon" className="h-4 w-4 text-[#575757]">
-                        <SquarePen className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-gray-900">DATA E HORA:</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-700">{formatDate(order.date)}</span>
-                      <Button variant="ghost" size="icon" className="h-4 w-4 text-[#575757]">
-                        <SquarePen className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-gray-900">ENTREGADOR:</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-700">Freire Guerra</span>
-                      <Button variant="ghost" size="icon" className="h-4 w-4 text-[#575757]">
-                        <SquarePen className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
+                  {renderEditableField('order', 'payment_method', paymentInfo.label, 'FORMA DE PAGAMENTO')}
+                  {renderEditableField('order', 'date', formatDate(order.date), 'DATA E HORA')}
+                  {renderEditableField('order', 'delivery', 'Freire Guerra', 'ENTREGADOR')}
                 </div>
               </div>
             </div>
@@ -199,35 +215,9 @@ export default function OrderDetailsModal({ open, onOpenChange, order }: OrderDe
                   Resumo <span className="font-bold text-gray-700">Financeiro</span>
                 </h3>
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-700">TOTAL DOS ITENS:</span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-gray-900">{formatCurrency(subtotal)}</span>
-                      <Button variant="ghost" size="icon" className="h-4 w-4 text-[#575757]">
-                        <SquarePen className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-700">TAXA DE ENTREGA:</span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-gray-900">{formatCurrency(deliveryFee)}</span>
-                      <Button variant="ghost" size="icon" className="h-4 w-4 text-[#575757]">
-                        <SquarePen className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between pt-2 border-t border-gray-200">
-                    <span className="font-bold text-gray-900">TOTAL:</span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-lg text-gray-900">{formatCurrency(order.total)}</span>
-                      <Button variant="ghost" size="icon" className="h-4 w-4 text-[#575757]">
-                        <SquarePen className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
+                  {renderEditableField('financial', 'subtotal', formatCurrency(subtotal), 'TOTAL DOS ITENS')}
+                  {renderEditableField('financial', 'delivery_fee', formatCurrency(deliveryFee), 'TAXA DE ENTREGA')}
+                  {renderEditableField('financial', 'total', formatCurrency(order.total), 'TOTAL')}
                 </div>
               </div>
 
@@ -278,12 +268,9 @@ export default function OrderDetailsModal({ open, onOpenChange, order }: OrderDe
                   </div>
                   
                   <div className="flex items-center gap-6">
-                    <div className="bg-primary text-white px-3 py-1 rounded-xs text-sm font-medium">
-                      {formatCurrency(item.price * item.quantity)}
+                    <div className="flex items-center gap-2">
+                      {renderEditableField('item', `price_${item.id}`, formatCurrency(item.price * item.quantity), '')}
                     </div>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 text-[#575757]">
-                      <SquarePen className="h-4 w-4" />
-                    </Button>
                     <Button variant="ghost" size="icon" className="h-6 w-6 text-red-400 hover:text-red-600">
                       <Trash2 className="h-4 w-4" />
                     </Button>
