@@ -1,7 +1,7 @@
-import { ClientProvider } from "./client-context";
-import { CartProvider } from "./cart/cart-context";
+import { ClientProvider } from "./[slug]/client-context";
+import { CartProvider } from "./[slug]/cart/cart-context";
 
-export default function SlugLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;

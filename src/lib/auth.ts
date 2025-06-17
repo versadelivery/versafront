@@ -1,9 +1,15 @@
 const TOKEN_KEY = 'auth_token'
-const USER_KEY = 'user'
+const USER_KEY = 'client_token'
 
 export const getToken = (): string | null => {
   if (typeof window === 'undefined') return null
   return localStorage.getItem(TOKEN_KEY)
+}
+
+
+export const getClientToken = (): string | null => {
+  if (typeof window === 'undefined') return null
+  return localStorage.getItem(USER_KEY)
 }
 
 export const setToken = (token: string): void => {
@@ -17,7 +23,7 @@ export const removeToken = (): void => {
   localStorage.clear()
 }
 
-export const removeUser = (): void => {
-  if (typeof window === 'undefined') return
-  localStorage.removeItem(USER_KEY)
-}
+// export const removeUser = (): void => {
+//   if (typeof window === 'undefined') return
+//   localStorage.removeItem(USER_KEY)
+// }

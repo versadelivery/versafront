@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { LogOut, Menu, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useShop } from "@/hooks/use-shop";
 import Image from "next/image";
@@ -22,9 +22,9 @@ export function Header() {
 
   return (
     <header className="bg-muted">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center justify-center gap-4">
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="md:hidden">
@@ -74,7 +74,7 @@ export function Header() {
             </Link>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-12">
             <div className="flex items-center gap-2">
               <Avatar>
                 <AvatarImage src={shop?.image_url} />
@@ -88,11 +88,12 @@ export function Header() {
               </div>
             </div>
             <Button
-              variant="ghost"
-              size="icon"
+              variant="destructive"
+              size="default"
               onClick={handleSignOut}
-              className="text-black hover:text-white hover:bg-black hover:p-6 transition-all duration-500"
+              className="text-white bg-destructive hover:bg-destructive/80 transition-all duration-500 font-outfit px-6 py-2 rounded-xs"
             >
+              Sair
               <LogOut className="h-5 w-5" />
             </Button>
           </div>

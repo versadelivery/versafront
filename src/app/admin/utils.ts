@@ -2,7 +2,7 @@ import { ShoppingCart, Settings, Target, BarChart3, Headset, BookOpen } from "lu
 
 export const dashboardCards = [
   {
-    href: "#pedidos",
+    href: "/admin/pedidos",
     icon: ShoppingCart,
     title: "Pedidos",
     description: "Gerencie os pedidos da sua loja",

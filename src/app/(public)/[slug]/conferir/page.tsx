@@ -196,6 +196,8 @@ export default function CheckoutPage() {
 
     try {
       const response = await createOrder(orderData)
+      // router.push(`/pedidos/${response.id}`)
+      router.push(`/pedidos/1`)
       console.log("response", response)
       setOrder(response)
     } catch (error) {
@@ -208,9 +210,9 @@ export default function CheckoutPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="flex flex-col lg:flex-row gap-8">
         <div className="lg:w-2/3 space-y-6">
-          <Card className="overflow-hidden border-0 shadow-md hover:shadow-lg transition-shadow duration-300 bg-gradient-to-br from-white to-gray-50">
-            <CardHeader className="py-4 bg-gradient-to-r from-primary/10 to-primary/5">
-              <CardTitle className="flex items-center gap-2 text-primary">
+          <Card className="rounded-xs overflow-hidden border hover:shadow-lg transition-shadow duration-300 bg-gradient-to-br from-white to-gray-50">
+            <CardHeader className="py-4 bg-primary">
+              <CardTitle className="flex items-center gap-2 text-white">
                 <Truck className="h-5 w-5" />
                 <span>Opções de entrega</span>
               </CardTitle>
@@ -256,9 +258,9 @@ export default function CheckoutPage() {
           </Card>
 
           {deliveryOption !== 'pickup' && (
-            <Card className="overflow-hidden border-0 shadow-md hover:shadow-lg transition-shadow duration-300 bg-gradient-to-br from-white to-gray-50">
-              <CardHeader className="py-4 bg-gradient-to-r from-primary/10 to-primary/5">
-                <CardTitle className="flex items-center gap-2 text-primary">
+            <Card className="rounded-xs overflow-hidden border hover:shadow-lg transition-shadow duration-300 bg-gradient-to-br from-white to-gray-50">
+              <CardHeader className="py-4 bg-primary">
+                <CardTitle className="flex items-center gap-2 text-white">
                   <MapPin className="h-5 w-5" />
                   <span>Endereço de entrega</span>
                 </CardTitle>
@@ -340,9 +342,9 @@ export default function CheckoutPage() {
             </Card>
           )}
 
-          <Card className="overflow-hidden border-0 shadow-md hover:shadow-lg transition-shadow duration-300 bg-gradient-to-br from-white to-gray-50">
-            <CardHeader className="py-4 bg-gradient-to-r from-primary/10 to-primary/5">
-              <CardTitle className="flex items-center gap-2 text-primary">
+          <Card className="rounded-xs overflow-hidden border hover:shadow-lg transition-shadow duration-300 bg-gradient-to-br from-white to-gray-50">
+            <CardHeader className="py-4 bg-primary">
+              <CardTitle className="flex items-center gap-2 text-white">
                 <CreditCard className="h-5 w-5" />
                 <span>Forma de pagamento</span>
               </CardTitle>
@@ -414,10 +416,9 @@ export default function CheckoutPage() {
             </CardContent>
           </Card>
 
-          {/* Order Items */}
-          <Card className="overflow-hidden border-0 shadow-md hover:shadow-lg transition-shadow duration-300 bg-gradient-to-br from-white to-gray-50">
-            <CardHeader className="py-4 bg-gradient-to-r from-primary/10 to-primary/5">
-              <CardTitle className="flex items-center gap-2 text-primary">
+          <Card className="rounded-xs overflow-hidden border hover:shadow-lg transition-shadow duration-300 bg-gradient-to-br from-white to-gray-50">
+              <CardHeader className="py-4 bg-primary">
+              <CardTitle className="flex items-center gap-2 text-white">
                 <Package className="h-5 w-5" />
                 <span>Seu pedido</span>
                 <Badge variant="secondary" className="px-2 py-1 ml-2 bg-primary/10 text-primary">
@@ -468,7 +469,6 @@ export default function CheckoutPage() {
                             <span className="line-through text-xs ml-2">R$ {item.price.toFixed(2).replace('.', ',')}</span>
                           </>
                         ) : (
-                          // <span className="font-medium">R$ {item.price.toFixed(2).replace('.', ',')}</span>
                           <span className="font-medium">R$ {item.totalPrice.toFixed(2).replace('.', ',')}</span>
                         )}
                       </p>
@@ -590,9 +590,9 @@ export default function CheckoutPage() {
         </div>
 
         <div className="lg:w-1/3 space-y-6">
-          <Card className="sticky top-6 overflow-hidden border-0 shadow-md hover:shadow-lg transition-shadow duration-300 bg-gradient-to-br from-white to-gray-50">
-            <CardHeader className="py-4 bg-gradient-to-r from-primary/10 to-primary/5">
-              <CardTitle className="text-primary">Resumo do pedido</CardTitle>
+          <Card className="rounded-xs sticky top-6 overflow-hidden border hover:shadow-lg transition-shadow duration-300 bg-gradient-to-br from-white to-gray-50">
+            <CardHeader className="py-4 bg-primary">
+              <CardTitle className="text-white">Resumo do pedido</CardTitle>
             </CardHeader>
             <CardContent className="pt-6 space-y-4">
               <div className="space-y-2">
@@ -637,7 +637,7 @@ export default function CheckoutPage() {
             </CardContent>
             <CardFooter className="pt-4">
               <Button 
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-all duration-300" 
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-all duration-300 rounded-xs" 
                 size="lg"
                 onClick={handleSubmitOrder}
                 disabled={isSubmitting || (deliveryOption === 'delivery' && !address.trim())}
@@ -657,9 +657,9 @@ export default function CheckoutPage() {
             </CardFooter>
           </Card>
           
-          <Card className="overflow-hidden border-0 shadow-md hover:shadow-lg transition-shadow duration-300 bg-gradient-to-br from-primary/10 to-primary/5">
-            <CardHeader className="py-4 bg-gradient-to-r from-primary/10 to-primary/5">
-              <CardTitle className="text-lg text-primary">Informações adicionais</CardTitle>
+          <Card className="rounded-xs overflow-hidden border hover:shadow-lg transition-shadow duration-300 bg-white">
+            <CardHeader className="py-4 bg-primary">
+              <CardTitle className="text-lg text-white">Informações adicionais</CardTitle>
             </CardHeader>
             <CardContent className="pt-6 text-sm text-muted-foreground space-y-2">
               <p>

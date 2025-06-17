@@ -16,8 +16,8 @@ export default function AdminDashboard() {
       <div className="max-w-2xl mx-auto px-4 -mt-10 z-20 relative border-none">
         <UrlCard url={`https://versadelivery.com.br/${shop?.slug}`} isLoading={isLoading} />
       </div>
-      <div className="max-w-full mx-auto p-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="max-w-full mx-auto py-6 px-2 sm:px-6">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2">
           {dashboardCards.map((card, index) => (
             <div key={index}>
               <AdminDashboardCard {...card} />

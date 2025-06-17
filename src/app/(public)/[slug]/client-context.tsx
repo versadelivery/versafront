@@ -6,6 +6,7 @@ import { ShopResponse } from "@/types/client-catalog";
 import { DeliveryConfig } from "@/services/delivery-service";
 import { useShopBySlug } from "./use-slug";
 import { useParams } from "next/navigation";
+import { getClientToken } from "@/lib/auth";
 
 interface PaymentMethod {
   id: string;
@@ -71,7 +72,7 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const storedClient = localStorage.getItem("client");
-    const token = localStorage.getItem("client_token");
+    const token = getClientToken();
     let storedShop = null;
     
     try {

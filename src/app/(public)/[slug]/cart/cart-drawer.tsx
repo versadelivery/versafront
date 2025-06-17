@@ -37,7 +37,7 @@ export function CartDrawer() {
   const slug = params.slug as string
 
   const handleCheckout = () => {
-    router.push(`/${slug}/checkout`)
+    router.push(`/${slug}/conferir`)
   }
 
   const getPrepareMethodName = (item: CartItem) => {
