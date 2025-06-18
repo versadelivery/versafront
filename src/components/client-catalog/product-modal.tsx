@@ -103,7 +103,6 @@ export function ProductModal({ product, isOpen, onClose, onAddToCart }: ProductM
           </div>
         )}
 
-        {/* Informações Básicas */}
         <div className="space-y-4">
           <div>
             <h3 className="text-xl font-semibold text-gray-800">{product.attributes.name}</h3>
@@ -149,7 +148,6 @@ export function ProductModal({ product, isOpen, onClose, onAddToCart }: ProductM
           </div>
         </div>
 
-        {/* Seleção de Peso */}
         {['kg', 'g'].includes(product.attributes.unit_of_measurement) && (
           <div className="space-y-2">
             <h4 className="font-medium text-gray-700 flex items-center gap-2">
@@ -171,7 +169,6 @@ export function ProductModal({ product, isOpen, onClose, onAddToCart }: ProductM
           </div>
         )}
 
-        {/* Adicionais */}
         {product.attributes.extra?.data?.length > 0 && (
           <div className="space-y-2">
             <h4 className="font-medium text-gray-700 flex items-center gap-2">
@@ -211,7 +208,6 @@ export function ProductModal({ product, isOpen, onClose, onAddToCart }: ProductM
           </div>
         )}
 
-        {/* Métodos de Preparo */}
         {product.attributes.prepare_method?.data?.length > 0 && (
           <div className="space-y-2">
             <h4 className="font-medium text-gray-700 flex items-center gap-2">
@@ -245,7 +241,6 @@ export function ProductModal({ product, isOpen, onClose, onAddToCart }: ProductM
           </div>
         )}
 
-        {/* Etapas de Personalização */}
         {product.attributes.steps?.data?.length > 0 && (
           <div className="space-y-2">
             <h4 className="font-medium text-gray-700 flex items-center gap-2">
@@ -293,7 +288,6 @@ export function ProductModal({ product, isOpen, onClose, onAddToCart }: ProductM
 
         <Separator />
 
-        {/* Botão de Adicionar ao Carrinho */}
         <div className="flex justify-center">
           <Button 
             size="lg" 

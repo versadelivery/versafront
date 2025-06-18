@@ -26,16 +26,16 @@ export default function CartDrawer({ isCartOpen, setIsCartOpen, cartItems, allIt
   const totalCartItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const { isAuthenticated } = useAuth();
   const router = useRouter();
-  const { updateItemQuantity, removeFromCart } = useCart();
+  const { updateQuantity, removeItem } = useCart();
   const [editingItem, setEditingItem] = useState<CartItem | null>(null);
   
   const handleQuantityChange = (itemId: string, newQuantity: number) => {
     updateCartItem(itemId, newQuantity);
     
     if (newQuantity <= 0) {
-      removeFromCart(itemId);
+      removeItem(itemId);
     } else {
-      updateItemQuantity(itemId, newQuantity);
+      updateQuantity(itemId, newQuantity);
     }
   };
 
@@ -112,7 +112,7 @@ export default function CartDrawer({ isCartOpen, setIsCartOpen, cartItems, allIt
       };
       
       // Atualizar o item no carrinho
-      updateItemQuantity(editingItem.id, editingItem.quantity);
+      updateQuantity(editingItem.id, editingItem.quantity);
       setEditingItem(null);
     }
   };
@@ -173,7 +173,6 @@ export default function CartDrawer({ isCartOpen, setIsCartOpen, cartItems, allIt
                             </div>
                             
                             <div className="mt-1 text-xs text-muted-foreground space-y-1">
-                              {/* Display weight if exists */}
                               {cartItem.options?.weight && (
                                 <div className="flex items-center justify-between">
                                   <p className="text-sm">
@@ -190,7 +189,6 @@ export default function CartDrawer({ isCartOpen, setIsCartOpen, cartItems, allIt
                                 </div>
                               )}
                               
-                              {/* Display extras if exists */}
                               {cartItem.options?.extras && cartItem.options.extras.length > 0 && (
                                 <div className="space-y-1">
                                   <p className="font-medium">Extras:</p>
@@ -204,14 +202,12 @@ export default function CartDrawer({ isCartOpen, setIsCartOpen, cartItems, allIt
                                 </div>
                               )}
                               
-                              {/* Display prepare method if exists */}
                               {prepareMethodName && (
                                 <p className="text-sm">
                                   Preparo: {prepareMethodName}
                                 </p>
                               )}
                               
-                              {/* Display steps if exists */}
                               {cartItem.options?.steps && Object.keys(cartItem.options.steps).length > 0 && (
                                 <div className="space-y-1">
                                   <div className="flex items-center justify-between">

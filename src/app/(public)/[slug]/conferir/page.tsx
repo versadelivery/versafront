@@ -48,6 +48,7 @@ interface CartItemWithExtras {
   selectedMethods?: string[];
   selectedOptions?: Record<string, string>;
   totalPrice: number;
+  observation?: string;
 }
 
 export default function CheckoutPage() {
@@ -76,6 +77,7 @@ export default function CheckoutPage() {
   const [isExpanded, setIsExpanded] = useState<Record<string, boolean>>({})
   const [selectedNeighborhood, setSelectedNeighborhood] = useState<string>('')
   const [order, setOrder] = useState<Order | null>(null)
+  const [itemObservations, setItemObservations] = useState<Record<string, string>>({})
   
   useEffect(() => {
     
@@ -118,7 +120,8 @@ export default function CheckoutPage() {
       selectedExtras: item.selectedExtras || [],
       selectedMethods: item.selectedMethods || [],
       selectedOptions: item.selectedOptions || {},
-      totalPrice: item.totalPrice
+      totalPrice: item.totalPrice,
+      observation: item.observation
     }))
     setCartItems(mappedItems)
     setIsLoading(false)
@@ -189,7 +192,7 @@ export default function CheckoutPage() {
             "items": cartItems.map(item => ({
               catalog_item_id: Number(item.id),
               quantity: item.quantity,
-              observation: ''
+              observation: item.observation || ''
             }))
         }
     }
@@ -516,6 +519,25 @@ export default function CheckoutPage() {
                             )}
                           </Button>
                         ) : null}
+                      </div>
+
+                      <div className="mt-2">
+                        <Input
+                          placeholder="Adicionar observação (opcional)"
+                          value={itemObservations[item.id] || ''}
+                          onChange={(e) => {
+                            setItemObservations(prev => ({
+                              ...prev,
+                              [item.id]: e.target.value
+                            }))
+                            setCartItems(prev => prev.map(cartItem => 
+                              cartItem.id === item.id 
+                                ? { ...cartItem, observation: e.target.value }
+                                : cartItem
+                            ))
+                          }}
+                          className="w-full text-sm border-gray-200 focus:border-primary focus:ring-primary/20"
+                        />
                       </div>
                     </div>
                   </div>
