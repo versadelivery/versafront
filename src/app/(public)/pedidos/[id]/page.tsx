@@ -26,106 +26,39 @@ import {
   ExternalLink
 } from "lucide-react";
 import { toast } from "sonner";
-
-const mockOrderDetails = {
-  id: "1",
-  date: "2024-03-20T14:30:00",
-  status: "processing",
-  payment_status: "pending",
-  total: 299.90,
-  withdrawal: false,
-  payment_method: "manual_pix",
-  payment_details: {
-    pix_key: "matheuspizzas@email.com",
-    pix_key_type: "email",
-    card_last_digits: "1234",
-    card_brand: "Visa",
-    installments: 1
-  },
-  address: {
-    address: "Major barreto, 1602",
-    neighborhood: "Centro", 
-    complement: "Portão vermelho",
-    reference: "Em frente a Márcia"
-  },
-  items: [
-    {
-      id: "1",
-      catalog_item_id: 66,
-      name: "Pizza de Calabresa",
-      price: 25.90,
-      quantity: 2,
-      observation: "Sem cebola, extra bacon e sem borda",
-      image: "https://images.pexels.com/photos/1639557/pexels-photo-1639557.jpeg?auto=compress&cs=tinysrgb&w=400"
-    },
-    {
-      id: "2", 
-      catalog_item_id: 67,
-      name: "Pizza Margherita",
-      price: 18.50,
-      quantity: 1,
-      observation: "",
-      image: "https://images.pexels.com/photos/1583884/pexels-photo-1583884.jpeg?auto=compress&cs=tinysrgb&w=400"
-    },
-    {
-      id: "3",
-      catalog_item_id: 68, 
-      name: "Refrigerante 2L",
-      price: 8.90,
-      quantity: 3,
-      observation: "Bem gelado",
-      image: "https://images.pexels.com/photos/50593/coca-cola-cold-drink-soft-drink-coke-50593.jpeg?auto=compress&cs=tinysrgb&w=400"
-    }
-  ],
-  shop: {
-    id: 1,
-    name: "Matheus Pizzas",
-    phone: "(11) 99999-9999",
-    email: "contato@matheuspizzas.com"
-  },
-  customer: {
-    name: "Matheus",
-    phone: "(85) 99123-4567"
-  },
-  timeline: [
-    { 
-      status: "processing", 
-      label: "Pedido Realizado", 
-      date: "2024-03-20T14:30:00",
-      description: "Seu pedido foi recebido e está sendo processado"
-    }
-  ]
-};
+import React, { useState, useEffect } from "react";
+import { useActionCable } from "@/lib/cable";
+import { ActionCableOrderData } from "@/types/order";
 
 const getStatusInfo = (status: string) => {
   const statusMap = {
-    delivered: { 
-      label: "Entregue", 
+    ready: { 
+      label: "Pronto", 
       color: "bg-emerald-500 text-white", 
       icon: CheckCircle2 
     },
-    in_transit: { 
-      label: "Em trânsito", 
-      color: "bg-blue-500 text-white", 
-      icon: Truck 
-    },
-    processing: { 
-      label: "Processando", 
-      color: "bg-amber-500 text-white", 
-      icon: Clock 
-    },
-    preparing: { 
-      label: "Preparando", 
+    in_prepare: { 
+      label: "Em preparo", 
       color: "bg-orange-500 text-white", 
       icon: Package 
     },
-    cancelled: { 
-      label: "Cancelado", 
-      color: "bg-red-500 text-white", 
-      icon: Package 
+    in_analysis: { 
+      label: "Em análise", 
+      color: "bg-blue-500 text-white", 
+      icon: Clock 
+    },
+    accepted: { 
+      label: "Aceito", 
+      color: "bg-green-500 text-white", 
+      icon: CheckCircle2 
+    },
+    received: { 
+      label: "Recebido", 
+      color: "bg-amber-500 text-white", 
+      icon: Clock 
     }
   };
-  return statusMap[status as keyof typeof statusMap] || statusMap.processing;
+  return statusMap[status as keyof typeof statusMap] || statusMap.received;
 };
 
 const getPaymentMethodInfo = (method: string) => {
@@ -154,27 +87,6 @@ const getPaymentMethodInfo = (method: string) => {
   return methodMap[method as keyof typeof methodMap] || { label: method, icon: CreditCard };
 };
 
-const getPaymentStatusInfo = (status: string) => {
-  const statusMap = {
-    paid: { 
-      label: "Pago", 
-      color: "bg-emerald-500 text-white", 
-      icon: CheckCircle2 
-    },
-    pending: { 
-      label: "Pendente", 
-      color: "bg-amber-500 text-white", 
-      icon: Clock 
-    },
-    failed: { 
-      label: "Falhou", 
-      color: "bg-red-500 text-white", 
-      icon: CreditCard 
-    }
-  };
-  return statusMap[status as keyof typeof statusMap] || statusMap.pending;
-};
-
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
   return {
@@ -183,19 +95,133 @@ const formatDate = (dateString: string) => {
   };
 };
 
-export default function OrderDetailsPage({ params }: { params: { slug: string, id: string } }) {
+export default function OrderDetailsPage({ params }: { params: Promise<{ slug: string, id: string }> }) {
   const router = useRouter();
-  const order = mockOrderDetails;
+  const { id } = React.use(params);
+  const { subscribeToOrder, disconnect, isConnected } = useActionCable();
+  const [connectionStatus, setConnectionStatus] = useState<string>('Conectando...');
+  const [orderData, setOrderData] = useState<ActionCableOrderData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  console.log("ID do pedido recebido:", id);
+  console.log("Status da conexão:", isConnected());
+  console.log("Status da conexão:", connectionStatus);
+
+  useEffect(() => {
+    if (!id) return;
+
+    const handleOrderData = (data: ActionCableOrderData) => {
+      console.log("Dados do pedido recebidos via Action Cable:", data);
+      setOrderData(data);
+      setIsLoading(false);
+      setError(null);
+    };
+
+    const unsubscribe = subscribeToOrder(id, handleOrderData);
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+      disconnect();
+    };
+  }, [id, subscribeToOrder, disconnect]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-slate-600">Carregando informações do pedido...</p>
+        </div>
+      </div>
+    );  
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Erro ao carregar pedido: {error}</p>
+          <Button onClick={() => router.push('/pedidos')}>
+            Voltar para pedidos
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!orderData) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-slate-600 mb-4">Pedido não encontrado</p>
+          <Button onClick={() => router.push('/pedidos')}>
+            Voltar para pedidos
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const order = {
+    id: orderData.attributes.id?.toString() || "0",
+    date: orderData.attributes.created_at || new Date().toISOString(),
+    status: orderData.attributes.status || "received",
+    total: parseFloat(orderData.attributes.total_items_price || "0"),
+    withdrawal: orderData.attributes.withdrawal || false,
+    payment_method: orderData.attributes.payment_method || "cash",
+    delivery_fee: parseFloat(orderData.attributes.delivery_fee || "0"),
+    items: orderData.attributes.items?.data?.map((item: any) => ({
+      id: item.id || "",
+      catalog_item_id: parseInt(item.attributes?.catalog_item?.data?.id || "0"),
+      name: item.attributes?.catalog_item?.data?.attributes?.name || "Item não informado",
+      price: parseFloat(item.attributes?.price || "0"),
+      quantity: item.attributes?.quantity || 0,
+      observation: item.attributes?.observation || "",
+      image: item.attributes?.catalog_item?.data?.attributes?.image_url || ""
+    })) || [],
+    shop: {
+      id: orderData.attributes.shop?.data?.id || "",
+      name: orderData.attributes.shop?.data?.attributes?.name || "Loja não informada",
+      phone: orderData.attributes.shop?.data?.attributes?.cellphone || "",
+      email: "contato@loja.com" // Não está na API ainda
+    },
+    customer: {
+      name: orderData.attributes.customer?.data?.attributes?.name || "Cliente não informado",
+      phone: orderData.attributes.customer?.data?.attributes?.cellphone || "",
+      email: orderData.attributes.customer?.data?.attributes?.email || ""
+    },
+    address: {
+      address: orderData.attributes.address?.data?.attributes?.address || "Endereço não informado",
+      neighborhood: orderData.attributes.address?.data?.attributes?.neighborhood || "",
+      complement: orderData.attributes.address?.data?.attributes?.complement || "",
+      reference: orderData.attributes.address?.data?.attributes?.reference || ""
+    },
+    payment_details: {
+      pix_key: "pix@email.com",
+      pix_key_type: "email"
+    },
+    timeline: [
+      { 
+        status: orderData.attributes.status, 
+        label: "Pedido Realizado", 
+        date: orderData.attributes.created_at,
+        description: "Seu pedido foi recebido e está sendo processado"
+      }
+    ]
+  };
+
   const statusInfo = getStatusInfo(order.status);
   const StatusIcon = statusInfo.icon;
   const paymentInfo = getPaymentMethodInfo(order.payment_method);
   const PaymentIcon = paymentInfo.icon;
-  const paymentStatusInfo = getPaymentStatusInfo(order.payment_status);
-  const PaymentStatusIcon = paymentStatusInfo.icon;
   const dateInfo = formatDate(order.date);
 
-  const subtotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const deliveryFee = order.withdrawal ? 0 : 5.00;
+  const subtotal = order.items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+  const deliveryFee = order.withdrawal ? 0 : order.delivery_fee;
+  const total = subtotal + deliveryFee;
 
   const handleSendReceipt = () => {
     const message = `Olá! Segue o comprovante do pagamento do pedido #${order.id}`;
@@ -209,12 +235,11 @@ export default function OrderDetailsPage({ params }: { params: { slug: string, i
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-200">
       <div className="container mx-auto px-6 py-12">
         <Button
           variant="ghost"
           className="mb-8 hover:bg-slate-100 text-slate-700 font-medium"
-          // onClick={() => router.back()}
           onClick={() => router.push('/pedidos')}
         >
           <ArrowLeft className="mr-2 h-5 w-5" />
@@ -225,26 +250,26 @@ export default function OrderDetailsPage({ params }: { params: { slug: string, i
           <Card className="border-0 shadow-sm bg-white rounded-xs overflow-hidden">
             <div className="bg-primary p-8">
               <div className="flex items-start justify-between">
-                <div>
-                  <div className="flex items-center gap-4 mb-3">
+                <div className="flex-1">
+                  <div className="flex items-center gap-4 mb-4">
                     <h1 className="text-4xl font-bold text-primary-foreground">#{order.id}</h1>
-                    <Badge className={`${statusInfo.color} border-0 px-4 py-2 rounded-xs font-semibold text-sm`}>
-                      <StatusIcon className="h-4 w-4 mr-2" />
-                      {statusInfo.label}
-                    </Badge>
+                    <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg">
+                      <StatusIcon className="h-5 w-5 text-white" />
+                      <span className="text-white font-semibold text-sm">{statusInfo.label}</span>
+                    </div>
                   </div>
                   <p className="text-primary-foreground text-xl font-medium mb-1">{order.shop.name}</p>
-                  <p className="text-primary-foreground">{dateInfo.date} às {dateInfo.time}</p>
+                  <p className="text-primary-foreground/80">{dateInfo.date} às {dateInfo.time}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-4xl font-bold text-white">{formatCurrency(order.total)}</p>
+                  <p className="text-4xl font-bold text-white">{formatCurrency(total)}</p>
                   <p className="text-slate-300">Total do pedido</p>
                 </div>
               </div>
             </div>
             
             <CardContent className="p-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="flex items-center gap-4">
                   <div className="p-3 bg-slate-100 rounded-xs">
                     <PaymentIcon className="h-6 w-6 text-slate-700" />
@@ -278,28 +303,16 @@ export default function OrderDetailsPage({ params }: { params: { slug: string, i
                     <p className="text-slate-900 font-bold">{order.items.length} produtos</p>
                   </div>
                 </div>
-
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-slate-100 rounded-xs">
-                    <PaymentStatusIcon className="h-6 w-6 text-slate-700" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-500">STATUS PAGAMENTO</p>
-                    <Badge className={`${paymentStatusInfo.color} border-0 px-3 py-1 rounded-xs font-semibold text-xs`}>
-                      {paymentStatusInfo.label}
-                    </Badge>
-                  </div>
-                </div>
               </div>
             </CardContent>
           </Card>
 
-          {order.payment_method === 'manual_pix' && order.payment_status === 'pending' && (
+          {order.payment_method === 'manual_pix' && (
             <Card className="border-0 shadow-sm bg-white rounded-xs">
               <CardHeader className="bg-amber-50 border-b border-amber-200">
                 <CardTitle className="flex items-center gap-3 text-amber-800">
                   <QrCode className="h-6 w-6" />
-                  Pagamento PIX Pendente
+                  Pagamento PIX
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-8">
@@ -343,7 +356,7 @@ export default function OrderDetailsPage({ params }: { params: { slug: string, i
                 </CardHeader>
                 <CardContent className="p-8">
                   <div className="space-y-6">
-                    {order.items.map((item, index) => (
+                    {order.items.map((item: any, index: number) => (
                       <div key={item.id}>
                         <div className="flex gap-6">
                           <div className="relative">
@@ -382,7 +395,7 @@ export default function OrderDetailsPage({ params }: { params: { slug: string, i
                           <span>Subtotal</span>
                           <span className="font-medium">{formatCurrency(subtotal)}</span>
                         </div>
-                        {!order.withdrawal && (
+                        {!order.withdrawal && deliveryFee > 0 && (
                           <div className="flex justify-between text-slate-600">
                             <span>Taxa de entrega</span>
                             <span className="font-medium">{formatCurrency(deliveryFee)}</span>
@@ -391,7 +404,7 @@ export default function OrderDetailsPage({ params }: { params: { slug: string, i
                         <Separator />
                         <div className="flex justify-between text-xl font-bold text-slate-900">
                           <span>Total</span>
-                          <span>{formatCurrency(order.total)}</span>
+                          <span>{formatCurrency(total)}</span>
                         </div>
                       </div>
                     </div>
@@ -476,6 +489,10 @@ export default function OrderDetailsPage({ params }: { params: { slug: string, i
                       <div className="flex items-center gap-3">
                         <Phone className="h-4 w-4 text-slate-500" />
                         <span className="text-slate-900 font-medium">{order.customer.phone}</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Mail className="h-4 w-4 text-slate-500" />
+                        <span className="text-slate-900 font-medium">{order.customer.email}</span>
                       </div>
                     </div>
                   </div>

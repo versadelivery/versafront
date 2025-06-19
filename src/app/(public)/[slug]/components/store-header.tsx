@@ -1,10 +1,12 @@
 "use client"
 
 import { useClient } from "../client-context";
-import { Store } from 'lucide-react';
+import { Package, Store } from 'lucide-react';
 import Image from 'next/image';
 import { CartDrawer } from '../cart/cart-drawer';
 import { motion } from 'framer-motion';
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 interface StoreHeaderProps {
   shop: any;
@@ -33,6 +35,22 @@ export default function StoreHeader({ shop }: StoreHeaderProps) {
             />
           </motion.div>
           
+          <div className="flex items-center justify-center gap-12">
+            {client && (
+              <Button variant="outline" className="hidden md:flex bg-primary text-white hover:text-black/80 border-none py-5 px-8 rounded-xs shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all duration-300 group">
+                <Package className="w-4 h-4 mr-2" />
+                <Link href="/pedidos">
+                  <span className="text-sm font-medium">Meus Pedidos</span>
+                </Link>
+              </Button>
+            )}
+
+          {client && (
+            <Button variant="outline" className="mr-4 md:hidden bg-transparent items-center justify-center text-white border border-white py-5 px-12 rounded-xs shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all duration-300 group">
+              <Package className="w-6 h-6" />
+            </Button>
+          )}
+
           {client && (
             <motion.div
               initial={{ opacity: 0 }}
@@ -42,6 +60,7 @@ export default function StoreHeader({ shop }: StoreHeaderProps) {
               <CartDrawer />
             </motion.div>
           )}
+          </div>
         </div>
       </header>
 

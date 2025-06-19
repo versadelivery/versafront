@@ -56,9 +56,15 @@ importers:
       '@radix-ui/react-tooltip':
         specifier: ^1.1.8
         version: 1.1.8(@types/react-dom@19.0.4(@types/react@19.0.12))(@types/react@19.0.12)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      '@rails/actioncable':
+        specifier: ^8.0.200
+        version: 8.0.200
       '@tanstack/react-query':
         specifier: ^5.71.5
         version: 5.71.5(react@19.0.0)
+      actioncable:
+        specifier: 5.2.8-1
+        version: 5.2.8-1
       axios:
         specifier: ^1.8.4
         version: 1.8.4
@@ -117,6 +123,9 @@ importers:
       '@types/node':
         specifier: ^20
         version: 20.17.27
+      '@types/rails__actioncable':
+        specifier: ^6.1.11
+        version: 6.1.11
       '@types/react':
         specifier: ^19
         version: 19.0.12
@@ -1003,6 +1012,9 @@ packages:
   '@radix-ui/rect@1.1.0':
     resolution: {integrity: sha512-A9+lCBZoaMJlVKcRBz2YByCG+Cp2t6nAnMnNba+XiWxnj6r4JUFqfsgwocMBZU9LPtdxC6wB56ySYpc7LQIoJg==}
 
+  '@rails/actioncable@8.0.200':
+    resolution: {integrity: sha512-EDqWyxck22BHmv1e+mD8Kl6GmtNkhEPdRfGFT7kvsv1yoXd9iYrqHDVAaR8bKmU/syC5eEZ2I5aWWxtB73ukMw==}
+
   '@rtsao/scc@1.1.0':
     resolution: {integrity: sha512-zt6OdqaDoOnJ1ZYsCYGt9YmWzDXl4vQdKTyJev62gFhRGKdx7mcT54V9KIjg+d2wi9EXsPvAPKe7i7WjfVWB8g==}
 
@@ -1116,6 +1128,9 @@ packages:
 
   '@types/node@20.17.27':
     resolution: {integrity: sha512-U58sbKhDrthHlxHRJw7ZLiLDZGmAUOZUbpw0S6nL27sYUdhvgBLCRu/keSd6qcTsfArd1sRFCCBxzWATGr/0UA==}
+
+  '@types/rails__actioncable@6.1.11':
+    resolution: {integrity: sha512-L6A3Rg6sGsv2cqalOgdOmyFvL1Pw69Mg0WuG6NtY9chzabhtkiSFY5fczo72mqRGezrMvl0Jy80v+N719CW+Tg==}
 
   '@types/react-dom@19.0.4':
     resolution: {integrity: sha512-4fSQ8vWFkg+TGhePfUzVmat3eC14TXYSsiiDSLI0dVLsrm9gZFABjPy/Qu6TKgl1tq1Bu1yDsuQgY3A3DOjCcg==}
@@ -1236,6 +1251,9 @@ packages:
     resolution: {integrity: sha512-OvQ/2pUDKmgfCg++xsTX1wGxfTaszcHVcTctW4UJB4hibJx2HXxxO5UmVgyjMa+ZDsiaf5wWLXYpRWMmBI0QHg==}
     engines: {node: '>=0.4.0'}
     hasBin: true
+
+  actioncable@5.2.8-1:
+    resolution: {integrity: sha512-p/a9jeFs3KB3SWZ9w/T5HLyztooYSufOG++Uhau9YzprdBNyjFfsqrtN1roVVEzNDBGZJVr/2SSWwofvavPL1w==}
 
   ajv@6.12.6:
     resolution: {integrity: sha512-j3fVLgvTo527anyYyJOGTYJbG+vnnQYvE0m5mmkc1TK+nxAppkCLMIL0aZ4dblVCNoGShhm+kzE4ZUykBoMg4g==}
@@ -3347,6 +3365,8 @@ snapshots:
 
   '@radix-ui/rect@1.1.0': {}
 
+  '@rails/actioncable@8.0.200': {}
+
   '@rtsao/scc@1.1.0': {}
 
   '@rushstack/eslint-patch@1.11.0': {}
@@ -3442,6 +3462,8 @@ snapshots:
   '@types/node@20.17.27':
     dependencies:
       undici-types: 6.19.8
+
+  '@types/rails__actioncable@6.1.11': {}
 
   '@types/react-dom@19.0.4(@types/react@19.0.12)':
     dependencies:
@@ -3568,6 +3590,8 @@ snapshots:
       acorn: 8.14.1
 
   acorn@8.14.1: {}
+
+  actioncable@5.2.8-1: {}
 
   ajv@6.12.6:
     dependencies:

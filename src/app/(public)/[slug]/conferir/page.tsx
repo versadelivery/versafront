@@ -125,8 +125,6 @@ export default function CheckoutPage() {
     }))
     setCartItems(mappedItems)
     setIsLoading(false)
-    console.log("mappedItems", mappedItems)
-    
     const expandedState = mappedItems.reduce((acc: Record<string, boolean>, item) => {
       if ((item.extras && item.extras.length > 0) || 
           (item.prepareMethods && item.prepareMethods.length > 0) || 
@@ -199,18 +197,43 @@ export default function CheckoutPage() {
 
     try {
       const response = await createOrder(orderData)
-      // router.push(`/pedidos/${response.id}`)
-      router.push(`/pedidos/1`)
-      console.log("response", response)
+      const orderId = response.order_id
       setOrder(response)
+      if (orderId) {
+        router.push(`/pedidos/${orderId}`)
+      } else {
+        console.error('ID do pedido não encontrado')
+      }
+      clearCart()
     } catch (error) {
       console.error('Erro ao enviar pedido:', error)
       setIsSubmitting(false)
     }
   }
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-slate-600">Carregando informações do pedido...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (cartItems?.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-slate-600">Adicione itens ao carrinho para continuar</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="p-12 bg-gray-200">
       <div className="flex flex-col lg:flex-row gap-8">
         <div className="lg:w-2/3 space-y-6">
           <Card className="rounded-xs overflow-hidden border hover:shadow-lg transition-shadow duration-300 bg-gradient-to-br from-white to-gray-50">
