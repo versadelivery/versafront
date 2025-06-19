@@ -3,6 +3,7 @@ export interface OrderAddress {
   neighborhood: string;
   complement?: string;
   reference?: string;
+  shop_delivery_neighborhood?: string;
 }
 
 export interface OrderItem {
@@ -29,6 +30,7 @@ export interface CreateOrderRequest {
       neighborhood: string;
       complement?: string;
       reference?: string;
+      shop_delivery_neighborhood?: string;
     };
     items: OrderItem[];
   };

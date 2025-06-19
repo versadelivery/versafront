@@ -21,6 +21,8 @@ import {
 import { cn } from '@/lib/utils';
 import OrderDetailsModal from '@/components/admin/order-details-modal';
 import { formatPrice } from '@/app/(public)/[slug]/format-price';
+import { useAdminActionCable, AdminOrderData } from '@/lib/admin-cable';
+import OrderCard from '@/components/admin/order-card';
 
 interface Order {
   id: string;
@@ -32,6 +34,7 @@ interface Order {
   paymentStatus: 'pending' | 'paid';
   readyTime?: string;
   deliveryType: 'delivery' | 'pickup';
+  socketData: AdminOrderData;
 }
 
 const mockDeliveryPeople = [
@@ -43,59 +46,45 @@ const mockDeliveryPeople = [
   { id: '6', name: 'Pedro' },
 ];
 
-const mockOrders: Order[] = [
-  {
-    id: '92083',
-    customerName: 'Gabriel Felix',
-    amount: 89.00,
-    time: '9:13 AM',
-    deliveryPerson: 'Freire',
-    status: 'recebidos',
-    paymentStatus: 'pending',
-    deliveryType: 'delivery'
-  },
-  {
-    id: '92084',
-    customerName: 'Hivna Castro',
-    amount: 100.00,
-    time: '9:25 AM',
-    deliveryPerson: 'Freire',
-    status: 'aceitos',
-    paymentStatus: 'pending',
-    deliveryType: 'delivery'
-  },
-  {
-    id: '92085',
-    customerName: 'Neymar Silva',
-    amount: 67.80,
-    time: '9:30 AM',
-    deliveryPerson: 'Maikon',
-    status: 'em_analise',
-    paymentStatus: 'pending',
-    deliveryType: 'pickup'
-  },
-  {
-    id: '92086',
-    customerName: 'Italo Linhares',
-    amount: 92.30,
-    time: '9:45 AM',
-    deliveryPerson: 'Matheus',
-    status: 'em_preparo',
-    paymentStatus: 'paid',
-    deliveryType: 'delivery'
-  },
-  {
-    id: '92087',
-    customerName: 'Freire Guerra',
-    amount: 78.90,
-    time: '9:50 AM',
-    deliveryPerson: 'Leo',
-    status: 'prontos',
-    paymentStatus: 'paid',
-    readyTime: '10:23:08',
-    deliveryType: 'delivery'
-  }
-];
+// Função para converter dados do socket para o formato da interface Order
+const convertSocketDataToOrder = (socketOrder: AdminOrderData): Order => {
+  const createdAt = new Date(socketOrder.attributes.created_at);
+  const time = createdAt.toLocaleTimeString('pt-BR', { 
+    hour: '2-digit', 
+    minute: '2-digit' 
+  });
+
+  // Mapear status do backend para o frontend
+  const statusMap: Record<string, Order['status']> = {
+    'received': 'recebidos',
+    'accepted': 'aceitos',
+    'in_analysis': 'em_analise',
+    'in_preparation': 'em_preparo',
+    'ready': 'prontos'
+  };
+
+  // Calcular valor total dos itens
+  const totalItemsPrice = socketOrder.attributes.items.data.reduce((sum, item) => {
+    return sum + parseFloat(item.attributes.total_price || '0');
+  }, 0);
+
+  // Calcular valor total com taxa de entrega
+  const deliveryFee = parseFloat(socketOrder.attributes.delivery_fee || '0');
+  const totalPrice = parseFloat(socketOrder.attributes.total_price || '0') || (totalItemsPrice + deliveryFee);
+
+  return {
+    id: socketOrder.id,
+    customerName: socketOrder.attributes.customer.data.attributes.name,
+    amount: totalPrice,
+    time,
+    deliveryPerson: undefined, // Será definido pelo admin
+    status: statusMap[socketOrder.attributes.status] || 'recebidos',
+    paymentStatus: 'pending', // Será gerenciado pelo admin
+    deliveryType: socketOrder.attributes.withdrawal ? 'pickup' : 'delivery',
+    // Dados adicionais para o modal
+    socketData: socketOrder
+  };
+};
 
 const statusConfig = {
   recebidos: { 
@@ -147,7 +136,8 @@ const mapOrderStatus = (status: Order['status']) => {
 };
 
 export default function OrderManagement() {
-  const [orders, setOrders] = useState<Order[]>(mockOrders);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [expandedColumns, setExpandedColumns] = useState<Record<string, boolean>>({
     recebidos: true,
     aceitos: true,
@@ -158,6 +148,8 @@ export default function OrderManagement() {
   const [isMobile, setIsMobile] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 
+  const { subscribeToAdminOrders, isConnected } = useAdminActionCable();
+
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 640);
@@ -167,6 +159,25 @@ export default function OrderManagement() {
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  useEffect(() => {
+    const unsubscribe = subscribeToAdminOrders((socketOrders: AdminOrderData[]) => {
+      console.log('Recebendo dados dos pedidos:', socketOrders);
+      const convertedOrders = socketOrders.map(convertSocketDataToOrder);
+      setOrders(convertedOrders);
+      setIsLoading(false);
+    });
+
+    // Timeout para parar o loading se não receber dados em 10 segundos
+    const timeout = setTimeout(() => {
+      setIsLoading(false);
+    }, 10000);
+
+    return () => {
+      unsubscribe();
+      clearTimeout(timeout);
+    };
+  }, [subscribeToAdminOrders]);
 
   const updateOrderStatus = (orderId: string, newStatus: Order['status']) => {
     setOrders(orders.map(order => 
@@ -188,6 +199,14 @@ export default function OrderManagement() {
     ));
   };
 
+  const updateDeliveryPerson = (orderId: string, deliveryPerson: string) => {
+    setOrders(orders.map(order => 
+      order.id === orderId 
+        ? { ...order, deliveryPerson }
+        : order
+    ));
+  };
+
   const toggleColumn = (status: string) => {
     setExpandedColumns(prev => ({
       ...prev,
@@ -199,252 +218,21 @@ export default function OrderManagement() {
     return orders.filter(order => order.status === status);
   };
 
-  const OrderCard = ({ order }: { order: Order }) => {
-    const config = statusConfig[order.status];
-    const isPronto = order.status === 'prontos';
-    
-    const handleDeliveryPersonChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-      const newDeliveryPerson = e.target.value;
-      setOrders(orders.map(o => 
-        o.id === order.id 
-          ? { ...o, deliveryPerson: newDeliveryPerson }
-          : o
-      ));
-    };
-
-    const handleOpenOrderDetails = () => {
-      setSelectedOrderId(order.id);
-    };
-    
-    return (
-      <Card className={cn("mb-4 rounded-xs shadow border-0", config.bgColor)}>
-        <CardContent className="p-4">
-          <div className="flex justify-between items-center mb-2">
-            <div className={cn("text-xs font-medium", isPronto && "text-white", order.paymentStatus === 'pending' ? 'text-red-500' : 'text-green-500')}>
-              {order.paymentStatus === 'pending' ? 'Aguardando pagamento' : 'Pago'}
-            </div>
-            <div className="flex items-center gap-2">
-              {order.deliveryType === 'delivery' && <Truck className={cn("w-4 h-4", isPronto && "text-white")} />}
-            </div>
-          </div>
-
-          <div className={cn("mb-2 flex items-center gap-2", isPronto && "text-white")}>
-            <h3 className={cn("font-bold text-lg leading-tight", isPronto ? "text-white" : "text-gray-800")}>
-              {order.customerName}
-            </h3>
-            <Badge variant="secondary" className={cn("text-xs px-2 py-0.5", isPronto && "bg-white text-primary")}>38</Badge>
-          </div>
-          <div className={cn("flex items-center gap-2 mb-2", isPronto && "text-white")}>
-            <div className={cn("font-bold text-lg", isPronto ? "text-white" : "text-green-600")}>
-              {formatPrice(order.amount)}
-            </div>
-            <span className={cn("text-xs", isPronto ? "text-white" : "text-gray-500")}>{order.time}</span>
-          </div>
-
-          <div className={cn("text-xs", isPronto ? "text-white" : "text-gray-400", "mb-2")}>ID: {order.id}</div>
-          <div className={cn("text-xs", isPronto ? "text-white" : "text-gray-600", "mb-4")}>
-            {order.status === 'recebidos' ? (
-              <div className="flex items-center gap-2">
-                <span>Entregador:</span>
-                <select
-                  value={order.deliveryPerson || ''}
-                  onChange={handleDeliveryPersonChange}
-                  className="border rounded-xs px-2 py-1 text-sm bg-white w-[100px]"
-                >
-                  <option value="">Selecione um entregador</option>
-                  {mockDeliveryPeople.map(deliveryPerson => (
-                    <option key={deliveryPerson.id} value={deliveryPerson.name}>
-                      {deliveryPerson.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ) : (
-              <>
-                Entregador: <span className={cn("font-semibold", isPronto && "text-white")}>{order.deliveryPerson}</span>
-              </>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex gap-2">
-              {order.status !== 'prontos' && (
-                <Button variant="outline" size="sm" className="flex-1 rounded-xs">
-                  <SquarePen className="w-4 h-4 mr-1" />
-                  EDITAR
-                </Button>
-              )}
-              <Button variant="outline" size="sm" className={cn("rounded-xs", isPronto && "border-none")}>
-                <Copy className="w-4 h-4"/>
-              </Button>
-            </div>
-
-            {order.status === 'recebidos' && (
-              <div className="space-y-2">
-                <Button 
-                  className="w-full bg-white text-black font-semibold hover:bg-primary/90 hover:text-white rounded-xs"
-                  onClick={() => updateOrderStatus(order.id, 'aceitos')}
-                >
-                  ACEITAR
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-                <Button 
-                  variant="destructive" 
-                  className="w-full rounded-xs"
-                  onClick={() => console.log('Recusar pedido', order.id)}
-                >
-                  RECUSAR
-                  <XCircle className="w-4 h-4 mr-2" />
-                </Button>
-              </div>
-            )}
-
-            {order.status === 'aceitos' && (
-              <div className="space-y-2">
-                <div className="grid grid-cols-2 gap-2">
-                  <Button 
-                    variant="outline"
-                    className="w-full rounded-xs"
-                    onClick={() => updateOrderStatus(order.id, 'em_analise')}
-                  >
-                    EM ANÁLISE
-                  </Button>
-                  <Button 
-                    variant="outline"
-                    className="w-full rounded-xs"
-                    onClick={() => updateOrderStatus(order.id, 'em_preparo')}
-                  >
-                    EM PREPARO
-                  </Button>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button 
-                    variant={order.paymentStatus === 'paid' ? 'default' : 'outline'}
-                    className={cn('w-full rounded-xs', order.paymentStatus === 'paid' ? 'bg-primary text-white hover:bg-primary/90' : '')}
-                    onClick={() => togglePaymentStatus(order.id)}
-                  >
-                    PAGO {order.paymentStatus === 'paid' && <CheckCircle className="w-4 h-4 ml-1" />}
-                  </Button>
-                  <Button 
-                    variant="outline"
-                    className="w-full rounded-xs"
-                    onClick={() => updateOrderStatus(order.id, 'prontos')}
-                  >
-                    PRONTO
-                  </Button>
-                </div>
-                <Button className="w-full bg-primary hover:bg-primary/90 text-white font-bold rounded-xs">
-                  <Bell className="w-4 h-4 mr-2" />
-                  NOTIFICAR
-                </Button>
-              </div>
-            )}
-
-            {order.status === 'em_analise' && (
-              <div className="space-y-2">
-                <Button 
-                  variant="outline"
-                  className="w-full rounded-xs"
-                  onClick={() => updateOrderStatus(order.id, 'em_preparo')}
-                >
-                  EM PREPARO
-                </Button>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button 
-                    variant={order.paymentStatus === 'paid' ? 'default' : 'outline'}
-                    className={cn('w-full rounded-xs', order.paymentStatus === 'paid' ? 'bg-primary text-white hover:bg-primary/90' : '')}
-                    onClick={() => togglePaymentStatus(order.id)}
-                  >
-                    PAGO {order.paymentStatus === 'paid' && <CheckCircle className="w-4 h-4 ml-1" />}
-                  </Button>
-                  <Button 
-                    variant="outline"
-                    className="w-full rounded-xs"
-                    onClick={() => updateOrderStatus(order.id, 'prontos')}
-                  >
-                    PRONTO
-                  </Button>
-                </div>
-                <Button className="w-full bg-primary hover:bg-primary/90 text-white font-bold rounded-xs">
-                  <Bell className="w-4 h-4 mr-2" />
-                  NOTIFICAR
-                </Button>
-              </div>
-            )}
-
-            {order.status === 'em_preparo' && (
-              <div className="space-y-2">
-                <div className="grid grid-cols-2 gap-2">
-                  <Button 
-                    variant={order.paymentStatus === 'paid' ? 'default' : 'outline'}
-                    className={cn('w-full rounded-xs', order.paymentStatus === 'paid' ? 'bg-primary text-white hover:bg-primary/90' : '')}
-                    onClick={() => togglePaymentStatus(order.id)}
-                  >
-                    PAGO {order.paymentStatus === 'paid' && <CheckCircle className="w-4 h-4 ml-1" />}
-                  </Button>
-                  <Button 
-                    variant="outline"
-                    className="w-full rounded-xs"
-                    onClick={() => updateOrderStatus(order.id, 'prontos')}
-                  >
-                    PRONTO
-                  </Button>
-                </div>
-                <Button className="w-full bg-primary hover:bg-primary/90 text-white font-bold rounded-xs">
-                  <Bell className="w-4 h-4 mr-2" />
-                  NOTIFICAR
-                </Button>
-              </div>
-            )}
-
-            {order.status === 'prontos' && (
-              <div className="space-y-2">
-                <div className="grid grid-cols-2 gap-2">
-                  <Button variant="outline" className="w-full rounded-xs">
-                    <Truck className="w-3 h-3" />
-                    SAIU
-                  </Button>
-                  <Button variant="outline" className="w-full rounded-xs">
-                    <CheckCircle className="w-2 h-2" />
-                    ENTREGUE
-                  </Button>
-                </div>
-                <Button className="w-full border border-white text-white font-bold rounded-xs">
-                  <Bell className="w-4 h-4 mr-2 text-white" />
-                  NOTIFICAR
-                </Button>
-              </div>
-            )}
-
-            <Button 
-              variant="outline" 
-              className="w-full rounded-xs"
-              onClick={handleOpenOrderDetails}
-            >
-              DETALHES DO PEDIDO ↗
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
-
   const selectedOrder = orders.find(order => order.id === selectedOrderId);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-slate-600">Carregando informações do pedido...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* <div className="bg-white shadow-sm p-6 mb-8">
-        <div className="max-w-[1920px] mx-auto">
-          <h1 className="text-3xl font-bold text-gray-800">PEDIDOS</h1>
-          <div className="flex items-center gap-6 mt-3 text-base text-gray-600">
-            <span>🏠 INÍCIO</span>
-            <span className="bg-primary text-white px-4 py-1.5 rounded">Pedidos</span>
-            <span>Limpar Pedido</span>
-            <span>Controle de Caixa</span>
-            <span>RDS</span>
-          </div>
-        </div>
-      </div> */}
 
       <div className="max-w-[1920px] mx-auto p-6">
         {isMobile ? (
@@ -471,7 +259,16 @@ export default function OrderManagement() {
                   {isExpanded && (
                     <div className="px-4 pb-4">
                       {statusOrders.map(order => (
-                        <OrderCard key={order.id} order={order} />
+                        <OrderCard
+                          key={order.id}
+                          order={order}
+                          config={config}
+                          mockDeliveryPeople={mockDeliveryPeople}
+                          onUpdateOrderStatus={updateOrderStatus}
+                          onTogglePaymentStatus={togglePaymentStatus}
+                          onDeliveryPersonChange={updateDeliveryPerson}
+                          onOpenOrderDetails={setSelectedOrderId}
+                        />
                       ))}
                       {statusOrders.length === 0 && (
                         <div className="text-center py-8 text-gray-500">
@@ -508,7 +305,16 @@ export default function OrderManagement() {
                   {isExpanded && (
                     <div className="p-4 max-h-[80vh] overflow-y-auto">
                       {statusOrders.map(order => (
-                        <OrderCard key={order.id} order={order} />
+                        <OrderCard
+                          key={order.id}
+                          order={order}
+                          config={config}
+                          mockDeliveryPeople={mockDeliveryPeople}
+                          onUpdateOrderStatus={updateOrderStatus}
+                          onTogglePaymentStatus={togglePaymentStatus}
+                          onDeliveryPersonChange={updateDeliveryPerson}
+                          onOpenOrderDetails={setSelectedOrderId}
+                        />
                       ))}
                       {statusOrders.length === 0 && (
                         <div className="text-center py-8 text-gray-500">
@@ -530,28 +336,48 @@ export default function OrderManagement() {
           onOpenChange={(open) => !open && setSelectedOrderId(null)}
           order={{
             id: selectedOrder.id,
-            date: new Date().toISOString(),
+            date: selectedOrder.socketData.attributes.created_at,
             status: mapOrderStatus(selectedOrder.status),
             payment_status: selectedOrder.paymentStatus,
             total: selectedOrder.amount,
             withdrawal: selectedOrder.deliveryType === 'pickup',
-            payment_method: 'credit',
-            items: [
-              {
-                id: '1',
-                catalog_item_id: 1,
-                name: 'Produto Exemplo',
-                price: selectedOrder.amount,
-                quantity: 1
-              }
-            ],
+            payment_method: selectedOrder.socketData.attributes.payment_method,
+            address: selectedOrder.socketData.attributes.address.data ? {
+              address: selectedOrder.socketData.attributes.address.data.attributes.address,
+              neighborhood: selectedOrder.socketData.attributes.address.data.attributes.neighborhood,
+              complement: selectedOrder.socketData.attributes.address.data.attributes.complement,
+              reference: selectedOrder.socketData.attributes.address.data.attributes.reference
+            } : undefined,
+            items: selectedOrder.socketData.attributes.items.data.map(item => ({
+              id: item.id,
+              catalog_item_id: parseInt(item.attributes.catalog_item.data.id),
+              name: item.attributes.catalog_item.data.attributes.name,
+              price: parseFloat(item.attributes.price),
+              quantity: item.attributes.quantity,
+              observation: item.attributes.observation,
+              image: item.attributes.catalog_item.data.attributes.image_url,
+              weight: item.attributes.item_type === 'weight_per_kg' ? `${item.attributes.quantity}kg` : undefined,
+              extras: item.attributes.catalog_item.data.attributes.extra?.data?.map((extra: any) => ({
+                name: extra.attributes.name,
+                price: parseFloat(extra.attributes.price)
+              })) || [],
+              prepare_methods: item.attributes.catalog_item.data.attributes.prepare_method?.data?.map((method: any) => ({
+                name: method.attributes.name
+              })) || [],
+              steps: item.attributes.catalog_item.data.attributes.steps?.data?.map((step: any) => ({
+                name: step.attributes.name,
+                options: step.attributes.options?.data?.map((option: any) => ({
+                  name: option.attributes.name
+                })) || []
+              })) || []
+            })),
             shop: {
-              name: 'Loja Exemplo',
-              phone: '(11) 99999-9999'
+              name: selectedOrder.socketData.attributes.shop.data.attributes.name,
+              phone: selectedOrder.socketData.attributes.shop.data.attributes.cellphone
             },
             customer: {
-              name: selectedOrder.customerName,
-              phone: '(11) 99999-9999'
+              name: selectedOrder.socketData.attributes.customer.data.attributes.name,
+              phone: selectedOrder.socketData.attributes.customer.data.attributes.cellphone
             }
           }}
         />

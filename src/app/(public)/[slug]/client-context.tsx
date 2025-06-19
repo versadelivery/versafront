@@ -110,8 +110,6 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
         setShop(storedShop);
         setShopDeliveryConfig(storedShop.data.attributes.shop_delivery_config.data.attributes)
         setShopPaymentConfig(storedShop.data.attributes.shop_payment_config.data.attributes)
-        console.log("shopDeliveryConfig", shopDeliveryConfig)
-        console.log("shopPaymentConfig", shopPaymentConfig)
       } catch (error) {
         localStorage.removeItem("shop");
         setShop(null);

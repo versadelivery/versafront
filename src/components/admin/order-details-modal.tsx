@@ -21,6 +21,19 @@ interface OrderItem {
   observation?: string;
   image?: string;
   weight?: string;
+  extras?: Array<{
+    name: string;
+    price: number;
+  }>;
+  prepare_methods?: Array<{
+    name: string;
+  }>;
+  steps?: Array<{
+    name: string;
+    options?: Array<{
+      name: string;
+    }>;
+  }>;
 }
 
 interface OrderDetailsModalProps {
@@ -85,12 +98,12 @@ export default function OrderDetailsModal({ open, onOpenChange, order }: OrderDe
   const subtotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
   const [editingField, setEditingField] = useState<{
-    type: 'customer' | 'order' | 'financial' | 'item';
+    type: 'customer' | 'order' | 'financial' | 'item' | 'shop';
     field: string;
     value: string | number;
   } | null>(null);
 
-  const handleEdit = (type: 'customer' | 'order' | 'financial' | 'item', field: string, value: string | number) => {
+  const handleEdit = (type: 'customer' | 'order' | 'financial' | 'item' | 'shop', field: string, value: string | number) => {
     setEditingField({ type, field, value });
   };
 
@@ -104,7 +117,7 @@ export default function OrderDetailsModal({ open, onOpenChange, order }: OrderDe
   };
 
   const renderEditableField = (
-    type: 'customer' | 'order' | 'financial' | 'item',
+    type: 'customer' | 'order' | 'financial' | 'item' | 'shop',
     field: string,
     value: string | number,
     label: string
@@ -178,7 +191,7 @@ export default function OrderDetailsModal({ open, onOpenChange, order }: OrderDe
         </DialogHeader>
 
         <div className="p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="space-y-6">
               <div>
                 <h3 className="text-sm font-medium text-gray-500 mb-4 uppercase tracking-wide">
@@ -199,12 +212,36 @@ export default function OrderDetailsModal({ open, onOpenChange, order }: OrderDe
 
               <div>
                 <h3 className="text-sm font-medium text-gray-500 mb-4 uppercase tracking-wide">
+                  Informações da <span className="font-bold text-gray-700">Loja</span>
+                </h3>
+                <div className="space-y-3">
+                  {renderEditableField('shop', 'name', order.shop.name, 'NOME')}
+                  {renderEditableField('shop', 'phone', order.shop.phone, 'TELEFONE')}
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-4 uppercase tracking-wide">
                   Informações do <span className="font-bold text-gray-700">Pedido</span>
                 </h3>
                 <div className="space-y-3">
                   {renderEditableField('order', 'payment_method', paymentInfo.label, 'FORMA DE PAGAMENTO')}
                   {renderEditableField('order', 'date', formatDate(order.date), 'DATA E HORA')}
                   {renderEditableField('order', 'delivery', 'Freire Guerra', 'ENTREGADOR')}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-4 uppercase tracking-wide">
+                  Status do <span className="font-bold text-gray-700">Pedido</span>
+                </h3>
+                <div className="flex items-center gap-3">
+                  <Badge className={`${statusInfo.color} px-3 py-1 text-xs font-medium rounded-xs`}>
+                    {statusInfo.label}
+                    <Clock8 className="w-3 h-3" />
+                  </Badge>
                 </div>
               </div>
             </div>
@@ -218,18 +255,6 @@ export default function OrderDetailsModal({ open, onOpenChange, order }: OrderDe
                   {renderEditableField('financial', 'subtotal', formatCurrency(subtotal), 'TOTAL DOS ITENS')}
                   {renderEditableField('financial', 'delivery_fee', formatCurrency(deliveryFee), 'TAXA DE ENTREGA')}
                   {renderEditableField('financial', 'total', formatCurrency(order.total), 'TOTAL')}
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-4 uppercase tracking-wide">
-                  Status do <span className="font-bold text-gray-700">Pedido</span>
-                </h3>
-                <div className="flex items-center gap-3">
-                  <Badge className={`${statusInfo.color} px-3 py-1 text-xs font-medium rounded-xs`}>
-                    {statusInfo.label}
-                    <Clock8 className="w-3 h-3" />
-                  </Badge>
                 </div>
               </div>
             </div>
@@ -251,23 +276,96 @@ export default function OrderDetailsModal({ open, onOpenChange, order }: OrderDe
             
             <div className="space-y-3">
               {order.items.map((item) => (
-                <div key={item.id} className="flex items-center justify-between p-4 bg-gray-100 rounded-xs">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center justify-center w-12 h-8 rounded text-sm font-medium">
-                      {item.quantity}x
-                    </div>
-                    <div>
-                      <span className="font-medium text-black text-xl">{item.name}</span>
-                      {item.weight && (
-                        <span className="text-sm text-gray-500 ml-2">{item.weight}</span>
-                      )}
+                <div key={item.id} className="flex items-start justify-between p-4 bg-gray-100 rounded-xs">
+                  <div className="flex items-start gap-4 flex-1">
+                    {/* Imagem do produto */}
+                    {item.image && (
+                      <div className="flex-shrink-0">
+                        <img 
+                          src={item.image} 
+                          alt={item.name}
+                          className="w-16 h-16 object-cover rounded-xs"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      </div>
+                    )}
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center justify-center w-8 h-6 bg-primary text-white rounded text-xs font-medium">
+                          {item.quantity}x
+                        </div>
+                        <span className="font-medium text-black text-lg">{item.name}</span>
+                        {item.weight && (
+                          <Badge variant="outline" className="text-xs">
+                            {item.weight}
+                          </Badge>
+                        )}
+                      </div>
+                      
+                      {/* Observação */}
                       {item.observation && (
-                        <p className="text-xs text-gray-500 mt-1">{item.observation}</p>
+                        <p className="text-sm text-orange-600 mb-2 italic">
+                          "{item.observation}"
+                        </p>
+                      )}
+                      
+                      {/* Extras */}
+                      {item.extras && item.extras.length > 0 && (
+                        <div className="mb-2">
+                          <span className="text-xs font-medium text-gray-600">Extras:</span>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {item.extras.map((extra, index) => (
+                              <Badge key={index} variant="secondary" className="text-xs">
+                                {extra.name} (+{formatCurrency(extra.price)})
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Métodos de preparo */}
+                      {item.prepare_methods && item.prepare_methods.length > 0 && (
+                        <div className="mb-2">
+                          <span className="text-xs font-medium text-gray-600">Preparo:</span>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {item.prepare_methods.map((method, index) => (
+                              <Badge key={index} variant="outline" className="text-xs">
+                                {method.name}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Passos/Opções */}
+                      {item.steps && item.steps.length > 0 && (
+                        <div className="mb-2">
+                          <span className="text-xs font-medium text-gray-600">Opções:</span>
+                          <div className="space-y-1 mt-1">
+                            {item.steps.map((step, index) => (
+                              <div key={index} className="text-xs">
+                                <span className="font-medium">{step.name}:</span>
+                                {step.options && step.options.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 mt-1 ml-2">
+                                    {step.options.map((option, optIndex) => (
+                                      <Badge key={optIndex} variant="outline" className="text-xs">
+                                        {option.name}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       )}
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-4 flex-shrink-0">
                     <div className="flex items-center gap-2">
                       {renderEditableField('item', `price_${item.id}`, formatCurrency(item.price * item.quantity), '')}
                     </div>

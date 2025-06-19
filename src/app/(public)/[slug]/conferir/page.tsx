@@ -55,7 +55,12 @@ export default function CheckoutPage() {
   const router = useRouter()
   const params = useParams()
   const storeSlug = params.slug as string
-  const { client, shop, shopDeliveryConfig, shopPaymentConfig } = useClient()
+  const { client } = useClient()
+
+  // Buscar dados da loja em tempo real usando o slug
+  const { data: shopData, isLoading: isLoadingShop } = useShopBySlug(storeSlug, { 
+    staleTime: 1000 * 60 * 5 // 5 minutos para sempre ter dados atualizados
+  })
 
   const { 
     items, 
@@ -78,6 +83,11 @@ export default function CheckoutPage() {
   const [selectedNeighborhood, setSelectedNeighborhood] = useState<string>('')
   const [order, setOrder] = useState<Order | null>(null)
   const [itemObservations, setItemObservations] = useState<Record<string, string>>({})
+  
+  // Extrair configurações da loja dos dados buscados em tempo real
+  const shopDeliveryConfig = shopData?.data?.attributes?.shop_delivery_config?.data?.attributes || null
+  const shopPaymentConfig = shopData?.data?.attributes?.shop_payment_config?.data?.attributes || null
+  const shop = shopData
   
   useEffect(() => {
     
@@ -149,11 +159,27 @@ export default function CheckoutPage() {
     }))
   }
 
+  const calculateDeliveryFee = () => {
+    if (deliveryOption !== 'delivery' || !selectedNeighborhood) {
+      return 0
+    }
+    
+    if (shopDeliveryConfig?.delivery_fee_kind === 'fixed') {
+      return shopDeliveryConfig.amount
+    }
+    
+    if (shopDeliveryConfig?.delivery_fee_kind === 'per_neighborhood') {
+      const selectedNeighborhoodData = shopDeliveryConfig.shop_delivery_neighborhoods.data.find(
+        n => n.id === selectedNeighborhood
+      )
+      return selectedNeighborhoodData?.attributes.amount || 0
+    }
+    
+    return 0
+  }
+
   const calculateTotal = () => {
-    const deliveryFee = deliveryOption === 'delivery' && selectedNeighborhood 
-      ? shopDeliveryConfig?.shop_delivery_neighborhoods.data.find(n => n.id === selectedNeighborhood)?.attributes.amount || 0
-      : 0
-    return totalPrice + deliveryFee
+    return totalPrice + calculateDeliveryFee()
   }
 
   const handleQuantityChange = (itemId: string, newQuantity: number) => {
@@ -176,6 +202,20 @@ export default function CheckoutPage() {
   const handleSubmitOrder = async () => {
     setIsSubmitting(true)
     
+    // Determinar o nome do bairro e o ID quando necessário
+    let neighborhoodName = selectedNeighborhood
+    let neighborhoodId = null
+    
+    if (shopDeliveryConfig?.delivery_fee_kind === 'per_neighborhood' && selectedNeighborhood) {
+      const selectedNeighborhoodData = shopDeliveryConfig.shop_delivery_neighborhoods.data.find(
+        n => n.id === selectedNeighborhood
+      )
+      if (selectedNeighborhoodData) {
+        neighborhoodName = selectedNeighborhoodData.attributes.name
+        neighborhoodId = selectedNeighborhoodData.id
+      }
+    }
+    
     const orderData: CreateOrderRequest = {
         "order": {
             "shop_id": Number(shop?.data.id),
@@ -183,9 +223,10 @@ export default function CheckoutPage() {
             "payment_method": paymentMethod as 'manual_pix' | 'credit' | 'debit' | 'cash',
             "address": {
                 "address": address,
-                "neighborhood": selectedNeighborhood,
+                "neighborhood": neighborhoodName,
                 "complement": complement,
-                "reference": reference
+                "reference": reference,
+                ...(neighborhoodId && { shop_delivery_neighborhood_id: neighborhoodId })
             },
             "items": cartItems.map(item => ({
               catalog_item_id: Number(item.id),
@@ -211,7 +252,7 @@ export default function CheckoutPage() {
     }
   }
 
-  if (isLoading) {
+  if (isLoadingShop || isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -652,7 +693,7 @@ export default function CheckoutPage() {
                       {shopDeliveryConfig?.delivery_fee_kind === 'fixed' 
                         ? `R$ ${shopDeliveryConfig.amount.toFixed(2).replace('.', ',')}`
                         : shopDeliveryConfig?.delivery_fee_kind === 'per_neighborhood' && selectedNeighborhood
-                          ? `R$ ${shopDeliveryConfig?.shop_delivery_neighborhoods.data.find(n => n.id === selectedNeighborhood)?.attributes.amount.toFixed(2).replace('.', ',')}`
+                          ? `R$ ${calculateDeliveryFee().toFixed(2).replace('.', ',')}`
                           : 'Taxa a combinar'
                       }
                     </span>

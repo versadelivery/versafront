@@ -13,6 +13,7 @@ import { z } from "zod";
 import Image from "next/image";
 import logoInline from "@/public/logo/logo-inline-black.svg";
 import { useRouter } from "next/navigation";
+import { formatPhone } from "@/utils/format-phone";
 
 type AuthMode = "login" | "register";
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -102,7 +103,7 @@ export default function AuthPage() {
                     id="cellphone"
                     type="tel"
                     {...registerForm("cellphone" as any)}
-                    placeholder="(00) 00000-0000"
+                    placeholder={formatPhone("(00) 00000-0000")}
                     className="rounded-xs bg-transparent w-full p-8 border border-black/10 pr-10 placeholder:text-foreground/40"
                   />
                   {(errors as any).cellphone && (

@@ -12,6 +12,11 @@ export const getClientToken = (): string | null => {
   return localStorage.getItem(USER_KEY)
 }
 
+export const getAdminToken = (): string | null => {
+  if (typeof window === 'undefined') return null
+  return localStorage.getItem(USER_KEY)
+}
+
 export const setToken = (token: string): void => {
   if (typeof window === 'undefined') return
   localStorage.setItem(TOKEN_KEY, token)

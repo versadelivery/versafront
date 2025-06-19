@@ -186,7 +186,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ slug: s
       id: orderData.attributes.shop?.data?.id || "",
       name: orderData.attributes.shop?.data?.attributes?.name || "Loja não informada",
       phone: orderData.attributes.shop?.data?.attributes?.cellphone || "",
-      email: "contato@loja.com" // Não está na API ainda
+      email: "contato@loja.com"
     },
     customer: {
       name: orderData.attributes.customer?.data?.attributes?.name || "Cliente não informado",
@@ -195,7 +195,8 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ slug: s
     },
     address: {
       address: orderData.attributes.address?.data?.attributes?.address || "Endereço não informado",
-      neighborhood: orderData.attributes.address?.data?.attributes?.neighborhood || "",
+      neighborhood: (orderData.attributes.address?.data?.attributes?.shop_delivery_neighborhood as any)?.data?.attributes?.name || 
+                   orderData.attributes.address?.data?.attributes?.neighborhood || "",
       complement: orderData.attributes.address?.data?.attributes?.complement || "",
       reference: orderData.attributes.address?.data?.attributes?.reference || ""
     },
