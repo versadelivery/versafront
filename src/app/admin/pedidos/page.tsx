@@ -116,11 +116,11 @@ const statusConfig = {
     icon: <ChefHat className="w-4 h-4" />
   },
   prontos: { 
-    title: 'PRONTOS', 
+    title: 'ENTREGA', 
     color: 'bg-primary', 
     textColor: 'text-white',
     bgColor: 'bg-primary',
-    icon: <CheckCircle className="w-4 h-4 text-primary" />
+    icon: <Truck className="w-4 h-4 text-primary" />
   }
 };
 

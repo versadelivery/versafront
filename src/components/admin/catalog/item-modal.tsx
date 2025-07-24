@@ -312,7 +312,7 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="rounded-xs sm:h-auto max-w-[95vw] sm:max-w-[720px] p-4 sm:p-6 md:p-8 bg-white rounded-sm max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#212121] [&::-webkit-scrollbar-thumb]:rounded-sm [&::-webkit-scrollbar]:px-2">
+      <DialogContent className="rounded-xs sm:h-auto max-w-[95vw] sm:max-w-[720px] p-4 sm:p-6 md:p-8 bg-white max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#212121] [&::-webkit-scrollbar-thumb]:rounded-sm [&::-webkit-scrollbar]:px-2">
         <DialogHeader>
           <DialogTitle className="text-start text-xl md:text-2xl font-bold">
             NOVO ITEM
@@ -333,7 +333,7 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
                     NOME
                   </FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Ex: Hamburguer" className="border border-black/30 border-[0.5px] h-12 placeholder:text-gray-400" />
+                    <Input {...field} placeholder="Ex: Hamburguer" className="border-black/30 border-[0.5px] h-12 placeholder:text-gray-400" />
                   </FormControl>
                 </FormItem>
               )}
@@ -348,13 +348,13 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
                     DESCRIÇÃO
                   </FormLabel>
                   <FormControl>
-                    <Textarea {...field} placeholder="Digite a descrição do item" className="border border-black/30 border-[0.5px] h-12 placeholder:text-gray-400" />
+                    <Textarea {...field} placeholder="Digite a descrição do item" className="border-black/30 border-[0.5px] h-12 placeholder:text-gray-400" />
                   </FormControl>
                 </FormItem>
               )}
             />
 
-            <hr className="border-black/30 border-[0,1px] my-12 w-full" />
+            <hr className="border-black/30 my-12 w-full" />
 
             <div className="flex flex-row gap-4 w-full">
               <FormField
@@ -408,7 +408,7 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
                       value={field.value}
                     >
                       <FormControl className="w-full h-12">
-                        <SelectTrigger className="border border-black/30 border-[0.5px] h-12">
+                        <SelectTrigger className="border-black/30 border-[0.5px] h-12">
                           <SelectValue placeholder={isLoading ? "Carregando grupos..." : "Selecione um grupo"} className="w-full p-4 h-12 placeholder:text-gray-400" />
                         </SelectTrigger>
                       </FormControl>
@@ -440,7 +440,7 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
                     </FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl className="w-1/2 h-12">
-                        <SelectTrigger className="border border-black/30 border-[0.5px] h-12">
+                        <SelectTrigger className="border-black/30 border-[0.5px] h-12">
                           <SelectValue placeholder="Selecione o tipo de unidade" className="placeholder:text-gray-400" />
                         </SelectTrigger>
                       </FormControl>
@@ -471,7 +471,7 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
                           type="number"
                           {...field}
                           onChange={(e) => field.onChange(Number(e.target.value))}
-                          className="border border-black/30 border-[0.5px] h-12 placeholder:text-gray-400"
+                          className="border-black/30 border-[0.5px] h-12 placeholder:text-gray-400"
                         />
                       </FormControl>
                     </FormItem>
@@ -492,7 +492,7 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
                           type="number"
                           {...field}
                           onChange={(e) => field.onChange(Number(e.target.value))}
-                          className="border border-black/30 border-[0.5px] h-12 placeholder:text-gray-400"
+                          className="border-black/30 border-[0.5px] h-12 placeholder:text-gray-400"
                         />
                       </FormControl>
                     </FormItem>
@@ -513,7 +513,7 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
                           min="0"
                           {...field}
                           onChange={(e) => field.onChange(Number(e.target.value))}
-                          className="border border-black/30 border-[0.5px] h-12 placeholder:text-gray-400"
+                          className="border-black/30 border-[0.5px] h-12 placeholder:text-gray-400"
                         />
                       </FormControl>
                     </FormItem>
@@ -537,7 +537,7 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
                         placeholder="0,00"
                         value={formatPrice(field.value)}
                         onChange={(e) => field.onChange(handlePriceChange(e.target.value))}
-                        className="pl-10 h-12 border border-black/30"
+                        className="pl-10 h-12 border-black/30"
                         required
                       />
                     </div>
@@ -574,7 +574,7 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
                           placeholder="0,00"
                           value={formatPrice(field.value as number)}
                           onChange={(e) => field.onChange(handlePriceChange(e.target.value))}
-                          className="pl-10 h-12 border border-black/30"
+                          className="pl-10 h-12 border-black/30"
                           disabled={!hasDiscount}
                         />
                       </div>
@@ -584,7 +584,7 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
               />
             </div>
 
-            <hr className="border-black/30 border-[0,1px] my-12 w-full" />
+            <hr className="border-black/30 my-12 w-full" />
 
             <FormItem className="cursor-pointer flex flex-row items-center justify-between rounded-lg p-4 bg-muted/40">
               <FormLabel className="cursor-pointer text-sm font-bold text-foreground w-full">

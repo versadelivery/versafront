@@ -45,13 +45,11 @@ export default function StoreHeader({ shop }: StoreHeaderProps) {
               </Button>
             )}
 
-          {client && (
+          
             <Button variant="outline" className="mr-4 md:hidden bg-transparent items-center justify-center text-white border border-white py-5 px-12 rounded-xs shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all duration-300 group">
               <Package className="w-6 h-6" />
             </Button>
-          )}
-
-          {client && (
+          
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -59,7 +57,7 @@ export default function StoreHeader({ shop }: StoreHeaderProps) {
             >
               <CartDrawer />
             </motion.div>
-          )}
+        
           </div>
         </div>
       </header>

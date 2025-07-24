@@ -278,7 +278,6 @@ export default function OrderDetailsModal({ open, onOpenChange, order }: OrderDe
               {order.items.map((item) => (
                 <div key={item.id} className="flex items-start justify-between p-4 bg-gray-100 rounded-xs">
                   <div className="flex items-start gap-4 flex-1">
-                    {/* Imagem do produto */}
                     {item.image && (
                       <div className="flex-shrink-0">
                         <img 
@@ -305,14 +304,12 @@ export default function OrderDetailsModal({ open, onOpenChange, order }: OrderDe
                         )}
                       </div>
                       
-                      {/* Observação */}
                       {item.observation && (
                         <p className="text-sm text-orange-600 mb-2 italic">
                           "{item.observation}"
                         </p>
                       )}
                       
-                      {/* Extras */}
                       {item.extras && item.extras.length > 0 && (
                         <div className="mb-2">
                           <span className="text-xs font-medium text-gray-600">Extras:</span>
@@ -326,7 +323,6 @@ export default function OrderDetailsModal({ open, onOpenChange, order }: OrderDe
                         </div>
                       )}
                       
-                      {/* Métodos de preparo */}
                       {item.prepare_methods && item.prepare_methods.length > 0 && (
                         <div className="mb-2">
                           <span className="text-xs font-medium text-gray-600">Preparo:</span>
@@ -340,7 +336,6 @@ export default function OrderDetailsModal({ open, onOpenChange, order }: OrderDe
                         </div>
                       )}
                       
-                      {/* Passos/Opções */}
                       {item.steps && item.steps.length > 0 && (
                         <div className="mb-2">
                           <span className="text-xs font-medium text-gray-600">Opções:</span>

@@ -211,12 +211,6 @@ export default function OrdersPage({ params }: { params: Promise<{ slug: string 
               </div>
               <h3 className="text-2xl font-bold text-slate-900 mb-3">Nenhum pedido encontrado</h3>
               <p className="text-slate-600 mb-8 text-lg">Você ainda não fez nenhum pedido</p>
-              <Button 
-                onClick={() => router.push(`/${slug}`)}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 rounded-xs font-semibold"
-              >
-                Fazer meu primeiro pedido
-              </Button>
             </CardContent>
           </Card>
         )}
