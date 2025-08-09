@@ -52,7 +52,8 @@ export interface AdminOrderData {
 export function createAdminCableWithToken() {
   const token = getToken()
   if (token) {
-    const cableUrl = `ws://localhost:3000/cable?token=${token}`
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+    const cableUrl = apiUrl.replace('http', 'ws').replace('https', 'wss') + `/cable?token=${token}`
     return createConsumer(cableUrl)
   }
   return null
