@@ -75,20 +75,6 @@ export default function PaymentSettingsPage() {
 
   const handleSaveSettings = async () => {
     if (!paymentMethodsData) return;
-    console.log(
-      {
-        data: {
-          id: paymentMethodsData.data.id,
-          type: "shop_payment_config",
-          attributes: {
-            cash: paymentMethods.find(method => method.id === "cash")?.enabled || false,
-            credit: paymentMethods.find(method => method.id === "credit_card")?.enabled || false,
-            debit: paymentMethods.find(method => method.id === "debit_card")?.enabled || false,
-            manual_pix: paymentMethods.find(method => method.id === "pix")?.enabled || false
-          }
-        }
-      }
-    )
     await updatePaymentMethodsMutation.mutateAsync({
       data: {
         id: paymentMethodsData.data.id,

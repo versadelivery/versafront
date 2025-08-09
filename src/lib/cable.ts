@@ -7,7 +7,6 @@ export function createCableWithToken() {
   const token = getClientToken()
   if (token) {
     const cableUrl = `ws://localhost:3000/cable?token=${token}`
-    console.log('cableUrl', cableUrl)
     return createConsumer(cableUrl)
   }
   return null
@@ -24,7 +23,6 @@ export function useActionCable() {
       if (cable) {
         cableRef.current = cable
         setIsConnected(true)
-        console.log('Action Cable conectado')
       }
     }
 
@@ -49,19 +47,15 @@ export function useActionCable() {
       },
       {
         received: (payload: any) => {
-          console.log('Payload recebido:', payload)
-          
           if (!payload?.event) return
 
           // Evento inicial
           if (payload.event === "initial_order_data") {
-            console.log('Dados iniciais do pedido recebidos')
             onData(payload.data.data)
           }
 
           // Eventos futuros
           if (payload.event === "order_updated") {
-            console.log('Pedido atualizado recebido')
             onData(payload.data.data)
           }
         },

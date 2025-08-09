@@ -20,11 +20,6 @@ export const getPaymentMethods = async (): Promise<ShopPaymentConfig> => {
 };
 
 export const updatePaymentMethods = async (paymentMethods: ShopPaymentConfig): Promise<ShopPaymentConfig> => {
-  console.log(
-    {
-      shop_payment_config: paymentMethods.data.attributes
-    }
-  )
   const response = await api.put("/shop_payment_configs", {
     shop_payment_config: paymentMethods.data.attributes
   });

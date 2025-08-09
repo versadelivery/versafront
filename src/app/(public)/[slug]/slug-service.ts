@@ -8,9 +8,6 @@ export async function fetchShopBySlug(slug: string) {
 }
 
 export async function clientRegister(data: ClientData) {
-  console.log({
-    customer: data,
-  });
   const response = await api.post<ClientAuthData>("/customers/register", {
     customer: data,
   });
@@ -18,12 +15,6 @@ export async function clientRegister(data: ClientData) {
 }
 
 export async function clientLogin(email: string, password: string) {
-  console.log({
-    customer: {
-      email,
-      password,
-    },
-  });
   const response = await api.post("/customers/login", {
     customer: {
       email,

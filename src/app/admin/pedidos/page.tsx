@@ -162,7 +162,6 @@ export default function OrderManagement() {
 
   useEffect(() => {
     const unsubscribe = subscribeToAdminOrders((socketOrders: AdminOrderData[]) => {
-      console.log('Recebendo dados dos pedidos:', socketOrders);
       const convertedOrders = socketOrders.map(convertSocketDataToOrder);
       setOrders(convertedOrders);
       setIsLoading(false);

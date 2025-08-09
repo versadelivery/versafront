@@ -4,8 +4,6 @@ import { CreateOrderRequest, CustomerOrdersResponse } from "@/types/order";
 import { toast } from "sonner";
 
 export const createOrder = async (data: CreateOrderRequest) => {
-  console.log('pedido data', data);
-  
   setTokenType('client');
   
   try {

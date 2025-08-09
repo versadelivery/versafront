@@ -103,16 +103,11 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ slug: s
   const [orderData, setOrderData] = useState<ActionCableOrderData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  console.log("ID do pedido recebido:", id);
-  console.log("Status da conexão:", isConnected());
-  console.log("Status da conexão:", connectionStatus);
 
   useEffect(() => {
     if (!id) return;
 
     const handleOrderData = (data: ActionCableOrderData) => {
-      console.log("Dados do pedido recebidos via Action Cable:", data);
       setOrderData(data);
       setIsLoading(false);
       setError(null);

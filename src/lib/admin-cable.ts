@@ -53,7 +53,6 @@ export function createAdminCableWithToken() {
   const token = getToken()
   if (token) {
     const cableUrl = `ws://localhost:3000/cable?token=${token}`
-    console.log('adminCableUrl', cableUrl)
     return createConsumer(cableUrl)
   }
   return null
@@ -70,7 +69,6 @@ export function useAdminActionCable() {
       if (cable) {
         cableRef.current = cable
         setIsConnected(true)
-        console.log('Admin Action Cable conectado')
       }
     }
 
@@ -94,19 +92,16 @@ export function useAdminActionCable() {
       },
       {
         received: (payload: any) => {
-          console.log('Admin Payload recebido:', payload)
           
           if (!payload?.event) return
 
           // Evento inicial
           if (payload.event === "initial_order_admin_data") {
-            console.log('Dados iniciais dos pedidos admin recebidos')
             onData(payload.data.data)
           }
 
           // Eventos futuros
           if (payload.event === "order_updated") {
-            console.log('Pedido atualizado recebido no admin')
             onData(payload.data.data)
           }
         },
