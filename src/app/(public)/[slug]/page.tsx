@@ -1,73 +1,63 @@
-"use client"
-
-import { notFound, useParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { Loader2 } from 'lucide-react';
-import { useShopBySlug } from './use-slug';
+import { notFound } from 'next/navigation';
+import { Metadata } from 'next';
+import { fetchShopBySlugServer } from './server-service';
 import StoreHeader from './components/store-header';
-import ProductGrid from './components/product-grid';
-import CategoryNavigation from './components/category-navigation';
-import SearchBar from './components/search-bar';
+import ClientStoreContent from './client-store-content';
 
-export default function StoreCatalog() {
-  const params = useParams();
-  const slug = params.slug as string;
-  const { data: shop, isLoading } = useShopBySlug(slug);
-  const [activeCategory, setActiveCategory] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
+interface Props {
+  params: {
+    slug: string;
+  };
+}
 
-  useEffect(() => {
-    if (shop) {
-      localStorage.removeItem("shop");
-      localStorage.setItem("shop", JSON.stringify(shop));
-    }
-  }, [shop]);
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-screen bg-background">
-        <div className="flex flex-col items-center">
-          <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-          <p className="text-muted-foreground animate-pulse">Carregando catálogo da loja...</p>
-        </div>
-      </div>
-    );
+// Generate metadata for SEO
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const shop = await fetchShopBySlugServer(params.slug);
+  
+  if (!shop) {
+    return {
+      title: 'Loja não encontrada',
+    };
   }
 
-  if (!shop) return notFound();
-
-  const groups = shop?.data.attributes.catalog_groups.data || [];
+  const shopData = shop.data.attributes;
+  const defaultDescription = `Confira o catálogo completo da ${shopData.name}. Faça seus pedidos online de forma rápida e prática.`;
   
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
+  return {
+    title: `${shopData.name} - Catálogo Online`,
+    description: defaultDescription,
+    keywords: `${shopData.name}, delivery, catálogo, pedidos online`,
+    openGraph: {
+      title: `${shopData.name} - Catálogo Online`,
+      description: defaultDescription,
+      images: shopData.image_url ? [shopData.image_url] : [],
+      url: `${process.env.NEXT_PUBLIC_SHOP_DOMAIN}/${params.slug}`,
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${shopData.name} - Catálogo Online`,
+      description: defaultDescription,
+      images: shopData.image_url ? [shopData.image_url] : [],
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
   };
+}
 
-  const handleCategoryChange = (category: string) => {
-    setActiveCategory(category);
-  };
+export default async function StoreCatalog({ params }: Props) {
+  const shop = await fetchShopBySlugServer(params.slug);
+
+  if (!shop) {
+    notFound();
+  }
 
   return (
     <div className="min-h-screen bg-background">
       <StoreHeader shop={shop.data} />
-      
-      <main className="container mx-auto px-4 py-8 max-w-7xl">
-        <div className="flex flex-col gap-6">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-            <SearchBar onSearch={handleSearch} />
-            <CategoryNavigation 
-              categories={groups} 
-              activeCategory={activeCategory} 
-              onChange={handleCategoryChange} 
-            />
-          </div>
-          
-          <ProductGrid 
-            categories={groups} 
-            activeCategory={activeCategory}
-            searchQuery={searchQuery}
-          />
-        </div>
-      </main>
+      <ClientStoreContent shop={shop} />
     </div>
   );
 }
