@@ -14,7 +14,10 @@ export default function AdminDashboard() {
     <>
       <AdminBanner bannerImg={bannerImg}/>
       <div className="max-w-2xl mx-auto px-4 -mt-10 z-20 relative border-none">
-        <UrlCard url={`https://versadelivery.com.br/${shop?.slug}`} isLoading={isLoading} />
+        <UrlCard
+          url={`${process.env.NEXT_PUBLIC_SHOP_DOMAIN}/${shop?.slug}`}
+          isLoading={isLoading}
+        />
       </div>
       <div className="max-w-full mx-auto py-6 px-2 sm:px-6">
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2">
