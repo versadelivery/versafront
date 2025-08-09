@@ -37,56 +37,61 @@ function CatalogPage() {
 
   return (
     <ProtectedRoute>
-      <div className="flex flex-col h-full">
-          <AdminHeader
-            title="CATÁLOGO"
-            description="Gerencie seu catálogo, estoque e disponibilidade dos itens"
-          />
+      <div className="flex flex-col min-h-screen">
+        <AdminHeader
+          title="CATÁLOGO"
+          description="Gerencie seu catálogo, estoque e disponibilidade dos itens"
+        />
+        
+        <div className="flex-1 px-4 sm:px-6 lg:px-8 max-w-8xl mx-auto w-full">
           <ActionBar onNewGroup={() => setIsGroupModalOpen(true)} onNewItem={() => setIsItemModalOpen(true)} />
+          
           <GroupModal isOpen={isGroupModalOpen} onOpenChange={setIsGroupModalOpen} />
           <GroupModalEdit isOpen={isGroupModalOpenEdit} onOpenChange={setIsGroupModalOpenEdit} editingGroup={editingGroup as never} />
           <NewItemModal isOpen={isItemModalOpen} onOpenChange={setIsItemModalOpen} />
+          
           {isLoading ? (
-            <div className="flex justify-center w-full">
+            <div className="flex justify-center w-full py-12">
               <Loader2 className="h-10 w-10 animate-spin" />
             </div>
           ) : (
-            <div className="flex flex-col gap-6 w-full">
+            <div className="flex flex-col gap-6 w-full pb-8">
               {catalog?.data?.map((group) => (
-                <div key={group.id} className="flex flex-col gap-4 bg-accent p-3 sm:p-4 md:p-6 rounded-xs">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full gap-2">
-                  <h2 className="text-xl font-semibold text-gray-800 break-words">{group.attributes.name}</h2>
-                  <div className="flex gap-1 sm:gap-2 py-2 sm:py-4">
-                  <Button 
-                    variant="ghost" 
-                    className="font-outfit rounded-xs py-2 px-3 sm:py-3 sm:px-6 flex items-center justify-center gap-2 bg-muted hover:bg-muted/80 border-none shadow-none text-muted-foreground text-xs sm:text-sm"
-                    onClick={() => handleEditGroup(group.id)}
-                  >
-                    <Edit2 className="w-4 h-4" />
-                    <span>Editar</span>
-                  </Button>
-                  <Button 
-                    variant="destructive" 
-                    className="font-outfit rounded-xs py-2 px-3 sm:py-3 sm:px-6 flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 border-none shadow-none text-muted-foreground text-xs sm:text-sm"
-                    onClick={() => {
-                      setGroupIdToDelete(group.id);
-                      setIsDeleteConfirmationOpen(true);
-                    }}
-                  >
-                    <Trash className="w-4 h-4 text-white" />
-                    <span className="text-white">Excluir</span>
-                  </Button>
+                <div key={group.id} className="flex flex-col gap-4 bg-accent p-4 sm:p-6 lg:p-8 rounded-lg">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full gap-4">
+                    <h2 className="text-xl font-semibold text-gray-800 break-words">{group.attributes.name}</h2>
+                    <div className="flex gap-2 sm:gap-3">
+                      <Button 
+                        variant="ghost" 
+                        className="font-outfit rounded-xs py-2 px-4 sm:py-3 sm:px-6 flex items-center justify-center gap-2 bg-muted hover:bg-muted/80 border-none shadow-none text-muted-foreground text-sm"
+                        onClick={() => handleEditGroup(group.id)}
+                      >
+                        <Edit2 className="w-4 h-4" />
+                        <span>Editar</span>
+                      </Button>
+                      <Button 
+                        variant="destructive" 
+                        className="font-outfit rounded-xs py-2 px-4 sm:py-3 sm:px-6 flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 border-none shadow-none text-sm"
+                        onClick={() => {
+                          setGroupIdToDelete(group.id);
+                          setIsDeleteConfirmationOpen(true);
+                        }}
+                      >
+                        <Trash className="w-4 h-4 text-white" />
+                        <span className="text-white">Excluir</span>
+                      </Button>
+                    </div>
                   </div>
-                  </div>
-                  <div className="w-full overflow-x-auto">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+                  
+                  <div className="w-full">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                       {group.attributes.items.length === 0 ? (
-                        <div className="col-span-full text-start text-gray-500">
+                        <div className="col-span-full text-start text-gray-500 py-8">
                           Este grupo não possui itens
                         </div>
                       ) : (
                         group.attributes.items.map((item) => (
-                          <div key={item.data.id} className="min-h-[350px] w-full max-w-xs sm:max-w-sm mx-auto">
+                          <div key={item.data.id} className="min-h-[350px] w-full">
                             <ItemCard 
                               key={item.data.id} 
                               item={{
@@ -115,6 +120,7 @@ function CatalogPage() {
               ))}
             </div>
           )}
+        </div>
       </div>
 
       <DeleteConfirmation
