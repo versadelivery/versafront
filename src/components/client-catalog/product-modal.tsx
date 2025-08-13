@@ -9,8 +9,6 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Badge } from '@/components/ui/badge'
 import { AlertCircle, Package, Scale, Plus, ChefHat, ListChecks, ShoppingCart, Info, Clock } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { useAuth } from '@/hooks/useClientAuth'
-import { AuthModal } from '@/components/client-auth/(auth)/auth-modal'
 import { Separator } from '@/components/ui/separator'
 import Image from 'next/image'
 
@@ -27,15 +25,12 @@ interface ProductModalProps {
 }
 
 export function ProductModal({ product, isOpen, onClose, onAddToCart }: ProductModalProps) {
-  const { isAuthenticated } = useAuth()
   const [currentStep, setCurrentStep] = useState(0)
   const [selectedWeight, setSelectedWeight] = useState<number | undefined>(undefined)
   const [selectedExtras, setSelectedExtras] = useState<{id: string; name: string; price: number}[]>([])
   const [selectedPrepareMethod, setSelectedPrepareMethod] = useState<string[]>([])
   const [selectedSteps, setSelectedSteps] = useState<Record<string, string>>({})
   const [validationError, setValidationError] = useState<string | null>(null)
-  const [showAuthModal, setShowAuthModal] = useState(false)
-  const [showProductModal, setShowProductModal] = useState(false)
 
   // Reset state when modal closes
   useEffect(() => {
@@ -46,17 +41,10 @@ export function ProductModal({ product, isOpen, onClose, onAddToCart }: ProductM
       setSelectedPrepareMethod([])
       setSelectedSteps({})
       setValidationError(null)
-      setShowAuthModal(false)
-      setShowProductModal(false)
     }
   }, [isOpen])
 
   const handleAddToCart = () => {
-    if (!isAuthenticated) {
-      setShowAuthModal(true)
-      return
-    }
-
     // Validar se há peso selecionado para produtos por peso
     if (['kg', 'g'].includes(product.attributes.unit_of_measurement) && !selectedWeight) {
       setValidationError('Por favor, selecione o peso desejado')
@@ -303,31 +291,19 @@ export function ProductModal({ product, isOpen, onClose, onAddToCart }: ProductM
   }
 
   return (
-    <>
-      <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="rounded-xs sm:h-auto max-w-[95vw] sm:max-w-[720px] p-4 sm:p-6 md:p-8 bg-white max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#212121] [&::-webkit-scrollbar-thumb]:rounded-sm [&::-webkit-scrollbar]:px-2">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5" />
-              Detalhes do Produto
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-6">
-            {renderProductDetails()}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <AuthModal 
-        isOpen={showAuthModal} 
-        onClose={() => {
-          setShowAuthModal(false)
-          if (!isAuthenticated) {
-            onClose()
-          }
-        }} 
-      />
-    </>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="rounded-xs sm:h-auto max-w-[95vw] sm:max-w-[720px] p-4 sm:p-6 md:p-8 bg-white max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#212121] [&::-webkit-scrollbar-thumb]:rounded-sm [&::-webkit-scrollbar]:px-2">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Package className="h-5 w-5" />
+            Detalhes do Produto
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-6">
+          {renderProductDetails()}
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }

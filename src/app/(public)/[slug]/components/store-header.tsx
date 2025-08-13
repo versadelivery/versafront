@@ -7,6 +7,7 @@ import { CartDrawer } from '../cart/cart-drawer';
 import { motion } from 'framer-motion';
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import AuthIndicator from './auth-indicator';
 
 interface StoreHeaderProps {
   shop: any;
@@ -35,7 +36,9 @@ export default function StoreHeader({ shop }: StoreHeaderProps) {
             />
           </motion.div>
           
-          <div className="flex items-center justify-center gap-12">
+          <div className="flex items-center justify-center gap-4">
+            <AuthIndicator />
+            
             {client && (
               <Button variant="outline" className="hidden md:flex bg-primary text-white hover:text-black/80 border-none py-5 px-8 rounded-xs shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all duration-300 group">
                 <Package className="w-4 h-4 mr-2" />

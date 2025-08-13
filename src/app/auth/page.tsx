@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useClientLogin, useClientRegister } from "../use-slug";
+import { useClientLogin, useClientRegister } from "./use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,8 +12,10 @@ import { Loader2, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { z } from "zod";
 import Image from "next/image";
 import logoInline from "@/public/logo/logo-inline-black.svg";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { formatPhone } from "@/utils/format-phone";
+import { useClient } from "@/app/(public)/[slug]/client-context";
+import { usePhoneMask } from "@/hooks/use-phone-mask";
 
 type AuthMode = "login" | "register";
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -25,12 +27,27 @@ export default function AuthPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { login, isLoading: isLoadingLogin } = useClientLogin();
   const { register, isLoading: isLoadingRegister } = useClientRegister();
+  const { client } = useClient();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '';
+  const { formatPhone, getUnmaskedValue } = usePhoneMask();
+
+  // Redirecionar se já estiver logado
+  useEffect(() => {
+    if (client) {
+      const targetPage = redirectTo ? decodeURIComponent(redirectTo) : '/';
+      router.push(targetPage);
+    }
+  }, [client, redirectTo, router]);
+
   const {
     register: registerForm,
     handleSubmit,
     formState: { errors },
     reset,
+    setValue,
+    watch,
   } = useForm<LoginFormData | RegisterFormData>({
     resolver: zodResolver(mode === "login" ? loginSchema : registerSchema),
     defaultValues: mode === "login" 
@@ -47,7 +64,7 @@ export default function AuthPage() {
         name: registerData.name, 
         email: registerData.email, 
         password: registerData.password,
-        cellphone: registerData.cellphone
+        cellphone: getUnmaskedValue(registerData.cellphone)
       });
     }
   };
@@ -57,9 +74,17 @@ export default function AuthPage() {
     reset();
   };
 
+  const handleGoBack = () => {
+    if (redirectTo) {
+      router.push(decodeURIComponent(redirectTo));
+    } else {
+      router.back();
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <Button variant="link" type="button" onClick={() => router.back()} className="absolute top-8 left-8 text-primary hover:bg-primary hover:text-white transition-colors">
+      <Button variant="link" type="button" onClick={handleGoBack} className="absolute top-8 left-8 text-primary hover:bg-primary hover:text-white transition-colors">
         <ArrowLeft className="h-4 w-4" />
         Voltar
       </Button>
@@ -69,12 +94,12 @@ export default function AuthPage() {
       <div className="w-full max-w-lg space-y-6 bg-white px-8 rounded-xs flex flex-col items-center">
         <div className="text-center w-full">
           <h2 className="text-3xl font-bold tracking-tight text-gray-700">
-            {mode === "login" ? "Bem-vindo de volta :)" : "Criar nova conta ;)"}
+            {mode === "login" ? "Bem-vindo de volta" : "Criar nova conta"}
           </h2>
           <p className="mt-2 text-sm text-gray-600">
             {mode === "login"
-              ? "Entre com suas credenciais para continuar seu pedido"
-              : "Preencha as informações abaixo para continuar seu pedido"}
+              ? "Entre com suas credenciais para continuar"
+              : "Preencha as informações abaixo para continuar"}
           </p>
         </div>
 
@@ -102,9 +127,13 @@ export default function AuthPage() {
                   <Input
                     id="cellphone"
                     type="tel"
-                    {...registerForm("cellphone" as any)}
-                    placeholder={formatPhone("(00) 00000-0000")}
+                    value={watch("cellphone") || ""}
+                    placeholder="(00) 00000-0000"
                     className="rounded-xs bg-transparent w-full p-8 border border-black/10 pr-10 placeholder:text-foreground/40"
+                    onChange={(e) => {
+                      const formattedValue = formatPhone(e.target.value);
+                      setValue("cellphone", formattedValue, { shouldValidate: true });
+                    }}
                   />
                   {(errors as any).cellphone && (
                     <p className="mt-1 text-sm text-red-600">

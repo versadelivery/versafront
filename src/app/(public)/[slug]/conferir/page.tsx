@@ -1,6 +1,6 @@
 "use client"
 
-import { MapPin, CreditCard, Wallet, QrCode, Truck, ChevronDown, ChevronUp, Plus, Minus, X, CheckCircle2, Package, Store, Timer } from 'lucide-react'
+import { MapPin, CreditCard, Wallet, QrCode, Truck, ChevronDown, ChevronUp, Plus, Minus, X, CheckCircle2, Package, Store, Timer, User, LogIn } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
@@ -144,13 +144,9 @@ export default function CheckoutPage() {
       return acc
     }, {})
     setIsExpanded(expandedState)
-  }, [client, storeSlug, items, router])
+  }, [items])
 
-  useEffect(() => {
-    if (!isLoading && !client) {
-      router.push(`/${storeSlug}`)
-    }
-  }, [isLoading, client, storeSlug, router])
+  // Removido o useEffect que redirecionava usuários não autenticados
 
   const toggleItemExpansion = (itemId: string) => {
     setIsExpanded(prev => ({
@@ -200,6 +196,14 @@ export default function CheckoutPage() {
   }
 
   const handleSubmitOrder = async () => {
+    // Verificar autenticação apenas no momento de finalizar a compra
+    if (!client) {
+      // Redirecionar para login, preservando a intenção de finalizar compra
+      const currentPath = window.location.pathname;
+      router.push(`/auth/login?redirect=${encodeURIComponent(currentPath)}`);
+      return
+    }
+
     setIsSubmitting(true)
     
     // Determinar o nome do bairro e o ID quando necessário
@@ -277,6 +281,50 @@ export default function CheckoutPage() {
     <div className="p-12 bg-gray-200">
       <div className="flex flex-col lg:flex-row gap-8">
         <div className="lg:w-2/3 space-y-6">
+          {/* Card de Status de Autenticação */}
+          {!client && (
+            <Card className="rounded-xs overflow-hidden border hover:shadow-lg transition-shadow duration-300 bg-gradient-to-br from-white to-gray-50">
+              <CardHeader className={`py-4 ${client ? 'bg-green-500' : 'bg-yellow-500'}`}>
+                <CardTitle className="flex items-center gap-2 text-white">
+                  {client ? <CheckCircle2 className="h-5 w-5" /> : <User className="h-5 w-5" />}
+                  <span>{client ? 'Usuário Autenticado' : 'Login Necessário'}</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6">
+                
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Você pode navegar e adicionar itens ao carrinho sem fazer login, mas será necessário se autenticar para finalizar a compra.
+                    </p>
+                    <div className="flex gap-3">
+                      <Button 
+                        variant="outline" 
+                        className="flex items-center gap-2"
+                        onClick={() => {
+                          const currentPath = window.location.pathname;
+                          router.push(`/auth/login?redirect=${encodeURIComponent(currentPath)}`);
+                        }}
+                      >
+                        <LogIn className="h-4 w-4" />
+                        Fazer Login
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        className="flex items-center gap-2"
+                        onClick={() => {
+                          const currentPath = window.location.pathname;
+                          router.push(`/auth/register?redirect=${encodeURIComponent(currentPath)}`);
+                        }}
+                      >
+                        <User className="h-4 w-4" />
+                        Criar Conta
+                      </Button>
+                    </div>
+                  </div>
+                
+              </CardContent>
+            </Card>
+          )}
           <Card className="rounded-xs overflow-hidden border hover:shadow-lg transition-shadow duration-300 bg-gradient-to-br from-white to-gray-50">
             <CardHeader className="py-4 bg-primary">
               <CardTitle className="flex items-center gap-2 text-white">
@@ -735,8 +783,17 @@ export default function CheckoutPage() {
                   </span>
                 ) : (
                   <span className="flex items-center gap-2">
-                    <CheckCircle2 className="h-5 w-5" />
-                    Finalizar pedido
+                    {client ? (
+                      <>
+                        <CheckCircle2 className="h-5 w-5" />
+                        Finalizar pedido
+                      </>
+                    ) : (
+                      <>
+                        <LogIn className="h-5 w-5" />
+                        Fazer login e finalizar
+                      </>
+                    )}
                   </span>
                 )}
               </Button>

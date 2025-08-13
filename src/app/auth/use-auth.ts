@@ -1,43 +1,34 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { clientLogin, clientRegister, fetchShopBySlug } from "./slug-service";
-import { ClientData } from "./types";
+import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { useClient } from "./client-context";
 import { useRouter } from "next/navigation";
+import { authService, AuthResponse } from "@/services/client-service";
+import { useClient } from "@/app/(public)/[slug]/client-context";
 
-export function useShopBySlug(slug: string, options?: { staleTime?: number }) {
-  const { setShop } = useClient();
-  
-  return useQuery({
-    queryKey: ["shop", slug],
-    queryFn: async () => {
-      const data = await fetchShopBySlug(slug);
-      setShop(data);
-      return data;
-    },
-    retry: false,
-    staleTime: options?.staleTime || 1000 * 60 * 60 * 24 // 24 horas por padrão
-  });
+interface ClientData {
+  name: string;
+  email: string;
+  password: string;
+  cellphone: string;
 }
 
 export function useClientRegister() {
   const { setClient } = useClient();
   const router = useRouter();
   const mutation = useMutation({
-    mutationFn: (data: ClientData) => clientRegister(data),
-    onSuccess: (data) => {
+    mutationFn: (data: ClientData) => authService.register({ customer: data }),
+    onSuccess: (data: AuthResponse) => {
       localStorage.setItem("client", JSON.stringify(data.customer));
       localStorage.setItem("client_token", data.token);
-      setClient(data as any);
+      setClient(data.customer);
       toast.success("Conta criada com sucesso");
       
       // Verificar se há redirecionamento via URL params
       const urlParams = new URLSearchParams(window.location.search);
       const redirectTo = urlParams.get('redirect');
       if (redirectTo) {
-        router.push(`/${window.location.pathname.split('/')[1]}/${redirectTo}`);
+        router.push(decodeURIComponent(redirectTo));
       } else {
-        router.back();
+        router.push('/');
       }
     },
     onError: (error: any) => {
@@ -61,20 +52,20 @@ export function useClientLogin() {
   const { setClient } = useClient();
   const router = useRouter();
   const mutation = useMutation({
-    mutationFn: (data: { email: string; password: string }) => clientLogin(data.email, data.password),
-    onSuccess: (data) => {
+    mutationFn: (data: { email: string; password: string }) => authService.login({ customer: data }),
+    onSuccess: (data: AuthResponse) => {
       localStorage.setItem("client", JSON.stringify(data.customer));
       localStorage.setItem("client_token", data.token);
-      setClient(data);
+      setClient(data.customer);
       toast.success("Conta logada com sucesso");
       
       // Verificar se há redirecionamento via URL params
       const urlParams = new URLSearchParams(window.location.search);
       const redirectTo = urlParams.get('redirect');
       if (redirectTo) {
-        router.push(`/${window.location.pathname.split('/')[1]}/${redirectTo}`);
+        router.push(decodeURIComponent(redirectTo));
       } else {
-        router.back();
+        router.push('/');
       }
     },
     onError: (error: any) => {

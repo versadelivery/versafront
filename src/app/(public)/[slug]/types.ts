@@ -94,8 +94,9 @@ export interface CatalogItemStepOption {
 export interface ClientData {
   name: string;
   email: string;
-  password: string;
+  password?: string;
   cellphone: string;
+  avatar_url?: string;
 }
 
 export interface ClientAuthData {

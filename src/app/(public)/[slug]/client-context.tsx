@@ -49,6 +49,7 @@ interface ShopDeliveryConfig {
 interface ClientContextData {
   client: ClientData | null;
   setClient: (client: ClientData | null) => void;
+  logout: () => void;
   isAuthenticated: boolean;
   shop: ShopResponse | null;
   setShop: (shop: ShopResponse | null) => void;
@@ -124,6 +125,16 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
     setIsAuthenticated(!!newClient);
   };
 
+  const handleLogout = () => {
+    // Limpar dados do localStorage
+    localStorage.removeItem("client");
+    localStorage.removeItem("client_token");
+    
+    // Limpar estado
+    setClient(null);
+    setIsAuthenticated(false);
+  };
+
   const handleSetShop = (newShop: ShopResponse | null) => {
     setShop(newShop);
     if (newShop) {
@@ -164,6 +175,7 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
     <ClientContext.Provider value={{ 
       client, 
       setClient: handleSetClient, 
+      logout: handleLogout,
       isAuthenticated,
       shop,
       setShop: handleSetShop,

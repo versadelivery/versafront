@@ -1,6 +1,7 @@
 "use client"
 
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react'
+import { useParams } from 'next/navigation'
 import { CatalogItem } from '../types'
 
 interface CartItem extends CatalogItem {
@@ -20,22 +21,41 @@ interface CartContextType {
   removeItem: (id: string) => void
   updateItemQuantity: (id: string, quantity: number) => void
   clearCart: () => void
+  clearAllCarts: () => void
+  getCurrentShopSlug: () => string
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
 
 export function CartProvider({ children }: { children: ReactNode }) {
+  const params = useParams()
+  const slug = params.slug as string
+
   const [items, setItems] = useState<CartItem[]>(() => {
     if (typeof window !== 'undefined') {
-      const savedCart = localStorage.getItem('cart')
+      const cartKey = `cart_${slug}`
+      const savedCart = localStorage.getItem(cartKey)
       return savedCart ? JSON.parse(savedCart) : []
     }
     return []
   })
 
   useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(items))
-  }, [items])
+    if (slug) {
+      const cartKey = `cart_${slug}`
+      localStorage.setItem(cartKey, JSON.stringify(items))
+    }
+  }, [items, slug])
+
+  // Carregar carrinho quando o slug mudar
+  useEffect(() => {
+    if (slug && typeof window !== 'undefined') {
+      const cartKey = `cart_${slug}`
+      const savedCart = localStorage.getItem(cartKey)
+      const cartData = savedCart ? JSON.parse(savedCart) : []
+      setItems(cartData)
+    }
+  }, [slug])
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0)
   const totalPrice = items.reduce((sum, item) => sum + item.totalPrice, 0)
@@ -85,6 +105,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems([])
   }
 
+  const clearAllCarts = () => {
+    if (typeof window !== 'undefined') {
+      // Remove todos os carrinhos do localStorage
+      const keys = Object.keys(localStorage)
+      keys.forEach(key => {
+        if (key.startsWith('cart_')) {
+          localStorage.removeItem(key)
+        }
+      })
+      setItems([])
+    }
+  }
+
+  const getCurrentShopSlug = () => {
+    return slug || ''
+  }
+
   return (
     <CartContext.Provider
       value={{
@@ -94,7 +131,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
         addItem,
         removeItem,
         updateItemQuantity,
-        clearCart
+        clearCart,
+        clearAllCarts,
+        getCurrentShopSlug
       }}
     >
       {children}

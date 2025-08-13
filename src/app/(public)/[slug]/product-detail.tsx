@@ -116,11 +116,6 @@ export default function ProductModal({ product, trigger }: ProductModalProps) {
   };
 
   const handleAddToCart = () => {
-    if (!client) {
-      router.push(`/${slug as string}/auth`);
-      return; 
-    }
-
     const cartItem = {
       ...product,
       quantity,
@@ -171,10 +166,6 @@ export default function ProductModal({ product, trigger }: ProductModalProps) {
   };
 
   const startCustomization = () => {
-    if (!client) {
-      router.push(`/${slug as string}/auth`);
-      return;
-    }
     setCurrentStep(stepsAvailable[0]);
   };
 

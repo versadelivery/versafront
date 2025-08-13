@@ -28,7 +28,7 @@ export const removeToken = (): void => {
   localStorage.clear()
 }
 
-// export const removeUser = (): void => {
-//   if (typeof window === 'undefined') return
-//   localStorage.removeItem(USER_KEY)
-// }
+export const removeUser = (): void => {
+  if (typeof window === 'undefined') return
+  localStorage.removeItem(USER_KEY)
+}
