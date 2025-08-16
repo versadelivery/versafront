@@ -5,14 +5,15 @@ import StoreHeader from './components/store-header';
 import ClientStoreContent from './client-store-content';
 
 interface Props {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
 // Generate metadata for SEO
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const shop = await fetchShopBySlugServer(params.slug);
+  const { slug } = await params;
+  const shop = await fetchShopBySlugServer(slug);
   
   if (!shop) {
     return {
@@ -31,7 +32,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: `${shopData.name} - Catálogo Online`,
       description: defaultDescription,
       images: shopData.image_url ? [shopData.image_url] : [],
-      url: `${process.env.NEXT_PUBLIC_SHOP_DOMAIN}/${params.slug}`,
+      url: `${process.env.NEXT_PUBLIC_SHOP_DOMAIN}/${slug}`,
       type: 'website',
     },
     twitter: {
@@ -48,7 +49,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function StoreCatalog({ params }: Props) {
-  const shop = await fetchShopBySlugServer(params.slug);
+  const { slug } = await params;
+  const shop = await fetchShopBySlugServer(slug);
 
   if (!shop) {
     notFound();

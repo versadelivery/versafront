@@ -1,4 +1,5 @@
 import api from "@/api/config";
+import { prepareScheduleForAPI } from "@/utils/time";
 
 export interface DaySchedule {
   active: boolean;
@@ -51,7 +52,12 @@ export const scheduleService = {
 
   // Atualizar configuração de horário
   updateSchedule: async (data: UpdateScheduleRequest): Promise<ScheduleResponse> => {
-    const response = await api.put('/shop_schedule_configs', data);
+    // Normaliza os horários antes de enviar para a API
+    const normalizedData = {
+      shop_schedule_config: prepareScheduleForAPI(data.shop_schedule_config)
+    };
+    
+    const response = await api.put('/shop_schedule_configs', normalizedData);
     return response.data;
   }
 };
