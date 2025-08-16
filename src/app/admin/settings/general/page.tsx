@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { useShop } from "@/hooks/use-shop";
 import { ShopAttributes } from "@/services/shop";
 import AdminHeader from "@/components/admin/catalog-header";
+import ScheduleSettings from "./components/ScheduleSettings";
 
 export default function GeneralSettingsPage() {
   const { shop, isLoading, updateShop, isUpdating } = useShop();
@@ -206,6 +207,16 @@ export default function GeneralSettingsPage() {
                   </div>
                 </div>
               </div>
+            </div>
+
+            <Separator className="my-6 bg-gray-200 dark:bg-gray-800" />
+
+            {/* Seção de Horário de Funcionamento */}
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold text-foreground">
+                Horário de Funcionamento
+              </h3>
+              <ScheduleSettings />
             </div>
 
             <Separator className="my-6 bg-gray-200 dark:bg-gray-800" />
