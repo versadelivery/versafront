@@ -41,9 +41,16 @@ export function Header() {
                   <Button
                     variant="ghost"
                     className="font-outfit justify-start text-black hover:bg-black/10"
-                    onClick={() => router.push("/admin/dashboard")}
+                    onClick={() => router.push("/admin")}
                   >
                     Dashboard
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="font-outfit justify-start text-black hover:bg-black/10"
+                    onClick={() => router.push("/admin/pdv")}
+                  >
+                    PDV
                   </Button>
                   <Button
                     variant="ghost"
@@ -55,7 +62,7 @@ export function Header() {
                   <Button
                     variant="ghost"
                     className="font-outfit justify-start text-black hover:bg-black/10"
-                    onClick={() => router.push("/admin/orders")}
+                    onClick={() => router.push("/admin/pedidos")}
                   >
                     Pedidos
                   </Button>
@@ -72,6 +79,45 @@ export function Header() {
             <Link href="/admin" className="hidden md:block">
               <Image src={logo_inline} alt="Logo" width={190} height={190} />
             </Link>
+            
+            {/* Menu Desktop */}
+            <nav className="hidden md:flex items-center gap-6 ml-8">
+              <Button
+                variant="ghost"
+                className="font-outfit text-black hover:bg-black/10"
+                onClick={() => router.push("/admin")}
+              >
+                Dashboard
+              </Button>
+              <Button
+                variant="ghost"
+                className="font-outfit text-black hover:bg-black/10"
+                onClick={() => router.push("/admin/pdv")}
+              >
+                PDV
+              </Button>
+              <Button
+                variant="ghost"
+                className="font-outfit text-black hover:bg-black/10"
+                onClick={() => router.push("/admin/catalogo")}
+              >
+                Catálogo
+              </Button>
+              <Button
+                variant="ghost"
+                className="font-outfit text-black hover:bg-black/10"
+                onClick={() => router.push("/admin/pedidos")}
+              >
+                Pedidos
+              </Button>
+              <Button
+                variant="ghost"
+                className="font-outfit text-black hover:bg-black/10"
+                onClick={() => router.push("/admin/settings")}
+              >
+                Configurações
+              </Button>
+            </nav>
           </div>
 
           <div className="flex items-center gap-12">

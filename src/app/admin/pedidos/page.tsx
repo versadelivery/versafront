@@ -232,6 +232,24 @@ export default function OrderManagement() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Cabeçalho com botão PDV */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-[1920px] mx-auto p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Gerenciamento de Pedidos</h1>
+              <p className="text-gray-600">Visualize e gerencie todos os pedidos da sua loja</p>
+            </div>
+            <Button
+              onClick={() => window.location.href = '/admin/pdv'}
+              className="flex items-center gap-2 bg-primary hover:bg-primary/90"
+            >
+              <SquarePen className="h-4 w-4" />
+              Novo Pedido (PDV)
+            </Button>
+          </div>
+        </div>
+      </div>
 
       <div className="max-w-[1920px] mx-auto p-6">
         {isMobile ? (
