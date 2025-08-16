@@ -13,7 +13,7 @@ export const createOrder = async (data: CreateOrderRequest) => {
   } catch (error) {
     console.error('Erro ao criar pedido:', error);
     toast.error("Erro ao criar pedido");
-    return null;
+    throw error; // Lança o erro em vez de retornar null
   }
 };
 

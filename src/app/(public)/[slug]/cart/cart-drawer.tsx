@@ -1,6 +1,6 @@
 "use client"
 
-import { X, ShoppingCart, Scale, Utensils } from 'lucide-react'
+import { X, ShoppingCart, Scale, Utensils, Clock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer'
 import { useCart } from './cart-context'
@@ -12,6 +12,8 @@ import { CartButton } from './cart-button'
 import { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { CatalogItem } from '../types'
+import { useShopStatusContext } from '@/contexts/ShopStatusContext'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 interface CartItem extends CatalogItem {
   quantity: number
@@ -31,12 +33,17 @@ export function CartDrawer() {
     updateItemQuantity,
     clearCart
   } = useCart()
+  const { isOpen: isShopOpen, loading: shopStatusLoading } = useShopStatusContext()
   const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
   const params = useParams()
   const slug = params.slug as string
 
   const handleCheckout = () => {
+    if (!isShopOpen) {
+      // Não permite checkout quando fechado
+      return
+    }
     router.push(`/${slug}/conferir`)
   }
 
@@ -242,6 +249,15 @@ export function CartDrawer() {
                   <span className="font-bold">{formatPrice(totalPrice)}</span>
                 </div>
                 
+                {!isShopOpen && !shopStatusLoading && (
+                  <Alert className="mb-4 border-amber-200 bg-amber-50">
+                    <Clock className="h-4 w-4 text-amber-600" />
+                    <AlertDescription className="text-amber-800">
+                      Loja fechada no momento. Você pode adicionar itens ao carrinho, mas não pode finalizar a compra.
+                    </AlertDescription>
+                  </Alert>
+                )}
+                
                 <div className="flex gap-2">
                   <Button 
                     variant="outline" 
@@ -253,8 +269,9 @@ export function CartDrawer() {
                   <Button 
                     className="flex-1" 
                     onClick={handleCheckout}
+                    disabled={!isShopOpen || shopStatusLoading}
                   >
-                    Finalizar Compra
+                    {!isShopOpen && !shopStatusLoading ? 'Loja Fechada' : 'Finalizar Compra'}
                   </Button>
                 </div>
               </div>

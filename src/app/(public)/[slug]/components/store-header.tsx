@@ -1,13 +1,14 @@
 "use client"
 
 import { useClient } from "../client-context";
-import { Package, Store } from 'lucide-react';
+import { Package, Store, Clock, Phone, MapPin, CheckCircle, XCircle } from 'lucide-react';
 import Image from 'next/image';
 import { CartDrawer } from '../cart/cart-drawer';
 import { motion } from 'framer-motion';
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import AuthIndicator from './auth-indicator';
+import ShopStatus from './shop-status';
 
 interface StoreHeaderProps {
   shop: any;
@@ -81,9 +82,9 @@ export default function StoreHeader({ shop }: StoreHeaderProps) {
             <Store className="w-12 h-12 sm:w-14 sm:h-14 text-white" />
           </motion.div>
           
-          <div className="text-center sm:text-left">
+          <div className="text-center sm:text-left flex-1">
             <motion.h1 
-              className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-2"
+              className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-4"
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.4, duration: 0.5 }}
@@ -91,18 +92,49 @@ export default function StoreHeader({ shop }: StoreHeaderProps) {
               {shop.attributes.name}
             </motion.h1>
             
+            {/* Status da Loja */}
             <motion.div 
-              className="flex items-center justify-center sm:justify-start gap-2 text-white/90"
+              className="flex items-center justify-center sm:justify-start mb-3"
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.5, duration: 0.5 }}
             >
+              <ShopStatus />
+            </motion.div>
+
+            {/* Informações de Contato */}
+            <motion.div 
+              className="flex flex-col sm:flex-row items-center sm:items-start gap-3 text-white/90"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.7, duration: 0.5 }}
+            >
               {shop.attributes.cellphone && (
-                <div className="flex items-center">
-                  <span className="text-base sm:text-lg">{shop.attributes.cellphone}</span>
+                <div className="flex items-center gap-2">
+                  <Phone className="w-4 h-4" />
+                  <span className="text-sm">{shop.attributes.cellphone}</span>
+                </div>
+              )}
+
+              {shop.attributes.address && (
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4" />
+                  <span className="text-sm">{shop.attributes.address}</span>
                 </div>
               )}
             </motion.div>
+
+            {/* Descrição da Loja */}
+            {shop.attributes.description && (
+              <motion.div 
+                className="mt-3 text-white/80"
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.8, duration: 0.5 }}
+              >
+                <p className="text-sm max-w-2xl">{shop.attributes.description}</p>
+              </motion.div>
+            )}
           </div>
         </div>
       </motion.div>

@@ -1,6 +1,6 @@
 "use client"
 
-import { MapPin, CreditCard, Wallet, QrCode, Truck, ChevronDown, ChevronUp, Plus, Minus, X, CheckCircle2, Package, Store, Timer, User, LogIn } from 'lucide-react'
+import { MapPin, CreditCard, Wallet, QrCode, Truck, ChevronDown, ChevronUp, Plus, Minus, X, CheckCircle2, Package, Store, Timer, User, LogIn, Clock, AlertTriangle, ChevronLeft, ShoppingCart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useCart } from '../cart/cart-context'
 import { useParams, useRouter } from 'next/navigation'
 import { useClient } from '../client-context'
@@ -16,6 +17,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { CreateOrderRequest, Order } from '@/types/order'
 import { createOrder } from '@/services/order-service'
 import { useShopBySlug } from '../use-slug'
+import { useShopStatusContext } from '@/contexts/ShopStatusContext'
 
 type DeliveryOption = 'delivery' | 'pickup'
 
@@ -56,6 +58,7 @@ export default function CheckoutPage() {
   const params = useParams()
   const storeSlug = params.slug as string
   const { client } = useClient()
+  const { isOpen: isShopOpen, loading: shopStatusLoading } = useShopStatusContext()
 
   // Buscar dados da loja em tempo real usando o slug
   const { data: shopData, isLoading: isLoadingShop } = useShopBySlug(storeSlug, { 
@@ -83,6 +86,7 @@ export default function CheckoutPage() {
   const [selectedNeighborhood, setSelectedNeighborhood] = useState<string>('')
   const [order, setOrder] = useState<Order | null>(null)
   const [itemObservations, setItemObservations] = useState<Record<string, string>>({})
+  const [shouldAutoSubmitAfterLogin, setShouldAutoSubmitAfterLogin] = useState(false)
   
   // Extrair configurações da loja dos dados buscados em tempo real
   const shopDeliveryConfig = shopData?.data?.attributes?.shop_delivery_config?.data?.attributes || null
@@ -146,6 +150,17 @@ export default function CheckoutPage() {
     setIsExpanded(expandedState)
   }, [items])
 
+  // UseEffect para auto-submit após login
+  useEffect(() => {
+    if (client && shouldAutoSubmitAfterLogin) {
+      setShouldAutoSubmitAfterLogin(false)
+      // Pequeno delay para garantir que o estado foi atualizado
+      setTimeout(() => {
+        handleSubmitOrder()
+      }, 100)
+    }
+  }, [client, shouldAutoSubmitAfterLogin])
+
   // Removido o useEffect que redirecionava usuários não autenticados
 
   const toggleItemExpansion = (itemId: string) => {
@@ -196,8 +211,16 @@ export default function CheckoutPage() {
   }
 
   const handleSubmitOrder = async () => {
+    // Verificar se a loja está aberta
+    if (!isShopOpen || shopStatusLoading) {
+      console.log('Tentativa de finalizar pedido com loja fechada')
+      return
+    }
+
     // Verificar autenticação apenas no momento de finalizar a compra
     if (!client) {
+      // Definir flag para auto-submit após login
+      setShouldAutoSubmitAfterLogin(true)
       // Redirecionar para login, preservando a intenção de finalizar compra
       const currentPath = window.location.pathname;
       router.push(`/auth/login?redirect=${encodeURIComponent(currentPath)}`);
@@ -271,7 +294,16 @@ export default function CheckoutPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-slate-600">Adicione itens ao carrinho para continuar</p>
+          <ShoppingCart className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Seu carrinho está vazio</h3>
+          <p className="text-slate-600 mb-6">Adicione itens ao carrinho para continuar</p>
+          <Button 
+            onClick={() => router.push(`/${storeSlug}`)}
+            className="flex items-center gap-2"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Continuar Comprando
+          </Button>
         </div>
       </div>
     )
@@ -279,8 +311,34 @@ export default function CheckoutPage() {
 
   return (
     <div className="p-12 bg-gray-200">
+      {/* Cabeçalho com botão voltar */}
+      <div className="mb-8">
+        <div className="flex items-center gap-4 mb-4">
+          <Button 
+            variant="outline" 
+            onClick={() => router.push(`/${storeSlug}`)}
+            className="flex items-center gap-2"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Voltar ao Catálogo
+          </Button>
+        </div>
+        <h1 className="text-2xl font-bold text-gray-900">Conferir Pedido</h1>
+        <p className="text-gray-600 mt-1">Revise seu pedido e finalize a compra</p>
+      </div>
+
       <div className="flex flex-col lg:flex-row gap-8">
         <div className="lg:w-2/3 space-y-6">
+          {/* Alerta de Loja Fechada */}
+          {!isShopOpen && !shopStatusLoading && (
+            <Alert className="border-red-200 bg-red-50">
+              <AlertTriangle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-800">
+                <strong>Loja fechada no momento.</strong> Você pode revisar seu carrinho, mas não pode finalizar a compra enquanto a loja estiver fechada.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Card de Status de Autenticação */}
           {!client && (
             <Card className="rounded-xs overflow-hidden border hover:shadow-lg transition-shadow duration-300 bg-gradient-to-br from-white to-gray-50">
@@ -301,6 +359,7 @@ export default function CheckoutPage() {
                         variant="outline" 
                         className="flex items-center gap-2"
                         onClick={() => {
+                          setShouldAutoSubmitAfterLogin(true)
                           const currentPath = window.location.pathname;
                           router.push(`/auth/login?redirect=${encodeURIComponent(currentPath)}`);
                         }}
@@ -774,12 +833,17 @@ export default function CheckoutPage() {
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-all duration-300 rounded-xs" 
                 size="lg"
                 onClick={handleSubmitOrder}
-                disabled={isSubmitting || (deliveryOption === 'delivery' && !address.trim())}
+                disabled={isSubmitting || (deliveryOption === 'delivery' && !address.trim()) || !isShopOpen || shopStatusLoading}
               >
                 {isSubmitting ? (
                   <span className="flex items-center gap-2">
                     <span className="h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></span>
                     Finalizando...
+                  </span>
+                ) : !isShopOpen && !shopStatusLoading ? (
+                  <span className="flex items-center gap-2">
+                    <Clock className="h-5 w-5" />
+                    Loja Fechada
                   </span>
                 ) : (
                   <span className="flex items-center gap-2">
