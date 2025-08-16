@@ -20,13 +20,15 @@ export function useSchedule() {
   // Função para extrair apenas a hora de um timestamp
   const extractTime = (timeString: string | null): string => {
     if (!timeString) return "00:00";
-    
     try {
       const date = new Date(timeString);
-      const hours = date.getUTCHours().toString().padStart(2, '0');
-      const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+      // Usa getHours() e getMinutes() em vez de getUTCHours() para respeitar o timezone local
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      console.log(`Original: ${timeString} -> Extracted time: ${hours}:${minutes}`);
       return `${hours}:${minutes}`;
     } catch (error) {
+      console.error('Erro ao extrair hora:', error);
       // Se não conseguir fazer parse, assume que já está no formato HH:MM
       return timeString.includes(':') ? timeString : "00:00";
     }
@@ -34,7 +36,9 @@ export function useSchedule() {
 
   // Função para converter os dados da API para o formato do componente
   const apiToSchedule = (data: ShopScheduleConfig): WeekSchedule => {
-    return {
+    console.log('Convertendo dados da API:', data);
+    
+    const schedule = {
       sunday: {
         active: data.attributes.sunday_active || false,
         open: extractTime(data.attributes.sunday_open),
@@ -71,32 +75,42 @@ export function useSchedule() {
         close: extractTime(data.attributes.saturday_close)
       }
     };
+    
+    console.log('Schedule convertido:', schedule);
+    return schedule;
   };
 
   // Função para converter do formato do componente para a API
   const scheduleToApi = (schedule: WeekSchedule) => {
+    // Função auxiliar para formatar horário como HH:MM
+    const formatTime = (time: string): string => {
+      if (!time || !time.includes(':')) return "00:00";
+      const [hours, minutes] = time.split(':');
+      return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
+    };
+
     return {
       sunday_active: schedule.sunday.active,
-      sunday_open: schedule.sunday.open,
-      sunday_close: schedule.sunday.close,
+      sunday_open: formatTime(schedule.sunday.open),
+      sunday_close: formatTime(schedule.sunday.close),
       monday_active: schedule.monday.active,
-      monday_open: schedule.monday.open,
-      monday_close: schedule.monday.close,
+      monday_open: formatTime(schedule.monday.open),
+      monday_close: formatTime(schedule.monday.close),
       tuesday_active: schedule.tuesday.active,
-      tuesday_open: schedule.tuesday.open,
-      tuesday_close: schedule.tuesday.close,
+      tuesday_open: formatTime(schedule.tuesday.open),
+      tuesday_close: formatTime(schedule.tuesday.close),
       wednesday_active: schedule.wednesday.active,
-      wednesday_open: schedule.wednesday.open,
-      wednesday_close: schedule.wednesday.close,
+      wednesday_open: formatTime(schedule.wednesday.open),
+      wednesday_close: formatTime(schedule.wednesday.close),
       thursday_active: schedule.thursday.active,
-      thursday_open: schedule.thursday.open,
-      thursday_close: schedule.thursday.close,
+      thursday_open: formatTime(schedule.thursday.open),
+      thursday_close: formatTime(schedule.thursday.close),
       friday_active: schedule.friday.active,
-      friday_open: schedule.friday.open,
-      friday_close: schedule.friday.close,
+      friday_open: formatTime(schedule.friday.open),
+      friday_close: formatTime(schedule.friday.close),
       saturday_active: schedule.saturday.active,
-      saturday_open: schedule.saturday.open,
-      saturday_close: schedule.saturday.close,
+      saturday_open: formatTime(schedule.saturday.open),
+      saturday_close: formatTime(schedule.saturday.close),
     };
   };
 
@@ -108,7 +122,7 @@ export function useSchedule() {
       const response = await scheduleService.getSchedule();
       console.log('Raw API response:', response.data);
       const scheduleData = apiToSchedule(response.data);
-      console.log('Processed schedule data:', scheduleData);
+      console.log('Final schedule data:', scheduleData);
       setSchedule(scheduleData);
     } catch (err: any) {
       setError(err.message || 'Erro ao carregar horários');

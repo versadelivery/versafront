@@ -37,7 +37,7 @@ export function Header() {
                     <Image src={logo_inline} alt="Logo" width={120} height={120} />
                   </Link>
                 </SheetHeader>
-                <nav className="flex flex-col gap-4 mt-8">
+                {/* <nav className="flex flex-col gap-4 mt-8">
                   <Button
                     variant="ghost"
                     className="font-outfit justify-start text-black hover:bg-black/10"
@@ -73,7 +73,7 @@ export function Header() {
                   >
                     Configurações
                   </Button>
-                </nav>
+                </nav> */}
               </SheetContent>
             </Sheet>
             <Link href="/admin" className="hidden md:block">
@@ -81,7 +81,7 @@ export function Header() {
             </Link>
             
             {/* Menu Desktop */}
-            <nav className="hidden md:flex items-center gap-6 ml-8">
+            {/* <nav className="hidden md:flex items-center gap-6 ml-8">
               <Button
                 variant="ghost"
                 className="font-outfit text-black hover:bg-black/10"
@@ -117,7 +117,7 @@ export function Header() {
               >
                 Configurações
               </Button>
-            </nav>
+            </nav> */}
           </div>
 
           <div className="flex items-center gap-12">
