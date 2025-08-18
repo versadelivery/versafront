@@ -38,7 +38,7 @@ export const dashboardCards = [
     iconBgColor: "bg-purple-500"
   },
   {
-    href: "#suporte",
+    href: "/admin/suporte",
     icon: Headset,
     title: "Suporte",
     description: "Área de atendimento e auxílio ao lojista",
