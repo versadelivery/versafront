@@ -27,8 +27,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import React, { useState, useEffect } from "react";
-import { useActionCable } from "@/lib/cable";
-import { ActionCableOrderData } from "@/types/order";
+import { useClientActionCable, ClientOrderData } from "@/lib/client-cable";
 
 const getStatusInfo = (status: string) => {
   const statusMap = {
@@ -98,22 +97,22 @@ const formatDate = (dateString: string) => {
 export default function OrderDetailsPage({ params }: { params: Promise<{ slug: string, id: string }> }) {
   const router = useRouter();
   const { id } = React.use(params);
-  const { subscribeToOrder, disconnect, isConnected } = useActionCable();
+  const { subscribeToOrder, disconnect, isConnected } = useClientActionCable(id);
   const [connectionStatus, setConnectionStatus] = useState<string>('Conectando...');
-  const [orderData, setOrderData] = useState<ActionCableOrderData | null>(null);
+  const [orderData, setOrderData] = useState<ClientOrderData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
 
-    const handleOrderData = (data: ActionCableOrderData) => {
+    const handleOrderData = (data: ClientOrderData) => {
       setOrderData(data);
       setIsLoading(false);
       setError(null);
     };
 
-    const unsubscribe = subscribeToOrder(id, handleOrderData);
+    const unsubscribe = subscribeToOrder(handleOrderData);
 
     return () => {
       if (unsubscribe) {

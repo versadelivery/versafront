@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -147,8 +147,9 @@ export default function OrderManagement() {
   });
   const [isMobile, setIsMobile] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const isUpdatingRef = useRef<Record<string, boolean>>({});
 
-  const { subscribeToAdminOrders, isConnected } = useAdminActionCable();
+  const { subscribeToAdminOrders, updateOrder, isConnected } = useAdminActionCable();
 
   useEffect(() => {
     const checkMobile = () => {
@@ -162,7 +163,26 @@ export default function OrderManagement() {
 
   useEffect(() => {
     const unsubscribe = subscribeToAdminOrders((socketOrders: AdminOrderData[]) => {
+      console.log('📥 Dados recebidos do WebSocket:', socketOrders.length, 'pedidos');
+      
+      // Verificar se algum pedido está sendo atualizado no momento
+      const hasUpdatingOrders = Object.keys(isUpdatingRef.current).some(
+        orderId => isUpdatingRef.current[orderId]
+      );
+      
+      if (hasUpdatingOrders) {
+        console.log('⏳ Ignorando atualização do WebSocket - pedidos sendo atualizados localmente');
+        // Aplicar atualização com delay para não conflitar com otimistic update
+        setTimeout(() => {
+          const convertedOrders = socketOrders.map(convertSocketDataToOrder);
+          console.log('🔄 Aplicando dados do WebSocket aos pedidos (com delay)');
+          setOrders(convertedOrders);
+        }, 3000); // 3 segundos de delay
+        return;
+      }
+      
       const convertedOrders = socketOrders.map(convertSocketDataToOrder);
+      console.log('🔄 Aplicando dados do WebSocket aos pedidos');
       setOrders(convertedOrders);
       setIsLoading(false);
     });
@@ -176,30 +196,130 @@ export default function OrderManagement() {
       unsubscribe();
       clearTimeout(timeout);
     };
-  }, [subscribeToAdminOrders]);
+  }, []); // Remover dependência subscribeToAdminOrders
 
-  const updateOrderStatus = (orderId: string, newStatus: Order['status']) => {
-    setOrders(orders.map(order => 
-      order.id === orderId 
-        ? { 
-            ...order, 
-            status: newStatus,
-            readyTime: newStatus === 'prontos' ? new Date().toLocaleTimeString() : order.readyTime
-          }
-        : order
-    ));
-  };
+  const updateOrderStatus = useCallback(async (orderId: string, newStatus: Order['status']) => {
+    console.log('🚀 Iniciando atualização de status:', orderId, newStatus);
+    
+    // Verificar se já está atualizando
+    if (isUpdatingRef.current[orderId]) {
+      console.log('⏳ Já está atualizando o pedido:', orderId);
+      return;
+    }
 
-  const togglePaymentStatus = (orderId: string) => {
-    setOrders(orders.map(order => 
-      order.id === orderId 
-        ? { ...order, paymentStatus: order.paymentStatus === 'pending' ? 'paid' : 'pending' }
-        : order
-    ));
-  };
+    // Marcar como atualizando
+    isUpdatingRef.current[orderId] = true;
+
+    // Mapear status do frontend para o backend
+    const statusMap: Record<Order['status'], string> = {
+      'recebidos': 'received',
+      'aceitos': 'accepted',
+      'em_analise': 'in_analysis',
+      'em_preparo': 'in_preparation',
+      'prontos': 'ready'
+    };
+
+    const backendStatus = statusMap[newStatus];
+    
+    // Primeiro atualizar o estado local de forma otimista
+    setOrders((prevOrders: Order[]) => {
+      return prevOrders.map((order: Order) => 
+        order.id === orderId 
+          ? { 
+              ...order, 
+              status: newStatus,
+              readyTime: newStatus === 'prontos' ? new Date().toLocaleTimeString() : order.readyTime
+            }
+          : order
+      );
+    });
+
+    try {
+      // Enviar via websocket e aguardar resposta
+      const success = await updateOrder(orderId, backendStatus);
+      
+      if (success) {
+        console.log('✅ Atualização confirmada pelo backend:', orderId, backendStatus);
+      } else {
+        console.log('❌ Falha confirmada pelo backend, revertendo:', orderId);
+        // Reverter atualização otimista em caso de falha
+        setOrders((prevOrders: Order[]) => {
+          return prevOrders.map((order: Order) => 
+            order.id === orderId 
+              ? { ...order, status: 'recebidos' } // Reverter para estado inicial
+              : order
+          );
+        });
+      }
+    } catch (error) {
+      console.error('❌ Erro ao atualizar status do pedido:', error);
+      // Reverter atualização otimista em caso de erro
+      setOrders((prevOrders: Order[]) => {
+        return prevOrders.map((order: Order) => 
+          order.id === orderId 
+            ? { ...order, status: 'recebidos' } // Reverter para estado inicial
+            : order
+        );
+      });
+    } finally {
+      // Sempre limpar a flag após 2 segundos (dar tempo para o websocket responder)
+      setTimeout(() => {
+        console.log(`🔓 Limpando flag de atualização para pedido ${orderId}`);
+        delete isUpdatingRef.current[orderId];
+      }, 2000);
+    }
+  }, [updateOrder]);
+
+  const togglePaymentStatus = useCallback((orderId: string) => {
+    // Evitar múltiplas execuções usando ref
+    if (isUpdatingRef.current[orderId]) {
+      console.log('Já está atualizando pagamento do pedido:', orderId);
+      return;
+    }
+
+    console.log('Iniciando toggle de pagamento:', orderId);
+    isUpdatingRef.current[orderId] = true;
+
+    // Encontrar pedido atual e determinar novo status
+    let newPaymentStatus: 'pending' | 'paid' = 'pending';
+    
+    setOrders((prevOrders: Order[]) => {
+      const currentOrder = prevOrders.find((order: Order) => order.id === orderId);
+      if (!currentOrder) {
+        console.error('Pedido não encontrado:', orderId);
+        isUpdatingRef.current[orderId] = false;
+        return prevOrders;
+      }
+
+      newPaymentStatus = currentOrder.paymentStatus === 'pending' ? 'paid' : 'pending';
+      
+      // Atualizar estado local de forma otimista
+      const updatedOrders = prevOrders.map((order: Order) => 
+        order.id === orderId 
+          ? { ...order, paymentStatus: newPaymentStatus }
+          : order
+      );
+
+      // Enviar via websocket após atualizar estado
+      try {
+        updateOrder(orderId, undefined, newPaymentStatus === 'paid');
+        console.log('Toggle de pagamento enviado via websocket:', orderId, newPaymentStatus);
+      } catch (error) {
+        console.error('Erro ao atualizar status de pagamento:', error);
+      }
+
+      return updatedOrders;
+    });
+
+    // Liberar o lock após um delay
+    setTimeout(() => {
+      isUpdatingRef.current[orderId] = false;
+      console.log('Lock de pagamento liberado para pedido:', orderId);
+    }, 2000);
+  }, [updateOrder]);
 
   const updateDeliveryPerson = (orderId: string, deliveryPerson: string) => {
-    setOrders(orders.map(order => 
+    setOrders(orders.map((order: Order) => 
       order.id === orderId 
         ? { ...order, deliveryPerson }
         : order
@@ -207,17 +327,17 @@ export default function OrderManagement() {
   };
 
   const toggleColumn = (status: string) => {
-    setExpandedColumns(prev => ({
+    setExpandedColumns((prev: Record<string, boolean>) => ({
       ...prev,
       [status]: !prev[status]
     }));
   };
 
   const getOrdersByStatus = (status: Order['status']) => {
-    return orders.filter(order => order.status === status);
+    return orders.filter((order: Order) => order.status === status);
   };
 
-  const selectedOrder = orders.find(order => order.id === selectedOrderId);
+  const selectedOrder = orders.find((order: Order) => order.id === selectedOrderId);
 
   if (isLoading) {
     return (
