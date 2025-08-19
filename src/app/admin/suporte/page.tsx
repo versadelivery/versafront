@@ -109,8 +109,8 @@ export default function SupportPage() {
               {/* WhatsApp Contact */}
               <div className="p-4 border rounded-lg hover:shadow-md transition-all">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="bg-green-500 p-2 rounded-lg">
-                    <MessageCircle className="w-5 h-5 text-white" />
+                  <div className="bg-[#64B161] p-2 rounded-lg">
+                    <img src="/whatsapp.svg" className="w-5 h-5 text-white" alt="WhatsApp" />
                   </div>
                   <div>
                     <h3 className="font-semibold">WhatsApp</h3>
@@ -120,7 +120,7 @@ export default function SupportPage() {
                 <p className="font-medium text-lg mb-3">{phoneNumber}</p>
                 <Button 
                   variant="outline" 
-                  className="w-full border-green-500 text-green-500 hover:bg-green-50"
+                  className="w-full border-[#64B161] text-[#64B161] hover:bg-green-50"
                   onClick={() => window.open(`https://wa.me/${phoneNumber.replace(/\D/g, '')}`)}
                 >
                   <MessageCircle className="w-4 h-4 mr-2" />
