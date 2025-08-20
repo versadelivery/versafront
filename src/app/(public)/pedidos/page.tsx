@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { formatCurrency } from "@/lib/utils";
 import { getCustomerOrders } from "@/services/order-service";
 import { CustomerOrder } from "@/types/order";
+import { useCustomerOrdersWebSocket } from "@/hooks/use-customer-orders-websocket";
 import { 
   Package, 
   Clock, 
@@ -20,7 +21,9 @@ import {
   ArrowRight,
   Calendar,
   MapPin,
-  ShoppingBag
+  ShoppingBag,
+  ChefHat,
+  Eye
 } from "lucide-react";
 
 const getPaymentMethodInfo = (method: string) => {
@@ -43,14 +46,15 @@ const formatDate = (dateString: string) => {
 
 const getStatusInfo = (status: string) => {
   const statusMap = {
-    received: { label: "Recebido", color: "bg-blue-100 text-blue-800" },
-    in_analysis: { label: "Em Análise", color: "bg-yellow-100 text-yellow-800" },
-    preparing: { label: "Preparando", color: "bg-orange-100 text-orange-800" },
-    ready: { label: "Pronto", color: "bg-green-100 text-green-800" },
-    delivered: { label: "Entregue", color: "bg-green-100 text-green-800" },
-    cancelled: { label: "Cancelado", color: "bg-red-100 text-red-800" }
+    received: { label: "Recebido", color: "bg-blue-100 text-blue-800", icon: <Clock className="w-4 h-4" /> },
+    accepted: { label: "Aceito", color: "bg-green-100 text-green-800", icon: <CheckCircle2 className="w-4 h-4" /> },
+    in_analysis: { label: "Em Análise", color: "bg-yellow-100 text-yellow-800", icon: <Eye className="w-4 h-4" /> },
+    in_preparation: { label: "Preparando", color: "bg-orange-100 text-orange-800", icon: <ChefHat className="w-4 h-4" /> },
+    ready: { label: "Pronto", color: "bg-emerald-100 text-emerald-800", icon: <Package className="w-4 h-4" /> },
+    delivered: { label: "Entregue", color: "bg-green-100 text-green-800", icon: <CheckCircle2 className="w-4 h-4" /> },
+    cancelled: { label: "Cancelado", color: "bg-red-100 text-red-800", icon: <Package className="w-4 h-4" /> }
   };
-  return statusMap[status as keyof typeof statusMap] || { label: status, color: "bg-gray-100 text-gray-800" };
+  return statusMap[status as keyof typeof statusMap] || { label: status, color: "bg-gray-100 text-gray-800", icon: <Clock className="w-4 h-4" /> };
 };
 
 export default function OrdersPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -58,8 +62,10 @@ export default function OrdersPage({ params }: { params: Promise<{ slug: string 
   const { slug } = React.use(params);
   const [orders, setOrders] = useState<CustomerOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const { subscribeToOrders, isLoading: wsLoading } = useCustomerOrdersWebSocket();
 
   useEffect(() => {
+    // Fallback HTTP call caso o WebSocket não funcione
     const fetchOrders = async () => {
       try {
         const response = await getCustomerOrders();
@@ -73,10 +79,31 @@ export default function OrdersPage({ params }: { params: Promise<{ slug: string 
       }
     };
 
-    fetchOrders();
-  }, []);
+    // Primeira tentativa de conexão WebSocket
+    const unsubscribe = subscribeToOrders((wsOrders: CustomerOrder[]) => {
+      console.log('📦 Pedidos recebidos via WebSocket:', wsOrders.length);
+      setOrders(wsOrders);
+      setLoading(false);
+    });
 
-  if (loading) {
+    // Timeout fallback para HTTP se WebSocket demorar muito
+    const fallbackTimeout = setTimeout(() => {
+      if (wsLoading) {
+        console.log('WebSocket demorou, fazendo fallback para HTTP');
+        fetchOrders();
+      }
+    }, 5000);
+
+    return () => {
+      unsubscribe();
+      clearTimeout(fallbackTimeout);
+    };
+  }, [subscribeToOrders, wsLoading]);
+
+  // Use loading do WebSocket se disponível, senão use loading do HTTP
+  const isLoading = wsLoading || loading;
+
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="container mx-auto px-6 py-12">
@@ -117,7 +144,8 @@ export default function OrdersPage({ params }: { params: Promise<{ slug: string 
                         <div>
                           <div className="flex items-center gap-3 mb-2">
                             <h3 className="text-2xl font-bold text-slate-900">#{order.attributes.id}</h3>
-                            <Badge className={statusInfo.color}>
+                            <Badge className={`${statusInfo.color} flex items-center gap-1`}>
+                              {statusInfo.icon}
                               {statusInfo.label}
                             </Badge>
                           </div>

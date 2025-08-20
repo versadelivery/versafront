@@ -34,27 +34,32 @@ const getStatusInfo = (status: string) => {
     ready: { 
       label: "Pronto", 
       color: "bg-emerald-500 text-white", 
-      icon: CheckCircle2 
+      icon: CheckCircle2,
+      description: "Seu pedido está pronto para retirada/entrega!" 
     },
-    in_prepare: { 
+    in_preparation: { 
       label: "Em preparo", 
       color: "bg-orange-500 text-white", 
-      icon: Package 
+      icon: Package,
+      description: "Seu pedido está sendo preparado com carinho." 
     },
     in_analysis: { 
       label: "Em análise", 
       color: "bg-blue-500 text-white", 
-      icon: Clock 
+      icon: Clock,
+      description: "Estamos analisando seu pedido." 
     },
     accepted: { 
       label: "Aceito", 
       color: "bg-green-500 text-white", 
-      icon: CheckCircle2 
+      icon: CheckCircle2,
+      description: "Seu pedido foi aceito e será preparado em breve." 
     },
     received: { 
       label: "Recebido", 
       color: "bg-amber-500 text-white", 
-      icon: Clock 
+      icon: Clock,
+      description: "Seu pedido foi recebido e será processado em breve." 
     }
   };
   return statusMap[status as keyof typeof statusMap] || statusMap.received;
@@ -255,6 +260,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ slug: s
                   </div>
                   <p className="text-primary-foreground text-xl font-medium mb-1">{order.shop.name}</p>
                   <p className="text-primary-foreground/80">{dateInfo.date} às {dateInfo.time}</p>
+                  <p className="text-primary-foreground/90 mt-2 text-sm italic">{statusInfo.description}</p>
                 </div>
                 <div className="text-right">
                   <p className="text-4xl font-bold text-white">{formatCurrency(total)}</p>
