@@ -53,7 +53,6 @@ interface OrderCardProps {
 export default function OrderCard({
   order,
   config,
-  mockDeliveryPeople,
   onUpdateOrderStatus,
   onTogglePaymentStatus,
   onDeliveryPersonChange,

@@ -23,6 +23,8 @@ import OrderDetailsModal from '@/components/admin/order-details-modal';
 import { formatPrice } from '@/app/(public)/[slug]/format-price';
 import { useAdminActionCable, AdminOrderData } from '@/lib/admin-cable';
 import OrderCard from '@/components/admin/order-card';
+import { useRestaurantSounds } from '@/hooks/use-restaurant-sounds';
+import { SoundSettings } from '@/components/admin/sound-settings';
 
 interface Order {
   id: string;
@@ -36,15 +38,6 @@ interface Order {
   deliveryType: 'delivery' | 'pickup';
   socketData: AdminOrderData;
 }
-
-const mockDeliveryPeople = [
-  { id: '1', name: 'Freire' },
-  { id: '2', name: 'Maikon' },
-  { id: '3', name: 'Matheus' },
-  { id: '4', name: 'Leo' },
-  { id: '5', name: 'João' },
-  { id: '6', name: 'Pedro' },
-];
 
 // Função para converter dados do socket para o formato da interface Order
 const convertSocketDataToOrder = (socketOrder: AdminOrderData): Order => {
@@ -72,6 +65,9 @@ const convertSocketDataToOrder = (socketOrder: AdminOrderData): Order => {
   const deliveryFee = parseFloat(socketOrder.attributes.delivery_fee || '0');
   const totalPrice = parseFloat(socketOrder.attributes.total_price || '0') || (totalItemsPrice + deliveryFee);
 
+  const paidAt = (socketOrder.attributes as any).paid_at || (socketOrder.attributes as any).paidAt
+  const paymentStatus: Order['paymentStatus'] = paidAt ? 'paid' : 'pending'
+
   return {
     id: socketOrder.id,
     customerName: socketOrder.attributes.customer.data.attributes.name,
@@ -79,7 +75,7 @@ const convertSocketDataToOrder = (socketOrder: AdminOrderData): Order => {
     time,
     deliveryPerson: undefined, // Será definido pelo admin
     status: statusMap[socketOrder.attributes.status] || 'recebidos',
-    paymentStatus: 'pending', // Será gerenciado pelo admin
+    paymentStatus,
     deliveryType: socketOrder.attributes.withdrawal ? 'pickup' : 'delivery',
     // Dados adicionais para o modal
     socketData: socketOrder
@@ -148,8 +144,11 @@ export default function OrderManagement() {
   const [isMobile, setIsMobile] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const isUpdatingRef = useRef<Record<string, boolean>>({});
+  const lastLocalChangeRef = useRef<Record<string, { statusAt?: number; paymentAt?: number }>>({});
+  const socketOrdersCache = useRef<Map<string, Order>>(new Map());
 
   const { subscribeToAdminOrders, updateOrder, isConnected } = useAdminActionCable();
+  const { orderAccepted, orderReady, newOrder, updateSettings } = useRestaurantSounds();
 
   useEffect(() => {
     const checkMobile = () => {
@@ -163,7 +162,7 @@ export default function OrderManagement() {
 
   useEffect(() => {
     const unsubscribe = subscribeToAdminOrders((socketOrders: AdminOrderData[]) => {
-      console.log('📥 Dados recebidos do WebSocket:', socketOrders.length, 'pedidos');
+      console.log(socketOrders);
       
       // Verificar se algum pedido está sendo atualizado no momento
       const hasUpdatingOrders = Object.keys(isUpdatingRef.current).some(
@@ -175,15 +174,65 @@ export default function OrderManagement() {
         // Aplicar atualização com delay para não conflitar com otimistic update
         setTimeout(() => {
           const convertedOrders = socketOrders.map(convertSocketDataToOrder);
-          console.log('🔄 Aplicando dados do WebSocket aos pedidos (com delay)');
-          setOrders(convertedOrders);
+          // atualizar cache com dados vindos do servidor
+          socketOrdersCache.current = new Map(convertedOrders.map(o => [o.id, o]));
+          console.log(socketOrders)
+          setOrders((prev) => {
+            const now = Date.now();
+            const prevById = new Map(prev.map(o => [o.id, o]));
+            return convertedOrders.map(incoming => {
+              const current = prevById.get(incoming.id);
+              if (!current) return incoming;
+              const last = lastLocalChangeRef.current[incoming.id] || {};
+              const keepLocalStatus = last.statusAt !== undefined && (now - (last.statusAt as number)) < 4000;
+              const keepLocalPayment = last.paymentAt !== undefined && (now - (last.paymentAt as number)) < 4000;
+              return {
+                ...current,
+                ...incoming,
+                status: keepLocalStatus ? current.status : incoming.status,
+                paymentStatus: keepLocalPayment ? current.paymentStatus : incoming.paymentStatus,
+              };
+            });
+          });
         }, 3000); // 3 segundos de delay
         return;
       }
       
-      const convertedOrders = socketOrders.map(convertSocketDataToOrder);
-      console.log('🔄 Aplicando dados do WebSocket aos pedidos');
-      setOrders(convertedOrders);
+      // Detectar novos pedidos comparando com o estado atual
+      setOrders((prevOrders) => {
+        const convertedOrders = socketOrders.map(convertSocketDataToOrder);
+        // atualizar cache com dados vindos do servidor
+        socketOrdersCache.current = new Map(convertedOrders.map(o => [o.id, o]));
+        
+        // Verificar se há novos pedidos (pedidos que não existiam antes)
+        const newOrders = convertedOrders.filter(socketOrder => 
+          !prevOrders.some(prevOrder => prevOrder.id === socketOrder.id)
+        );
+        
+        // Se há novos pedidos, tocar som de notificação
+        if (newOrders.length > 0 && prevOrders.length > 0) {
+          console.log('🆕 Novos pedidos detectados:', newOrders.length);
+          newOrder();
+        }
+
+        // Mesclar mantendo alterações locais recentes
+        const now = Date.now();
+        const prevById = new Map(prevOrders.map(o => [o.id, o]));
+        return convertedOrders.map(incoming => {
+          const current = prevById.get(incoming.id);
+          if (!current) return incoming;
+          const last = lastLocalChangeRef.current[incoming.id] || {};
+          const keepLocalStatus = last.statusAt !== undefined && (now - (last.statusAt as number)) < 4000;
+          const keepLocalPayment = last.paymentAt !== undefined && (now - (last.paymentAt as number)) < 4000;
+          return {
+            ...current,
+            ...incoming,
+            status: keepLocalStatus ? current.status : incoming.status,
+            paymentStatus: keepLocalPayment ? current.paymentStatus : incoming.paymentStatus,
+          };
+        });
+      });
+      
       setIsLoading(false);
     });
 
@@ -233,6 +282,18 @@ export default function OrderManagement() {
           : order
       );
     });
+    // registrar momento da alteração local do status
+    lastLocalChangeRef.current[orderId] = {
+      ...(lastLocalChangeRef.current[orderId] || {}),
+      statusAt: Date.now(),
+    };
+
+    // Tocar som baseado no novo status
+    if (newStatus === 'aceitos') {
+      orderAccepted();
+    } else if (newStatus === 'prontos') {
+      orderReady();
+    }
 
     try {
       // Enviar via websocket e aguardar resposta
@@ -242,11 +303,14 @@ export default function OrderManagement() {
         console.log('✅ Atualização confirmada pelo backend:', orderId, backendStatus);
       } else {
         console.log('❌ Falha confirmada pelo backend, revertendo:', orderId);
-        // Reverter atualização otimista em caso de falha
+        // Reverter atualização otimista em caso de falha para o status vindo do servidor mais recente
         setOrders((prevOrders: Order[]) => {
+          const current = prevOrders.find(o => o.id === orderId);
+          const serverOrder = socketOrdersCache.current.get(orderId);
+          const fallbackStatus = serverOrder?.status || current?.status || 'recebidos';
           return prevOrders.map((order: Order) => 
             order.id === orderId 
-              ? { ...order, status: 'recebidos' } // Reverter para estado inicial
+              ? { ...order, status: fallbackStatus as Order['status'] }
               : order
           );
         });
@@ -255,9 +319,12 @@ export default function OrderManagement() {
       console.error('❌ Erro ao atualizar status do pedido:', error);
       // Reverter atualização otimista em caso de erro
       setOrders((prevOrders: Order[]) => {
+        const current = prevOrders.find(o => o.id === orderId);
+        const serverOrder = socketOrdersCache.current.get(orderId);
+        const fallbackStatus = serverOrder?.status || current?.status || 'recebidos';
         return prevOrders.map((order: Order) => 
           order.id === orderId 
-            ? { ...order, status: 'recebidos' } // Reverter para estado inicial
+            ? { ...order, status: fallbackStatus as Order['status'] }
             : order
         );
       });
@@ -311,6 +378,12 @@ export default function OrderManagement() {
       return updatedOrders;
     });
 
+    // registrar momento da alteração local do pagamento
+    lastLocalChangeRef.current[orderId] = {
+      ...(lastLocalChangeRef.current[orderId] || {}),
+      paymentAt: Date.now(),
+    };
+
     // Liberar o lock após um delay
     setTimeout(() => {
       isUpdatingRef.current[orderId] = false;
@@ -360,13 +433,16 @@ export default function OrderManagement() {
               <h1 className="text-2xl font-bold text-gray-900">Gerenciamento de Pedidos</h1>
               <p className="text-gray-600">Visualize e gerencie todos os pedidos da sua loja</p>
             </div>
-            <Button
-              onClick={() => window.location.href = '/admin/pdv'}
-              className="flex items-center gap-2 bg-primary hover:bg-primary/90"
-            >
-              <SquarePen className="h-4 w-4" />
-              Novo Pedido (PDV)
-            </Button>
+            <div className="flex items-center gap-3">
+              <SoundSettings onSettingsChange={updateSettings} />
+              <Button
+                onClick={() => window.location.href = '/admin/pdv'}
+                className="flex items-center gap-2 bg-primary hover:bg-primary/90"
+              >
+                <SquarePen className="h-4 w-4" />
+                Novo Pedido (PDV)
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -400,7 +476,6 @@ export default function OrderManagement() {
                           key={order.id}
                           order={order}
                           config={config}
-                          mockDeliveryPeople={mockDeliveryPeople}
                           onUpdateOrderStatus={updateOrderStatus}
                           onTogglePaymentStatus={togglePaymentStatus}
                           onDeliveryPersonChange={updateDeliveryPerson}
@@ -446,7 +521,6 @@ export default function OrderManagement() {
                           key={order.id}
                           order={order}
                           config={config}
-                          mockDeliveryPeople={mockDeliveryPeople}
                           onUpdateOrderStatus={updateOrderStatus}
                           onTogglePaymentStatus={togglePaymentStatus}
                           onDeliveryPersonChange={updateDeliveryPerson}
@@ -515,6 +589,25 @@ export default function OrderManagement() {
             customer: {
               name: selectedOrder.socketData.attributes.customer.data.attributes.name,
               phone: selectedOrder.socketData.attributes.customer.data.attributes.cellphone
+            },
+            deliveryPerson: selectedOrder.deliveryPerson || ''
+          }}
+          onUpdateOrder={async (orderId, data) => {
+            // Atualizar localmente
+            setOrders(prev => prev.map(order => order.id === orderId ? { ...order, ...data } : order));
+            // Atualizar via WebSocket se for entregador
+            if (data.deliveryPerson && updateOrder) {
+              await updateOrder(orderId, undefined, undefined, data.deliveryPerson);
+            }
+            // Atualizar outros campos se necessário (exemplo: nome, telefone, etc)
+            // Aqui você pode adicionar lógica para outros campos se a API permitir
+          }}
+          onCancelOrder={async (orderId) => {
+            // Atualizar localmente para status 'recebidos' (frontend) e 'cancelled' (backend)
+            setOrders(prev => prev.map(order => order.id === orderId ? { ...order, status: 'recebidos' } : order));
+            // Atualizar via WebSocket para status cancelado
+            if (updateOrder) {
+              await updateOrder(orderId, 'cancelled');
             }
           }}
         />

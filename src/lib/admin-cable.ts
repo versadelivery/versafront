@@ -14,6 +14,7 @@ export interface AdminOrderData {
     withdrawal: boolean
     payment_method: string
     created_at: string
+    paid_at?: string | null
     items: {
       data: any[]
     }
@@ -112,6 +113,7 @@ export function useAdminActionCable() {
             try {
               const orders: AdminOrderData[] = payload.data.data || []
               const pending = pendingConfirmationsRef.current || {}
+              console.log(pending)
 
               // Para cada pedido retornado, verificar promessas pendentes
               orders.forEach((socketOrder: AdminOrderData) => {

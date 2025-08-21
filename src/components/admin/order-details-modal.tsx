@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useUsers } from '@/app/admin/settings/users/hooks/useUsers';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/order-dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -62,7 +63,10 @@ interface OrderDetailsModalProps {
       name: string;
       phone: string;
     };
+    deliveryPerson?: string;
   };
+  onUpdateOrder?: (orderId: string, data: Partial<any>) => Promise<void>;
+  onCancelOrder?: (orderId: string) => Promise<void>;
 }
 
 const getStatusInfo = (status: string) => {
@@ -91,25 +95,48 @@ const formatDate = (dateString: string) => {
   return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 };
 
-export default function OrderDetailsModal({ open, onOpenChange, order }: OrderDetailsModalProps) {
+export default function OrderDetailsModal({ open, onOpenChange, order, onUpdateOrder, onCancelOrder }: OrderDetailsModalProps) {
+  // Buscar entregadores reais
+  const { users, loading: loadingUsers } = useUsers();
+  const deliveryPeople = users.filter(u => u.role === 'delivery_man');
   const statusInfo = getStatusInfo(order.status);
   const paymentInfo = getPaymentMethodInfo(order.payment_method);
   const deliveryFee = order.withdrawal ? 0 : 3.00;
   const subtotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
   const [editingField, setEditingField] = useState<{
-    type: 'customer' | 'order' | 'financial' | 'item' | 'shop';
+    type: 'customer' | 'order' | 'financial' | 'item' | 'shop' | 'delivery';
     field: string;
     value: string | number;
   } | null>(null);
+  const [selectedDeliveryPerson, setSelectedDeliveryPerson] = useState(order.deliveryPerson || '');
+  const [isSavingDelivery, setIsSavingDelivery] = useState(false);
 
   const handleEdit = (type: 'customer' | 'order' | 'financial' | 'item' | 'shop', field: string, value: string | number) => {
     setEditingField({ type, field, value });
   };
 
-  const handleSave = () => {
-    // TODO: Implementar lógica de salvamento
+  const handleSave = async () => {
+    if (!editingField) return;
+    if (onUpdateOrder) {
+      await onUpdateOrder(order.id, { [editingField.field]: editingField.value });
+    }
     setEditingField(null);
+  };
+  const handleDeliveryPersonChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    setSelectedDeliveryPerson(value);
+    if (onUpdateOrder) {
+      setIsSavingDelivery(true);
+      await onUpdateOrder(order.id, { deliveryPerson: value });
+      setIsSavingDelivery(false);
+    }
+  };
+  const handleCancelOrder = async () => {
+    if (onCancelOrder) {
+      await onCancelOrder(order.id);
+      onOpenChange(false);
+    }
   };
 
   const handleCancel = () => {
@@ -229,7 +256,32 @@ export default function OrderDetailsModal({ open, onOpenChange, order }: OrderDe
                 <div className="space-y-3">
                   {renderEditableField('order', 'payment_method', paymentInfo.label, 'FORMA DE PAGAMENTO')}
                   {renderEditableField('order', 'date', formatDate(order.date), 'DATA E HORA')}
-                  {renderEditableField('order', 'delivery', 'Freire Guerra', 'ENTREGADOR')}
+                  {/* Seleção de entregador apenas para delivery */}
+                  {(!order.withdrawal) && (
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-gray-900">ENTREGADOR:</span>
+                      <select
+                        value={selectedDeliveryPerson}
+                        onChange={handleDeliveryPersonChange}
+                        disabled={isSavingDelivery || loadingUsers}
+                        className="border rounded-xs px-2 py-1 text-sm bg-white w-[150px]"
+                      >
+                        <option value="">Selecione um entregador</option>
+                        {deliveryPeople.map(person => (
+                          <option key={person.id} value={person.name}>{person.name}</option>
+                        ))}
+                      </select>
+                      {isSavingDelivery && <span className="text-xs text-gray-400 ml-2">Salvando...</span>}
+                    </div>
+                  )}
+        {/* Botão de cancelar pedido, só para delivery e status recebidos */}
+        {(!order.withdrawal && order.status === 'processing') && (
+          <div className="mt-6">
+            <Button variant="destructive" className="w-full" onClick={handleCancelOrder}>
+              Cancelar Pedido
+            </Button>
+          </div>
+        )}
                 </div>
               </div>
 
