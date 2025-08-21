@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useUsers } from '@/app/admin/settings/users/hooks/useUsers';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -58,6 +59,10 @@ export default function OrderCard({
   onDeliveryPersonChange,
   onOpenOrderDetails
 }: OrderCardProps) {
+  // Buscar entregadores reais
+  const { users, loading: loadingUsers } = useUsers();
+  console.log(users)
+  const deliveryPeople = users.filter(u => u.attributes.role === 'delivery_man');
   const isPronto = order.status === 'prontos';
   
   const handleDeliveryPersonChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -172,22 +177,24 @@ export default function OrderCard({
           </div>
         )}
 
-        <div className={cn("text-xs", isPronto ? "text-white" : "text-gray-600", "mb-4")}>
+        <div className={cn("text-xs", isPronto ? "text-white" : "text-gray-600", "mb-4")}> 
           {order.status === 'recebidos' ? (
             <div className="flex items-center gap-2">
               <span>Entregador:</span>
               <select
                 value={order.deliveryPerson || ''}
                 onChange={handleDeliveryPersonChange}
-                className="border rounded-xs px-2 py-1 text-sm bg-white w-[100px]"
+                className="border rounded-xs px-2 py-1 text-sm bg-white w-[150px]"
+                disabled={loadingUsers}
               >
                 <option value="">Selecione um entregador</option>
-                {mockDeliveryPeople.map(deliveryPerson => (
+                {deliveryPeople.map(deliveryPerson => (
                   <option key={deliveryPerson.id} value={deliveryPerson.name}>
-                    {deliveryPerson.name}
+                    {deliveryPerson.attributes.name}
                   </option>
                 ))}
               </select>
+              {loadingUsers && <span className="text-xs text-gray-400 ml-2">Carregando...</span>}
             </div>
           ) : (
             <>
