@@ -24,7 +24,7 @@ import { formatPrice } from '@/app/(public)/[slug]/format-price';
 import { useAdminActionCable, AdminOrderData } from '@/lib/admin-cable';
 import OrderCard from '@/components/admin/order-card';
 import { useRestaurantSounds } from '@/hooks/use-restaurant-sounds';
-import { SoundSettings } from '@/components/admin/sound-settings';
+// Controle de som foi movido para o Header global da administração
 
 interface Order {
   id: string;
@@ -148,7 +148,7 @@ export default function OrderManagement() {
   const socketOrdersCache = useRef<Map<string, Order>>(new Map());
 
   const { subscribeToAdminOrders, updateOrder, isConnected } = useAdminActionCable();
-  const { orderAccepted, orderReady, newOrder, updateSettings } = useRestaurantSounds();
+  const { orderAccepted, orderReady } = useRestaurantSounds();
 
   useEffect(() => {
     const checkMobile = () => {
@@ -209,11 +209,7 @@ export default function OrderManagement() {
           !prevOrders.some(prevOrder => prevOrder.id === socketOrder.id)
         );
         
-        // Se há novos pedidos, tocar som de notificação
-        if (newOrders.length > 0 && prevOrders.length > 0) {
-          console.log('🆕 Novos pedidos detectados:', newOrders.length);
-          newOrder();
-        }
+        // Som de novo pedido agora é global no Header
 
         // Mesclar mantendo alterações locais recentes
         const now = Date.now();
@@ -434,7 +430,6 @@ export default function OrderManagement() {
               <p className="text-gray-600">Visualize e gerencie todos os pedidos da sua loja</p>
             </div>
             <div className="flex items-center gap-3">
-              <SoundSettings onSettingsChange={updateSettings} />
               <Button
                 onClick={() => window.location.href = '/admin/pdv'}
                 className="flex items-center gap-2 bg-primary hover:bg-primary/90"

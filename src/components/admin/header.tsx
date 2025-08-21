@@ -10,15 +10,60 @@ import { useShop } from "@/hooks/use-shop";
 import Image from "next/image";
 import logo_inline from "../../../public/logo/logo-inline-black.svg";
 import Link from "next/link";
+import { useEffect, useRef } from "react";
+import { useAdminActionCable, AdminOrderData } from "@/lib/admin-cable";
+import { useRestaurantSounds } from "@/hooks/use-restaurant-sounds";
+import { SoundSettings } from "@/components/admin/sound-settings";
 
 export function Header() {
   const router = useRouter();
   const { logout } = useAuth();
   const { shop } = useShop();
+  const { subscribeToAdminOrders } = useAdminActionCable();
+  const { newOrder, updateSettings } = useRestaurantSounds();
+  const seenOrderIdsRef = useRef<Set<string>>(new Set());
+  const initializedRef = useRef(false);
 
   const handleSignOut = async () => {
     await logout();
   };
+
+  // Assinar pedidos via WS globalmente no header e tocar som quando chegar novo pedido (status received)
+  useEffect(() => {
+    const unsubscribe = subscribeToAdminOrders((socketOrders: AdminOrderData[]) => {
+      try {
+        const idsInPayload = new Set<string>(socketOrders.map((o) => o.id));
+
+        // Primeira carga não emite som; apenas inicializa o conjunto conhecido
+        if (!initializedRef.current) {
+          seenOrderIdsRef.current = idsInPayload;
+          initializedRef.current = true;
+          return;
+        }
+
+        let hasNewReceived = false;
+        socketOrders.forEach((o) => {
+          if (!seenOrderIdsRef.current.has(o.id) && o.attributes.status === 'received') {
+            hasNewReceived = true;
+          }
+        });
+
+        // Atualiza conjunto visto para refletir estado atual do servidor
+        seenOrderIdsRef.current = idsInPayload;
+
+        if (hasNewReceived) {
+          newOrder();
+        }
+      } catch (err) {
+        // silenciar erros não críticos do som/WS no header
+        console.warn('Header WS sound handler error:', err);
+      }
+    });
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [subscribeToAdminOrders, newOrder]);
 
   return (
     <header className="bg-muted">
@@ -121,6 +166,10 @@ export function Header() {
           </div>
 
           <div className="flex items-center gap-12">
+            {/* Controle de som global para toda a administração */}
+            <div className="hidden md:block">
+              <SoundSettings onSettingsChange={updateSettings} />
+            </div>
             <div className="flex items-center gap-2">
               <Avatar>
                 <AvatarImage src={shop?.image_url} />
