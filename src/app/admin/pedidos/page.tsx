@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { KDSBoard } from '@/components/admin/kds-board';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -147,7 +149,7 @@ export default function OrderManagement() {
   const lastLocalChangeRef = useRef<Record<string, { statusAt?: number; paymentAt?: number }>>({});
   const socketOrdersCache = useRef<Map<string, Order>>(new Map());
 
-  const { subscribeToAdminOrders, updateOrder, isConnected } = useAdminActionCable();
+  const { subscribeToAdminOrders, updateOrder, updateOrderDetails, isConnected } = useAdminActionCable();
   const { orderAccepted, orderReady } = useRestaurantSounds();
 
   useEffect(() => {
@@ -162,7 +164,7 @@ export default function OrderManagement() {
 
   useEffect(() => {
     const unsubscribe = subscribeToAdminOrders((socketOrders: AdminOrderData[]) => {
-      console.log(socketOrders);
+      console.log('📡 WebSocket recebeu dados:', socketOrders.length, 'pedidos');
       
       // Verificar se algum pedido está sendo atualizado no momento
       const hasUpdatingOrders = Object.keys(isUpdatingRef.current).some(
@@ -176,7 +178,7 @@ export default function OrderManagement() {
           const convertedOrders = socketOrders.map(convertSocketDataToOrder);
           // atualizar cache com dados vindos do servidor
           socketOrdersCache.current = new Map(convertedOrders.map(o => [o.id, o]));
-          console.log(socketOrders)
+          console.log('🔄 Aplicando atualização com delay');
           setOrders((prev) => {
             const now = Date.now();
             const prevById = new Map(prev.map(o => [o.id, o]));
@@ -184,8 +186,11 @@ export default function OrderManagement() {
               const current = prevById.get(incoming.id);
               if (!current) return incoming;
               const last = lastLocalChangeRef.current[incoming.id] || {};
-              const keepLocalStatus = last.statusAt !== undefined && (now - (last.statusAt as number)) < 4000;
-              const keepLocalPayment = last.paymentAt !== undefined && (now - (last.paymentAt as number)) < 4000;
+              const keepLocalStatus = last.statusAt !== undefined && (now - (last.statusAt as number)) < 5000; // Aumentado para 5 segundos
+              const keepLocalPayment = last.paymentAt !== undefined && (now - (last.paymentAt as number)) < 5000;
+              
+              console.log(`📊 Pedido ${incoming.id}: keepLocalStatus=${keepLocalStatus}, keepLocalPayment=${keepLocalPayment}`);
+              
               return {
                 ...current,
                 ...incoming,
@@ -194,7 +199,7 @@ export default function OrderManagement() {
               };
             });
           });
-        }, 3000); // 3 segundos de delay
+        }, 2000); // Reduzido para 2 segundos
         return;
       }
       
@@ -209,7 +214,9 @@ export default function OrderManagement() {
           !prevOrders.some(prevOrder => prevOrder.id === socketOrder.id)
         );
         
-        // Som de novo pedido agora é global no Header
+        if (newOrders.length > 0) {
+          console.log('🆕 Novos pedidos detectados:', newOrders.length);
+        }
 
         // Mesclar mantendo alterações locais recentes
         const now = Date.now();
@@ -218,8 +225,14 @@ export default function OrderManagement() {
           const current = prevById.get(incoming.id);
           if (!current) return incoming;
           const last = lastLocalChangeRef.current[incoming.id] || {};
-          const keepLocalStatus = last.statusAt !== undefined && (now - (last.statusAt as number)) < 4000;
-          const keepLocalPayment = last.paymentAt !== undefined && (now - (last.paymentAt as number)) < 4000;
+          const keepLocalStatus = last.statusAt !== undefined && (now - (last.statusAt as number)) < 5000; // Aumentado para 5 segundos
+          const keepLocalPayment = last.paymentAt !== undefined && (now - (last.paymentAt as number)) < 5000;
+          
+          // Log para debug
+          if (current.status !== incoming.status) {
+            console.log(`🔄 Status mudou para pedido ${incoming.id}: ${current.status} -> ${incoming.status} (keepLocal=${keepLocalStatus})`);
+          }
+          
           return {
             ...current,
             ...incoming,
@@ -265,10 +278,11 @@ export default function OrderManagement() {
     };
 
     const backendStatus = statusMap[newStatus];
+    console.log('🔄 Mapeando status:', newStatus, '->', backendStatus);
     
     // Primeiro atualizar o estado local de forma otimista
     setOrders((prevOrders: Order[]) => {
-      return prevOrders.map((order: Order) => 
+      const updatedOrders = prevOrders.map((order: Order) => 
         order.id === orderId 
           ? { 
               ...order, 
@@ -277,12 +291,17 @@ export default function OrderManagement() {
             }
           : order
       );
+      
+      console.log('✅ Atualização otimista aplicada localmente');
+      return updatedOrders;
     });
+    
     // registrar momento da alteração local do status
     lastLocalChangeRef.current[orderId] = {
       ...(lastLocalChangeRef.current[orderId] || {}),
       statusAt: Date.now(),
     };
+    console.log('📝 Timestamp de alteração local registrado:', Date.now());
 
     // Tocar som baseado no novo status
     if (newStatus === 'aceitos') {
@@ -293,6 +312,7 @@ export default function OrderManagement() {
 
     try {
       // Enviar via websocket e aguardar resposta
+      console.log('📤 Enviando atualização via WebSocket...');
       const success = await updateOrder(orderId, backendStatus);
       
       if (success) {
@@ -304,6 +324,7 @@ export default function OrderManagement() {
           const current = prevOrders.find(o => o.id === orderId);
           const serverOrder = socketOrdersCache.current.get(orderId);
           const fallbackStatus = serverOrder?.status || current?.status || 'recebidos';
+          console.log('🔄 Revertendo para status:', fallbackStatus);
           return prevOrders.map((order: Order) => 
             order.id === orderId 
               ? { ...order, status: fallbackStatus as Order['status'] }
@@ -318,6 +339,7 @@ export default function OrderManagement() {
         const current = prevOrders.find(o => o.id === orderId);
         const serverOrder = socketOrdersCache.current.get(orderId);
         const fallbackStatus = serverOrder?.status || current?.status || 'recebidos';
+        console.log('🔄 Revertendo para status (erro):', fallbackStatus);
         return prevOrders.map((order: Order) => 
           order.id === orderId 
             ? { ...order, status: fallbackStatus as Order['status'] }
@@ -325,11 +347,11 @@ export default function OrderManagement() {
         );
       });
     } finally {
-      // Sempre limpar a flag após 2 segundos (dar tempo para o websocket responder)
+      // Sempre limpar a flag após 3 segundos (dar tempo para o websocket responder)
       setTimeout(() => {
         console.log(`🔓 Limpando flag de atualização para pedido ${orderId}`);
         delete isUpdatingRef.current[orderId];
-      }, 2000);
+      }, 3000);
     }
   }, [updateOrder]);
 
@@ -443,97 +465,126 @@ export default function OrderManagement() {
       </div>
 
       <div className="max-w-[1920px] mx-auto p-6">
-        {isMobile ? (
-          <div className="space-y-4">
-            {Object.entries(statusConfig).map(([status, config]) => {
-              const statusOrders = getOrdersByStatus(status as Order['status']);
-              const isExpanded = expandedColumns[status];
-              
-              return (
-                <div key={status} className="bg-white rounded-2xl shadow-sm">
-                  <button
-                    onClick={() => toggleColumn(status)}
-                    className="w-full p-4 flex items-center justify-between text-center border-b-0"
-                  >
-                    <div className="flex items-center gap-2 mx-auto">
-                      {config.icon}
-                      <span className="font-bold text-base text-gray-800">
-                        {config.title} ({statusOrders.length})
-                      </span>
-                    </div>
-                    {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-                  </button>
+        <Tabs defaultValue="painel" className="w-full">
+          <TabsList>
+            <TabsTrigger value="painel">Painel</TabsTrigger>
+            <TabsTrigger value="kds">KDS</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="painel">
+            {isMobile ? (
+              <div className="space-y-4">
+                {Object.entries(statusConfig).map(([status, config]) => {
+                  const statusOrders = getOrdersByStatus(status as Order['status']);
+                  const isExpanded = expandedColumns[status];
                   
-                  {isExpanded && (
-                    <div className="px-4 pb-4">
-                      {statusOrders.map(order => (
-                        <OrderCard
-                          key={order.id}
-                          order={order}
-                          config={config}
-                          onUpdateOrderStatus={updateOrderStatus}
-                          onTogglePaymentStatus={togglePaymentStatus}
-                          onDeliveryPersonChange={updateDeliveryPerson}
-                          onOpenOrderDetails={setSelectedOrderId}
-                        />
-                      ))}
-                      {statusOrders.length === 0 && (
-                        <div className="text-center py-8 text-gray-500">
-                          Nenhum pedido neste status
+                  return (
+                    <div key={status} className="bg-white rounded-2xl shadow-sm">
+                      <button
+                        onClick={() => toggleColumn(status)}
+                        className="w-full p-4 flex items-center justify-between text-center border-b-0"
+                      >
+                        <div className="flex items-center gap-2 mx-auto">
+                          {config.icon}
+                          <span className="font-bold text-base text-gray-800">
+                            {config.title} ({statusOrders.length})
+                          </span>
+                        </div>
+                        {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                      </button>
+                      
+                      {isExpanded && (
+                        <div className="px-4 pb-4">
+                          {statusOrders.map(order => (
+                            <OrderCard
+                              key={order.id}
+                              order={order}
+                              config={config}
+                              onUpdateOrderStatus={updateOrderStatus}
+                              onTogglePaymentStatus={togglePaymentStatus}
+                              onDeliveryPersonChange={updateDeliveryPerson}
+                              onOpenOrderDetails={setSelectedOrderId}
+                            />
+                          ))}
+                          {statusOrders.length === 0 && (
+                            <div className="text-center py-8 text-gray-500">
+                              Nenhum pedido neste status
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
-            {Object.entries(statusConfig).map(([status, config]) => {
-              const statusOrders = getOrdersByStatus(status as Order['status']);
-              const isExpanded = expandedColumns[status];
-              
-              return (
-                <div key={status} className="bg-white rounded-2xl shadow-sm">
-                  <button
-                    onClick={() => toggleColumn(status)}
-                    className="w-full p-4 flex items-center justify-between text-center border-b-0"
-                  >
-                    <div className="flex items-center gap-2 mx-auto">
-                      {config.icon}
-                      <h2 className="font-bold text-base text-gray-800">
-                        {config.title} ({statusOrders.length})
-                      </h2>
-                    </div>
-                    {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-                  </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+                {Object.entries(statusConfig).map(([status, config]) => {
+                  const statusOrders = getOrdersByStatus(status as Order['status']);
+                  const isExpanded = expandedColumns[status];
                   
-                  {isExpanded && (
-                    <div className="p-4 max-h-[80vh] overflow-y-auto">
-                      {statusOrders.map(order => (
-                        <OrderCard
-                          key={order.id}
-                          order={order}
-                          config={config}
-                          onUpdateOrderStatus={updateOrderStatus}
-                          onTogglePaymentStatus={togglePaymentStatus}
-                          onDeliveryPersonChange={updateDeliveryPerson}
-                          onOpenOrderDetails={setSelectedOrderId}
-                        />
-                      ))}
-                      {statusOrders.length === 0 && (
-                        <div className="text-center py-8 text-gray-500">
-                          Nenhum pedido
+                  return (
+                    <div key={status} className="bg-white rounded-2xl shadow-sm">
+                      <button
+                        onClick={() => toggleColumn(status)}
+                        className="w-full p-4 flex items-center justify-between text-center border-b-0"
+                      >
+                        <div className="flex items-center gap-2 mx-auto">
+                          {config.icon}
+                          <h2 className="font-bold text-base text-gray-800">
+                            {config.title} ({statusOrders.length})
+                          </h2>
+                        </div>
+                        {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                      </button>
+                      
+                      {isExpanded && (
+                        <div className="p-4 max-h-[80vh] overflow-y-auto">
+                          {statusOrders.map(order => (
+                            <OrderCard
+                              key={order.id}
+                              order={order}
+                              config={config}
+                              onUpdateOrderStatus={updateOrderStatus}
+                              onTogglePaymentStatus={togglePaymentStatus}
+                              onDeliveryPersonChange={updateDeliveryPerson}
+                              onOpenOrderDetails={setSelectedOrderId}
+                            />
+                          ))}
+                          {statusOrders.length === 0 && (
+                            <div className="text-center py-8 text-gray-500">
+                              Nenhum pedido
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
+                  );
+                })}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="kds">
+            <div className="bg-white rounded-xs border shadow-sm p-4">
+              <KDSBoard
+                orders={orders.map((o) => ({
+                  id: o.id,
+                  customerName: o.customerName,
+                  status: o.status,
+                  createdAtLabel: o.time,
+                  items: (o.socketData.attributes.items.data || []).map((it: any) => ({
+                    name: it.attributes.catalog_item.data.attributes.name,
+                    qty: Number(it.attributes.quantity || 1),
+                    note: it.attributes.observation || undefined,
+                  })),
+                }))}
+                onMarkReady={(orderId) => updateOrderStatus(orderId, 'prontos')}
+                onOpenDetails={(orderId) => setSelectedOrderId(orderId)}
+              />
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
 
       {selectedOrder && (
@@ -585,17 +636,70 @@ export default function OrderManagement() {
               name: selectedOrder.socketData.attributes.customer.data.attributes.name,
               phone: selectedOrder.socketData.attributes.customer.data.attributes.cellphone
             },
-            deliveryPerson: selectedOrder.deliveryPerson || ''
+            deliveryPerson: selectedOrder.deliveryPerson || selectedOrder.socketData.attributes.delivery_person || ''
           }}
           onUpdateOrder={async (orderId, data) => {
-            // Atualizar localmente
-            setOrders(prev => prev.map(order => order.id === orderId ? { ...order, ...data } : order));
-            // Atualizar via WebSocket se for entregador
-            if (data.deliveryPerson && updateOrder) {
-              await updateOrder(orderId, undefined, undefined, data.deliveryPerson);
+            console.log('🔄 Atualizando pedido via modal:', { orderId, data });
+            
+            // Atualizar localmente primeiro para feedback imediato
+            setOrders(prev => prev.map(order => {
+              if (order.id === orderId) {
+                const updatedOrder = { ...order };
+                
+                // Atualizar dados do cliente
+                if (data.customer) {
+                  if (data.customer.name) {
+                    updatedOrder.customerName = data.customer.name;
+                  }
+                  if (data.customer.phone) {
+                    // Atualizar telefone no socketData
+                    if (updatedOrder.socketData?.attributes?.customer?.data?.attributes) {
+                      updatedOrder.socketData.attributes.customer.data.attributes.cellphone = data.customer.phone;
+                    }
+                  }
+                }
+                
+                // Atualizar dados do endereço
+                if (data.address && updatedOrder.socketData?.attributes?.address?.data?.attributes) {
+                  Object.assign(updatedOrder.socketData.attributes.address.data.attributes, data.address);
+                }
+                
+                // Atualizar dados da loja
+                if (data.shop && updatedOrder.socketData?.attributes?.shop?.data?.attributes) {
+                  Object.assign(updatedOrder.socketData.attributes.shop.data.attributes, data.shop);
+                }
+                
+                // Atualizar dados financeiros
+                if (data.total !== undefined) {
+                  updatedOrder.amount = data.total;
+                }
+                
+                // Atualizar entregador
+                if (data.deliveryPerson !== undefined) {
+                  updatedOrder.deliveryPerson = data.deliveryPerson;
+                  // Atualizar também no socketData
+                  if (updatedOrder.socketData?.attributes) {
+                    updatedOrder.socketData.attributes.delivery_person = data.deliveryPerson;
+                  }
+                }
+                
+                return updatedOrder;
+              }
+              return order;
+            }));
+            
+            // Enviar via WebSocket
+            try {
+              const success = await updateOrderDetails(orderId, data);
+              if (success) {
+                console.log('✅ Pedido atualizado com sucesso via WebSocket');
+              } else {
+                console.log('❌ Falha ao atualizar pedido via WebSocket');
+                // Opcional: reverter mudanças locais em caso de falha
+              }
+            } catch (error) {
+              console.error('❌ Erro ao atualizar pedido:', error);
             }
-            // Atualizar outros campos se necessário (exemplo: nome, telefone, etc)
-            // Aqui você pode adicionar lógica para outros campos se a API permitir
           }}
           onCancelOrder={async (orderId) => {
             // Atualizar localmente para status 'recebidos' (frontend) e 'cancelled' (backend)

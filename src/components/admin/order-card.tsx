@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatPrice } from '@/app/(public)/[slug]/format-price';
+import { User } from '@/app/admin/settings/users/services/userService';
 
 const getPaymentMethodLabel = (method: string) => {
   const methodMap: Record<string, string> = {
@@ -43,7 +44,6 @@ interface Order {
 interface OrderCardProps {
   order: Order;
   config: any;
-  mockDeliveryPeople: Array<{ id: string; name: string }>;
   onUpdateOrderStatus: (orderId: string, newStatus: Order['status']) => void;
   onTogglePaymentStatus: (orderId: string) => void;
   onDeliveryPersonChange: (orderId: string, deliveryPerson: string) => void;
@@ -61,7 +61,7 @@ export default function OrderCard({
   // Buscar entregadores reais
   const { users, loading: loadingUsers } = useUsers();
   console.log(users)
-  const deliveryPeople = users.filter(u => u.attributes.role === 'delivery_man');
+  const deliveryPeople = users.filter((u: User) => u.attributes.role === 'delivery_man');
   const isPronto = order.status === 'prontos';
   
   const handleDeliveryPersonChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -188,7 +188,7 @@ export default function OrderCard({
               >
                 <option value="">Selecione um entregador</option>
                 {deliveryPeople.map(deliveryPerson => (
-                  <option key={deliveryPerson.id} value={deliveryPerson.name}>
+                  <option key={deliveryPerson.id} value={deliveryPerson.attributes.name}>
                     {deliveryPerson.attributes.name}
                   </option>
                 ))}
@@ -203,18 +203,6 @@ export default function OrderCard({
         </div>
 
         <div className="space-y-2">
-          <div className="flex gap-2">
-            {order.status !== 'prontos' && (
-              <Button variant="outline" size="sm" className="flex-1 rounded-xs">
-                <SquarePen className="w-4 h-4 mr-1" />
-                EDITAR
-              </Button>
-            )}
-            <Button variant="outline" size="sm" className={cn("rounded-xs", isPronto && "border-none")}>
-              <Copy className="w-4 h-4"/>
-            </Button>
-          </div>
-
           {order.status === 'recebidos' && (
             <div className="space-y-2">
               <Button 
@@ -352,13 +340,47 @@ export default function OrderCard({
             </div>
           )}
 
-          <Button 
-            variant="outline" 
-            className="w-full rounded-xs"
-            onClick={handleOpenOrderDetails}
-          >
-            DETALHES DO PEDIDO ↗
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              className="flex-1 rounded-xs"
+              onClick={handleOpenOrderDetails}
+            >
+              DETALHES DO PEDIDO ↗
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className={cn("rounded-xs", isPronto && "border-none")}
+              onClick={() => {
+                // Copiar informações do pedido para a área de transferência
+                const orderInfo = `
+Pedido #${order.id}
+Cliente: ${order.customerName}
+Telefone: ${order.socketData?.attributes?.customer?.data?.attributes?.cellphone || 'N/A'}
+Valor: ${formatPrice(order.amount)}
+Status: ${order.status}
+Forma de pagamento: ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
+${order.deliveryType === 'delivery' && order.socketData?.attributes?.address?.data ? `
+Endereço: ${order.socketData.attributes.address.data.attributes.address}
+Bairro: ${order.socketData.attributes.address.data.attributes.neighborhood}
+${order.socketData.attributes.address.data.attributes.complement ? `Complemento: ${order.socketData.attributes.address.data.attributes.complement}` : ''}
+` : ''}
+Itens:
+${order.socketData?.attributes?.items?.data?.map((item: any) => 
+  `${item.attributes.quantity}x ${item.attributes.catalog_item.data.attributes.name} - ${formatPrice(parseFloat(item.attributes.total_price || '0'))}`
+).join('\n') || 'Nenhum item'}
+                `.trim();
+                
+                navigator.clipboard.writeText(orderInfo).then(() => {
+                  // Opcional: mostrar uma notificação de sucesso
+                  console.log('Informações do pedido copiadas!');
+                });
+              }}
+            >
+              <Copy className="w-4 h-4"/>
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

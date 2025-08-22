@@ -197,8 +197,8 @@ export function useAdminActionCable() {
     }
   }, [])  // Array vazio para memoizar a função
 
-  const updateOrder = useCallback((orderId: string, status?: string, paid_at?: boolean): Promise<boolean> => {
-    console.log('🔄 updateOrder chamado:', { orderId, status, paid_at });
+  const updateOrder = useCallback((orderId: string, status?: string, paid_at?: boolean, deliveryPerson?: string): Promise<boolean> => {
+    console.log('🔄 updateOrder chamado:', { orderId, status, paid_at, deliveryPerson });
     
     return new Promise((resolve, reject) => {
       if (!subscriptionRef.current || !subscriptionRef.current.send) {
@@ -212,7 +212,8 @@ export function useAdminActionCable() {
         data: {
           id: orderId,
           ...(status && { status }),
-          ...(paid_at !== undefined && { paid_at })
+          ...(paid_at !== undefined && { paid_at }),
+          ...(deliveryPerson && { delivery_person: deliveryPerson })
         }
       };
 
@@ -269,10 +270,67 @@ export function useAdminActionCable() {
           }
         }
         
-  resolve(false);
+        resolve(false);
       }
     });
   }, [])
+
+  const updateOrderDetails = useCallback((orderId: string, data: any): Promise<boolean> => {
+    console.log('🔄 updateOrderDetails chamado:', { orderId, data });
+    
+    return new Promise((resolve, reject) => {
+      if (!subscriptionRef.current || !subscriptionRef.current.send) {
+        console.error('❌ Subscription não está ativa');
+        resolve(false);
+        return;
+      }
+
+      // Filtrar apenas os campos que o backend suporta
+      const supportedData: any = {};
+      
+      if (data.customer) {
+        supportedData.customer = data.customer;
+      }
+      
+      if (data.address) {
+        supportedData.address = data.address;
+      }
+      
+      if (data.shop) {
+        supportedData.shop = data.shop;
+      }
+      
+      if (data.items) {
+        supportedData.items = data.items;
+      }
+      
+      if (data.total !== undefined) {
+        supportedData.total = data.total;
+      }
+
+      if (data.deliveryPerson !== undefined) {
+        supportedData.delivery_person = data.deliveryPerson;
+      }
+
+      const updateData = {
+        event: "update_order",
+        data: {
+          id: orderId,
+          ...supportedData
+        }
+      };
+
+      console.log('📤 Enviando dados para o backend:', updateData);
+
+      subscriptionRef.current.send(updateData);
+
+      // Simular sucesso por enquanto (o backend vai responder via WebSocket)
+      setTimeout(() => {
+        console.log('✅ updateOrderDetails concluído');
+        resolve(true);
+      }, 100);
+    });
+  }, []);
 
   const disconnect = useCallback(() => {
     if (cableRef.current) {
@@ -284,6 +342,7 @@ export function useAdminActionCable() {
   return {
     subscribeToAdminOrders,
     updateOrder,
+    updateOrderDetails,
     disconnect,
     isConnected: () => isConnected
   }
