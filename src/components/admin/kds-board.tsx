@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 export type KDSOrder = {
 	id: string;
 	customerName: string;
-	status: 'recebidos' | 'aceitos' | 'em_analise' | 'em_preparo' | 'prontos';
+	status: 'recebidos' | 'aceitos' | 'em_analise' | 'em_preparo' | 'prontos' | 'saiu' | 'entregue' | 'cancelled';
 	items: Array<{ name: string; qty: number; note?: string }>;
 	createdAtLabel: string;
 };

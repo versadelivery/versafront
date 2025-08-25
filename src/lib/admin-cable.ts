@@ -15,6 +15,7 @@ export interface AdminOrderData {
     payment_method: string
     created_at: string
     paid_at?: string | null
+    delivery_person?: string | null
     items: {
       data: any[]
     }
@@ -124,20 +125,31 @@ export function useAdminActionCable() {
                 // status vindo do servidor (backend)
                 const serverStatus: string = socketOrder.attributes.status
 
-                // Percorre cópias para evitar mutation durante iteração
                 const toKeep: Array<any> = []
 
                 list.forEach((entry: any) => {
                   const { expectedStatus, expectedPaidAt, resolve, reject, timeoutId } = entry
                   let matched = false
 
-                  if (expectedStatus && expectedStatus === serverStatus) {
+                  // expectedStatus deve estar no formato backend
+                  const frontendToBackend: Record<string, string> = {
+                    'recebidos': 'received',
+                    'aceitos': 'accepted',
+                    'em_analise': 'in_analysis',
+                    'em_preparo': 'in_preparation',
+                    'prontos': 'ready',
+                    'saiu': 'left_for_delivery',
+                    'entregue': 'delivered',
+                    'cancelled': 'cancelled'
+                  }
+                  const expectedBackendStatus = expectedStatus ? (frontendToBackend[expectedStatus] || expectedStatus) : undefined
+
+                  if (expectedBackendStatus && expectedBackendStatus === serverStatus) {
                     matched = true
                   }
 
                   // Se a confirmação era sobre pagamento, checar paid flag
                   if (!matched && expectedPaidAt !== undefined) {
-                    // backend envia paid via presence de paid_at (ou paidAt); consider paid se não é nulo
                     const paidAt = (socketOrder.attributes as any).paid_at || (socketOrder.attributes as any).paidAt
                     const serverPaid = !!paidAt
                     if (serverPaid === expectedPaidAt) {
@@ -197,8 +209,8 @@ export function useAdminActionCable() {
     }
   }, [])  // Array vazio para memoizar a função
 
-  const updateOrder = useCallback((orderId: string, status?: string, paid_at?: boolean, deliveryPerson?: string): Promise<boolean> => {
-    console.log('🔄 updateOrder chamado:', { orderId, status, paid_at, deliveryPerson });
+  const updateOrder = useCallback((orderId: string, status?: string, paid_at?: boolean, deliveryPerson?: string, cancellationReason?: string): Promise<boolean> => {
+    console.log('🔄 updateOrder chamado:', { orderId, status, paid_at, deliveryPerson, cancellationReason });
     
     return new Promise((resolve, reject) => {
       if (!subscriptionRef.current || !subscriptionRef.current.send) {
@@ -207,8 +219,9 @@ export function useAdminActionCable() {
         return;
       }
 
-      const updateData = {
-        event: "update_order",
+      let event = "update_order";
+      let updateData: any = {
+        event: event,
         data: {
           id: orderId,
           ...(status && { status }),
@@ -216,6 +229,41 @@ export function useAdminActionCable() {
           ...(deliveryPerson && { delivery_person: deliveryPerson })
         }
       };
+
+      // Se for cancelamento, usar evento específico
+      if (status === 'cancelled') {
+        event = "cancel_order";
+        updateData = {
+          event: event,
+          data: {
+            id: orderId,
+            cancellation_reason_type: cancellationReason || "other",
+            cancellation_reason: cancellationReason || "Cancelado pelo administrador"
+          }
+        };
+      }
+
+      // Se for saiu para entrega, usar evento específico (backend: left_for_delivery)
+      if (status === 'left_for_delivery') {
+        event = "left_for_delivery";
+        updateData = {
+          event: event,
+          data: {
+            id: orderId
+          }
+        };
+      }
+
+      // Se for entregue, usar evento específico (backend: delivered)
+      if (status === 'delivered') {
+        event = "delivered";
+        updateData = {
+          event: event,
+          data: {
+            id: orderId
+          }
+        };
+      }
 
       console.log('📤 Enviando dados via websocket:', updateData);
 
@@ -312,8 +360,12 @@ export function useAdminActionCable() {
         supportedData.delivery_person = data.deliveryPerson;
       }
 
+      // Determinar se é uma edição completa ou atualização simples
+      const hasItemsChanges = data.items && Object.keys(data.items).length > 0;
+      const event = hasItemsChanges ? "edit_order" : "update_order";
+
       const updateData = {
-        event: "update_order",
+        event: event,
         data: {
           id: orderId,
           ...supportedData
