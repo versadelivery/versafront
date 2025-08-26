@@ -13,6 +13,17 @@ interface ProductGridProps {
 }
 
 export default function ProductGrid({ categories, activeCategory, searchQuery }: ProductGridProps) {
+  if (typeof window !== 'undefined') {
+    try {
+      console.groupCollapsed('[Versa] ProductGrid input');
+      console.log('categories length:', categories?.length);
+      console.log('activeCategory:', activeCategory);
+      console.log('searchQuery:', searchQuery);
+      console.log('categories names:', (categories || []).map((g: any) => g?.attributes?.name));
+      console.groupEnd();
+    } catch {}
+  }
+
   const allItems = categories.flatMap(group => 
     normalizeItems(group.attributes.items)
   ).filter(item => 
@@ -32,6 +43,20 @@ export default function ProductGrid({ categories, activeCategory, searchQuery }:
   const itemsToDisplay = activeCategory === 'all' 
     ? allItems 
     : itemsByGroup[activeCategory] || [];
+
+  if (typeof window !== 'undefined') {
+    try {
+      console.groupCollapsed('[Versa] ProductGrid computed');
+      console.log('allItems count:', allItems.length);
+      console.log('itemsByGroup keys:', Object.keys(itemsByGroup));
+      console.log('itemsToDisplay count:', itemsToDisplay.length);
+      console.table((categories || []).map((g: any) => ({
+        group: g?.attributes?.name,
+        items: normalizeItems(g?.attributes?.items)?.length || 0
+      })));
+      console.groupEnd();
+    } catch {}
+  }
 
   if (itemsToDisplay.length === 0) {
     return (

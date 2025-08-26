@@ -16,7 +16,7 @@ export const useEditStep = ({ id, stepId, name, optionId, price }: EditStepProps
   const queryClient = useQueryClient();
 
   const { data: item, isLoading } = useQuery({
-    queryKey: ["catalog", id],
+    queryKey: ["catalog-item", id],
     queryFn: () => getCatalogItem(id),
   });
 
@@ -45,7 +45,7 @@ export const useEditStep = ({ id, stepId, name, optionId, price }: EditStepProps
   const updateStepMutation = useMutation({
     mutationFn: () => updateStep(id, stepId, name),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['catalog', id] });
+      queryClient.invalidateQueries({ queryKey: ['catalog-item', id] });
       toast.success("Etapa atualizada com sucesso");
     },
     onError: () => {
@@ -56,7 +56,7 @@ export const useEditStep = ({ id, stepId, name, optionId, price }: EditStepProps
   const updateStepOptionMutation = useMutation({
     mutationFn: () => updateStepOption(id, stepId, optionId as string, name),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['catalog', id] });
+      queryClient.invalidateQueries({ queryKey: ['catalog-item', id] });
       toast.success("Opção atualizada com sucesso");
     },
     onError: () => {
@@ -139,7 +139,7 @@ export const useCatalogItem = (id: string) => {
   const queryClient = useQueryClient();
 
   const catalogItemQuery = useQuery<CatalogItemResponse>({
-    queryKey: ["catalog", id],
+    queryKey: ["catalog-item", id],
     queryFn: () => getCatalogItem(id),
     enabled: !!id,
   });
@@ -147,7 +147,7 @@ export const useCatalogItem = (id: string) => {
   const deleteCatalogItemMutation = useMutation({
     mutationFn: () => deleteCatalogItem(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['catalog', id] });
+      queryClient.invalidateQueries({ queryKey: ['catalog-item', id] });
       toast.success("Item deletado com sucesso");
     },
     onError: () => {
@@ -174,7 +174,7 @@ export const useCatalogGroup = (id?: string) => {
   });
   
   const { data: catalogGroup, isLoading: isLoadingGroup, error: errorGroup, refetch: refetchGroup } = useQuery({
-    queryKey: ["catalog", id],
+    queryKey: ["catalog-group", id],
     queryFn: () => getCatalogGroup(id as any),
     enabled: !!id,
   });

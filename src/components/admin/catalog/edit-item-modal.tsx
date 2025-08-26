@@ -782,7 +782,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
               <Button type="button" variant="outline" className="w-32 bg-red-500 text-white rounded-xs" onClick={() => handleDeleteItem()} disabled={isDeletingCatalogItem}>
                 {isDeletingCatalogItem ? <Loader2 className="animate-spin" /> : 'DELETAR'}
               </Button>
-              <Button type="submit" className="w-32 rounded-xs" disabled={isUpdating || !hasChanges}>
+              <Button type="submit" className="w-32 rounded-xs" disabled={isUpdating}>
                 {isUpdating ? <Loader2 className="animate-spin" /> : 'ATUALIZAR'}
               </Button>
             </DialogFooter>
