@@ -12,7 +12,6 @@ import {
   SquarePen, 
   Trash2,
   X,
-  Check,
   Copy,
   Save,
   Edit3
@@ -130,90 +129,6 @@ export default function OrderDetailsModal({ open, onOpenChange, order, onUpdateO
     setEditingField({ type, field, value });
   };
 
-  const handleSave = async () => {
-    if (!editingField) return;
-    
-    // Atualizar o estado local primeiro
-    setEditedOrder((prev: any) => {
-      const updated = { ...prev };
-      
-      // Mapear o campo para a estrutura correta do objeto
-      switch (editingField.type) {
-        case 'customer':
-          if (editingField.field === 'name' || editingField.field === 'phone') {
-            updated.customer = { ...updated.customer, [editingField.field]: editingField.value };
-          } else if (updated.address) {
-            updated.address = { ...updated.address, [editingField.field]: editingField.value };
-          }
-          break;
-        case 'shop':
-          updated.shop = { ...updated.shop, [editingField.field]: editingField.value };
-          break;
-        case 'financial':
-          if (editingField.field === 'subtotal') {
-            // Recalcular total baseado no novo subtotal
-            const newSubtotal = editingField.value as number;
-            updated.total = newSubtotal + deliveryFee;
-          } else if (editingField.field === 'delivery_fee') {
-            // Recalcular total baseado na nova taxa de entrega
-            const newDeliveryFee = editingField.value as number;
-            updated.total = editedSubtotal + newDeliveryFee;
-          } else if (editingField.field === 'total') {
-            updated.total = editingField.value as number;
-          }
-          break;
-        case 'item':
-          if (editingField.field.startsWith('price_')) {
-            const itemId = editingField.field.replace('price_', '');
-            const itemIndex = updated.items.findIndex((item: any) => item.id === itemId);
-            if (itemIndex !== -1) {
-              const newItems = [...updated.items];
-              newItems[itemIndex] = { 
-                ...newItems[itemIndex], 
-                price: (editingField.value as number) / newItems[itemIndex].quantity 
-              };
-              updated.items = newItems;
-            }
-          }
-          break;
-      }
-      
-      return updated;
-    });
-    
-    // Salvar via callback se fornecido
-    if (onUpdateOrder) {
-      const updateData: any = {};
-      
-      switch (editingField.type) {
-        case 'customer':
-          if (editingField.field === 'name' || editingField.field === 'phone') {
-            updateData.customer = { [editingField.field]: editingField.value };
-          } else if (editingField.field === 'address' || editingField.field === 'neighborhood' || 
-                     editingField.field === 'complement' || editingField.field === 'reference') {
-            updateData.address = { [editingField.field]: editingField.value };
-          }
-          break;
-        case 'shop':
-          updateData.shop = { [editingField.field]: editingField.value };
-          break;
-        case 'financial':
-          updateData[editingField.field] = editingField.value;
-          break;
-        case 'item':
-          if (editingField.field.startsWith('price_')) {
-            const itemId = editingField.field.replace('price_', '');
-            updateData.items = { [itemId]: { price: (editingField.value as number) } };
-          }
-          break;
-      }
-      
-      await onUpdateOrder(order.id, updateData);
-    }
-    
-    setEditingField(null);
-  };
-
   const handleSaveAllChanges = async () => {
     if (onUpdateOrder) {
       // Calcular diferenças entre order original e editedOrder
@@ -271,10 +186,42 @@ export default function OrderDetailsModal({ open, onOpenChange, order, onUpdateO
       // Só salvar se houver mudanças
       if (Object.keys(changes).length > 0) {
         await onUpdateOrder(order.id, changes);
+        
+        // Atualizar o order original com as mudanças salvas
+        // para que a próxima edição funcione corretamente
+        setEditedOrder((prev: any) => {
+          const updated = { ...prev };
+          
+          // Aplicar as mudanças salvas ao order original
+          if (changes.customer) {
+            updated.customer = { ...updated.customer, ...changes.customer };
+          }
+          if (changes.address) {
+            updated.address = { ...updated.address, ...changes.address };
+          }
+          if (changes.shop) {
+            updated.shop = { ...updated.shop, ...changes.shop };
+          }
+          if (changes.total !== undefined) {
+            updated.total = changes.total;
+          }
+          if (changes.items) {
+            // Atualizar os itens com as mudanças
+            Object.keys(changes.items).forEach(itemId => {
+              const itemIndex = updated.items.findIndex((item: any) => item.id === itemId);
+              if (itemIndex !== -1) {
+                updated.items[itemIndex] = { ...updated.items[itemIndex], ...changes.items[itemId] };
+              }
+            });
+          }
+          
+          return updated;
+        });
       }
     }
     
     setIsEditingMode(false);
+    setEditingField(null); // Limpar o campo em edição
   };
 
   const handleCancelAllChanges = () => {
@@ -304,10 +251,6 @@ export default function OrderDetailsModal({ open, onOpenChange, order, onUpdateO
       await onCancelOrder(order.id);
       onOpenChange(false);
     }
-  };
-
-  const handleCancel = () => {
-    setEditingField(null);
   };
 
   const copyOrderInfo = () => {
@@ -345,6 +288,73 @@ ${order.items.map(item =>
     const isEditing = editingField?.type === type && editingField?.field === field;
     const isItemPrice = type === 'item' && field.startsWith('price_');
 
+    const handleInputChange = (newValue: string | number) => {
+      // Atualizar o estado editingField
+      setEditingField({ type, field, value: newValue });
+      
+      // Atualizar também o editedOrder em tempo real
+      setEditedOrder((prev: any) => {
+        const updated = { ...prev };
+        
+        if (type === 'customer' && (field === 'name' || field === 'phone')) {
+          updated.customer = { ...updated.customer, [field]: newValue };
+        } else if (type === 'customer' && (field === 'address' || field === 'neighborhood' || field === 'complement' || field === 'reference')) {
+          if (updated.address) {
+            updated.address = { ...updated.address, [field]: newValue };
+          }
+        } else if (type === 'shop' && (field === 'name' || field === 'phone')) {
+          updated.shop = { ...updated.shop, [field]: newValue };
+        } else if (type === 'financial') {
+          if (field === 'subtotal') {
+            const newSubtotal = newValue as number;
+            updated.total = newSubtotal + (updated.delivery_fee || 0);
+          } else if (field === 'delivery_fee') {
+            const newDeliveryFee = newValue as number;
+            updated.total = editedSubtotal + newDeliveryFee;
+          } else if (field === 'total') {
+            updated.total = newValue as number;
+          }
+        } else if (type === 'item') {
+          if (field.startsWith('price_')) {
+            const itemId = field.replace('price_', '');
+            const newItems = [...updated.items];
+            const itemIndex = newItems.findIndex((item: any) => item.id === itemId);
+            if (itemIndex !== -1) {
+              newItems[itemIndex] = {
+                ...newItems[itemIndex],
+                price: (newValue as number) / newItems[itemIndex].quantity
+              };
+              updated.items = newItems;
+            }
+          } else if (field.startsWith('quantity_')) {
+            const itemId = field.replace('quantity_', '');
+            const newItems = [...updated.items];
+            const itemIndex = newItems.findIndex((item: any) => item.id === itemId);
+            if (itemIndex !== -1) {
+              newItems[itemIndex] = {
+                ...newItems[itemIndex],
+                quantity: newValue as number
+              };
+              updated.items = newItems;
+            }
+          } else if (field.startsWith('observation_')) {
+            const itemId = field.replace('observation_', '');
+            const newItems = [...updated.items];
+            const itemIndex = newItems.findIndex((item: any) => item.id === itemId);
+            if (itemIndex !== -1) {
+              newItems[itemIndex] = {
+                ...newItems[itemIndex],
+                observation: newValue as string
+              };
+              updated.items = newItems;
+            }
+          }
+        }
+        
+        return updated;
+      });
+    };
+
     return (
       <div className={`flex items-center justify-between ${isItemPrice ? '' : ''}`}>
         {label && <span className="font-medium text-gray-900">{label}:</span>}
@@ -354,7 +364,7 @@ ${order.items.map(item =>
               {inputType === 'textarea' ? (
                 <Textarea
                   value={editingField.value as string}
-                  onChange={(e) => setEditingField({ ...editingField, value: e.target.value })}
+                  onChange={(e) => handleInputChange(e.target.value)}
                   className={`h-20 w-48 ${isItemPrice ? 'text-black' : ''}`}
                   placeholder="Digite aqui..."
                 />
@@ -362,26 +372,10 @@ ${order.items.map(item =>
                 <Input
                   type={inputType}
                   value={editingField.value}
-                  onChange={(e) => setEditingField({ ...editingField, value: inputType === 'number' ? parseFloat(e.target.value) || 0 : e.target.value })}
+                  onChange={(e) => handleInputChange(inputType === 'number' ? parseFloat(e.target.value) || 0 : e.target.value)}
                   className={`h-8 w-24 ${isItemPrice ? 'text-black' : ''}`}
                 />
               )}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleSave}
-                className="h-6 w-6 text-green-500"
-              >
-                <Check className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleCancel}
-                className="h-6 w-6 text-red-500"
-              >
-                <X className="h-4 w-4" />
-              </Button>
             </div>
           ) : (
             <>
@@ -432,7 +426,7 @@ ${order.items.map(item =>
                     className="flex items-center gap-2"
                   >
                     <Copy className="h-4 w-4" />
-                    Copiar
+                    Copiar Info
                   </Button>
                 </>
               ) : (
@@ -546,7 +540,7 @@ ${order.items.map(item =>
                 <div className="flex items-center gap-3">
                   <Badge className={`${statusInfo.color} px-3 py-1 text-xs font-medium rounded-xs`}>
                     {statusInfo.label}
-                    <Clock8 className="w-3 h-3" />
+                    <Clock8 className="w-3 h-3 ml-1" />
                   </Badge>
                 </div>
               </div>

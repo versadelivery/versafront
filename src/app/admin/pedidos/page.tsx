@@ -34,7 +34,7 @@ interface Order {
   amount: number;
   time: string;
   deliveryPerson?: string;
-  status: 'recebidos' | 'aceitos' | 'em_analise' | 'em_preparo' | 'prontos';
+  status: 'recebidos' | 'aceitos' | 'em_analise' | 'em_preparo' | 'prontos' | 'saiu' | 'entregue' | 'cancelled';
   paymentStatus: 'pending' | 'paid';
   readyTime?: string;
   deliveryType: 'delivery' | 'pickup';
@@ -55,7 +55,10 @@ const convertSocketDataToOrder = (socketOrder: AdminOrderData): Order => {
     'accepted': 'aceitos',
     'in_analysis': 'em_analise',
     'in_preparation': 'em_preparo',
-    'ready': 'prontos'
+    'ready': 'prontos',
+    'left_for_delivery': 'saiu',
+    'delivered': 'entregue',
+    'cancelled': 'cancelled'
   };
 
   // Calcular valor total dos itens
@@ -119,6 +122,27 @@ const statusConfig = {
     textColor: 'text-white',
     bgColor: 'bg-primary',
     icon: <Truck className="w-4 h-4 text-primary" />
+  },
+  saiu: { 
+    title: 'SAIU PARA ENTREGA', 
+    color: 'bg-blue-500', 
+    textColor: 'text-white',
+    bgColor: 'bg-blue-100',
+    icon: <Truck className="w-4 h-4" />
+  },
+  entregue: { 
+    title: 'ENTREGUE', 
+    color: 'bg-green-500', 
+    textColor: 'text-white',
+    bgColor: 'bg-green-100',
+    icon: <CheckCircle className="w-4 h-4" />
+  },
+  cancelled: {
+    title: 'CANCELADOS',
+    color: 'bg-gray-500',
+    textColor: 'text-gray-700',
+    bgColor: 'bg-gray-100',
+    icon: <XCircle className="w-4 h-4" />
   }
 };
 
@@ -128,7 +152,10 @@ const mapOrderStatus = (status: Order['status']) => {
     aceitos: 'processing',
     em_analise: 'processing',
     em_preparo: 'preparing',
-    prontos: 'in_transit'
+    prontos: 'in_transit',
+    saiu: 'in_transit',
+    entregue: 'delivered',
+    cancelled: 'cancelled'
   };
   return statusMap[status] || 'processing';
 };
@@ -141,7 +168,10 @@ export default function OrderManagement() {
     aceitos: true,
     em_analise: true,
     em_preparo: true,
-    prontos: true
+    prontos: true,
+    saiu: true,
+    entregue: true,
+    cancelled: true
   });
   const [isMobile, setIsMobile] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
@@ -164,7 +194,6 @@ export default function OrderManagement() {
 
   useEffect(() => {
     const unsubscribe = subscribeToAdminOrders((socketOrders: AdminOrderData[]) => {
-      console.log('📡 WebSocket recebeu dados:', socketOrders.length, 'pedidos');
       
       // Verificar se algum pedido está sendo atualizado no momento
       const hasUpdatingOrders = Object.keys(isUpdatingRef.current).some(
@@ -172,13 +201,11 @@ export default function OrderManagement() {
       );
       
       if (hasUpdatingOrders) {
-        console.log('⏳ Ignorando atualização do WebSocket - pedidos sendo atualizados localmente');
         // Aplicar atualização com delay para não conflitar com otimistic update
         setTimeout(() => {
           const convertedOrders = socketOrders.map(convertSocketDataToOrder);
           // atualizar cache com dados vindos do servidor
           socketOrdersCache.current = new Map(convertedOrders.map(o => [o.id, o]));
-          console.log('🔄 Aplicando atualização com delay');
           setOrders((prev) => {
             const now = Date.now();
             const prevById = new Map(prev.map(o => [o.id, o]));
@@ -189,7 +216,6 @@ export default function OrderManagement() {
               const keepLocalStatus = last.statusAt !== undefined && (now - (last.statusAt as number)) < 5000; // Aumentado para 5 segundos
               const keepLocalPayment = last.paymentAt !== undefined && (now - (last.paymentAt as number)) < 5000;
               
-              console.log(`📊 Pedido ${incoming.id}: keepLocalStatus=${keepLocalStatus}, keepLocalPayment=${keepLocalPayment}`);
               
               return {
                 ...current,
@@ -213,10 +239,6 @@ export default function OrderManagement() {
         const newOrders = convertedOrders.filter(socketOrder => 
           !prevOrders.some(prevOrder => prevOrder.id === socketOrder.id)
         );
-        
-        if (newOrders.length > 0) {
-          console.log('🆕 Novos pedidos detectados:', newOrders.length);
-        }
 
         // Mesclar mantendo alterações locais recentes
         const now = Date.now();
@@ -227,11 +249,6 @@ export default function OrderManagement() {
           const last = lastLocalChangeRef.current[incoming.id] || {};
           const keepLocalStatus = last.statusAt !== undefined && (now - (last.statusAt as number)) < 5000; // Aumentado para 5 segundos
           const keepLocalPayment = last.paymentAt !== undefined && (now - (last.paymentAt as number)) < 5000;
-          
-          // Log para debug
-          if (current.status !== incoming.status) {
-            console.log(`🔄 Status mudou para pedido ${incoming.id}: ${current.status} -> ${incoming.status} (keepLocal=${keepLocalStatus})`);
-          }
           
           return {
             ...current,
@@ -257,13 +274,6 @@ export default function OrderManagement() {
   }, []); // Remover dependência subscribeToAdminOrders
 
   const updateOrderStatus = useCallback(async (orderId: string, newStatus: Order['status']) => {
-    console.log('🚀 Iniciando atualização de status:', orderId, newStatus);
-    
-    // Verificar se já está atualizando
-    if (isUpdatingRef.current[orderId]) {
-      console.log('⏳ Já está atualizando o pedido:', orderId);
-      return;
-    }
 
     // Marcar como atualizando
     isUpdatingRef.current[orderId] = true;
@@ -274,11 +284,13 @@ export default function OrderManagement() {
       'aceitos': 'accepted',
       'em_analise': 'in_analysis',
       'em_preparo': 'in_preparation',
-      'prontos': 'ready'
+      'prontos': 'ready',
+      'saiu': 'left_for_delivery',
+      'entregue': 'delivered',
+      'cancelled': 'cancelled'
     };
 
     const backendStatus = statusMap[newStatus];
-    console.log('🔄 Mapeando status:', newStatus, '->', backendStatus);
     
     // Primeiro atualizar o estado local de forma otimista
     setOrders((prevOrders: Order[]) => {
@@ -291,8 +303,6 @@ export default function OrderManagement() {
             }
           : order
       );
-      
-      console.log('✅ Atualização otimista aplicada localmente');
       return updatedOrders;
     });
     
@@ -301,7 +311,7 @@ export default function OrderManagement() {
       ...(lastLocalChangeRef.current[orderId] || {}),
       statusAt: Date.now(),
     };
-    console.log('📝 Timestamp de alteração local registrado:', Date.now());
+
 
     // Tocar som baseado no novo status
     if (newStatus === 'aceitos') {
@@ -312,19 +322,15 @@ export default function OrderManagement() {
 
     try {
       // Enviar via websocket e aguardar resposta
-      console.log('📤 Enviando atualização via WebSocket...');
       const success = await updateOrder(orderId, backendStatus);
       
       if (success) {
-        console.log('✅ Atualização confirmada pelo backend:', orderId, backendStatus);
       } else {
-        console.log('❌ Falha confirmada pelo backend, revertendo:', orderId);
         // Reverter atualização otimista em caso de falha para o status vindo do servidor mais recente
         setOrders((prevOrders: Order[]) => {
           const current = prevOrders.find(o => o.id === orderId);
           const serverOrder = socketOrdersCache.current.get(orderId);
           const fallbackStatus = serverOrder?.status || current?.status || 'recebidos';
-          console.log('🔄 Revertendo para status:', fallbackStatus);
           return prevOrders.map((order: Order) => 
             order.id === orderId 
               ? { ...order, status: fallbackStatus as Order['status'] }
@@ -339,7 +345,6 @@ export default function OrderManagement() {
         const current = prevOrders.find(o => o.id === orderId);
         const serverOrder = socketOrdersCache.current.get(orderId);
         const fallbackStatus = serverOrder?.status || current?.status || 'recebidos';
-        console.log('🔄 Revertendo para status (erro):', fallbackStatus);
         return prevOrders.map((order: Order) => 
           order.id === orderId 
             ? { ...order, status: fallbackStatus as Order['status'] }
@@ -349,7 +354,6 @@ export default function OrderManagement() {
     } finally {
       // Sempre limpar a flag após 3 segundos (dar tempo para o websocket responder)
       setTimeout(() => {
-        console.log(`🔓 Limpando flag de atualização para pedido ${orderId}`);
         delete isUpdatingRef.current[orderId];
       }, 3000);
     }
@@ -358,11 +362,9 @@ export default function OrderManagement() {
   const togglePaymentStatus = useCallback((orderId: string) => {
     // Evitar múltiplas execuções usando ref
     if (isUpdatingRef.current[orderId]) {
-      console.log('Já está atualizando pagamento do pedido:', orderId);
       return;
     }
 
-    console.log('Iniciando toggle de pagamento:', orderId);
     isUpdatingRef.current[orderId] = true;
 
     // Encontrar pedido atual e determinar novo status
@@ -388,7 +390,6 @@ export default function OrderManagement() {
       // Enviar via websocket após atualizar estado
       try {
         updateOrder(orderId, undefined, newPaymentStatus === 'paid');
-        console.log('Toggle de pagamento enviado via websocket:', orderId, newPaymentStatus);
       } catch (error) {
         console.error('Erro ao atualizar status de pagamento:', error);
       }
@@ -405,7 +406,6 @@ export default function OrderManagement() {
     // Liberar o lock após um delay
     setTimeout(() => {
       isUpdatingRef.current[orderId] = false;
-      console.log('Lock de pagamento liberado para pedido:', orderId);
     }, 2000);
   }, [updateOrder]);
 
@@ -416,6 +416,66 @@ export default function OrderManagement() {
         : order
     ));
   };
+
+  const cancelOrder = useCallback(async (orderId: string, reason: string, reasonType?: string) => {
+    
+    // Verificar se já está atualizando
+    if (isUpdatingRef.current[orderId]) {
+      return;
+    }
+
+    // Marcar como atualizando
+    isUpdatingRef.current[orderId] = true;
+
+    // Atualizar estado local de forma otimista
+    setOrders((prevOrders: Order[]) => {
+      const updatedOrders = prevOrders.map((order: Order) => 
+        order.id === orderId 
+          ? { ...order, status: 'cancelled' as Order['status'] }
+          : order
+      );
+      
+      return updatedOrders;
+    });
+
+    try {
+      // Enviar cancelamento via websocket
+      const success = await updateOrder(orderId, 'cancelled', undefined, undefined, reasonType || reason);
+      
+      if (success) {
+      } else {
+        // Reverter cancelamento otimista em caso de falha
+        setOrders((prevOrders: Order[]) => {
+          const current = prevOrders.find(o => o.id === orderId);
+          const serverOrder = socketOrdersCache.current.get(orderId);
+          const fallbackStatus = serverOrder?.status || current?.status || 'recebidos';
+          return prevOrders.map((order: Order) => 
+            order.id === orderId 
+              ? { ...order, status: fallbackStatus as Order['status'] }
+              : order
+          );
+        });
+      }
+    } catch (error) {
+      console.error('❌ Erro ao cancelar pedido:', error);
+      // Reverter cancelamento otimista em caso de erro
+      setOrders((prevOrders: Order[]) => {
+        const current = prevOrders.find(o => o.id === orderId);
+        const serverOrder = socketOrdersCache.current.get(orderId);
+        const fallbackStatus = serverOrder?.status || current?.status || 'recebidos';
+        return prevOrders.map((order: Order) => 
+          order.id === orderId 
+            ? { ...order, status: fallbackStatus as Order['status'] }
+            : order
+        );
+      });
+    } finally {
+      // Sempre limpar a flag após 3 segundos
+      setTimeout(() => {
+        delete isUpdatingRef.current[orderId];
+      }, 3000);
+    }
+  }, [updateOrder]);
 
   const toggleColumn = (status: string) => {
     setExpandedColumns((prev: Record<string, boolean>) => ({
@@ -504,6 +564,7 @@ export default function OrderManagement() {
                               onTogglePaymentStatus={togglePaymentStatus}
                               onDeliveryPersonChange={updateDeliveryPerson}
                               onOpenOrderDetails={setSelectedOrderId}
+                              onCancelOrder={cancelOrder}
                             />
                           ))}
                           {statusOrders.length === 0 && (
@@ -549,6 +610,7 @@ export default function OrderManagement() {
                               onTogglePaymentStatus={togglePaymentStatus}
                               onDeliveryPersonChange={updateDeliveryPerson}
                               onOpenOrderDetails={setSelectedOrderId}
+                              onCancelOrder={cancelOrder}
                             />
                           ))}
                           {statusOrders.length === 0 && (
@@ -636,10 +698,9 @@ export default function OrderManagement() {
               name: selectedOrder.socketData.attributes.customer.data.attributes.name,
               phone: selectedOrder.socketData.attributes.customer.data.attributes.cellphone
             },
-            deliveryPerson: selectedOrder.deliveryPerson || selectedOrder.socketData.attributes.delivery_person || ''
+            deliveryPerson: selectedOrder.deliveryPerson || (selectedOrder.socketData.attributes as any).delivery_person || ''
           }}
           onUpdateOrder={async (orderId, data) => {
-            console.log('🔄 Atualizando pedido via modal:', { orderId, data });
             
             // Atualizar localmente primeiro para feedback imediato
             setOrders(prev => prev.map(order => {
@@ -679,7 +740,7 @@ export default function OrderManagement() {
                   updatedOrder.deliveryPerson = data.deliveryPerson;
                   // Atualizar também no socketData
                   if (updatedOrder.socketData?.attributes) {
-                    updatedOrder.socketData.attributes.delivery_person = data.deliveryPerson;
+                    (updatedOrder.socketData.attributes as any).delivery_person = data.deliveryPerson;
                   }
                 }
                 
@@ -691,19 +752,14 @@ export default function OrderManagement() {
             // Enviar via WebSocket
             try {
               const success = await updateOrderDetails(orderId, data);
-              if (success) {
-                console.log('✅ Pedido atualizado com sucesso via WebSocket');
-              } else {
-                console.log('❌ Falha ao atualizar pedido via WebSocket');
-                // Opcional: reverter mudanças locais em caso de falha
-              }
+
             } catch (error) {
               console.error('❌ Erro ao atualizar pedido:', error);
             }
           }}
           onCancelOrder={async (orderId) => {
-            // Atualizar localmente para status 'recebidos' (frontend) e 'cancelled' (backend)
-            setOrders(prev => prev.map(order => order.id === orderId ? { ...order, status: 'recebidos' } : order));
+            // Atualizar localmente para status 'cancelled'
+            setOrders(prev => prev.map(order => order.id === orderId ? { ...order, status: 'cancelled' } : order));
             // Atualizar via WebSocket para status cancelado
             if (updateOrder) {
               await updateOrder(orderId, 'cancelled');

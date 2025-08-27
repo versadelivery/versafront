@@ -1,10 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useUsers } from '@/app/admin/settings/users/hooks/useUsers';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
 import { 
   Truck, 
   CheckCircle, 
@@ -12,11 +13,14 @@ import {
   Copy,
   SquarePen,
   Bell,
-  ArrowRight
+  ArrowRight,
+  MessageCircle,
+  Printer
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatPrice } from '@/app/(public)/[slug]/format-price';
 import { User } from '@/app/admin/settings/users/services/userService';
+import CancelOrderModal from './cancel-order-modal';
 
 const getPaymentMethodLabel = (method: string) => {
   const methodMap: Record<string, string> = {
@@ -34,9 +38,11 @@ interface Order {
   amount: number;
   time: string;
   deliveryPerson?: string;
-  status: 'recebidos' | 'aceitos' | 'em_analise' | 'em_preparo' | 'prontos';
+  status: 'recebidos' | 'aceitos' | 'em_analise' | 'em_preparo' | 'prontos' | 'saiu' | 'entregue' | 'cancelled';
   paymentStatus: 'pending' | 'paid';
   readyTime?: string;
+  leftTime?: string; // Horário que saiu para entrega
+  deliveredTime?: string; // Horário que foi entregue
   deliveryType: 'delivery' | 'pickup';
   socketData?: any; // Dados do socket para informações adicionais
 }
@@ -48,6 +54,7 @@ interface OrderCardProps {
   onTogglePaymentStatus: (orderId: string) => void;
   onDeliveryPersonChange: (orderId: string, deliveryPerson: string) => void;
   onOpenOrderDetails: (orderId: string) => void;
+  onCancelOrder?: (orderId: string, reason: string, reasonType?: string) => void;
 }
 
 export default function OrderCard({
@@ -56,13 +63,17 @@ export default function OrderCard({
   onUpdateOrderStatus,
   onTogglePaymentStatus,
   onDeliveryPersonChange,
-  onOpenOrderDetails
+  onOpenOrderDetails,
+  onCancelOrder
 }: OrderCardProps) {
   // Buscar entregadores reais
   const { users, loading: loadingUsers } = useUsers();
   console.log(users)
   const deliveryPeople = users.filter((u: User) => u.attributes.role === 'delivery_man');
   const isPronto = order.status === 'prontos';
+  
+  // Estado para controlar o modal de cancelamento
+  const [showCancelModal, setShowCancelModal] = useState(false);
   
   const handleDeliveryPersonChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newDeliveryPerson = e.target.value;
@@ -72,12 +83,185 @@ export default function OrderCard({
   const handleOpenOrderDetails = () => {
     onOpenOrderDetails(order.id);
   };
-  
+
+  const handleCancelOrder = () => {
+    setShowCancelModal(true);
+  };
+
+  const handleConfirmCancel = async (orderId: string, reason: string, justification?: string) => {
+    if (onCancelOrder) {
+      const fullReason = justification ? `${reason} - ${justification}` : reason;
+      await onCancelOrder(orderId, fullReason, reason);
+    }
+  };
+
+  // Função para marcar como saiu para entrega
+  const handleLeftForDelivery = async () => {
+    if (onUpdateOrderStatus) {
+      await onUpdateOrderStatus(order.id, 'saiu');
+    }
+  };
+
+  // Função para marcar como entregue
+  const handleDelivered = async () => {
+    if (onUpdateOrderStatus) {
+      await onUpdateOrderStatus(order.id, 'entregue');
+    }
+  };
+
+  // Função para notificar via WhatsApp
+  const handleWhatsAppNotification = () => {
+    const customerPhone = order.socketData?.attributes?.customer?.data?.attributes?.cellphone?.replace(/\D/g, '') || '';
+    const message = `Olá ${order.customerName}! Seu pedido #${order.id} está ${order.status === 'prontos' ? 'pronto para entrega' : 'em preparo'}. Em breve você receberá mais atualizações.`;
+    const whatsappUrl = `https://wa.me/55${customerPhone}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+    
+    // Toast criativo para WhatsApp
+    toast.success('📱 WhatsApp aberto!', {
+      description: 'Mensagem personalizada pronta para envio',
+      duration: 3000,
+      icon: '💬',
+      style: {
+        background: 'linear-gradient(135deg, #009246 0%, #2C5530 100%)',
+        color: 'white',
+        border: 'none',
+        borderRadius: '12px',
+        fontSize: '14px',
+        fontWeight: '600'
+      }
+    });
+  };
+
+  // Função para imprimir pedido
+  const handlePrintOrder = () => {
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      const printContent = `
+        <html>
+          <head>
+            <title>Pedido #${order.id}</title>
+            <style>
+              body { font-family: Arial, sans-serif; margin: 20px; }
+              .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
+              .section { margin-bottom: 20px; }
+              .section-title { font-weight: bold; font-size: 16px; margin-bottom: 10px; }
+              .item { margin-bottom: 10px; }
+              .total { font-weight: bold; font-size: 18px; border-top: 1px solid #000; padding-top: 10px; }
+              @media print { body { margin: 0; } }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h1>PEDIDO #${order.id}</h1>
+              <p>Data: ${order.time}</p>
+            </div>
+            
+            <div class="section">
+              <div class="section-title">CLIENTE</div>
+              <p><strong>Nome:</strong> ${order.customerName}</p>
+              <p><strong>Telefone:</strong> ${order.socketData?.attributes?.customer?.data?.attributes?.cellphone || 'N/A'}</p>
+              ${order.deliveryType === 'delivery' && order.socketData?.attributes?.address?.data ? `
+                <p><strong>Endereço:</strong> ${order.socketData.attributes.address.data.attributes.address}</p>
+                <p><strong>Bairro:</strong> ${order.socketData.attributes.address.data.attributes.neighborhood}</p>
+                ${order.socketData.attributes.address.data.attributes.complement ? `<p><strong>Complemento:</strong> ${order.socketData.attributes.address.data.attributes.complement}</p>` : ''}
+              ` : '<p><strong>Tipo:</strong> Retirada na loja</p>'}
+            </div>
+            
+            <div class="section">
+              <div class="section-title">ITENS</div>
+              ${order.socketData?.attributes?.items?.data?.map((item: any) => `
+                <div class="item">
+                  <p><strong>${item.attributes.quantity}x ${item.attributes.catalog_item.data.attributes.name}</strong></p>
+                  <p>Preço: R$ ${parseFloat(item.attributes.total_price || '0').toFixed(2)}</p>
+                  ${item.attributes.observation ? `<p><em>Obs: ${item.attributes.observation}</em></p>` : ''}
+                </div>
+              `).join('') || 'Nenhum item'}
+            </div>
+            
+            <div class="section">
+              <div class="section-title">FORMA DE PAGAMENTO</div>
+              <p>${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}</p>
+            </div>
+            
+            <div class="total">
+              <p><strong>TOTAL: R$ ${order.amount.toFixed(2)}</strong></p>
+            </div>
+          </body>
+        </html>
+      `;
+      
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+      printWindow.focus();
+      
+      // Aguarda o conteúdo carregar e imprime
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 500);
+      
+      // Toast criativo para impressão
+      toast.success('🖨️ Impressão iniciada!', {
+        description: 'Pedido enviado para impressora',
+        duration: 3000,
+        icon: '📄',
+        style: {
+          background: 'linear-gradient(135deg, #009246 0%, #2C5530 100%)',
+          color: 'white',
+          border: 'none',
+          borderRadius: '12px',
+          fontSize: '14px',
+          fontWeight: '600'
+        }
+      });
+    }
+  };
+
+  // Função para copiar impressão (formatação para WhatsApp/Telegram)
+  const handleCopyPrintFormat = () => {
+    const printText = `
+🍽️ *PEDIDO #${order.id}*
+📅 ${order.time}
+
+👤 *CLIENTE*
+Nome: ${order.customerName}
+Telefone: ${order.socketData?.attributes?.customer?.data?.attributes?.cellphone || 'N/A'}
+${order.deliveryType === 'delivery' && order.socketData?.attributes?.address?.data ? `
+📍 *ENDEREÇO*
+${order.socketData.attributes.address.data.attributes.address}
+Bairro: ${order.socketData.attributes.address.data.attributes.neighborhood}
+${order.socketData.attributes.address.data.attributes.complement ? `Complemento: ${order.socketData.attributes.address.data.attributes.complement}` : ''}
+` : '🏪 *TIPO: Retirada na loja*'}
+
+🛒 *ITENS*
+${order.socketData?.attributes?.items?.data?.map((item: any) => `
+• ${item.attributes.quantity}x ${item.attributes.catalog_item.data.attributes.name}
+  R$ ${parseFloat(item.attributes.total_price || '0').toFixed(2)}
+  ${item.attributes.observation ? `_Obs: ${item.attributes.observation}_` : ''}
+`).join('') || 'Nenhum item'}
+
+💳 *FORMA DE PAGAMENTO*
+${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
+
+💰 *TOTAL: R$ ${order.amount.toFixed(2)}*
+    `.trim();
+    
+    navigator.clipboard.writeText(printText).then(() => {
+      console.log('✅ Formato de impressão copiado!');
+      // Toast criativo para cópia
+      toast.success('Pedido copiado com sucesso!', {
+        description: 'Formato pronto para WhatsApp/Telegram',
+        duration: 3000,
+      });
+    });
+  };
+
   return (
+    <>
     <Card className={cn("mb-4 rounded-xs shadow border-0", config.bgColor)}>
       <CardContent className="p-4">
         <div className="flex justify-between items-center mb-2">
-          <div className={cn("text-xs font-medium", isPronto && "text-white", order.paymentStatus === 'pending' ? 'text-red-500' : 'text-green-500')}>
+          <div className={cn("text-xs font-medium", isPronto && "text-white", order.paymentStatus === 'pending' ? 'text-red-500' : config.bgColor === 'bg-primary' ? 'text-white' : 'text-green-500')}>
             {order.paymentStatus === 'pending' ? 'Aguardando pagamento' : 'Pago'}
           </div>
           <div className="flex items-center gap-2">
@@ -176,6 +360,23 @@ export default function OrderCard({
           </div>
         )}
 
+        {/* Exibir horários de saída e entrega */}
+        {order.leftTime && (
+          <div className={cn("text-xs mb-2", isPronto ? "text-white" : "text-blue-600")}>
+            <div className="flex items-center gap-2">
+              <span>🚚 Saiu para entrega: {order.leftTime}</span>
+            </div>
+          </div>
+        )}
+        
+        {order.deliveredTime && (
+          <div className={cn("text-xs mb-2", isPronto ? "text-white" : "text-green-600")}>
+            <div className="flex items-center gap-2">
+              <span>✅ Entregue em: {order.deliveredTime}</span>
+            </div>
+          </div>
+        )}
+
         <div className={cn("text-xs", isPronto ? "text-white" : "text-gray-600", "mb-4")}> 
           {order.status === 'recebidos' ? (
             <div className="flex items-center gap-2">
@@ -215,7 +416,7 @@ export default function OrderCard({
               <Button 
                 variant="destructive" 
                 className="w-full rounded-xs"
-                onClick={() => console.log('Recusar pedido', order.id)}
+                onClick={handleCancelOrder}
               >
                 RECUSAR
                 <XCircle className="w-4 h-4 mr-2" />
@@ -225,6 +426,36 @@ export default function OrderCard({
 
           {order.status === 'aceitos' && (
             <div className="space-y-2">
+              <div className="flex gap-1 justify-center">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="rounded-xs text-green-600 hover:text-green-700"
+                  onClick={handleWhatsAppNotification}
+                  title="Notificar via WhatsApp"
+                >
+                  <img src="/whatsapp.svg" alt="WhatsApp" className="w-4 h-4" />
+                  <span>WhatsApp</span>
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="rounded-xs"
+                  onClick={handlePrintOrder}
+                  title="Imprimir Pedido"
+                >
+                  <Printer className="w-4 h-4"/>
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="rounded-xs"
+                  onClick={handleCopyPrintFormat}
+                  title="Copiar Formato de Impressão"
+                >
+                  <Copy className="w-4 h-4"/>
+                </Button>
+              </div>
               <div className="grid grid-cols-2 gap-2">
                 <Button 
                   variant="outline"
@@ -257,15 +488,50 @@ export default function OrderCard({
                   PRONTO
                 </Button>
               </div>
-              <Button className="w-full bg-primary hover:bg-primary/90 text-white font-bold rounded-xs">
-                <Bell className="w-4 h-4 mr-2" />
-                NOTIFICAR
+              
+              <Button 
+                variant="destructive" 
+                className="w-full rounded-xs"
+                onClick={handleCancelOrder}
+              >
+                CANCELAR
+                <XCircle className="w-4 h-4 mr-2" />
               </Button>
             </div>
           )}
 
           {order.status === 'em_analise' && (
             <div className="space-y-2">
+              <div className="flex gap-1 justify-center">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="rounded-xs text-green-600 hover:text-green-700"
+                  onClick={handleWhatsAppNotification}
+                  title="Notificar via WhatsApp"
+                >
+                  <img src="/whatsapp.svg" alt="WhatsApp" className="w-4 h-4" />
+                  <span>WhatsApp</span>
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="rounded-xs"
+                  onClick={handlePrintOrder}
+                  title="Imprimir Pedido"
+                >
+                  <Printer className="w-4 h-4"/>
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="rounded-xs"
+                  onClick={handleCopyPrintFormat}
+                  title="Copiar Formato de Impressão"
+                >
+                  <Copy className="w-4 h-4"/>
+                </Button>
+              </div>
               <Button 
                 variant="outline"
                 className="w-full rounded-xs"
@@ -289,15 +555,49 @@ export default function OrderCard({
                   PRONTO
                 </Button>
               </div>
-              <Button className="w-full bg-primary hover:bg-primary/90 text-white font-bold rounded-xs">
-                <Bell className="w-4 h-4 mr-2" />
-                NOTIFICAR
+              <Button 
+                variant="destructive" 
+                className="w-full rounded-xs"
+                onClick={handleCancelOrder}
+              >
+                CANCELAR
+                <XCircle className="w-4 h-4 mr-2" />
               </Button>
             </div>
           )}
 
           {order.status === 'em_preparo' && (
             <div className="space-y-2">
+              <div className="flex gap-1 justify-center">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="rounded-xs text-green-600 hover:text-green-700"
+                  onClick={handleWhatsAppNotification}
+                  title="Notificar via WhatsApp"
+                >
+                  <img src="/whatsapp.svg" alt="WhatsApp" className="w-4 h-4" />
+                  <span>WhatsApp</span>
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="rounded-xs"
+                  onClick={handlePrintOrder}
+                  title="Imprimir Pedido"
+                >
+                  <Printer className="w-4 h-4"/>
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="rounded-xs"
+                  onClick={handleCopyPrintFormat}
+                  title="Copiar Formato de Impressão"
+                >
+                  <Copy className="w-4 h-4"/>
+                </Button>
+              </div>
               <div className="grid grid-cols-2 gap-2">
                 <Button 
                   variant={order.paymentStatus === 'paid' ? 'default' : 'outline'}
@@ -314,29 +614,98 @@ export default function OrderCard({
                   PRONTO
                 </Button>
               </div>
-              <Button className="w-full bg-primary hover:bg-primary/90 text-white font-bold rounded-xs">
-                <Bell className="w-4 h-4 mr-2" />
-                NOTIFICAR
+              <Button 
+                variant="destructive" 
+                className="w-full rounded-xs"
+                onClick={handleCancelOrder}
+              >
+                CANCELAR
+                <XCircle className="w-4 h-4 mr-2" />
               </Button>
             </div>
           )}
 
           {order.status === 'prontos' && (
             <div className="space-y-2">
+              <div className="flex gap-1 justify-center">
+              <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="rounded-xs text-white"
+                  onClick={handleWhatsAppNotification}
+                  title="Notificar via WhatsApp"
+                >
+                  <img src="/whatsapp.svg" alt="WhatsApp" className="w-4 h-4" />
+                  <span>WhatsApp</span>
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="rounded-xs text-white"
+                  onClick={handlePrintOrder}
+                  title="Imprimir Pedido"
+                >
+                  <Printer className="w-4 h-4"/>
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="rounded-xs text-white"
+                  onClick={handleCopyPrintFormat}
+                  title="Copiar Formato de Impressão"
+                >
+                  <Copy className="w-4 h-4"/>
+                </Button>
+              </div>
               <div className="grid grid-cols-2 gap-2">
-                <Button variant="outline" className="w-full rounded-xs">
+                <Button 
+                  variant="outline" 
+                  className="w-full rounded-xs"
+                  onClick={handleLeftForDelivery}
+                >
                   <Truck className="w-3 h-3" />
                   SAIU
                 </Button>
-                <Button variant="outline" className="w-full rounded-xs">
+                <Button 
+                  variant="outline" 
+                  className="w-full rounded-xs"
+                  onClick={handleDelivered}
+                >
                   <CheckCircle className="w-2 h-2" />
                   ENTREGUE
                 </Button>
               </div>
-              <Button className="w-full border border-white text-white font-bold rounded-xs">
-                <Bell className="w-4 h-4 mr-2 text-white" />
-                NOTIFICAR
+              <Button 
+                variant="destructive" 
+                className="w-full rounded-xs border-red-600"
+                onClick={handleCancelOrder}
+              >
+                CANCELAR
+                <XCircle className="w-4 h-4 mr-2" />
               </Button>
+            </div>
+          )}
+
+          {order.status === 'saiu' && (
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <Button 
+                  variant="outline" 
+                  className="w-full rounded-xs"
+                  onClick={handleDelivered}
+                >
+                  <CheckCircle className="w-2 h-2" />
+                  ENTREGUE
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  className="w-full rounded-xs"
+                  onClick={handleCancelOrder}
+                >
+                  CANCELAR
+                  <XCircle className="w-4 h-4 mr-2" />
+                </Button>
+              </div>
             </div>
           )}
 
@@ -348,41 +717,19 @@ export default function OrderCard({
             >
               DETALHES DO PEDIDO ↗
             </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className={cn("rounded-xs", isPronto && "border-none")}
-              onClick={() => {
-                // Copiar informações do pedido para a área de transferência
-                const orderInfo = `
-Pedido #${order.id}
-Cliente: ${order.customerName}
-Telefone: ${order.socketData?.attributes?.customer?.data?.attributes?.cellphone || 'N/A'}
-Valor: ${formatPrice(order.amount)}
-Status: ${order.status}
-Forma de pagamento: ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
-${order.deliveryType === 'delivery' && order.socketData?.attributes?.address?.data ? `
-Endereço: ${order.socketData.attributes.address.data.attributes.address}
-Bairro: ${order.socketData.attributes.address.data.attributes.neighborhood}
-${order.socketData.attributes.address.data.attributes.complement ? `Complemento: ${order.socketData.attributes.address.data.attributes.complement}` : ''}
-` : ''}
-Itens:
-${order.socketData?.attributes?.items?.data?.map((item: any) => 
-  `${item.attributes.quantity}x ${item.attributes.catalog_item.data.attributes.name} - ${formatPrice(parseFloat(item.attributes.total_price || '0'))}`
-).join('\n') || 'Nenhum item'}
-                `.trim();
-                
-                navigator.clipboard.writeText(orderInfo).then(() => {
-                  // Opcional: mostrar uma notificação de sucesso
-                  console.log('Informações do pedido copiadas!');
-                });
-              }}
-            >
-              <Copy className="w-4 h-4"/>
-            </Button>
           </div>
         </div>
       </CardContent>
     </Card>
+
+    {/* Modal de Cancelamento */}
+    <CancelOrderModal
+      open={showCancelModal}
+      onOpenChange={setShowCancelModal}
+      orderId={order.id}
+      customerName={order.customerName}
+      onCancelOrder={handleConfirmCancel}
+    />
+    </>
   );
 } 

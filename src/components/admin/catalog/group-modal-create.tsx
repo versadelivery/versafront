@@ -25,7 +25,7 @@ export default function GroupModal({ isOpen, onOpenChange }: { isOpen: boolean, 
     },
     resolver: zodResolver(z.object({
       name: z.string().min(1),
-      priority: z.number().min(1),
+      priority: z.coerce.number().min(1),
       image: z.instanceof(File).optional(),
       description: z.string().min(1),
     }))
@@ -64,7 +64,7 @@ export default function GroupModal({ isOpen, onOpenChange }: { isOpen: boolean, 
   const onSubmit = (data: any) => {
     const formData = new FormData();
     formData.append('name', data.name);
-    formData.append('priority', data.priority.toString());
+    formData.append('priority', Number(data.priority).toString());
     formData.append('image', data.image);
     formData.append('description', data.description);
     createCatalogGroup(formData)

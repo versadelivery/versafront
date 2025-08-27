@@ -29,9 +29,9 @@ function CatalogPage() {
   const handleDeleteGroup = async () => {
     if (groupIdToDelete) {
       await deleteCatalogGroup(groupIdToDelete);
-      setIsDeleteConfirmationOpen(true);
+      // Close confirmation after successful deletion
+      setIsDeleteConfirmationOpen(false);
     }
-    setIsDeleteConfirmationOpen(false);
     setGroupIdToDelete(null);
   };
 
@@ -85,35 +85,46 @@ function CatalogPage() {
                   
                   <div className="w-full">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-                      {group.attributes.items.length === 0 ? (
-                        <div className="col-span-full text-start text-gray-500 py-8">
-                          Este grupo não possui itens
-                        </div>
-                      ) : (
-                        group.attributes.items.map((item) => (
-                          <div key={item.data.id} className="min-h-[350px] w-full">
-                            <ItemCard 
-                              key={item.data.id} 
-                              item={{
-                                id: parseInt(item.data.id),
-                                catalog_group_id: parseInt(group.id),
-                                name: item.data.attributes.name,
-                                description: item.data.attributes.description,
-                                item_type: item.data.attributes.item_type as 'unit' | 'weight_per_kg' | 'weight_per_g',
-                                price: item.data.attributes.price,
-                                price_with_discount: item.data.attributes.price_with_discount as number,
-                                measure_interval: item.data.attributes.measure_interval as number,
-                                min_weight: item.data.attributes.min_weight as number,
-                                max_weight: item.data.attributes.max_weight as number,
-                                image: item.data.attributes.image_url as string,
-                                catalog_item_extras_attributes: item.data.attributes.extra.data as unknown as any[],
-                                catalog_item_prepare_methods_attributes: item.data.attributes.prepare_method.data as unknown as any[],
-                                catalog_item_steps_attributes: item.data.attributes.steps.data as unknown as any[]
-                              }} 
-                            />
-                          </div>
-                        ))
-                      )}
+                      {(() => {
+                        const rawItems: any = (group.attributes as any).items;
+                        const items: any[] = Array.isArray(rawItems)
+                          ? rawItems
+                          : (rawItems?.data || []);
+                        if (items.length === 0) {
+                          return (
+                            <div className="col-span-full text-start text-gray-500 py-8">
+                              Este grupo não possui itens
+                            </div>
+                          );
+                        }
+                        return items.map((raw: any) => {
+                          const node = raw?.data ? raw.data : raw;
+                          const attrs = node.attributes;
+                          return (
+                            <div key={node.id} className="min-h-[350px] w-full">
+                              <ItemCard 
+                                key={node.id} 
+                                item={{
+                                  id: parseInt(node.id),
+                                  catalog_group_id: parseInt(group.id),
+                                  name: attrs.name,
+                                  description: attrs.description,
+                                  item_type: attrs.item_type as 'unit' | 'weight_per_kg' | 'weight_per_g',
+                                  price: attrs.price,
+                                  price_with_discount: attrs.price_with_discount as number,
+                                  measure_interval: attrs.measure_interval as number,
+                                  min_weight: attrs.min_weight as number,
+                                  max_weight: attrs.max_weight as number,
+                                  image: attrs.image_url as string,
+                                  catalog_item_extras_attributes: attrs.extra?.data as unknown as any[],
+                                  catalog_item_prepare_methods_attributes: attrs.prepare_method?.data as unknown as any[],
+                                  catalog_item_steps_attributes: attrs.steps?.data as unknown as any[]
+                                }} 
+                              />
+                            </div>
+                          );
+                        });
+                      })()}
                     </div>
                   </div>
                 </div>
