@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useState } from "react";
 import { ItemDetailsModal } from "./item-details-modal";
 import { EditItemModal } from "./edit-item-modal";
+import { fixImageUrl } from "@/utils/image-url";
 
 interface ItemCardProps {
   item: {
@@ -69,7 +70,7 @@ export function ItemCard({ item }: ItemCardProps) {
         {item.image && (
           <div className="relative h-48 w-full">
             <Image
-              src={item.image}
+              src={fixImageUrl(item.image) || ''}
               alt={item.name}
               fill
               className="object-cover"

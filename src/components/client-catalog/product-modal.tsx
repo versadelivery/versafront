@@ -11,6 +11,7 @@ import { AlertCircle, Package, Scale, Plus, ChefHat, ListChecks, ShoppingCart, I
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Separator } from '@/components/ui/separator'
 import Image from 'next/image'
+import { fixImageUrl } from "@/utils/image-url";
 
 interface ProductModalProps {
   product: any
@@ -83,7 +84,7 @@ export function ProductModal({ product, isOpen, onClose, onAddToCart }: ProductM
         {product.attributes.image_url && (
           <div className="relative h-64 w-full rounded-lg overflow-hidden">
             <Image
-              src={product.attributes.image_url}
+              src={fixImageUrl(product.attributes.image_url) || ''}
               alt={product.attributes.name}
               fill
               className="object-cover"

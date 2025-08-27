@@ -14,6 +14,7 @@ import { useEffect, useRef } from "react";
 import { useAdminActionCable, AdminOrderData } from "@/lib/admin-cable";
 import { useRestaurantSounds } from "@/hooks/use-restaurant-sounds";
 import { SoundSettings } from "@/components/admin/sound-settings";
+import { fixImageUrl } from "@/utils/image-url";
 
 export function Header() {
   const router = useRouter();
@@ -172,7 +173,7 @@ export function Header() {
             </div>
             <div className="flex items-center gap-2">
               <Avatar>
-                <AvatarImage src={shop?.image_url} />
+                <AvatarImage src={fixImageUrl(shop?.image_url) || ''} />
                 <AvatarFallback className="bg-muted text-black">
                   <User className="h-5 w-5" />
                 </AvatarFallback>

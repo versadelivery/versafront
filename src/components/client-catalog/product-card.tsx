@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Item } from '@/types/client-catalog'
 import { ProductModal } from './product-modal'
+import { fixImageUrl } from "@/utils/image-url";
 
 interface ProductCardProps {
   product: Item
@@ -36,7 +37,7 @@ export function ProductCard({ product, onAddToCart, onToggleFavorite }: ProductC
         <div className="relative aspect-square overflow-hidden">
           {product.attributes.image_url ? (
             <motion.img
-              src={product.attributes.image_url}
+              src={fixImageUrl(product.attributes.image_url) || ''}
               alt={product.attributes.name}
               className="h-full w-full object-cover"
               whileHover={{ scale: 1.1 }}

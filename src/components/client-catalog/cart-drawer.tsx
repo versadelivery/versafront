@@ -9,6 +9,7 @@ import { useCart } from '../cart/useCart'
 import { Badge } from '@/components/ui/badge'
 import { ProductModal } from './product-modal'
 import { useState } from 'react'
+import { fixImageUrl } from "@/utils/image-url";
 
 interface CartItem {
   id: string;
@@ -148,7 +149,7 @@ export default function CartDrawer({ isCartOpen, setIsCartOpen, cartItems, allIt
                           <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border bg-muted">
                             {cartItem.product.attributes.image_url ? (
                               <Image
-                                src={cartItem.product.attributes.image_url}
+                                src={fixImageUrl(cartItem.product.attributes.image_url) || ''}
                                 alt={cartItem.product.attributes.name}
                                 fill
                                 className="object-cover"

@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useCatalogItem } from "../../../hooks/useCatalogGroup";
+import { fixImageUrl } from "@/utils/image-url";
 
 interface ItemDetailsModalProps {
   id: number;
@@ -47,7 +48,7 @@ export function ItemDetailsModal({ id, isOpen, onClose }: ItemDetailsModalProps)
           {item?.data.attributes.image_url && (
             <div className="relative h-64 w-full rounded-lg overflow-hidden">
               <Image
-                src={item.data.attributes.image_url}
+                src={fixImageUrl(item.data.attributes.image_url) || ''}
                 alt={item.data.attributes.name}
                 fill
                 className="object-cover"

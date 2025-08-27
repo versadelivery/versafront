@@ -3,6 +3,7 @@ import { useShop } from "@/hooks/use-shop";
 import Image from "next/image";
 import { StaticImageData } from "next/image";
 import { Loader2 } from "lucide-react";
+import { fixImageUrl } from "@/utils/image-url";
 
 interface AdminBannerProps {
   bannerImg: StaticImageData;
@@ -11,7 +12,7 @@ interface AdminBannerProps {
 
 export function AdminBanner({ bannerImg, children }: AdminBannerProps) {
   const { shop, isLoading } = useShop();
-  const shopImage = shop?.image_url;
+  const shopImage = fixImageUrl(shop?.image_url);
 
   return (
     <div className="relative">
