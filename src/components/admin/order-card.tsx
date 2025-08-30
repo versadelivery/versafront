@@ -203,16 +203,7 @@ export default function OrderCard({
       // Toast criativo para impressão
       toast.success('🖨️ Impressão iniciada!', {
         description: 'Pedido enviado para impressora',
-        duration: 3000,
-        icon: '📄',
-        style: {
-          background: 'linear-gradient(135deg, #009246 0%, #2C5530 100%)',
-          color: 'white',
-          border: 'none',
-          borderRadius: '12px',
-          fontSize: '14px',
-          fontWeight: '600'
-        }
+        duration: 2500,
       });
     }
   };
