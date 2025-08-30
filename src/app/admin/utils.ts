@@ -1,4 +1,4 @@
-import { ShoppingCart, Settings, Target, BarChart3, Headset, BookOpen } from "lucide-react";
+import { ShoppingCart, Settings, Target, BarChart3, Headset, BookOpen, DollarSign } from "lucide-react";
 
 export const dashboardCards = [
   {
@@ -43,5 +43,12 @@ export const dashboardCards = [
     title: "Suporte",
     description: "Área de atendimento e auxílio ao lojista",
     iconBgColor: "bg-yellow-500"
+  },
+  {
+    href: "/admin/caixa",
+    icon: DollarSign,
+    title: "Controle de Caixa",
+    description: "Gerencie o fluxo de caixa da sua loja",
+    iconBgColor: "bg-green-600"
   }
 ];
