@@ -3,7 +3,7 @@ export interface OrderAddress {
   neighborhood: string;
   complement?: string;
   reference?: string;
-  shop_delivery_neighborhood?: string;
+  shop_delivery_neighborhood_id?: number;
 }
 
 export interface OrderItem {
@@ -25,12 +25,14 @@ export interface CreateOrderRequest {
     shop_id: number;
     withdrawal: boolean;
     payment_method: 'manual_pix' | 'credit' | 'debit' | 'cash';
+    customer_name?: string;
+    customer_phone?: string;
     address: {
       address: string;
       neighborhood: string;
       complement?: string;
       reference?: string;
-      shop_delivery_neighborhood?: string;
+      shop_delivery_neighborhood_id?: number;
     };
     items: OrderItem[];
   };

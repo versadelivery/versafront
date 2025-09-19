@@ -87,6 +87,7 @@ export function ProductModal({ product, isOpen, onClose, onAddToCart }: ProductM
               src={fixImageUrl(product.attributes.image_url) || ''}
               alt={product.attributes.name}
               fill
+              sizes="(max-width: 768px) 100vw, 50vw"
               className="object-cover"
             />
           </div>

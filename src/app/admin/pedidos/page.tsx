@@ -73,9 +73,13 @@ const convertSocketDataToOrder = (socketOrder: AdminOrderData): Order => {
   const paidAt = (socketOrder.attributes as any).paid_at || (socketOrder.attributes as any).paidAt
   const paymentStatus: Order['paymentStatus'] = paidAt ? 'paid' : 'pending'
 
+  const customerName = socketOrder.attributes.customer?.data?.attributes?.name || 
+                      socketOrder.attributes.customer?.name || 
+                      'Cliente';
+
   return {
     id: socketOrder.id,
-    customerName: socketOrder.attributes.customer.data.attributes.name,
+    customerName,
     amount: totalPrice,
     time,
     deliveryPerson: undefined, // Será definido pelo admin
@@ -694,10 +698,10 @@ export default function OrderManagement() {
               name: selectedOrder.socketData.attributes.shop.data.attributes.name,
               phone: selectedOrder.socketData.attributes.shop.data.attributes.cellphone
             },
-            customer: {
-              name: selectedOrder.socketData.attributes.customer.data.attributes.name,
-              phone: selectedOrder.socketData.attributes.customer.data.attributes.cellphone
-            },
+            customer: selectedOrder.socketData.attributes.customer?.data ? {
+            name: selectedOrder.socketData.attributes.customer.data.attributes.name,
+            phone: selectedOrder.socketData.attributes.customer.data.attributes.cellphone
+            } : undefined,
             deliveryPerson: selectedOrder.deliveryPerson || (selectedOrder.socketData.attributes as any).delivery_person || ''
           }}
           onUpdateOrder={async (orderId, data) => {

@@ -123,7 +123,7 @@ export default function OrderDetailsModal({ open, onOpenChange, order, onUpdateO
   }, [order]);
 
   // Calcular subtotal baseado nos itens editados
-  const editedSubtotal = editedOrder.items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+  const editedSubtotal = (editedOrder.items || []).reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
 
   const handleEdit = (type: 'customer' | 'order' | 'financial' | 'item' | 'shop', field: string, value: string | number) => {
     setEditingField({ type, field, value });
@@ -134,12 +134,12 @@ export default function OrderDetailsModal({ open, onOpenChange, order, onUpdateO
       // Calcular diferenças entre order original e editedOrder
       const changes: any = {};
       
-      // Verificar mudanças no cliente
-      if (editedOrder.customer.name !== order.customer.name) {
-        changes.customer = { ...changes.customer, name: editedOrder.customer.name };
+      // Verificar mudanças no cliente (null-safe)
+      if ((editedOrder.customer?.name ?? '') !== (order.customer?.name ?? '')) {
+        changes.customer = { ...changes.customer, name: editedOrder.customer?.name ?? '' };
       }
-      if (editedOrder.customer.phone !== order.customer.phone) {
-        changes.customer = { ...changes.customer, phone: editedOrder.customer.phone };
+      if ((editedOrder.customer?.phone ?? '') !== (order.customer?.phone ?? '')) {
+        changes.customer = { ...changes.customer, phone: editedOrder.customer?.phone ?? '' };
       }
       
       // Verificar mudanças no endereço
@@ -194,7 +194,7 @@ export default function OrderDetailsModal({ open, onOpenChange, order, onUpdateO
           
           // Aplicar as mudanças salvas ao order original
           if (changes.customer) {
-            updated.customer = { ...updated.customer, ...changes.customer };
+            updated.customer = { ...(updated.customer || {}), ...changes.customer };
           }
           if (changes.address) {
             updated.address = { ...updated.address, ...changes.address };
@@ -471,8 +471,8 @@ ${order.items.map(item =>
                   Informações do <span className="font-bold text-gray-700">Cliente</span>
                 </h3>
                 <div className="space-y-3">
-                  {renderEditableField('customer', 'name', editedOrder.customer.name, 'NOME')}
-                  {renderEditableField('customer', 'phone', editedOrder.customer.phone, 'TELEFONE')}
+                  {renderEditableField('customer', 'name', editedOrder.customer?.name || 'Cliente', 'NOME')}
+                  {renderEditableField('customer', 'phone', editedOrder.customer?.phone || '', 'TELEFONE')}
 
                   {!order.withdrawal && editedOrder.address && (
                     <>

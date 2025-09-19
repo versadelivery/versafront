@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,8 @@ import { useCatalogGroup } from "@/hooks/useCatalogGroup";
 import Image from "next/image";
 import { toast } from "sonner";
 import { formatPrice } from "@/utils/format-price";
-import { createOrder } from "@/services/order-service";
+import { createPDVOrder } from "@/services/order-service";
+import { useAdminActionCable } from "@/lib/admin-cable";
 
 interface CartItem {
   id: string;
@@ -61,6 +62,17 @@ export default function PDVPage() {
   const [isProcessingOrder, setIsProcessingOrder] = useState(false);
 
   const { catalog, isLoading } = useCatalogGroup();
+  const { subscribeToAdminOrders } = useAdminActionCable();
+
+  // Conectar ao canal admin para receber atualizações via AnyCable (sem UI por enquanto)
+  useEffect(() => {
+    const unsubscribe = subscribeToAdminOrders(() => {
+      // No momento não usamos os dados nesta tela; mantemos a conexão ativa
+    });
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [subscribeToAdminOrders]);
 
   // Filtrar produtos baseado na busca e grupo selecionado
   const filteredCatalog = catalog?.data?.map((group: any) => ({
@@ -189,6 +201,8 @@ export default function PDVPage() {
           shop_id: 1, // Você pode buscar isso do contexto da loja
           withdrawal: orderType === "pickup",
           payment_method: paymentMethod === "cash" ? "cash" as const : paymentMethod === "card" ? "credit" as const : "manual_pix" as const,
+          customer_name: customerInfo.name,
+          customer_phone: customerInfo.phone.replace(/\D/g, ''), // Remove formatação do telefone
           address: {
             address: customerInfo.address,
             neighborhood: customerInfo.neighborhood,
@@ -203,7 +217,8 @@ export default function PDVPage() {
         }
       };
 
-      const result = await createOrder(orderData);
+      console.log('🔍 PDV Order Data:', JSON.stringify(orderData, null, 2));
+      const result = await createPDVOrder(orderData);
       
       if (result) {
         toast.success("Pedido criado com sucesso!");
@@ -221,9 +236,10 @@ export default function PDVPage() {
         setNotes("");
         setChangeAmount("");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao processar pedido:", error);
-      toast.error("Erro ao processar pedido");
+      const errorMessage = error.response?.data?.error || "Erro ao processar pedido";
+      toast.error(errorMessage);
     } finally {
       setIsProcessingOrder(false);
     }
@@ -394,6 +410,7 @@ export default function PDVPage() {
                                   src={item.data.attributes.image_url}
                                   alt={item.data.attributes.name}
                                   fill
+                                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                                   className="object-cover group-hover:scale-105 transition-transform duration-200"
                                 />
                               ) : (
@@ -501,6 +518,7 @@ export default function PDVPage() {
                               src={item.image_url}
                               alt={item.name}
                               fill
+                              sizes="48px"
                               className="object-cover rounded"
                             />
                           </div>

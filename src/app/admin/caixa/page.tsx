@@ -1,15 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { History, TrendingUp, CreditCard } from "lucide-react";
+import { closeCashRegister, createManualEntry, listCashRegisters, openCashRegister } from "@/services/cash-register-service";
 
 export default function CaixaPage() {
   const [openingValue, setOpeningValue] = useState("");
   const [isOpen, setIsOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
   
   // Estados para moedas
   const [coins, setCoins] = useState({
@@ -33,9 +35,54 @@ export default function CaixaPage() {
     "200.00": "0"
   });
 
-  const handleOpenCash = () => {
-    if (openingValue && parseFloat(openingValue) > 0) {
+  useEffect(() => {
+    const loadStatus = async () => {
+      try {
+        const registers = await listCashRegisters();
+        const hasOpen = registers.some((r) => !r.closed_at);
+        setIsOpen(hasOpen);
+      } catch (e) {
+        console.error('Erro ao carregar status do caixa:', e);
+        // Mantém o estado padrão (fechado) em caso de erro
+      }
+    };
+    loadStatus();
+  }, []);
+
+  const handleOpenCash = async () => {
+    if (!openingValue || parseFloat(openingValue) <= 0) return;
+    try {
+      setLoading(true);
+      await openCashRegister();
+      await createManualEntry({
+        kind: "opening",
+        amount: parseFloat(openingValue),
+        description: "Abertura de caixa",
+      });
       setIsOpen(true);
+      setOpeningValue(""); // Limpa o campo após sucesso
+      window.alert("Caixa aberto com sucesso");
+    } catch (err: any) {
+      console.error('Erro ao abrir caixa:', err);
+      const errorMessage = err?.response?.data?.error || err?.message || "Falha ao abrir o caixa";
+      window.alert(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCloseCash = async () => {
+    try {
+      setLoading(true);
+      await closeCashRegister();
+      setIsOpen(false);
+      window.alert("Caixa fechado com sucesso");
+    } catch (err: any) {
+      console.error('Erro ao fechar caixa:', err);
+      const errorMessage = err?.response?.data?.error || err?.message || "Falha ao fechar o caixa";
+      window.alert(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -109,15 +156,26 @@ export default function CaixaPage() {
                 className="text-lg"
                 step="0.01"
                 min="0"
+                disabled={isOpen || loading}
               />
             </div>
-            <Button 
-              onClick={handleOpenCash}
-              disabled={!openingValue || parseFloat(openingValue) <= 0}
-              className="bg-primary hover:bg-primary/80"
-            >
-              Abrir
-            </Button>
+            {!isOpen ? (
+              <Button 
+                onClick={handleOpenCash}
+                disabled={!openingValue || parseFloat(openingValue) <= 0 || loading}
+                className="bg-primary hover:bg-primary/80"
+              >
+                {loading ? "Abrindo..." : "Abrir"}
+              </Button>
+            ) : (
+              <Button 
+                onClick={handleCloseCash}
+                disabled={loading}
+                variant="destructive"
+              >
+                {loading ? "Fechando..." : "Fechar"}
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>

@@ -17,6 +17,18 @@ export const createOrder = async (data: CreateOrderRequest) => {
   }
 };
 
+export const createPDVOrder = async (data: CreateOrderRequest) => {
+  setTokenType('admin');
+  
+  try {
+    const response = await api.post(API_ENDPOINTS.ADMIN_ORDERS, data);
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao criar pedido no PDV:', error);
+    throw error;
+  }
+};
+
 export const getCustomerOrders = async (): Promise<CustomerOrdersResponse | null> => {
   setTokenType('client');
   

@@ -2,7 +2,7 @@ import axios from "axios"
 import { API_BASE_URL } from "@/api/routes"
 import { getClientToken, getToken, removeToken } from "@/lib/auth"  
 
-type TokenType = 'normal' | 'client'
+type TokenType = 'normal' | 'client' | 'admin'
 
 let currentTokenType: TokenType = 'normal'
 
@@ -24,10 +24,15 @@ api.interceptors.request.use((config) => {
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
-  } else {
+  } else if (currentTokenType === 'client') {
     const clientToken = getClientToken()
     if (clientToken) {
       config.headers.Authorization = `Bearer ${clientToken}`
+    }
+  } else if (currentTokenType === 'admin') {
+    const token = getToken()
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
     }
   }
   return config

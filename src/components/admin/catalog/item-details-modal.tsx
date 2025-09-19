@@ -51,6 +51,7 @@ export function ItemDetailsModal({ id, isOpen, onClose }: ItemDetailsModalProps)
                 src={fixImageUrl(item.data.attributes.image_url) || ''}
                 alt={item.data.attributes.name}
                 fill
+                sizes="(max-width: 768px) 100vw, 50vw"
                 className="object-cover"
               />
             </div>

@@ -527,6 +527,7 @@ export default function ProductModal({ product, trigger }: ProductModalProps) {
                   src={attributes.image_url}
                   alt={attributes.name}
                   fill
+                  sizes="(max-width: 768px) 100vw, 50vw"
                   className="object-cover rounded-t-xl max-sm:rounded-t-lg"
                 />
               ) : (

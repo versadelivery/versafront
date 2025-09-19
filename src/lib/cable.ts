@@ -5,12 +5,13 @@ import { ActionCableOrderData } from "@/types/order"
 
 export function createCableWithToken() {
   const token = getClientToken()
-  if (token) {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-    const cableUrl = apiUrl.replace('http', 'ws').replace('https', 'wss') + `/cable?token=${token}`
-    return createConsumer(cableUrl)
-  }
-  return null
+  if (!token) return null
+
+  const base = process.env.NEXT_PUBLIC_CABLE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+  const wsBase = base.startsWith('ws') ? base : base.replace('http', 'ws').replace('https', 'wss')
+  const hasQuery = wsBase.includes('?')
+  const cableUrl = `${wsBase.replace(/\/$/, '')}${wsBase.endsWith('/cable') || wsBase.endsWith('/cable/') ? '' : '/cable'}${hasQuery ? '&' : '?'}token=${token}`
+  return createConsumer(cableUrl)
 }
 
 export function useActionCable() {
