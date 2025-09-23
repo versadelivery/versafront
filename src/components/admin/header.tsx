@@ -183,6 +183,14 @@ export function Header() {
                 <p className="font-outfit text-xs text-black">{shop?.address}</p>
               </div>
             </div>
+            {/* <Button
+              variant="outline"
+              size="default"
+              onClick={() => router.push("/super-admin")}
+              className="text-blue-600 border-blue-600 hover:bg-blue-50 transition-all duration-500 font-outfit px-4 py-2 rounded-xs"
+            >
+              Super Admin
+            </Button> */}
             <Button
               variant="destructive"
               size="default"
