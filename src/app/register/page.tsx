@@ -11,6 +11,119 @@ import Link from "next/link";
 import { z } from "zod";
 import { formatPhone } from "@/utils/format-phone";
 import { useAuth } from "@/hooks/use-auth";
+import { isAxiosError } from "axios";
+import { toast } from "sonner";
+
+type RegisterStateErrors = {
+  shop?: Partial<RegisterFormData["shop"]>;
+  shop_user?: Partial<RegisterFormData["shop_user"]>;
+};
+
+type BackendErrorDescriptor =
+  | { section: "shop"; field: keyof RegisterFormData["shop"]; message: string }
+  | { section: "shop_user"; field: keyof RegisterFormData["shop_user"]; message: string };
+
+const BACKEND_ERROR_MAP: Record<string, BackendErrorDescriptor> = {
+  "Cellphone has already been taken": {
+    section: "shop",
+    field: "cellphone",
+    message: "Este celular já está em uso"
+  },
+  "Cellphone can't be blank": {
+    section: "shop",
+    field: "cellphone",
+    message: "Celular é obrigatório"
+  },
+  "Cellphone is too short (minimum is 10 characters)": {
+    section: "shop",
+    field: "cellphone",
+    message: "Celular deve ter no mínimo 10 dígitos"
+  },
+  "Name has already been taken": {
+    section: "shop",
+    field: "name",
+    message: "Nome do estabelecimento já está em uso"
+  },
+  "Name can't be blank": {
+    section: "shop_user",
+    field: "name",
+    message: "Nome é obrigatório"
+  },
+  "Email has already been taken": {
+    section: "shop_user",
+    field: "email",
+    message: "Email já está em uso"
+  },
+  "Email can't be blank": {
+    section: "shop_user",
+    field: "email",
+    message: "Email é obrigatório"
+  },
+  "Email is invalid": {
+    section: "shop_user",
+    field: "email",
+    message: "Email inválido"
+  },
+  "Password can't be blank": {
+    section: "shop_user",
+    field: "password",
+    message: "Senha é obrigatória"
+  },
+  "Password is too short (minimum is 6 characters)": {
+    section: "shop_user",
+    field: "password",
+    message: "Senha deve ter no mínimo 6 caracteres"
+  }
+};
+
+const stripValidationPrefix = (message: string) =>
+  message.replace(/^Validation failed:\s*/i, "").trim();
+
+const extractBackendMessages = (message: string) => {
+  const stripped = stripValidationPrefix(message);
+  return stripped.split(/,\s*/).map((entry) => entry.trim()).filter(Boolean);
+};
+
+const mapMessagesToFieldErrors = (messages: string[]): RegisterStateErrors => {
+  return messages.reduce<RegisterStateErrors>((acc, current) => {
+    const descriptor = BACKEND_ERROR_MAP[current];
+    if (!descriptor) {
+      return acc;
+    }
+
+    if (descriptor.section === "shop") {
+      acc.shop = {
+        ...(acc.shop ?? {}),
+        [descriptor.field]: descriptor.message
+      };
+    } else {
+      acc.shop_user = {
+        ...(acc.shop_user ?? {}),
+        [descriptor.field]: descriptor.message
+      };
+    }
+
+    return acc;
+  }, {});
+};
+
+const getApiErrorMessage = (error: unknown): string | null => {
+  if (isAxiosError(error)) {
+    const apiError = error.response?.data?.error;
+    if (typeof apiError === "string") {
+      return apiError;
+    }
+    if (Array.isArray(apiError)) {
+      return apiError.join(", ");
+    }
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return null;
+};
 
 export default function Register() {
   const { register } = useAuth();
@@ -29,6 +142,24 @@ export default function Register() {
     }
   });
   const [errors, setErrors] = useState<Partial<RegisterFormData>>({});
+
+  const applyBackendErrors = (fieldErrors: RegisterStateErrors) => {
+    if (!fieldErrors.shop && !fieldErrors.shop_user) {
+      return false;
+    }
+
+    setErrors(prev => ({
+      ...prev,
+      ...(fieldErrors.shop
+        ? { shop: { ...(prev.shop ?? {}), ...fieldErrors.shop } }
+        : {}),
+      ...(fieldErrors.shop_user
+        ? { shop_user: { ...(prev.shop_user ?? {}), ...fieldErrors.shop_user } }
+        : {})
+    }));
+
+    return true;
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -56,6 +187,7 @@ export default function Register() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setErrors({});
     try {
       const validatedData = registerSchema.parse(formData);
       await register(validatedData);
@@ -73,6 +205,21 @@ export default function Register() {
           }
         });
         setErrors(formattedErrors);
+      } else {
+        const apiErrorMessage = getApiErrorMessage(error);
+        if (apiErrorMessage) {
+          const messages = extractBackendMessages(apiErrorMessage);
+          const fieldErrors = mapMessagesToFieldErrors(messages);
+          applyBackendErrors(fieldErrors);
+
+          const primaryMessage = messages[0] ?? apiErrorMessage;
+          const friendlyMessage =
+            BACKEND_ERROR_MAP[primaryMessage]?.message ?? stripValidationPrefix(primaryMessage);
+
+          toast.error(friendlyMessage || "Erro ao cadastrar loja");
+        } else {
+          toast.error("Erro ao cadastrar loja");
+        }
       }
     } finally {
       setIsLoading(false);

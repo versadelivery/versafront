@@ -20,16 +20,12 @@ export function useAuth() {
   }, [])
 
   const register = async (data: RegisterData)=> {
-    try {
-      const response = await registerShop(data)
-      setToken(response.token)
-      setUser(response.user)
-      toast.success('Loja cadastrada com sucesso')
-      router.push('/admin')
-      return response
-    } catch (error) {
-      toast.error('Erro ao cadastrar loja')
-    }
+    const response = await registerShop(data)
+    setToken(response.token)
+    setUser(response.user)
+    toast.success('Loja cadastrada com sucesso')
+    router.push('/admin')
+    return response
   }
 
   const login = async (data: LoginData): Promise<LoginResponse> => {
