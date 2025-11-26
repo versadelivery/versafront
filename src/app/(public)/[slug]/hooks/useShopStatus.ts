@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { scheduleService } from "@/app/admin/settings/general/services/scheduleService";
-import { shopStatusService } from "@/services/shopStatusService";
 
 export interface ShopStatus {
   isOpen: boolean;
@@ -12,13 +11,22 @@ export interface ShopStatus {
   nextOpenTime: string | null;
 }
 
-export function useShopStatus() {
+interface UseShopStatusOptions {
+  initialShopStatus?: {
+    is_open: boolean;
+    current_time?: string;
+    timezone?: string;
+  };
+  shopScheduleConfig?: any;
+}
+
+export function useShopStatus(options?: UseShopStatusOptions) {
   const [shopStatus, setShopStatus] = useState<ShopStatus>({
-    isOpen: false,
+    isOpen: options?.initialShopStatus?.is_open ?? false,
     todaySchedule: null,
     nextOpenTime: null
   });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!options?.initialShopStatus);
 
   // Função para obter o dia da semana em inglês
   const getCurrentDayKey = () => {
@@ -84,16 +92,6 @@ export function useShopStatus() {
       isOpen = currentMinutes >= openMinutes && currentMinutes <= closeMinutes;
     }
 
-    // Debug para verificar cálculos
-    console.log('Debug Shop Status:', {
-      brasiliaTime: brasiliaTime.toLocaleString('pt-BR'),
-      currentDay,
-      currentMinutes,
-      openMinutes,
-      closeMinutes,
-      todaySchedule,
-      isOpen
-    });
 
     return {
       isOpen,
@@ -107,24 +105,107 @@ export function useShopStatus() {
     try {
       setLoading(true);
       
-      // Primeiro tentar buscar o status do backend (mais confiável)
-      try {
-        const backendStatus = await shopStatusService.getStatus();
-        
-        // Se conseguir buscar do backend, usar essa informação
-        if (backendStatus.data) {
-          setShopStatus({
-            isOpen: backendStatus.data.attributes.is_open,
-            todaySchedule: null, // Pode ser expandido depois
-            nextOpenTime: null
-          });
-          return;
-        }
-      } catch (backendError) {
-        console.warn('Erro ao buscar status do backend, usando cálculo local:', backendError);
+      // Se temos dados iniciais do servidor, usar esses dados
+      if (options?.initialShopStatus) {
+        setShopStatus({
+          isOpen: options.initialShopStatus.is_open,
+          todaySchedule: null,
+          nextOpenTime: null
+        });
+        setLoading(false);
+        return;
       }
 
-      // Fallback: usar cálculo local baseado nos horários
+      // Se temos schedule config do servidor, usar cálculo local
+      if (options?.shopScheduleConfig) {
+        const config = options.shopScheduleConfig;
+        const schedule = {
+          sunday: {
+            active: config.sunday_active ?? false,
+            open: config.sunday_open ? 
+              (typeof config.sunday_open === 'string' && config.sunday_open.includes('T') 
+                ? config.sunday_open.substring(11, 16) 
+                : config.sunday_open) : "00:00",
+            close: config.sunday_close ? 
+              (typeof config.sunday_close === 'string' && config.sunday_close.includes('T')
+                ? config.sunday_close.substring(11, 16)
+                : config.sunday_close) : "23:59"
+          },
+          monday: {
+            active: config.monday_active ?? false,
+            open: config.monday_open ? 
+              (typeof config.monday_open === 'string' && config.monday_open.includes('T')
+                ? config.monday_open.substring(11, 16)
+                : config.monday_open) : "00:00",
+            close: config.monday_close ? 
+              (typeof config.monday_close === 'string' && config.monday_close.includes('T')
+                ? config.monday_close.substring(11, 16)
+                : config.monday_close) : "23:59"
+          },
+          tuesday: {
+            active: config.tuesday_active ?? false,
+            open: config.tuesday_open ? 
+              (typeof config.tuesday_open === 'string' && config.tuesday_open.includes('T')
+                ? config.tuesday_open.substring(11, 16)
+                : config.tuesday_open) : "00:00",
+            close: config.tuesday_close ? 
+              (typeof config.tuesday_close === 'string' && config.tuesday_close.includes('T')
+                ? config.tuesday_close.substring(11, 16)
+                : config.tuesday_close) : "23:59"
+          },
+          wednesday: {
+            active: config.wednesday_active ?? false,
+            open: config.wednesday_open ? 
+              (typeof config.wednesday_open === 'string' && config.wednesday_open.includes('T')
+                ? config.wednesday_open.substring(11, 16)
+                : config.wednesday_open) : "00:00",
+            close: config.wednesday_close ? 
+              (typeof config.wednesday_close === 'string' && config.wednesday_close.includes('T')
+                ? config.wednesday_close.substring(11, 16)
+                : config.wednesday_close) : "23:59"
+          },
+          thursday: {
+            active: config.thursday_active ?? false,
+            open: config.thursday_open ? 
+              (typeof config.thursday_open === 'string' && config.thursday_open.includes('T')
+                ? config.thursday_open.substring(11, 16)
+                : config.thursday_open) : "00:00",
+            close: config.thursday_close ? 
+              (typeof config.thursday_close === 'string' && config.thursday_close.includes('T')
+                ? config.thursday_close.substring(11, 16)
+                : config.thursday_close) : "23:59"
+          },
+          friday: {
+            active: config.friday_active ?? false,
+            open: config.friday_open ? 
+              (typeof config.friday_open === 'string' && config.friday_open.includes('T')
+                ? config.friday_open.substring(11, 16)
+                : config.friday_open) : "00:00",
+            close: config.friday_close ? 
+              (typeof config.friday_close === 'string' && config.friday_close.includes('T')
+                ? config.friday_close.substring(11, 16)
+                : config.friday_close) : "23:59"
+          },
+          saturday: {
+            active: config.saturday_active ?? false,
+            open: config.saturday_open ? 
+              (typeof config.saturday_open === 'string' && config.saturday_open.includes('T')
+                ? config.saturday_open.substring(11, 16)
+                : config.saturday_open) : "00:00",
+            close: config.saturday_close ? 
+              (typeof config.saturday_close === 'string' && config.saturday_close.includes('T')
+                ? config.saturday_close.substring(11, 16)
+                : config.saturday_close) : "23:59"
+          }
+        };
+
+        const status = calculateShopStatus(schedule);
+        setShopStatus(status);
+        setLoading(false);
+        return;
+      }
+
+      // Fallback: tentar buscar do backend (requer autenticação - apenas para admin)
       const response = await scheduleService.getSchedule();
       
       if (response.data) {
@@ -192,15 +273,19 @@ export function useShopStatus() {
     }
   };
 
-  // Atualizar status a cada minuto
+  // Atualizar status a cada minuto (apenas se não tivermos dados iniciais)
   useEffect(() => {
-    fetchShopStatus();
-    
-    const interval = setInterval(() => {
+    if (!options?.initialShopStatus && !options?.shopScheduleConfig) {
       fetchShopStatus();
-    }, 60000); // Atualizar a cada minuto
+      
+      const interval = setInterval(() => {
+        fetchShopStatus();
+      }, 60000); // Atualizar a cada minuto
 
-    return () => clearInterval(interval);
+      return () => clearInterval(interval);
+    } else {
+      fetchShopStatus();
+    }
   }, []);
 
   return {

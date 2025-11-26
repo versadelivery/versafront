@@ -4,8 +4,20 @@ import { useShopStatus } from '../hooks/useShopStatus';
 import { CheckCircle, XCircle, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-export default function ShopStatus() {
-  const { shopStatus, loading } = useShopStatus();
+interface ShopStatusProps {
+  shopStatusData?: {
+    is_open: boolean;
+    current_time?: string;
+    timezone?: string;
+  };
+  shopScheduleConfig?: any;
+}
+
+export default function ShopStatus({ shopStatusData, shopScheduleConfig }: ShopStatusProps) {
+  const { shopStatus, loading } = useShopStatus({
+    initialShopStatus: shopStatusData,
+    shopScheduleConfig: shopScheduleConfig
+  });
 
   if (loading) {
     return (

@@ -41,6 +41,11 @@ export interface ShopResponse {
           }
         }
       }
+      shop_status?: {
+        is_open: boolean
+        current_time?: string
+        timezone?: string
+      }
       catalog_groups: {
         data: Array<{
           id: string

@@ -1,7 +1,6 @@
 "use client"
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { shopStatusService } from '@/services/shopStatusService';
 
 interface ShopStatusContextType {
   isOpen: boolean;
@@ -27,20 +26,32 @@ interface ShopStatusProviderProps {
   children: React.ReactNode;
 }
 
-export const ShopStatusProvider: React.FC<ShopStatusProviderProps> = ({ children }) => {
+export const ShopStatusProvider: React.FC<ShopStatusProviderProps> = ({ 
+  children
+}) => {
   const [isOpen, setIsOpen] = useState(true);
   const [loading, setLoading] = useState(true);
 
   const checkStatus = async () => {
     try {
-      setLoading(true);
-      const response = await shopStatusService.getStatus();
-      setIsOpen(response.data.attributes.is_open);
+      // Buscar dados do shop do localStorage (salvos pelo ClientStoreContent)
+      const shopData = localStorage.getItem("shop");
+      if (shopData) {
+        const shop = JSON.parse(shopData);
+        if (shop?.data?.attributes?.shop_status) {
+          setIsOpen(shop.data.attributes.shop_status.is_open);
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Se não temos dados, assumir que está aberta para não bloquear vendas
+      // (não fazer chamadas autenticadas em páginas públicas)
+      setIsOpen(true);
+      setLoading(false);
     } catch (error) {
       console.error('Erro ao verificar status da loja:', error);
-      // Em caso de erro, assumir que está aberta para não bloquear vendas
       setIsOpen(true);
-    } finally {
       setLoading(false);
     }
   };
@@ -48,10 +59,26 @@ export const ShopStatusProvider: React.FC<ShopStatusProviderProps> = ({ children
   useEffect(() => {
     checkStatus();
     
-    // Verificar status a cada 2 minutos
-    const interval = setInterval(checkStatus, 120000);
+    // Verificar status a cada minuto
+    const interval = setInterval(checkStatus, 60000);
     
     return () => clearInterval(interval);
+  }, []);
+
+  // Escutar mudanças no localStorage para atualizar quando o shop for carregado
+  useEffect(() => {
+    const handleStorageChange = () => {
+      checkStatus();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    // Também verificar quando o componente monta (para mudanças na mesma aba)
+    const interval = setInterval(checkStatus, 1000);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
   }, []);
 
   return (

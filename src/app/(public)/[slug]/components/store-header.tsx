@@ -99,7 +99,10 @@ export default function StoreHeader({ shop }: StoreHeaderProps) {
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.5, duration: 0.5 }}
             >
-              <ShopStatus />
+              <ShopStatus 
+                shopStatusData={shop.attributes.shop_status}
+                shopScheduleConfig={shop.attributes.shop_schedule_config?.data?.attributes || shop.attributes.shop_schedule_config}
+              />
             </motion.div>
 
             {/* Informações de Contato */}
