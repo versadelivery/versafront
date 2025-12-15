@@ -184,7 +184,9 @@ export default function OrderManagement() {
   const socketOrdersCache = useRef<Map<string, Order>>(new Map());
 
   const { subscribeToAdminOrders, updateOrder, updateOrderDetails, isConnected } = useAdminActionCable();
-  const { orderAccepted, orderReady } = useRestaurantSounds();
+  const { orderAccepted, orderReady, newOrder } = useRestaurantSounds();
+  const seenOrderIdsRef = useRef<Set<string>>(new Set());
+  const initializedRef = useRef(false);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -194,6 +196,45 @@ export default function OrderManagement() {
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Inicializar contexto de áudio quando a página carregar
+  useEffect(() => {
+    // Tentar inicializar o contexto de áudio para evitar problemas de autoplay
+    const initAudio = async () => {
+      try {
+        if (!(window as any).__restaurantAudioContext) {
+          const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+          (window as any).__restaurantAudioContext = audioContext;
+          
+          // Se estiver suspenso, tentar resumir (pode falhar se não houver interação)
+          if (audioContext.state === 'suspended') {
+            // Tentar resumir em resposta a qualquer interação do usuário
+            const resumeAudio = async () => {
+              try {
+                await audioContext.resume();
+                console.log('🔊 Contexto de áudio inicializado com sucesso');
+                document.removeEventListener('click', resumeAudio);
+                document.removeEventListener('touchstart', resumeAudio);
+                document.removeEventListener('keydown', resumeAudio);
+              } catch (err) {
+                console.warn('⚠️ Não foi possível inicializar áudio:', err);
+              }
+            };
+            
+            document.addEventListener('click', resumeAudio, { once: true });
+            document.addEventListener('touchstart', resumeAudio, { once: true });
+            document.addEventListener('keydown', resumeAudio, { once: true });
+          } else {
+            console.log('🔊 Contexto de áudio já ativo');
+          }
+        }
+      } catch (error) {
+        console.warn('⚠️ Erro ao inicializar contexto de áudio:', error);
+      }
+    };
+    
+    initAudio();
   }, []);
 
   useEffect(() => {
@@ -239,6 +280,33 @@ export default function OrderManagement() {
         // atualizar cache com dados vindos do servidor
         socketOrdersCache.current = new Map(convertedOrders.map(o => [o.id, o]));
         
+        const idsInPayload = new Set<string>(socketOrders.map((o) => o.id));
+        
+        // Inicializar conjunto de IDs conhecidos na primeira carga
+        if (!initializedRef.current) {
+          seenOrderIdsRef.current = idsInPayload;
+          initializedRef.current = true;
+        } else {
+          // Verificar novos pedidos ANTES de atualizar o conjunto visto
+          let hasNewReceived = false;
+          socketOrders.forEach((o) => {
+            // Verificar se é um pedido novo (não estava no conjunto anterior) E tem status 'received'
+            if (!seenOrderIdsRef.current.has(o.id) && o.attributes.status === 'received') {
+              hasNewReceived = true;
+              console.log('🔔 Novo pedido detectado na página de pedidos:', o.id, o.attributes.status);
+            }
+          });
+          
+          // Tocar som se houver novo pedido recebido
+          if (hasNewReceived) {
+            console.log('🔔 Tocando som de novo pedido na página de pedidos');
+            newOrder();
+          }
+          
+          // Atualizar conjunto visto DEPOIS da verificação
+          seenOrderIdsRef.current = idsInPayload;
+        }
+        
         // Verificar se há novos pedidos (pedidos que não existiam antes)
         const newOrders = convertedOrders.filter(socketOrder => 
           !prevOrders.some(prevOrder => prevOrder.id === socketOrder.id)
@@ -275,7 +343,7 @@ export default function OrderManagement() {
       unsubscribe();
       clearTimeout(timeout);
     };
-  }, []); // Remover dependência subscribeToAdminOrders
+  }, [subscribeToAdminOrders, newOrder]); // Adicionar newOrder como dependência
 
   const updateOrderStatus = useCallback(async (orderId: string, newStatus: Order['status']) => {
 

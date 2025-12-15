@@ -6,6 +6,8 @@ export interface RestaurantSounds {
   newOrder: () => void;
   playSound: (soundType: 'orderAccepted' | 'orderReady' | 'newOrder') => void;
   updateSettings: (settings: SoundSettings) => void;
+  unlockAudioWithUserGesture: () => Promise<boolean>;
+  isUnlocked: () => boolean;
 }
 
 export interface SoundSettings {
@@ -24,6 +26,14 @@ export function useRestaurantSounds(): RestaurantSounds {
     orderAccepted: true,
     orderReady: true,
     newOrder: true,
+  });
+  const unlockedRef = useRef<boolean>(false);
+  const [isUnlockedState, setIsUnlockedState] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('restaurant-sound-unlocked') === '1';
+    } catch {
+      return false;
+    }
   });
 
   // Carregar configurações do localStorage
@@ -60,12 +70,68 @@ export function useRestaurantSounds(): RestaurantSounds {
     };
   }, []);
 
+  // Se havia sido desbloqueado anteriormente, marcar como desbloqueado em memória
+  useEffect(() => {
+    if (isUnlockedState) {
+      unlockedRef.current = true;
+    }
+  }, [isUnlockedState]);
+
   // Função para criar e configurar um elemento de áudio
   const createAudio = useCallback((src: string, volume: number = 0.7): HTMLAudioElement => {
     const audio = new Audio(src);
     audio.volume = volume;
     audio.preload = 'auto';
     return audio;
+  }, []);
+
+  // Função para desbloquear áudio através de gesto do usuário (deve ser chamado em um click/tap)
+  const unlockAudioWithUserGesture = useCallback(async (): Promise<boolean> => {
+    if (unlockedRef.current) {
+      return true;
+    }
+
+    try {
+      const AC = (window as any).AudioContext || (window as any).webkitAudioContext;
+      if (!AC) {
+        // sem suporte ao AudioContext, marcar desbloqueado para evitar repetição
+        unlockedRef.current = true;
+        setIsUnlockedState(true);
+        try { localStorage.setItem('restaurant-sound-unlocked', '1'); } catch {}
+        return true;
+      }
+
+      let audioContext: AudioContext | null = (window as any).__restaurantAudioContext || null;
+      if (!audioContext) {
+        audioContext = new AC();
+        (window as any).__restaurantAudioContext = audioContext;
+      }
+
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+      }
+
+      // Tocar um pulso muito curto e silencioso para "destravar" a reprodução
+      try {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        gainNode.gain.setValueAtTime(0.0001, audioContext.currentTime);
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + 0.03);
+      } catch (e) {
+        // não crítico; só tentamos desbloquear
+      }
+
+      unlockedRef.current = true;
+      setIsUnlockedState(true);
+      try { localStorage.setItem('restaurant-sound-unlocked', '1'); } catch {}
+      return true;
+    } catch (error) {
+      console.warn('Falha ao desbloquear áudio:', error);
+      return false;
+    }
   }, []);
 
   // Função para tocar som de pedido aceito (som de sino/ding)
@@ -160,31 +226,80 @@ export function useRestaurantSounds(): RestaurantSounds {
   const newOrder = useCallback(() => {
     // Verificar se o som está habilitado
     if (!settings.enabled || !settings.newOrder) {
+      console.log('🔇 Som desabilitado ou newOrder desabilitado nas configurações');
       return;
     }
 
     try {
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      // Tentar resumir o contexto de áudio se estiver suspenso (requer interação do usuário)
+      let audioContext: AudioContext | null = null;
+      
+      // Verificar se já existe um contexto de áudio global
+      if (!(window as any).__restaurantAudioContext) {
+        audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        (window as any).__restaurantAudioContext = audioContext;
+      } else {
+        audioContext = (window as any).__restaurantAudioContext;
+      }
+
+      // Se o contexto estiver suspenso, tentar resumir
+      if (audioContext.state === 'suspended') {
+        audioContext.resume().then(() => {
+          console.log('🔊 Contexto de áudio retomado');
+        }).catch((err) => {
+          console.warn('⚠️ Não foi possível retomar o contexto de áudio:', err);
+          // Tentar criar um novo contexto
+          audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+          (window as any).__restaurantAudioContext = audioContext;
+        });
+      }
+
+      if (!audioContext) {
+        console.warn('⚠️ Não foi possível criar contexto de áudio');
+        return;
+      }
+
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
       
       oscillator.connect(gainNode);
       gainNode.connect(audioContext.destination);
       
-      // Som de notificação para novo pedido
+      // Som de notificação para novo pedido (mais chamativo)
+      oscillator.type = 'sine';
       oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
       oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
       oscillator.frequency.setValueAtTime(400, audioContext.currentTime + 0.2);
+      oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.3);
       
-      gainNode.gain.setValueAtTime(settings.volume, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+      gainNode.gain.linearRampToValueAtTime(settings.volume, audioContext.currentTime + 0.05);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
       
       oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.4);
+      oscillator.stop(audioContext.currentTime + 0.5);
       
-      console.log('🔔 Som de novo pedido tocado');
+      console.log('🔔 Som de novo pedido tocado com sucesso');
     } catch (error) {
-      console.warn('Erro ao tocar som de novo pedido:', error);
+      console.warn('❌ Erro ao tocar som de novo pedido:', error);
+      // Tentar fallback com Audio element
+      try {
+        const audio = new Audio();
+        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = 600;
+        gainNode.gain.value = settings.volume * 0.3;
+        
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + 0.3);
+      } catch (fallbackError) {
+        console.warn('❌ Fallback de som também falhou:', fallbackError);
+      }
     }
   }, [settings.enabled, settings.newOrder, settings.volume]);
 
@@ -219,6 +334,8 @@ export function useRestaurantSounds(): RestaurantSounds {
     orderReady,
     newOrder,
     playSound,
+    unlockAudioWithUserGesture,
+    isUnlocked: () => !!unlockedRef.current || isUnlockedState,
     updateSettings
   };
 }

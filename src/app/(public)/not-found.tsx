@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { Compass, Map } from "lucide-react";
@@ -10,6 +10,24 @@ import Image from "next/image";
 export default function NotFound() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [countdown, setCountdown] = useState(10);
+  const [mounted, setMounted] = useState(false);
+
+  // Gerar valores aleatórios apenas no cliente após montagem para evitar problemas de hidratação
+  const randomValues = useMemo(() => {
+    if (!mounted) return [];
+    return Array.from({ length: 20 }).map(() => ({
+      width: Math.random() * 80 + 20,
+      height: Math.random() * 80 + 20,
+      left: Math.random() * 100,
+      top: Math.random() * 100,
+      y: Math.random() * 100 - 50,
+      duration: Math.random() * 10 + 10,
+    }));
+  }, [mounted]);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -38,22 +56,22 @@ export default function NotFound() {
   return (
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-b from-background to-secondary/20">
       <div className="absolute inset-0 overflow-hidden">
-        {Array.from({ length: 20 }).map((_, i) => (
+        {mounted && randomValues.map((values, i) => (
           <motion.div
             key={i}
             className="absolute rounded-full bg-primary/5"
             style={{
-              width: Math.random() * 80 + 20,
-              height: Math.random() * 80 + 20,
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
+              width: values.width,
+              height: values.height,
+              left: `${values.left}%`,
+              top: `${values.top}%`,
             }}
             animate={{
-              y: [0, Math.random() * 100 - 50],
+              y: [0, values.y],
               opacity: [0.1, 0.3, 0.1],
             }}
             transition={{
-              duration: Math.random() * 10 + 10,
+              duration: values.duration,
               repeat: Infinity,
               ease: "easeInOut",
             }}
