@@ -1,8 +1,15 @@
 import { ShopResponse } from "@/types/client-catalog";
 
-export async function fetchShopBySlugServer(slug: string): Promise<ShopResponse | null> {
+export type ShopFetchResult =
+  | { status: 'success'; data: ShopResponse }
+  | { status: 'not_found' }
+  | { status: 'unavailable' }
+  | { status: 'error' };
+
+export async function fetchShopBySlugServer(slug: string): Promise<ShopFetchResult> {
   try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    // Use internal Docker network URL for server-side, fallback to public URL
+    const apiUrl = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
     const isDev = process.env.NODE_ENV === 'development';
 
@@ -22,16 +29,19 @@ export async function fetchShopBySlugServer(slug: string): Promise<ShopResponse 
 
     if (!response.ok) {
       if (response.status === 404) {
-        return null;
+        return { status: 'not_found' };
+      }
+      if (response.status === 403) {
+        return { status: 'unavailable' };
       }
       throw new Error(`Failed to fetch shop: ${response.status}`);
     }
 
     const data = await response.json();
-    return data;
+    return { status: 'success', data };
   } catch (error) {
     console.error('Error fetching shop by slug:', error);
-    return null;
+    return { status: 'error' };
   }
 }
 

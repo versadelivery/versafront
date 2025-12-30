@@ -21,20 +21,27 @@ export function useAuth() {
 
   const register = async (data: RegisterData)=> {
     const response = await registerShop(data)
-    setToken(response.token)
-    setUser(response.user)
-    toast.success('Loja cadastrada com sucesso')
-    router.push('/admin')
+    toast.success('Loja cadastrada com sucesso!')
+    router.push('/pending-approval')
     return response
   }
 
   const login = async (data: LoginData): Promise<LoginResponse> => {
     try {
       const response = await loginUser(data)
+
+      const shopApproved = response.data?.attributes?.shop?.data?.attributes?.approved
+
+      if (shopApproved === false) {
+        router.push('/pending-approval')
+        return response
+      }
+
       setToken(response.token)
       setUser(response.user)
       toast.success('Login realizado com sucesso')
       router.push('/admin')
+
       return response
     } catch (error) {
       toast.error('Erro ao fazer login')
