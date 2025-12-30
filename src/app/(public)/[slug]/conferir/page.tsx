@@ -253,7 +253,7 @@ export default function CheckoutPage() {
                 "neighborhood": neighborhoodName,
                 "complement": complement,
                 "reference": reference,
-                ...(neighborhoodId && { shop_delivery_neighborhood_id: neighborhoodId })
+                ...(neighborhoodId && { shop_delivery_neighborhood_id: Number(neighborhoodId) })
             },
             "items": cartItems.map(item => ({
               catalog_item_id: Number(item.id),
