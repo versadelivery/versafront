@@ -43,8 +43,10 @@ export function useAuth() {
       router.push('/admin')
 
       return response
-    } catch (error) {
-      toast.error('Erro ao fazer login')
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: { error?: string } } }
+      const errorMessage = axiosError.response?.data?.error || 'Erro ao fazer login'
+      toast.error(errorMessage)
       throw error
     }
   }
