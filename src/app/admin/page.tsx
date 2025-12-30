@@ -9,7 +9,7 @@ import { useShop } from "@/hooks/use-shop";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { useSchedule } from "@/app/admin/settings/general/hooks/useSchedule";
+import { useSchedule, WeekSchedule } from "@/app/admin/settings/general/hooks/useSchedule";
 
 export default function AdminDashboard() {
   const { shop, isLoading } = useShop();
@@ -26,7 +26,7 @@ export default function AdminDashboard() {
     'saturday'
   ] as const;
 
-  const todayKey = dayKeys[new Date().getDay()] as keyof typeof schedule;
+  const todayKey = dayKeys[new Date().getDay()] as keyof WeekSchedule;
   const isOpenToday = !!(schedule && schedule[todayKey] && schedule[todayKey].active);
 
   const toggleTodayOpen = async () => {
