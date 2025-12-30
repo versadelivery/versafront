@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getToken } from '@/lib/auth';
+import { getSuperAdminToken } from '@/lib/auth';
 import { Suspense } from 'react';
 
 const ProtectedSuperAdminRoute = ({ children }: { children: React.ReactNode }) => {
@@ -10,12 +10,10 @@ const ProtectedSuperAdminRoute = ({ children }: { children: React.ReactNode }) =
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const token = getToken();
-    // TODO: Aqui você pode adicionar lógica para verificar se o usuário é super admin
-    // Por enquanto, apenas verifica se tem token (pode usar role do usuário)
+    const token = getSuperAdminToken();
     setIsAuthenticated(!!token);
     if (!token) {
-      router.push('/login');
+      router.push('/super-admin/login');
     }
   }, [router]);
 

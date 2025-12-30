@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { LogOut, Menu, User, BarChart3, Settings, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/hooks/use-auth";
+import { removeSuperAdminToken } from "@/lib/auth";
 import { Sheet, SheetContent, SheetHeader, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Image from "next/image";
@@ -12,10 +12,10 @@ import Link from "next/link";
 
 export function SuperAdminHeader() {
   const router = useRouter();
-  const { logout, user } = useAuth();
 
-  const handleSignOut = async () => {
-    await logout();
+  const handleSignOut = () => {
+    removeSuperAdminToken();
+    router.push("/super-admin/login");
   };
 
   const navigationItems = [
@@ -105,7 +105,6 @@ export function SuperAdminHeader() {
               </Avatar>
               <div className="hidden md:block">
                 <p className="font-outfit text-sm font-medium text-black">Super Admin</p>
-                <p className="font-outfit text-xs text-black">{user?.email}</p>
               </div>
             </div>
             <Button
