@@ -73,8 +73,8 @@ const convertSocketDataToOrder = (socketOrder: AdminOrderData): Order => {
   const paidAt = (socketOrder.attributes as any).paid_at || (socketOrder.attributes as any).paidAt
   const paymentStatus: Order['paymentStatus'] = paidAt ? 'paid' : 'pending'
 
-  const customerName = socketOrder.attributes.customer?.data?.attributes?.name || 
-                      socketOrder.attributes.customer?.name || 
+  const customerName = socketOrder.attributes.customer?.data?.attributes?.name ||
+                      (socketOrder.attributes.customer as any)?.name ||
                       'Cliente';
 
   return {
