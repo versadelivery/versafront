@@ -1,4 +1,4 @@
-import { ShoppingCart, Settings, Target, BarChart3, Headset, BookOpen, DollarSign } from "lucide-react";
+import { ShoppingCart, Settings, Target, BarChart3, Headset, BookOpen, DollarSign, CreditCard } from "lucide-react";
 
 export const dashboardCards = [
   {
@@ -14,6 +14,13 @@ export const dashboardCards = [
     title: "Catálogo",
     description: "Gerencie seu catálogo",
     iconBgColor: "bg-emerald-600"
+  },
+  {
+    href: "/admin/financeiro",
+    icon: CreditCard,
+    title: "Financeiro",
+    description: "Gerencie suas mensalidades",
+    iconBgColor: "bg-amber-500"
   },
   {
     href: "/admin/settings",
