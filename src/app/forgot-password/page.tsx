@@ -69,7 +69,7 @@ export default function ForgotPassword() {
         <div className="flex flex-col items-center text-center">
           <CheckCircle className="w-16 h-16 text-green-500 mb-4" />
           <p className="text-gray-600 mb-6">
-            Se o e-mail estiver cadastrado, voce recebera instrucoes para redefinir sua senha.
+            Se o e-mail estiver cadastrado, você receberá instruções para redefinir sua senha.
           </p>
           <p className="text-gray-500 text-sm mb-6">
             Verifique sua caixa de entrada e spam.
@@ -92,7 +92,7 @@ export default function ForgotPassword() {
       imagePosition="left"
     >
       <p className="text-gray-600 text-center mb-6">
-        Digite seu e-mail e enviaremos instrucoes para redefinir sua senha.
+        Digite seu e-mail e enviaremos instruções para redefinir sua senha.
       </p>
       <div className="w-full flex flex-col justify-center mb-4">
         <AuthFormInput

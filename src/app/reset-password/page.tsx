@@ -28,7 +28,7 @@ function ResetPasswordContent() {
 
   useEffect(() => {
     if (!token) {
-      toast.error("Token invalido ou ausente");
+      toast.error("Token inválido ou ausente");
       router.push("/login");
     }
   }, [token, router]);
@@ -84,14 +84,14 @@ function ResetPasswordContent() {
   if (!token) {
     return (
       <AuthLayout
-        title="Link Invalido"
+        title="Link Inválido"
         imageSrc={cesta}
         imagePosition="left"
       >
         <div className="flex flex-col items-center text-center">
           <XCircle className="w-16 h-16 text-red-500 mb-4" />
           <p className="text-gray-600 mb-6">
-            O link de recuperacao de senha e invalido ou expirou.
+            O link de recuperação de senha é inválido ou expirou.
           </p>
           <Link href="/forgot-password">
             <Button className="w-full">
@@ -113,7 +113,7 @@ function ResetPasswordContent() {
         <div className="flex flex-col items-center text-center">
           <CheckCircle className="w-16 h-16 text-green-500 mb-4" />
           <p className="text-gray-600 mb-6">
-            Sua senha foi alterada com sucesso. Voce ja pode fazer login com a nova senha.
+            Sua senha foi alterada com sucesso. Você já pode fazer login com a nova senha.
           </p>
           <Link href="/login">
             <Button className="w-full">
