@@ -20,3 +20,17 @@ export const registerShop = async (data: any) => {
   const response = await api.post(API_ENDPOINTS.SHOPS, payload)
   return response.data
 }
+
+export const forgotPassword = async (email: string) => {
+  const response = await api.post(API_ENDPOINTS.FORGOT_PASSWORD, { email })
+  return response.data
+}
+
+export const resetPassword = async (data: {
+  token: string
+  password: string
+  password_confirmation: string
+}) => {
+  const response = await api.post(API_ENDPOINTS.RESET_PASSWORD, data)
+  return response.data
+}

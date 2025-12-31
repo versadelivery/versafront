@@ -84,8 +84,14 @@ export default function Login() {
           onChange={handleChange}
           disabled={isLoading}
           label="Senha"
-          error={errors.password}showPasswordToggle
+          error={errors.password}
+          showPasswordToggle
         />
+      </div>
+      <div className="w-full flex justify-end mb-2">
+        <Link href="/forgot-password" className="text-sm text-primary hover:underline">
+          Esqueceu sua senha?
+        </Link>
       </div>
       <Button
         type="submit"
