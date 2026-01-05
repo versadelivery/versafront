@@ -75,7 +75,7 @@ const convertSocketDataToOrder = (socketOrder: AdminOrderData): Order => {
 
   return {
     id: socketOrder.id,
-    customerName: socketOrder.attributes.customer.data.attributes.name,
+    customerName: socketOrder.attributes.customer.data?.attributes?.name || 'Cliente PDV',
     amount: totalPrice,
     time,
     deliveryPerson: undefined, // Será definido pelo admin
@@ -695,8 +695,8 @@ export default function OrderManagement() {
               phone: selectedOrder.socketData.attributes.shop.data.attributes.cellphone
             },
             customer: {
-              name: selectedOrder.socketData.attributes.customer.data.attributes.name,
-              phone: selectedOrder.socketData.attributes.customer.data.attributes.cellphone
+              name: selectedOrder.socketData.attributes.customer.data?.attributes?.name || 'Cliente PDV',
+              phone: selectedOrder.socketData.attributes.customer.data?.attributes?.cellphone || 'N/A'
             },
             deliveryPerson: selectedOrder.deliveryPerson || (selectedOrder.socketData.attributes as any).delivery_person || ''
           }}

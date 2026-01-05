@@ -25,7 +25,10 @@ export function useShop() {
   });
 
   return {
-    shop: shop?.data?.attributes,
+    shop: {
+      ...shop?.data?.attributes,
+      id: shop?.data?.id
+    },
     isLoading,
     updateShop,
     isUpdating,

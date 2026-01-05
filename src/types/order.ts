@@ -25,6 +25,8 @@ export interface CreateOrderRequest {
     shop_id: number;
     withdrawal: boolean;
     payment_method: 'manual_pix' | 'credit' | 'debit' | 'cash';
+    customer_name?: string;
+    customer_phone?: string;
     address: {
       address: string;
       neighborhood: string;

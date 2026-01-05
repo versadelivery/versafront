@@ -5,6 +5,7 @@ export interface UserData {
   name: string
   role: string
   shop: {
+    id: string
     type: string
     attributes: {
       cellphone: string
@@ -160,6 +161,7 @@ export interface UserData {
   name: string;
   role: string;
   shop: {
+    id: string;
     type: string;
     attributes: {
       cellphone: string;
