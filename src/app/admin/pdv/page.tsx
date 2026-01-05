@@ -203,7 +203,7 @@ export default function PDVPage() {
         }
       };
 
-      const result = await createOrder(orderData);
+      const result = await createOrder(orderData, 'normal');
       
       if (result) {
         toast.success("Pedido criado com sucesso!");

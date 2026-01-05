@@ -1,6 +1,7 @@
 "use client"
 
 import { MapPin, CreditCard, Wallet, QrCode, Truck, ChevronDown, ChevronUp, Plus, Minus, X, CheckCircle2, Package, Store, Timer, User, LogIn, Clock, AlertTriangle, ChevronLeft, ShoppingCart } from 'lucide-react'
+import { toast } from "sonner"
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
@@ -267,6 +268,7 @@ export default function CheckoutPage() {
       const response = await createOrder(orderData)
       const orderId = response.order_id
       setOrder(response)
+      toast.success("Pedido realizado com sucesso!")
       if (orderId) {
         router.push(`/pedidos/${orderId}`)
       } else {
@@ -275,6 +277,7 @@ export default function CheckoutPage() {
       clearCart()
     } catch (error) {
       console.error('Erro ao enviar pedido:', error)
+      toast.error("Erro ao enviar pedido. Tente novamente.")
       setIsSubmitting(false)
     }
   }
