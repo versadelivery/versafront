@@ -18,7 +18,7 @@ function StepOptionInput({ value, onChange, onRemove, placeholder, id, stepId, o
   const [isEditing, setIsEditing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const [updateOptionName, setUpdateOptionName] = useState<string | null>(null)
-  const { destroyStepItem, isDestroyingStepItem } = useDestroyItems(id, stepId, optionId)
+  const { destroyStepItem, isDestroyingStepItem } = useDestroyItems()
   const { updateStepOption, isUpdatingStepOption } = useEditStep({ 
     id: id || '', 
     stepId: stepId || '', 
@@ -55,9 +55,9 @@ function StepOptionInput({ value, onChange, onRemove, placeholder, id, stepId, o
 
   const handleRemove = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
-    destroyStepItem();
+    destroyStepItem({ itemId: id, stepId, optionId });
     onRemove();
-  }, [destroyStepItem, onRemove]);
+  }, [destroyStepItem, id, onRemove, optionId, stepId]);
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setUpdateOptionName(e.target.value);
@@ -150,19 +150,13 @@ export function ItemSteps({
   const [updateStepId, setUpdateStepId] = useState<string | null>(null)
   const [editingStepIndex, setEditingStepIndex] = useState<number | null>(null);
   const stepInputRef = useRef<HTMLInputElement>(null);
-  const { destroyStep, isDestroyingStep } = useDestroyItems(id || '', stepId || '', '')
+  const { destroyStep, isDestroyingStep } = useDestroyItems()
   const [stepName, setStepName] = useState<string | null>(null)
   const { updateStep, isUpdatingStep } = useEditStep({ 
     id: id || '', 
     stepId: updateStepId || '', 
     name: stepName || '' 
   })
-
-  useEffect(() => {
-    if (stepId) {
-      destroyStep()
-    }
-  }, [stepId, destroyStep])
 
   useEffect(() => {
     if (editingStepIndex !== null && stepInputRef.current) {
@@ -188,10 +182,10 @@ export function ItemSteps({
     setStepName(value);
   }, [onStepChange]);
 
-  const handleRemoveStep = useCallback((stepIndex: number, stepId: string) => {
-    setStepId(stepId);
+  const handleRemoveStep = useCallback((stepIndex: number, sId: string) => {
+    destroyStep({ itemId: id || '', stepId: sId })
     onRemoveStep(stepIndex);
-  }, [onRemoveStep]);
+  }, [destroyStep, id, onRemoveStep]);
 
   const renderStep = useCallback((step: Step, stepIndex: number) => (
     <div key={stepIndex} className="space-y-3 border border-gray-200 rounded-lg p-4 bg-muted/40">

@@ -1,9 +1,13 @@
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 export const API_ENDPOINTS = {
-  SHOPS: "/shops/",
-  LOGIN: "/login/",
-  CATALOG: "/catalog_groups/",
-  CATALOG_ITEMS: "/catalog_items/",
-  ORDERS: "/customers/orders/"
-};  
+  LOGIN: "/login",
+  SHOPS: "/shops",
+  ORDERS: "/orders",
+  CUSTOMERS: {
+    LOGIN: "/customers/login",
+    REGISTER: "/customers/register",
+    ORDERS: "/customers/orders",
+  },
+};
+

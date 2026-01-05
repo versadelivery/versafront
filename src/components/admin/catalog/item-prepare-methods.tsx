@@ -22,7 +22,7 @@ export function ItemPrepareMethods({ itemId, prepareMethods, onPrepareMethodChan
   const [prepareMethodId, setPrepareMethodId] = useState<string | null>(null)
   const [prepareMethodName, setPrepareMethodName] = useState<string | null>(null)
   const [changed, setChanged] = useState(false)
-  const { destroyPrepareMethod, isDestroyingPrepareMethod } = useDestroyItems(prepareMethodId || '', itemId || '', '')
+  const { destroyPrepareMethod, isDestroyingPrepareMethod } = useDestroyItems()
   const { updatePrepareMethod, isUpdatingPrepareMethod } = useEditStep({ id: itemId || '', stepId: prepareMethodId || '', name: prepareMethodName || '' })
 
   const handleEdit = useCallback((index: number) => {
@@ -40,10 +40,9 @@ export function ItemPrepareMethods({ itemId, prepareMethods, onPrepareMethodChan
   }, [changed, onPrepareMethodChange, prepareMethodName, updatePrepareMethod])
 
   const handleRemovePrepareMethod = useCallback((index: number, methodId: string) => {
-    setPrepareMethodId(methodId)
-    destroyPrepareMethod()
-    prepareMethods.length > 1 && onRemovePrepareMethod(index)
-  }, [destroyPrepareMethod, onRemovePrepareMethod, prepareMethods.length])
+    destroyPrepareMethod({ methodId, itemId: itemId || '' })
+    onRemovePrepareMethod(index)
+  }, [destroyPrepareMethod, itemId, onRemovePrepareMethod])
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>, methodId: string) => {
     e.preventDefault()

@@ -25,9 +25,9 @@ export function useShop() {
   });
 
   return {
-    shop: shop?.data.attributes,
+    shop: shop?.data?.attributes,
     isLoading,
     updateShop,
     isUpdating,
   };
-} 
+}
