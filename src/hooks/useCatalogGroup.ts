@@ -77,13 +77,14 @@ export const useEditStep = ({ id, stepId, name, optionId, price }: EditStepProps
     isUpdatingExtra: updateExtraMutation.isPending,
   };
 }
-export const useDestroyItems = (id: string, itemId: string, optionId: string) => {
+export const useDestroyItems = () => {
   const queryClient = useQueryClient();
   
   const destroyExtraMutation = useMutation({
-    mutationFn: () => destroyExtra(id, itemId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['catalog', id] });
+    mutationFn: ({ extraId, itemId }: { extraId: string, itemId: string }) => destroyExtra(extraId, itemId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['catalog'] });
+      queryClient.invalidateQueries({ queryKey: ['catalog-item', variables.itemId] });
       toast.success("Extra deletado com sucesso");
     },
     onError: () => {
@@ -92,19 +93,23 @@ export const useDestroyItems = (id: string, itemId: string, optionId: string) =>
   });
 
   const destroyStepItemMutation = useMutation({
-    mutationFn: () => destroyStepOption(id, itemId, optionId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['catalog', id] });
+    mutationFn: ({ itemId, stepId, optionId }: { itemId: string, stepId: string, optionId: string }) => 
+      destroyStepOption(itemId, stepId, optionId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['catalog'] });
+      queryClient.invalidateQueries({ queryKey: ['catalog-item', variables.itemId] });
       toast.success("Opção deletada com sucesso");
     },
     onError: () => {
       toast.error("Erro ao deletar opção");
     },
   });
+
   const destroyStepMutation = useMutation({
-    mutationFn: () => destroyStep(id, itemId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['catalog', id] });
+    mutationFn: ({ itemId, stepId }: { itemId: string, stepId: string }) => destroyStep(itemId, stepId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['catalog'] });
+      queryClient.invalidateQueries({ queryKey: ['catalog-item', variables.itemId] });
       toast.success("Etapa deletada com sucesso");
     },
     onError: () => {
@@ -113,9 +118,10 @@ export const useDestroyItems = (id: string, itemId: string, optionId: string) =>
   });
 
   const destroyPrepareMethodMutation = useMutation({
-    mutationFn: () => destroyPrepareMethod(id, itemId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['catalog', id] });
+    mutationFn: ({ methodId, itemId }: { methodId: string, itemId: string }) => destroyPrepareMethod(methodId, itemId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['catalog'] });
+      queryClient.invalidateQueries({ queryKey: ['catalog-item', variables.itemId] });
       toast.success("Método de preparo deletado com sucesso");
     },
     onError: () => {
@@ -148,6 +154,7 @@ export const useCatalogItem = (id: string) => {
     mutationFn: () => deleteCatalogItem(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['catalog-item', id] });
+      queryClient.invalidateQueries({ queryKey: ['catalog'] });
       toast.success("Item deletado com sucesso");
     },
     onError: () => {

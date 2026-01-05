@@ -24,7 +24,7 @@ export function ItemExtras({ extras, onExtraChange, onRemoveExtra, onAddExtra, i
   const [extraName, setExtraName] = useState<string | null>(null)
   const [extraPrice, setExtraPrice] = useState<number | null>(null)
   const [changed, setChanged] = useState(false)
-  const { destroyExtra, isDestroyingExtra } = useDestroyItems(extraId || '', itemId || '', '')
+  const { destroyExtra, isDestroyingExtra } = useDestroyItems()
   const { updateExtra, isUpdatingExtra } = useEditStep({ 
     id: itemId || '', 
     stepId: extraId || '', 
@@ -65,10 +65,9 @@ export function ItemExtras({ extras, onExtraChange, onRemoveExtra, onAddExtra, i
   }, [changed, extraName, extraPrice, onExtraChange, updateExtra])
 
   const handleRemoveExtra = useCallback((index: number, extraId: string) => {
-    setExtraId(extraId)
-    destroyExtra()
-    extras.length > 1 && onRemoveExtra(index)
-  }, [destroyExtra, extras.length, onRemoveExtra])
+    destroyExtra({ extraId, itemId: itemId || '' })
+    onRemoveExtra(index)
+  }, [destroyExtra, itemId, onRemoveExtra])
 
   const renderExtra = useCallback((extra: Extra, index: number) => (
     <div key={index} className="flex gap-4 items-center py-2">

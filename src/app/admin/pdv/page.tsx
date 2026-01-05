@@ -60,6 +60,8 @@ export default function PDVPage() {
   const [changeAmount, setChangeAmount] = useState("");
   const [notes, setNotes] = useState("");
   const [isProcessingOrder, setIsProcessingOrder] = useState(false);
+  const { shop } = useShop();
+  const shopId = shop?.id;
 
   const { catalog, isLoading } = useCatalogGroup();
   const { subscribeToAdminOrders } = useAdminActionCable();
@@ -198,7 +200,7 @@ export default function PDVPage() {
     try {
       const orderData = {
         order: {
-          shop_id: 1, // Você pode buscar isso do contexto da loja
+          shop_id: Number(shopId) || 0,
           withdrawal: orderType === "pickup",
           payment_method: paymentMethod === "cash" ? "cash" as const : paymentMethod === "card" ? "credit" as const : "manual_pix" as const,
           customer_name: customerInfo.name,
