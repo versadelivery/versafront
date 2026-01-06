@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { shopService, ShopAttributes } from "../services/shop";
 import { toast } from "sonner";
@@ -9,6 +10,14 @@ export function useShop() {
     queryKey: ["shop"],
     queryFn: shopService.getShop,
   });
+
+  const shopData = useMemo(() => {
+    if (!shop?.data) return null;
+    return {
+      ...shop.data.attributes,
+      id: shop.data.id
+    };
+  }, [shop?.data?.id, shop?.data?.attributes]);
 
   const { mutate: updateShop, isPending: isUpdating } = useMutation({
     mutationFn: (data: Partial<ShopAttributes>) => {
@@ -25,10 +34,7 @@ export function useShop() {
   });
 
   return {
-    shop: {
-      ...shop?.data?.attributes,
-      id: shop?.data?.id
-    },
+    shop: shopData,
     isLoading,
     updateShop,
     isUpdating,

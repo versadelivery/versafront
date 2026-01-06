@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { scheduleService, ShopScheduleConfig, DaySchedule } from "../services/scheduleService";
 
 export interface WeekSchedule {
@@ -132,8 +132,14 @@ export function useSchedule() {
     }
   };
 
-  // Atualizar horários
-  const updateSchedule = async (newSchedule: WeekSchedule) => {
+  // Memoizar o resultado da conversão para manter a referência estável
+  const scheduleData = useMemo(() => {
+    if (!schedule) return null;
+    return schedule;
+  }, [schedule]);
+
+  // Envolver funções em useCallback para manter referências estáveis
+  const stabilizedUpdateSchedule = useCallback(async (newSchedule: WeekSchedule) => {
     try {
       setIsUpdating(true);
       setError(null);
@@ -151,52 +157,11 @@ export function useSchedule() {
     } finally {
       setIsUpdating(false);
     }
-  };
+  }, []);
 
-  // Copiar horário para todos os dias
-  const copyToAllDays = (daySchedule: DaySchedule) => {
-    if (!schedule) return;
-    
-    const newSchedule = {
-      sunday: { ...daySchedule },
-      monday: { ...daySchedule },
-      tuesday: { ...daySchedule },
-      wednesday: { ...daySchedule },
-      thursday: { ...daySchedule },
-      friday: { ...daySchedule },
-      saturday: { ...daySchedule }
-    };
-    
-    return updateSchedule(newSchedule);
-  };
-
-  // Copiar horário para dias úteis
-  const copyToWeekdays = (daySchedule: DaySchedule) => {
-    if (!schedule) return;
-    
-    const newSchedule = {
-      ...schedule,
-      monday: { ...daySchedule },
-      tuesday: { ...daySchedule },
-      wednesday: { ...daySchedule },
-      thursday: { ...daySchedule },
-      friday: { ...daySchedule }
-    };
-    
-    return updateSchedule(newSchedule);
-  };
-
-  // Atualizar um dia específico
-  const updateDay = (day: keyof WeekSchedule, daySchedule: DaySchedule) => {
-    if (!schedule) return;
-    
-    const newSchedule = {
-      ...schedule,
-      [day]: { ...daySchedule }
-    };
-    
-    setSchedule(newSchedule);
-  };
+  const stabilizedRefetch = useCallback(() => {
+    return fetchSchedule();
+  }, []);
 
   // Carregar horários na inicialização
   useEffect(() => {
@@ -204,14 +169,11 @@ export function useSchedule() {
   }, []);
 
   return {
-    schedule,
+    schedule: scheduleData,
     loading,
     error,
     isUpdating,
-    updateSchedule,
-    updateDay,
-    copyToAllDays,
-    copyToWeekdays,
-    refetch: fetchSchedule
+    updateSchedule: stabilizedUpdateSchedule,
+    refetch: stabilizedRefetch,
   };
 }

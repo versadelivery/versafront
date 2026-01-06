@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import { useSchedule, WeekSchedule } from "../hooks/useSchedule";
 
@@ -234,7 +235,34 @@ export default function ScheduleSettings() {
   };
 
   if (!localSchedule) {
-    return <div>Carregando horários...</div>;
+    return (
+      <Card className="p-6 shadow-none border rounded-lg">
+        <div className="space-y-4">
+          <div className="grid grid-cols-12 gap-4 items-center py-2 border-b border-gray-200">
+            <Skeleton className="h-4 col-span-2" />
+            <Skeleton className="h-4 col-span-2" />
+            <Skeleton className="h-4 col-span-2" />
+            <Skeleton className="h-4 col-span-2" />
+            <Skeleton className="h-4 col-span-4" />
+          </div>
+          {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+            <div key={i} className="grid grid-cols-12 gap-4 items-center py-3">
+              <Skeleton className="h-4 col-span-2" />
+              <div className="col-span-2 flex items-center gap-2">
+                <Skeleton className="h-6 w-10 rounded-full" />
+                <Skeleton className="h-4 w-12" />
+              </div>
+              <Skeleton className="h-9 col-span-2 rounded-md" />
+              <Skeleton className="h-9 col-span-2 rounded-md" />
+              <div className="col-span-4 flex gap-2">
+                <Skeleton className="h-8 w-24 rounded-md" />
+                <Skeleton className="h-8 w-24 rounded-md" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+    );
   }
 
   return (
