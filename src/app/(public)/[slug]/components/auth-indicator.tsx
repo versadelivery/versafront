@@ -47,30 +47,58 @@ export default function AuthIndicator() {
   if (!client) {
     return (
       <motion.div 
-        className="flex items-center gap-2"
+        className="flex items-center"
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.4 }}
       >
-        <Button 
-          variant="ghost" 
-          size="sm"
-          onClick={handleLogin}
-          className="text-white hover:bg-white/10 hover:text-white transition-colors duration-200"
-        >
-          <LogIn className="w-4 h-4 mr-2" />
-          <span className="hidden sm:inline">Entrar</span>
-        </Button>
-        
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={handleRegister}
-          className="bg-white/10 text-white border-white/20 hover:bg-white hover:text-black transition-all duration-200"
-        >
-          <UserPlus className="w-4 h-4 mr-2" />
-          <span className="hidden sm:inline">Cadastrar</span>
-        </Button>
+        {/* Desktop Buttons */}
+        <div className="hidden sm:flex items-center gap-2">
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={handleLogin}
+            className="text-white hover:bg-white/10 hover:text-white transition-colors duration-200"
+          >
+            <LogIn className="w-4 h-4 mr-2" />
+            Entrar
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleRegister}
+            className="bg-white/10 text-white border-white/20 hover:bg-white hover:text-black transition-all duration-200"
+          >
+            <UserPlus className="w-4 h-4 mr-2" />
+            Cadastrar
+          </Button>
+        </div>
+
+        {/* Mobile Dropdown for Guests */}
+        <div className="sm:hidden">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                className="text-white hover:bg-white/10 h-10 w-10 p-0 rounded-lg"
+              >
+                <User className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={handleLogin} className="cursor-pointer">
+                <LogIn className="w-4 h-4 mr-2" />
+                Entrar
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleRegister} className="cursor-pointer">
+                <UserPlus className="w-4 h-4 mr-2" />
+                Criar Conta
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </motion.div>
     );
   }

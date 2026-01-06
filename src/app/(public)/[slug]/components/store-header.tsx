@@ -19,8 +19,8 @@ export default function StoreHeader({ shop }: StoreHeaderProps) {
   
   return (
     <>
-      <header className="sticky top-0 z-50 w-full p-4 backdrop-blur-md bg-black/95 shadow-md">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4 max-w-7xl">
+      <header className="sticky top-0 z-50 w-full p-2 sm:p-4 backdrop-blur-md bg-black/95 shadow-md">
+        <div className="container mx-auto flex h-16 items-center justify-between px-2 sm:px-4 max-w-7xl">
           <motion.div 
             className="flex items-center"
             initial={{ opacity: 0, y: -10 }}
@@ -30,14 +30,14 @@ export default function StoreHeader({ shop }: StoreHeaderProps) {
             <Image 
               src="/logo/logo-inline.svg" 
               alt="Logo" 
-              width={150} 
-              height={40} 
+              width={120} 
+              height={32} 
               priority
-              className="h-auto"
+              className="h-auto w-[150px] sm:w-[150px]"
             />
           </motion.div>
           
-          <div className="flex items-center justify-center gap-4">
+          <div className="flex items-center justify-end gap-2 sm:gap-4 flex-1">
             <AuthIndicator />
             
             {client && (
@@ -50,9 +50,17 @@ export default function StoreHeader({ shop }: StoreHeaderProps) {
             )}
 
           
-            <Button variant="outline" className="mr-4 md:hidden bg-transparent items-center justify-center text-white border border-white py-5 px-12 rounded-xs shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all duration-300 group">
-              <Package className="w-6 h-6" />
-            </Button>
+            {client && (
+              <Button 
+                variant="outline" 
+                asChild
+                className="mr-2 md:hidden bg-transparent flex items-center justify-center text-white border border-white/20 h-10 w-10 p-0 rounded-lg hover:bg-white/10 transition-all"
+              >
+                <Link href="/pedidos">
+                  <Package className="w-5 h-5" />
+                </Link>
+              </Button>
+            )}
           
             <motion.div
               initial={{ opacity: 0 }}

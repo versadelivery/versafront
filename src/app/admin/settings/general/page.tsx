@@ -21,19 +21,20 @@ export default function GeneralSettingsPage() {
   const [initialData, setInitialData] = useState<Partial<ShopAttributes>>({});
 
   useEffect(() => {
-    if (shop && !isLoading) {
+    if (shop && !isLoading && (!(initialData as any).slug || (initialData as any).slug !== shop.slug)) {
       const initial = {
         name: shop.name || "",
         description: shop.description || "",
         cellphone: shop.cellphone || "",
         address: shop.address || "",
+        slug: shop.slug,
         image: null
       };
       setInitialData(initial);
       setFormData(initial);
       setLogoPreview(shop.image_url || null);
     }
-  }, [shop, isLoading]);
+  }, [shop, isLoading, (initialData as any).slug]);
 
   useEffect(() => {
     if (initialData && formData) {

@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { CatalogItem } from "./types";
 import { formatPrice } from "./format-price";
 import { PlusCircle, Utensils, Minus, Plus, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { motion } from "framer-motion";
 import { useClient } from "./client-context";
 import { useCart } from "./cart/cart-context";
 
@@ -477,25 +478,29 @@ export default function ProductModal({ product, trigger }: ProductModalProps) {
     const isLastStep = currentIndex === stepsAvailable.length - 1;
 
     return (
-      <div className="flex justify-between pt-4">
-        {!isFirstStep ? (
-          <Button variant="outline" onClick={goToPrevStep} className="gap-2">
+      <div className="flex flex-col sm:flex-row gap-3 pt-6 mt-auto">
+        {!isFirstStep && (
+          <Button 
+            variant="outline" 
+            onClick={goToPrevStep} 
+            className="w-full sm:w-auto gap-2 h-12 order-2 sm:order-1"
+          >
             <ChevronLeft className="h-4 w-4" />
             Voltar
           </Button>
-        ) : (
-          <div />
         )}
 
         {!isLastStep ? (
-          <Button onClick={goToNextStep} className="gap-2">
+          <Button 
+            onClick={goToNextStep} 
+            className="w-full sm:flex-1 gap-2 h-12 order-1 sm:order-2"
+          >
             Continuar
             <ChevronRight className="h-4 w-4" />
           </Button>
         ) : (
           <Button 
-            className="py-6 text-base font-medium rounded-full" 
-            size="lg" 
+            className="w-full sm:flex-1 h-12 text-sm sm:text-base font-semibold rounded-lg bg-green-600 hover:bg-green-700 order-1 sm:order-2" 
             onClick={handleAddToCart}
           >
             Adicionar ao carrinho - {formatPrice(calculatePrice())}
@@ -597,27 +602,26 @@ export default function ProductModal({ product, trigger }: ProductModalProps) {
               </div>
             ) : (
               <div className="space-y-6">
-                <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-2 px-2">
-                  {stepsAvailable.map((step, index) => (
-                    <div key={step} className="flex items-center gap-2">
-                      <div 
-                        className={`flex items-center justify-center h-7 w-7 sm:h-8 sm:w-8 rounded-full border-2 ${stepsAvailable.indexOf(currentStep) >= index ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-muted text-muted-foreground'}`}
-                      >
-                        {index + 1}
-                      </div>
-                      <span 
-                        className={`whitespace-nowrap text-xs sm:text-sm ${stepsAvailable.indexOf(currentStep) >= index ? 'font-medium text-foreground' : 'text-muted-foreground'}`}
-                      >
-                        {step === 'quantity' ? 'Quantidade' : 
-                         step === 'extras' ? 'Adicionais' : 
-                         step === 'methods' ? 'Preparo' : 
-                         step === 'options' ? 'Opções' : 'Revisão'}
-                      </span>
-                      {index < stepsAvailable.length - 1 && (
-                        <div className="h-px w-3 sm:w-4 bg-border mx-1" />
-                      )}
-                    </div>
-                  ))}
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest bg-muted px-2 py-0.5 rounded">
+                      Passo {stepsAvailable.indexOf(currentStep) + 1} de {stepsAvailable.length}
+                    </span>
+                    <span className="text-sm font-semibold text-foreground">
+                      {currentStep === 'quantity' ? 'Definir Quantidade' : 
+                       currentStep === 'extras' ? 'Adicionais Extras' : 
+                       currentStep === 'methods' ? 'Modo de Preparo' : 
+                       currentStep === 'options' ? 'Escolher Opções' : 'Revisar Pedido'}
+                    </span>
+                  </div>
+                  <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                    <motion.div 
+                      className="h-full bg-primary"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${((stepsAvailable.indexOf(currentStep) + 1) / stepsAvailable.length) * 100}%` }}
+                      transition={{ duration: 0.3, ease: "easeOut" }}
+                    />
+                  </div>
                 </div>
 
                 <Separator />
