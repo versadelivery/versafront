@@ -105,17 +105,6 @@ export function useShopStatus(options?: UseShopStatusOptions) {
     try {
       setLoading(true);
       
-      // Se temos dados iniciais do servidor, usar esses dados
-      if (options?.initialShopStatus) {
-        setShopStatus({
-          isOpen: options.initialShopStatus.is_open,
-          todaySchedule: null,
-          nextOpenTime: null
-        });
-        setLoading(false);
-        return;
-      }
-
       // Se temos schedule config do servidor, usar cálculo local
       if (options?.shopScheduleConfig) {
         const config = options.shopScheduleConfig;
