@@ -185,7 +185,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ slug: s
       id: orderData.attributes.shop?.data?.id || "",
       name: orderData.attributes.shop?.data?.attributes?.name || "Loja não informada",
       phone: orderData.attributes.shop?.data?.attributes?.cellphone || "",
-      email: "contato@loja.com"
+      email: orderData.attributes.shop?.data?.attributes?.email || "contato@loja.com"
     },
     customer: {
       name: orderData.attributes.customer?.data?.attributes?.name || "Cliente não informado",
@@ -236,7 +236,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ slug: s
 
   return (
     <div className="min-h-screen bg-gray-200">
-      <div className="container mx-auto px-6 py-12">
+      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-12">
         <Button
           variant="ghost"
           className="mb-8 hover:bg-slate-100 text-slate-700 font-medium"
@@ -248,28 +248,28 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ slug: s
 
         <div className="space-y-8">
           <Card className="border-0 shadow-sm bg-white rounded-xs overflow-hidden">
-            <div className="bg-primary p-8">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-4 mb-4">
-                    <h1 className="text-4xl font-bold text-primary-foreground">#{order.id}</h1>
-                    <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg">
-                      <StatusIcon className="h-5 w-5 text-white" />
-                      <span className="text-white font-semibold text-sm">{statusInfo.label}</span>
+            <div className="bg-primary p-4 sm:p-8">
+              <div className="flex flex-col sm:flex-row items-start justify-between gap-6">
+                <div className="flex-1 w-full">
+                  <div className="flex flex-wrap items-center gap-3 sm:gap-4 mb-4">
+                    <h1 className="text-2xl sm:text-4xl font-bold text-primary-foreground">#{order.id}</h1>
+                    <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg">
+                      <StatusIcon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                      <span className="text-white font-semibold text-xs sm:text-sm">{statusInfo.label}</span>
                     </div>
                   </div>
-                  <p className="text-primary-foreground text-xl font-medium mb-1">{order.shop.name}</p>
-                  <p className="text-primary-foreground/80">{dateInfo.date} às {dateInfo.time}</p>
-                  <p className="text-primary-foreground/90 mt-2 text-sm italic">{statusInfo.description}</p>
+                  <p className="text-primary-foreground text-lg sm:text-xl font-medium mb-1">{order.shop.name}</p>
+                  <p className="text-primary-foreground/80 text-sm sm:text-base">{dateInfo.date} às {dateInfo.time}</p>
+                  <p className="text-primary-foreground/90 mt-2 text-xs sm:text-sm italic">{statusInfo.description}</p>
                 </div>
-                <div className="text-right">
-                  <p className="text-4xl font-bold text-white">{formatCurrency(total)}</p>
-                  <p className="text-slate-300">Total do pedido</p>
+                <div className="text-left sm:text-right w-full sm:w-auto pt-4 sm:pt-0 border-t border-white/10 sm:border-0">
+                  <p className="text-3xl sm:text-4xl font-bold text-white">{formatCurrency(total)}</p>
+                  <p className="text-slate-300 text-sm">Total do pedido</p>
                 </div>
               </div>
             </div>
             
-            <CardContent className="p-8">
+            <CardContent className="p-4 sm:p-8">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="flex items-center gap-4">
                   <div className="p-3 bg-slate-100 rounded-xs">
@@ -316,11 +316,11 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ slug: s
                   Pagamento PIX
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-8">
-                <div className="bg-slate-50 p-6 rounded-xs mb-6">
+              <CardContent className="p-4 sm:p-8">
+                <div className="bg-slate-50 p-4 sm:p-6 rounded-xs mb-6">
                   <p className="text-sm font-semibold text-slate-500 mb-2">CHAVE PIX</p>
-                  <div className="flex items-center justify-between bg-white p-4 rounded-xs border">
-                    <span className="font-mono text-lg text-slate-900">{order.payment_details.pix_key}</span>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-white p-3 sm:p-4 rounded-xs border gap-3">
+                    <span className="font-mono text-base sm:text-lg text-slate-900 break-all">{order.payment_details.pix_key}</span>
                     <Button
                       onClick={copyPixKey}
                       variant="outline"
@@ -355,11 +355,11 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ slug: s
                     Itens do Pedido
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-8">
+                <CardContent className="p-4 sm:p-8">
                   <div className="space-y-6">
                     {order.items.map((item: any, index: number) => (
                       <div key={item.id}>
-                        <div className="flex gap-6">
+                        <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
                           <div className="relative">
                             <img
                               src={item.image}
@@ -390,7 +390,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ slug: s
                       </div>
                     ))}
                     
-                    <div className="bg-slate-50 p-6 rounded-xs mt-8">
+                    <div className="bg-slate-50 p-4 sm:p-6 rounded-xs mt-8">
                       <div className="space-y-3">
                         <div className="flex justify-between text-slate-600">
                           <span>Subtotal</span>

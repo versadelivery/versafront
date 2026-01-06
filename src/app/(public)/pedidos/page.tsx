@@ -115,15 +115,15 @@ export default function OrdersPage({ params }: { params: Promise<{ slug: string 
 
   return (
     <div className="min-h-screen bg-gray-200">
-      <div className="container mx-auto px-6 py-12">
-        <div className="mb-12">
+      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-12">
+        <div className="mb-8 sm:mb-12">
           <div className="flex items-center gap-3 mb-3">
-            <div className="p-3 bg-primary rounded-xs">
-              <ShoppingBag className="h-6 w-6 text-white" />
+            <div className="p-2 sm:p-3 bg-primary rounded-xs">
+              <ShoppingBag className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
             </div>
-            <h1 className="text-4xl font-bold text-slate-900">Meus Pedidos</h1>
+            <h1 className="text-2xl sm:text-4xl font-bold text-slate-900">Meus Pedidos</h1>
           </div>
-          <p className="text-slate-600 text-lg">Acompanhe todos os seus pedidos em um só lugar</p>
+          <p className="text-slate-600 text-base sm:text-lg text-balance">Acompanhe todos os seus pedidos em um só lugar</p>
         </div>
         
         <div className="space-y-6">
@@ -139,23 +139,23 @@ export default function OrdersPage({ params }: { params: Promise<{ slug: string 
               <Card key={order.id} className="group border-0 shadow-sm hover:shadow-xl transition-all duration-500 bg-white rounded-xs overflow-hidden">
                 <CardContent className="p-0">
                   <div className="flex">
-                    <div className="flex-1 p-8">
-                      <div className="flex items-start justify-between mb-6">
+                    <div className="flex-1 p-4 sm:p-8">
+                      <div className="flex flex-col sm:flex-row items-start justify-between gap-4 mb-6">
                         <div>
                           <div className="flex items-center gap-3 mb-2">
-                            <h3 className="text-2xl font-bold text-slate-900">#{order.attributes.id}</h3>
-                            <Badge className={`${statusInfo.color} flex items-center gap-1`}>
+                            <h3 className="text-xl sm:text-2xl font-bold text-slate-900">#{order.attributes.id}</h3>
+                            <Badge className={`${statusInfo.color} flex items-center gap-1 text-[10px] sm:text-xs`}>
                               {statusInfo.icon}
                               {statusInfo.label}
                             </Badge>
                           </div>
-                          <p className="text-slate-600 font-medium text-lg">{order.attributes.shop.data.attributes.name}</p>
-                          <p className="text-slate-500">{dateInfo.date} às {dateInfo.time}</p>
+                          <p className="text-slate-600 font-medium text-base sm:text-lg">{order.attributes.shop.data.attributes.name}</p>
+                          <p className="text-slate-500 text-sm sm:text-base">{dateInfo.date} às {dateInfo.time}</p>
                         </div>
                         
-                        <div className="text-right">
-                          <p className="text-3xl font-bold text-slate-900">{formatCurrency(totalPrice)}</p>
-                          <p className="text-slate-500">{itemsCount} {itemsCount === 1 ? 'item' : 'itens'}</p>
+                        <div className="text-left sm:text-right w-full sm:w-auto pt-4 sm:pt-0 border-t border-slate-100 sm:border-0">
+                          <p className="text-2xl sm:text-3xl font-bold text-slate-900">{formatCurrency(totalPrice)}</p>
+                          <p className="text-slate-500 text-sm">{itemsCount} {itemsCount === 1 ? 'item' : 'itens'}</p>
                         </div>
                       </div>
 
@@ -214,10 +214,10 @@ export default function OrdersPage({ params }: { params: Promise<{ slug: string 
                         </div>
                       )}
                       
-                      <div className="flex justify-end">
+                      <div className="flex flex-col sm:flex-row justify-end gap-3">
                         <Button
                           onClick={() => router.push(`/pedidos/${order.id}`)}
-                          className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 rounded-xs font-semibold transition-all duration-300 group-hover:bg-primary/90"
+                          className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 h-12 rounded-xs font-semibold transition-all duration-300 group-hover:bg-primary/90"
                         >
                           Ver detalhes
                           <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
