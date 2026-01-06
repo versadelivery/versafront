@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { ImageIcon, Upload, MapPin, Phone } from "lucide-react";
+import { ImageIcon, Upload, MapPin, Phone, Mail } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useShop } from "@/hooks/use-shop";
 import { ShopAttributes } from "@/services/shop";
@@ -21,20 +21,30 @@ export default function GeneralSettingsPage() {
   const [initialData, setInitialData] = useState<Partial<ShopAttributes>>({});
 
   useEffect(() => {
-    if (shop && !isLoading && (!(initialData as any).slug || (initialData as any).slug !== shop.slug)) {
+    if (shop && !isLoading && !isUpdating) {
       const initial = {
         name: shop.name || "",
         description: shop.description || "",
         cellphone: shop.cellphone || "",
         address: shop.address || "",
+        email: shop.email || "",
         slug: shop.slug,
         image: null
       };
-      setInitialData(initial);
-      setFormData(initial);
+
+      // Se for a primeira vez ou o estabelecimento mudou, inicializa tudo
+      if (!(initialData as any).slug || (initialData as any).slug !== shop.slug) {
+        setInitialData(initial);
+        setFormData(initial);
+      } else {
+        // Se for o mesmo estabelecimento (ex: após um save), apenas sincroniza o initialData
+        // Isso permite resetar o status de 'hasChanges' sem perder edições não salvas (se houver)
+        setInitialData(initial);
+      }
+      
       setLogoPreview(shop.image_url || null);
     }
-  }, [shop, isLoading, (initialData as any).slug]);
+  }, [shop, isLoading, isUpdating]);
 
   useEffect(() => {
     if (initialData && formData) {
@@ -177,7 +187,7 @@ export default function GeneralSettingsPage() {
                 <h3 className="text-lg font-semibold text-foreground">
                   Informações de Contato
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="space-y-1">
                     <Label htmlFor="phone" className="flex items-center gap-2 text-muted-foreground">
                       <Phone className="w-4 h-4" />
@@ -203,6 +213,21 @@ export default function GeneralSettingsPage() {
                       value={formData.address || ""}
                       onChange={handleInputChange}
                       placeholder="Major Barreto, 1602" 
+                      className="h-12 pl-10"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="email" className="flex items-center gap-2 text-muted-foreground">
+                      <Mail className="w-4 h-4" />
+                      E-mail de Contato
+                    </Label>
+                    <Input 
+                      id="email" 
+                      name="email"
+                      type="email"
+                      value={formData.email || ""}
+                      onChange={handleInputChange}
+                      placeholder="contato@sualoja.com" 
                       className="h-12 pl-10"
                     />
                   </div>

@@ -31,6 +31,7 @@ export interface ClientOrderData {
           address: string
           description: string
           image_url: string
+          email?: string
         }
       }
     }

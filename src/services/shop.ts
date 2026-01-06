@@ -6,6 +6,7 @@ export interface ShopAttributes {
   slug: string;
   address: string | null;
   description: string | null;
+  email: string | null;
   image?: File | string | any;
   image_url?: string | any;
 }
