@@ -20,143 +20,188 @@ export function ItemDetailsModal({ id, isOpen, onClose }: ItemDetailsModalProps)
   const { catalogItem, isLoadingCatalogItem } = useCatalogItem(id.toString());
   const item = catalogItem;
 
+  const getName = (obj: any) => {
+    if (!obj) return null;
+    return obj.attributes?.name || obj.name || obj.attributes?.description || obj.description || null;
+  };
 
   if (isLoadingCatalogItem) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="flex justify-center items-center h-full">
-          <DialogHeader>
-            <DialogTitle>Carregando...</DialogTitle>
-          </DialogHeader>
-          <Loader2 className="h-10 w-10 animate-spin" />
+        <DialogContent className="flex justify-center items-center min-h-[300px] bg-white rounded-3xl border-none shadow-2xl">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
         </DialogContent>
       </Dialog>
     );
   }
 
+  const attrs = item?.data?.attributes;
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="rounded-xs sm:h-auto max-w-[95vw] sm:max-w-[720px] p-4 sm:p-6 md:p-8 bg-white rounded-sm max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#212121] [&::-webkit-scrollbar-thumb]:rounded-sm [&::-webkit-scrollbar]:px-2">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
-            Detalhes do Item
-          </DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-6">
-          {item?.data.attributes.image_url && (
-            <div className="relative h-64 w-full rounded-lg overflow-hidden">
-              <Image
-                src={fixImageUrl(item.data.attributes.image_url) || ''}
-                alt={item.data.attributes.name}
-                fill
-                sizes="(max-width: 768px) 100vw, 50vw"
-                className="object-cover"
-              />
+      <DialogContent className="max-w-[95vw] sm:max-w-[800px] p-0 bg-white border-none shadow-2xl rounded-3xl overflow-hidden max-h-[92vh] flex flex-col">
+        {/* Banner Area */}
+        <div className="relative h-64 sm:h-80 w-full bg-muted/20 overflow-hidden flex-shrink-0">
+          {attrs?.image_url ? (
+            <Image
+              src={fixImageUrl(attrs.image_url) || ''}
+              alt={attrs.name}
+              fill
+              sizes="(max-width: 768px) 100vw, 50vw"
+              className="object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+              <Package className="h-24 w-24 text-muted-foreground/10" />
             </div>
           )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+          <div className="absolute bottom-6 left-8 right-8">
+            <h2 className="text-2xl sm:text-4xl font-black text-white drop-shadow-md tracking-tight">
+              {attrs?.name}
+            </h2>
+          </div>
+        </div>
 
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-xl font-semibold text-gray-800">{item?.data.attributes.name}</h3>
-              {item?.data.attributes.description && (
-                <p className="text-gray-600 mt-2 flex items-start gap-2">
-                  <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                  {item?.data.attributes.description}
+        {/* Content Scroll Area */}
+        <div className="flex-1 overflow-y-auto p-8 sm:p-10 space-y-10 custom-scrollbar">
+          <div className="flex flex-col md:flex-row md:items-start justify-between gap-8">
+            <div className="flex-1 space-y-4">
+              <h4 className="text-xs uppercase tracking-widest font-bold text-muted-foreground/60">Descrição do Produto</h4>
+              {attrs?.description ? (
+                <p className="text-gray-600 text-lg leading-relaxed font-medium">
+                  {attrs.description}
                 </p>
+              ) : (
+                <p className="text-muted-foreground/40 italic font-medium">Nenhuma descrição detalhada informada.</p>
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <h4 className="font-medium text-gray-700">Preço</h4>
+            <div className="flex flex-col gap-6 min-w-[240px] bg-gray-50/50 p-6 rounded-3xl border border-gray-100">
+              <div className="space-y-1">
+                <span className="text-xs uppercase tracking-widest font-black text-primary/70">Preço Principal</span>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-bold text-gray-900">
-                    R$ {item?.data.attributes.price_with_discount ? item?.data.attributes.price_with_discount.toFixed(2).replace('.', ',') : item?.data.attributes.price.toFixed(2).replace('.', ',')}
+                  <span className="text-3xl font-black text-gray-900">
+                    R$ {attrs?.price_with_discount ? attrs.price_with_discount.toFixed(2).replace('.', ',') : attrs?.price.toFixed(2).replace('.', ',')}
                   </span>
-                  {item?.data.attributes.price_with_discount && (
-                    <span className="text-sm text-gray-500 line-through">
-                      R$ {item?.data.attributes.price.toFixed(2).replace('.', ',')}
+                  {attrs?.price_with_discount && (
+                    <span className="text-sm font-bold text-muted-foreground/40 line-through">
+                      R$ {attrs.price.toFixed(2).replace('.', ',')}
                     </span>
                   )}
                 </div>
-                <span className="text-sm text-gray-500">
-                  {item?.data.attributes.item_type === 'weight_per_g' ? 'por grama' : item?.data.attributes.item_type === 'weight_per_kg' ? 'por quilo' : 'unidade'}
-                </span>
+                <p className="text-xs font-bold text-muted-foreground/60 uppercase">
+                  Cobrado por {attrs?.item_type === 'weight_per_g' ? 'grama' : attrs?.item_type === 'weight_per_kg' ? 'quilo' : 'unidade'}
+                </p>
               </div>
 
-              {item?.data.attributes.item_type !== 'unit' && (
-                <div className="space-y-2">
-                  <h4 className="font-medium text-gray-700 flex items-center gap-2">
-                    <Scale className="h-4 w-4" />
-                    Peso
-                  </h4>
-                  <div className="space-y-1">
-                    {item?.data.attributes.min_weight && item?.data.attributes.max_weight && (
-                      <p className="text-gray-600">
-                        {item?.data.attributes.min_weight} - {item?.data.attributes.max_weight} {item?.data.attributes.item_type === 'weight_per_g' ? 'g' : 'kg'}
-                      </p>
+              {attrs?.item_type !== 'unit' && (
+                <div className="space-y-3 pt-4 border-t border-gray-200/50">
+                  <div className="flex items-center gap-2 text-gray-800 font-bold text-sm">
+                    <Scale className="h-4 w-4 text-primary" />
+                    Especificações de Peso
+                  </div>
+                  <div className="space-y-2">
+                    {attrs?.min_weight && attrs?.max_weight && (
+                      <div className="flex justify-between items-center text-sm font-semibold">
+                        <span className="text-muted-foreground/60">Variação:</span>
+                        <span className="text-gray-800">{attrs.min_weight} - {attrs.max_weight} {attrs.item_type === 'weight_per_g' ? 'g' : 'kg'}</span>
+                      </div>
                     )}
-                    {item?.data.attributes.measure_interval && (
-                      <p className="text-gray-600 flex items-center gap-2">
-                        <Clock className="h-4 w-4" />
-                        Intervalo: {item?.data.attributes.measure_interval} {item?.data.attributes.item_type === 'weight_per_g' ? 'g' : 'kg'}
-                      </p>
+                    {attrs?.measure_interval && (
+                      <div className="flex justify-between items-center text-sm font-semibold">
+                        <span className="text-muted-foreground/60">Intervalo:</span>
+                        <span className="text-gray-800 flex items-center gap-1.5">
+                          <Clock className="h-3.5 w-3.5 opacity-60" />
+                          {attrs.measure_interval} {attrs.item_type === 'weight_per_g' ? 'g' : 'kg'}
+                        </span>
+                      </div>
                     )}
                   </div>
                 </div>
               )}
             </div>
+          </div>
 
-            {item?.data.attributes.extra && item?.data.attributes.extra.data.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="font-medium text-gray-700 flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
-                  Adicionais
+          {/* Additional Sections */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+            {attrs?.extra && attrs.extra.data.length > 0 && (
+              <div className="space-y-4">
+                <h4 className="text-sm font-black text-gray-800 flex items-center gap-3 uppercase tracking-widest">
+                  <Plus className="h-5 w-5 text-primary" />
+                  Adicionais Disponíveis
                 </h4>
-                <ul className="grid grid-cols-2 gap-2">
-                  {item?.data.attributes.extra.data.map((extra, index) => (
-                    <li key={index} className="text-gray-600 bg-gray-50 p-2 rounded-md">
-                      {extra.attributes.name}
-                    </li>
-                  ))}
-                </ul>
+                <div className="grid grid-cols-1 gap-2">
+                  {attrs.extra.data.map((extra: any, index: number) => {
+                    const name = getName(extra);
+                    return name ? (
+                      <div key={index} className="flex justify-between items-center p-3 sm:p-4 bg-gray-50/50 rounded-2xl border border-gray-100 font-semibold text-gray-700">
+                        <span>{name}</span>
+                        {Number(extra.attributes?.price) > 0 && (
+                          <span className="text-primary/70 text-xs">+ R$ {Number(extra.attributes.price).toFixed(2).replace('.', ',')}</span>
+                        )}
+                      </div>
+                    ) : null;
+                  })}
+                </div>
               </div>
             )}
 
-            {item?.data.attributes.prepare_method && item?.data.attributes.prepare_method.data.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="font-medium text-gray-700 flex items-center gap-2">
-                  <ChefHat className="h-4 w-4" />
+            {attrs?.prepare_method && attrs.prepare_method.data.length > 0 && (
+              <div className="space-y-4">
+                <h4 className="text-sm font-black text-gray-800 flex items-center gap-3 uppercase tracking-widest">
+                  <ChefHat className="h-5 w-5 text-primary" />
                   Métodos de Preparo
                 </h4>
-                <ul className="grid grid-cols-2 gap-2">
-                  {item?.data.attributes.prepare_method.data.map((method, index) => (
-                    <li key={index} className="text-gray-600 bg-gray-50 p-2 rounded-md">
-                      {method.attributes.name}
-                    </li>
-                  ))}
-                </ul>
+                <div className="grid grid-cols-1 gap-2">
+                  {attrs.prepare_method.data.map((method: any, index: number) => {
+                    const name = getName(method);
+                    return name ? (
+                      <div key={index} className="p-3 sm:p-4 bg-gray-50/50 rounded-2xl border border-gray-100 font-semibold text-gray-700">
+                        {name}
+                      </div>
+                    ) : null;
+                  })}
+                </div>
               </div>
             )}
 
-            {item?.data.attributes.steps && item?.data.attributes.steps.data.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="font-medium text-gray-700 flex items-center gap-2">
-                  <ListChecks className="h-4 w-4" />
-                  Passos
+            {attrs?.steps && attrs.steps.data.length > 0 && (
+              <div className="space-y-4 md:col-span-2">
+                <h4 className="text-sm font-black text-gray-800 flex items-center gap-3 uppercase tracking-widest">
+                  <ListChecks className="h-5 w-5 text-primary" />
+                  Etapas e Personalização
                 </h4>
-                <ol className="space-y-2">
-                  {item?.data.attributes.steps.data.map((step, index) => (
-                    <li key={index} className="text-gray-600 bg-gray-50 p-2 rounded-md">
-                      {step.attributes.name}
-                    </li>
-                  ))}
-                </ol>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {attrs.steps.data.map((step: any, index: number) => {
+                    const name = getName(step);
+                    return name ? (
+                      <div key={index} className="p-4 sm:p-6 bg-gray-50/50 rounded-3xl border border-gray-100 space-y-3">
+                        <span className="text-xs uppercase tracking-wider font-black text-primary/70">Passo {index + 1}</span>
+                        <p className="font-bold text-gray-800 text-lg">{name}</p>
+                        {step.attributes?.options?.data?.length > 0 && (
+                          <div className="flex flex-wrap gap-2 pt-2">
+                            {step.attributes.options.data.map((opt: any, i: number) => (
+                              <span key={i} className="px-2 py-1 bg-white rounded-lg border border-gray-100 text-[10px] font-bold text-muted-foreground uppercase">
+                                {getName(opt)}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ) : null;
+                  })}
+                </div>
               </div>
             )}
           </div>
+        </div>
+
+        {/* Footer */}
+        <div className="p-6 bg-gray-50/50 border-t border-gray-100 flex justify-end">
+          <Button onClick={onClose} variant="secondary" className="rounded-2xl px-8 font-bold">
+            Fechar Detalhes
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
