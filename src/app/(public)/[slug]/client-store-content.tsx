@@ -82,17 +82,21 @@ export default function ClientStoreContent({ shop }: ClientStoreContentProps) {
   };
 
   return (
-    <main className="container mx-auto px-4 py-8 max-w-7xl">
-      <div className="flex flex-col gap-6">
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+    <main className="min-h-screen pb-20 bg-background">
+      {/* Sticky Search Only - Navigation is now part of the Grid sections */}
+      <div className="sticky top-0 z-40 w-full bg-background/95 backdrop-blur-md border-b border-border shadow-sm transition-all duration-300">
+        <div className="container mx-auto px-4 py-4 max-w-7xl space-y-4">
           <SearchBar onSearch={handleSearch} />
+          
           <CategoryNavigation 
             categories={groups} 
             activeCategory={activeCategory} 
             onChange={handleCategoryChange} 
           />
         </div>
-        
+      </div>
+      
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
         <ProductGrid 
           categories={groups} 
           activeCategory={activeCategory}
@@ -102,3 +106,5 @@ export default function ClientStoreContent({ shop }: ClientStoreContentProps) {
     </main>
   );
 }
+
+

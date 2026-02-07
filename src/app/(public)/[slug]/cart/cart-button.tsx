@@ -17,12 +17,12 @@ export function CartButton({ variant = 'header' }: CartButtonProps) {
       {/* Desktop Version */}
       <Button 
         variant="outline" 
-        className="hidden md:flex w-full bg-transparent border-white text-white hover:bg-white hover:text-black text-lg font-semibold py-5 px-8 rounded-xs shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all duration-300 group"
+        className="hidden md:flex items-center gap-2 bg-transparent border-white text-white hover:bg-white hover:text-black text-lg font-semibold py-2 px-4 rounded-lg shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all duration-300 relative"
       >
         <ShoppingCart className="h-5 w-5" />
         <span className="font-semibold">Carrinho</span>
         {totalItems > 0 && (
-          <Badge className="h-5 w-5 flex items-center justify-center p-0 rounded-full">
+          <Badge className="h-5 w-5 flex items-center justify-center p-0 rounded-full bg-white text-primary border-2 border-white text-[10px] font-bold">
             {totalItems}
           </Badge>
         )}

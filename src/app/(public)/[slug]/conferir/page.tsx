@@ -177,6 +177,10 @@ export default function CheckoutPage() {
     }
     
     if (shopDeliveryConfig?.delivery_fee_kind === 'fixed') {
+      const minFree = Number(shopDeliveryConfig.min_value_free_delivery) || 0
+      if (minFree > 0 && totalPrice >= minFree) {
+        return 0
+      }
       return shopDeliveryConfig.amount
     }
     
@@ -184,7 +188,13 @@ export default function CheckoutPage() {
       const selectedNeighborhoodData = shopDeliveryConfig.shop_delivery_neighborhoods.data.find(
         n => n.id === selectedNeighborhood
       )
-      return selectedNeighborhoodData?.attributes.amount || 0
+      if (!selectedNeighborhoodData) return 0
+
+      const minFree = Number(selectedNeighborhoodData.attributes.min_value_free_delivery) || 0
+      if (minFree > 0 && totalPrice >= minFree) {
+        return 0
+      }
+      return selectedNeighborhoodData.attributes.amount || 0
     }
     
     return 0
@@ -215,6 +225,13 @@ export default function CheckoutPage() {
     // Verificar se a loja está aberta
     if (!isShopOpen || shopStatusLoading) {
       console.log('Tentativa de finalizar pedido com loja fechada')
+      return
+    }
+
+    // Verificar valor mínimo do pedido
+    const minOrderValue = Number(shopDeliveryConfig?.minimum_order_value) || 0
+    if (totalPrice < minOrderValue) {
+      toast.error(`O valor mínimo para pedidos nesta loja é R$ ${minOrderValue.toFixed(2).replace('.', ',')}`)
       return
     }
 
@@ -313,21 +330,22 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="p-12 bg-gray-200">
+    <div className="p-4 sm:p-8 lg:p-12 bg-gray-200 min-h-screen">
       {/* Cabeçalho com botão voltar */}
-      <div className="mb-8">
+      <div className="mb-6 md:mb-8">
         <div className="flex items-center gap-4 mb-4">
           <Button 
-            variant="outline" 
+            variant="ghost" 
+            size="sm"
             onClick={() => router.push(`/${storeSlug}`)}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 hover:bg-white/50 -ml-2"
           >
             <ChevronLeft className="h-4 w-4" />
             Voltar ao Catálogo
           </Button>
         </div>
-        <h1 className="text-2xl font-bold text-gray-900">Conferir Pedido</h1>
-        <p className="text-gray-600 mt-1">Revise seu pedido e finalize a compra</p>
+        <h1 className="text-xl md:text-2xl font-extrabold text-gray-900">Conferir Pedido</h1>
+        <p className="text-gray-600 mt-1 text-sm md:text-base">Revise seu pedido e finalize a compra</p>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-8">
@@ -398,7 +416,7 @@ export default function CheckoutPage() {
               <RadioGroup 
                 value={deliveryOption} 
                 onValueChange={(value: string) => setDeliveryOption(value as DeliveryOption)}
-                className="grid grid-cols-2 gap-4"
+                className="grid grid-cols-1 sm:grid-cols-2 gap-4"
               >
                 <div>
                   <RadioGroupItem value="delivery" id="delivery" className="peer sr-only" />
@@ -604,189 +622,188 @@ export default function CheckoutPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6 space-y-6">
-              {cartItems.map((item) => (
-                <div key={item.id} className="space-y-4">
-                  <div className="flex gap-4">
-                    <div className="relative">
-                      {item.image ? (
-                        <img 
-                          src={item.image} 
-                          alt={item.name}
-                          className="h-24 w-24 rounded-lg object-cover shadow-sm"
-                        />
-                      ) : (
-                        <div className="h-24 w-24 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center shadow-sm">
-                          <span className="text-primary/50 text-2xl font-bold">
-                            {item.name.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
-                      )}
-                      <Badge className="absolute -top-2 -right-2 bg-primary text-primary-foreground">
-                        {item.quantity}x
-                      </Badge>
-                    </div>
-                    
-                    <div className="flex-1">
-                      <div className="flex justify-between">
-                        <h3 className="font-medium">{item.name}</h3>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-6 w-6 text-muted-foreground hover:text-destructive"
-                          onClick={() => handleRemoveItem(item.id)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
+              {cartItems.map((item, index) => {
+                const hasDetails = (item.extras?.length ?? 0) > 0 || 
+                                  (item.prepareMethods?.length ?? 0) > 0 || 
+                                  (item.steps?.length ?? 0) > 0;
+
+                return (
+                  <div key={item.id} className={`p-4 md:p-6 ${index !== cartItems.length - 1 ? 'border-b border-gray-100' : ''}`}>
+                    <div className="flex gap-4">
+                      <div className="relative flex-shrink-0">
+                        {item.image ? (
+                          <img 
+                            src={item.image} 
+                            alt={item.name}
+                            className="h-20 w-20 md:h-24 md:w-24 rounded-lg object-cover shadow-sm bg-white"
+                          />
+                        ) : (
+                          <div className="h-20 w-20 md:h-24 md:w-24 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center shadow-sm border border-primary/10">
+                            <span className="text-primary/40 text-xl font-bold">
+                              {item.name.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                        )}
+                        <Badge className="absolute -top-2 -right-2 bg-primary text-primary-foreground h-6 min-w-[1.5rem] flex items-center justify-center border-2 border-white text-[10px] font-bold">
+                          {item.quantity}x
+                        </Badge>
                       </div>
                       
-                      <p className="text-sm text-muted-foreground">
-                        {item.priceWithDiscount ? (
-                          <>
-                            <span className="text-primary font-medium">R$ {item.priceWithDiscount.toFixed(2).replace('.', ',')}</span>
-                            <span className="line-through text-xs ml-2">R$ {item.price.toFixed(2).replace('.', ',')}</span>
-                          </>
-                        ) : (
-                          <span className="font-medium">R$ {item.totalPrice.toFixed(2).replace('.', ',')}</span>
-                        )}
-                      </p>
-                      
-                      <div className="flex items-center gap-4 mt-2">
-                        <div className="flex items-center gap-2">
-                          <Button 
-                            variant="outline" 
-                            size="icon" 
-                            className="h-8 w-8 border-gray-200 hover:border-primary hover:text-primary"
-                            onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
-                          >
-                            <Minus className="h-4 w-4" />
-                          </Button>
-                          <span className="w-8 text-center font-medium">{item.quantity}</span>
-                          <Button 
-                            variant="outline" 
-                            size="icon" 
-                            className="h-8 w-8 border-gray-200 hover:border-primary hover:text-primary"
-                            onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        
-                        {(item.extras && item.extras.length > 0) || 
-                         (item.prepareMethods && item.prepareMethods.length > 0) || 
-                         (item.steps && item.steps.length > 0) ? (
+                      <div className="flex-1 min-w-0 flex flex-col justify-between">
+                        <div className="flex justify-between items-start gap-2">
+                          <h3 className="font-bold text-gray-900 text-sm md:text-base leading-tight truncate">{item.name}</h3>
                           <Button 
                             variant="ghost" 
-                            size="sm" 
-                            className="gap-1 text-muted-foreground hover:text-primary"
-                            onClick={() => toggleItemExpansion(item.id)}
+                            size="icon" 
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 -mt-1 -mr-1 transition-colors flex-shrink-0"
+                            onClick={() => handleRemoveItem(item.id)}
                           >
-                            {isExpanded[item.id] ? (
-                              <>
-                                <ChevronUp className="h-4 w-4" />
-                                Ocultar detalhes
-                              </>
-                            ) : (
-                              <>
-                                <ChevronDown className="h-4 w-4" />
-                                Ver detalhes
-                              </>
-                            )}
+                            <X className="h-4 w-4" />
                           </Button>
-                        ) : null}
+                        </div>
+                        
+                        <p className="text-sm text-muted-foreground">
+                          {item.priceWithDiscount ? (
+                            <>
+                              <span className="text-primary font-medium">R$ {item.priceWithDiscount.toFixed(2).replace('.', ',')}</span>
+                              <span className="line-through text-xs ml-2">R$ {item.price.toFixed(2).replace('.', ',')}</span>
+                            </>
+                          ) : (
+                            <span className="font-medium">R$ {item.totalPrice.toFixed(2).replace('.', ',')}</span>
+                          )}
+                        </p>
+                        
+                        <div className="flex items-center justify-between mt-3">
+                          <div className="flex items-center gap-2 bg-gray-50 p-1 rounded-lg border border-gray-100">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-7 w-7 bg-white shadow-sm hover:bg-primary/10 hover:text-primary transition-all active:scale-95"
+                              onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
+                            >
+                              <Minus className="h-3 w-3" />
+                            </Button>
+                            <span className="min-w-[1.2rem] text-center font-bold text-xs">{item.quantity}</span>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-7 w-7 bg-white shadow-sm hover:bg-primary/10 hover:text-primary transition-all active:scale-95"
+                              onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
+                            >
+                              <Plus className="h-3 w-3" />
+                            </Button>
+                          </div>
+                          
+                          {hasDetails && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-8 px-2 text-[10px] md:text-xs font-bold text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-full transition-colors flex items-center gap-1"
+                              onClick={() => toggleItemExpansion(item.id)}
+                            >
+                              {isExpanded[item.id] ? (
+                                <><ChevronUp className="h-3.5 w-3.5" /> Menos</>
+                              ) : (
+                                <><ChevronDown className="h-3.5 w-3.5" /> Detalhes</>
+                              )}
+                            </Button>
+                          )}
+                        </div>
                       </div>
+                    </div>
 
-                      <div className="mt-2">
+                    <div className="mt-4 md:ml-[112px]">
+                      <div className="relative group">
                         <Input
-                          placeholder="Adicionar observação (opcional)"
+                          placeholder="Adicionar observação (ex: sem cebola)"
                           value={itemObservations[item.id] || ''}
                           onChange={(e) => {
-                            setItemObservations(prev => ({
-                              ...prev,
-                              [item.id]: e.target.value
-                            }))
+                            const val = e.target.value;
+                            setItemObservations(prev => ({ ...prev, [item.id]: val }));
                             setCartItems(prev => prev.map(cartItem => 
-                              cartItem.id === item.id 
-                                ? { ...cartItem, observation: e.target.value }
-                                : cartItem
-                            ))
+                              cartItem.id === item.id ? { ...cartItem, observation: val } : cartItem
+                            ));
                           }}
-                          className="w-full text-sm border-gray-200 focus:border-primary focus:ring-primary/20"
+                          className="w-full text-[11px] md:text-xs h-9 bg-gray-50/50 border-gray-100 hover:border-gray-200 focus:border-primary/30 focus:bg-white transition-all rounded-lg pl-3"
                         />
                       </div>
                     </div>
+                    
+                    <AnimatePresence>
+                      {isExpanded[item.id] && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.2, ease: "easeInOut" }}
+                          className="md:ml-[112px] mt-4 overflow-hidden"
+                        >
+                          <div className="bg-gray-50/80 rounded-xl p-4 border border-gray-100/50 space-y-4">
+                            {item.weight && (
+                              <div>
+                                <h4 className="text-[10px] uppercase tracking-widest font-black text-gray-400 mb-1">Peso Selecionado</h4>
+                                <p className="text-sm text-gray-700 font-bold">{item.weight}kg</p>
+                              </div>
+                            )}
+
+                            {item.extras && item.extras.length > 0 && (
+                              <div>
+                                <h4 className="text-[10px] uppercase tracking-widest font-black text-gray-400 mb-2">Extras Adicionados</h4>
+                                <ul className="space-y-2">
+                                  {item.extras.map((extra) => (
+                                    <li key={extra.id} className="flex justify-between items-center text-xs text-gray-600">
+                                      <div className="flex items-center gap-2">
+                                        <div className="w-1 h-1 rounded-full bg-primary" />
+                                        <span className="font-medium">{extra.name}</span>
+                                      </div>
+                                      <span className="font-bold text-gray-900 bg-white px-2 py-0.5 rounded-full border border-gray-100 shadow-sm">
+                                        + R$ {extra.price.toFixed(2).replace('.', ',')}
+                                      </span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+
+                            {item.prepareMethods && item.prepareMethods.length > 0 && (
+                              <div>
+                                <h4 className="text-[10px] uppercase tracking-widest font-black text-gray-400 mb-2">Modo de Preparo</h4>
+                                <div className="flex flex-wrap gap-2">
+                                  {item.prepareMethods.map((method) => (
+                                    <Badge key={method.id} variant="secondary" className="bg-white text-gray-600 border-gray-100 font-bold text-[10px]">
+                                      {method.name}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {item.steps && item.steps.length > 0 && (
+                              <div>
+                                <h4 className="text-[10px] uppercase tracking-widest font-black text-gray-400 mb-2">Opções</h4>
+                                <div className="space-y-2">
+                                  {item.steps.map((step) => (
+                                    <div key={step.id} className="flex flex-col gap-1">
+                                      <span className="text-[10px] font-bold text-gray-500">{step.name}</span>
+                                      <span className="text-xs font-black text-gray-900 ml-1">{step.selectedOption?.name}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
-                  
-                  <AnimatePresence>
-                    {isExpanded[item.id] && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="ml-28 space-y-3 bg-gray-50 p-4 rounded-lg"
-                      >
-                        <Separator />
-                        
-                        {item.weight && (
-                          <div className="space-y-2">
-                            <h4 className="text-sm font-medium">Peso:</h4>
-                            <p className="text-sm text-muted-foreground">{item.weight}kg</p>
-                          </div>
-                        )}
-
-                        {item.extras && item.extras.length > 0 && (
-                          <div className="space-y-2">
-                            <h4 className="text-sm font-medium">Extras adicionados:</h4>
-                            <ul className="space-y-2">
-                              {item.extras.map((extra) => (
-                                <li key={extra.id} className="flex justify-between text-sm">
-                                  <span className="text-muted-foreground">+ {extra.name}</span>
-                                  <span className="font-medium">R$ {extra.price.toFixed(2)}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        {item.prepareMethods && item.prepareMethods.length > 0 && (
-                          <div className="space-y-2">
-                            <h4 className="text-sm font-medium">Modo de preparo:</h4>
-                            <ul className="space-y-2">
-                              {item.prepareMethods.map((method) => (
-                                <li key={method.id} className="text-sm text-muted-foreground">
-                                  • {method.name}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        {item.steps && item.steps.length > 0 && (
-                          <div className="space-y-2">
-                            <h4 className="text-sm font-medium">Opções selecionadas:</h4>
-                            <ul className="space-y-2">
-                              {item.steps.map((step) => (
-                                <li key={step.id} className="text-sm">
-                                  <span className="text-muted-foreground">{step.name}:</span>
-                                  <span className="ml-2 font-medium">{step.selectedOption?.name}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                  
-                  <Separator className="my-4" />
-                </div>
-              ))}
+                );
+              })}
             </CardContent>
           </Card>
         </div>
 
         <div className="lg:w-1/3 space-y-6">
-          <Card className="rounded-xs sticky top-6 overflow-hidden border hover:shadow-lg transition-shadow duration-300 bg-gradient-to-br from-white to-gray-50">
+          <Card className="rounded-xs lg:sticky lg:top-6 overflow-hidden border hover:shadow-lg transition-shadow duration-300 bg-gradient-to-br from-white to-gray-50">
             <CardHeader className="py-4 bg-primary">
               <CardTitle className="text-white">Resumo do pedido</CardTitle>
             </CardHeader>
@@ -800,11 +817,9 @@ export default function CheckoutPage() {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Taxa de entrega</span>
                     <span className="font-medium">
-                      {shopDeliveryConfig?.delivery_fee_kind === 'fixed' 
-                        ? `R$ ${shopDeliveryConfig.amount.toFixed(2).replace('.', ',')}`
-                        : shopDeliveryConfig?.delivery_fee_kind === 'per_neighborhood' && selectedNeighborhood
-                          ? `R$ ${calculateDeliveryFee().toFixed(2).replace('.', ',')}`
-                          : 'Taxa a combinar'
+                      {calculateDeliveryFee() === 0 
+                        ? (shopDeliveryConfig?.delivery_fee_kind === 'to_be_agreed' ? 'Taxa a combinar' : <span className="text-green-500">Grátis</span>)
+                        : `R$ ${calculateDeliveryFee().toFixed(2).replace('.', ',')}`
                       }
                     </span>
                   </div>
@@ -825,6 +840,16 @@ export default function CheckoutPage() {
               </div>
               
               <Separator className="my-4" />
+              
+              {shopDeliveryConfig && (Number(shopDeliveryConfig.minimum_order_value) || 0) > 0 && totalPrice < (Number(shopDeliveryConfig.minimum_order_value) || 0) && (
+                <Alert variant="destructive" className="bg-red-50 border-red-200 text-red-700 py-3 rounded-xs mb-4">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription className="text-xs font-medium">
+                    O valor mínimo do pedido é R$ {(Number(shopDeliveryConfig.minimum_order_value) || 0).toFixed(2).replace('.', ',')}. 
+                    Faltam R$ {((Number(shopDeliveryConfig.minimum_order_value) || 0) - totalPrice).toFixed(2).replace('.', ',')} em produtos.
+                  </AlertDescription>
+                </Alert>
+              )}
               
               <div className="flex justify-between font-medium text-lg">
                 <span>Total</span>

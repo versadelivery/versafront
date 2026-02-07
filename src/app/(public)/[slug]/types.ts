@@ -6,9 +6,46 @@ export interface ShopData {
       cellphone: string;
       name: string;
       slug: string;
+      address: string | null;
+      email: string | null;
+      image_url: string | null;
+      is_closed: boolean;
+      shop_status: any;
       catalog_groups: {
         data: CatalogGroup[];
       };
+      shop_delivery_config: {
+        data: {
+          attributes: {
+            delivery_fee_kind: 'to_be_agreed' | 'fixed' | 'per_neighborhood';
+            amount: number;
+            min_value_free_delivery: number | null;
+            minimum_order_value: number | null;
+            shop_delivery_neighborhoods: {
+              data: Array<{
+                id: string;
+                type: string;
+                attributes: {
+                  name: string;
+                  amount: number;
+                  min_value_free_delivery: number | null;
+                };
+              }>;
+            };
+          };
+        };
+      } | null;
+      shop_payment_config: {
+        data: {
+          attributes: {
+            cash: boolean;
+            debit: boolean;
+            credit: boolean;
+            manual_pix: boolean;
+          };
+        };
+      } | null;
+      shop_schedule_config: any;
     };
   };
 }

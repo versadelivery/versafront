@@ -16,139 +16,153 @@ interface StoreHeaderProps {
 
 export default function StoreHeader({ shop }: StoreHeaderProps) {
   const { client } = useClient();
+  const attributes = shop?.attributes || {};
   
   return (
     <>
-      <header className="sticky top-0 z-50 w-full p-2 sm:p-4 backdrop-blur-md bg-black/95 shadow-md">
-        <div className="container mx-auto flex h-16 items-center justify-between px-2 sm:px-4 max-w-7xl">
+      <header className="sticky top-0 z-50 w-full backdrop-blur-md bg-black/80 border-b border-gray-800">
+        <div className="container mx-auto flex h-16 items-center justify-between px-4 max-w-7xl">
           <motion.div 
             className="flex items-center"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.4 }}
           >
-            <Image 
-              src="/logo/logo-inline.svg" 
-              alt="Logo" 
-              width={120} 
-              height={32} 
-              priority
-              className="h-auto w-[150px] sm:w-[150px]"
-            />
+            <Link href={`/${attributes.slug}`}>
+              <Image 
+                src="/logo/logo-inline.svg" 
+                alt="Versa Logo" 
+                width={100} 
+                height={28} 
+                priority
+                className="h-auto w-[100px]"
+              />
+            </Link>
           </motion.div>
           
-          <div className="flex items-center justify-end gap-2 sm:gap-4 flex-1">
+          <div className="flex items-center justify-end gap-3 flex-1">
             <AuthIndicator />
-            
             {client && (
-              <Button variant="outline" className="hidden md:flex bg-primary text-white hover:text-black/80 border-none py-5 px-8 rounded-xs shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all duration-300 group">
-                <Package className="w-4 h-4 mr-2" />
-                <Link href="/pedidos">
-                  <span className="text-sm font-medium">Meus Pedidos</span>
-                </Link>
-              </Button>
+              <>
+                <Button variant="ghost" asChild className="hidden md:flex font-medium text-white hover:text-primary transition-colors">
+                  <Link href="/pedidos">
+                    <Package className="w-4 h-4 mr-2" />
+                    Meus Pedidos
+                  </Link>
+                </Button>
+                <Button variant="ghost" size="icon" asChild className="md:hidden text-white hover:text-primary">
+                  <Link href="/pedidos">
+                    <Package className="w-5 h-5" />
+                  </Link>
+                </Button>
+              </>
             )}
-
-          
-            {client && (
-              <Button 
-                variant="outline" 
-                asChild
-                className="mr-2 md:hidden bg-transparent flex items-center justify-center text-white border border-white/20 h-10 w-10 p-0 rounded-lg hover:bg-white/10 transition-all"
-              >
-                <Link href="/pedidos">
-                  <Package className="w-5 h-5" />
-                </Link>
-              </Button>
-            )}
-          
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2, duration: 0.3 }}
             >
               <CartDrawer />
             </motion.div>
-        
           </div>
         </div>
       </header>
 
-      <motion.div 
-        className="bg-gradient-to-r from-primary to-primary/80 py-10 sm:py-16 text-white px-4"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6 }}
-      >
-        <div className="container mx-auto px-4 flex flex-col sm:flex-row items-center sm:items-start gap-6 max-w-7xl">
-          <motion.div 
-            className="w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center rounded-full bg-white/10 backdrop-blur-sm shadow-lg"
-            initial={{ scale: 0.8 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.3, duration: 0.5, type: "spring" }}
-          >
-            <Store className="w-12 h-12 sm:w-14 sm:h-14 text-white" />
-          </motion.div>
+      <div className="relative w-full">
+        {/* Banner Area - Centralized Hero */}
+        <div className="relative min-h-[320px] sm:min-h-[400px] md:min-h-[500px] flex items-center justify-center py-12 sm:py-20">
+          <div 
+            className="absolute inset-0 bg-cover bg-center"
+            style={{ 
+              backgroundImage: attributes.image_url 
+                ? `linear-gradient(to bottom, rgba(0,0,0,0.6), rgba(0,0,0,0.8)), url(${attributes.image_url})` 
+                : 'linear-gradient(135deg, var(--primary), #000)',
+            }}
+          />
           
-          <div className="text-center sm:text-left flex-1">
+          <div className="relative z-10 flex flex-col items-center text-center px-4 max-w-3xl">
+            <motion.div 
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.5 }}
+              className="mb-6"
+            >
+              <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-3xl bg-white dark:bg-card p-1.5 shadow-2xl overflow-hidden border-4 border-white/20">
+                {attributes.image_url ? (
+                  <img 
+                    src={attributes.image_url} 
+                    alt={attributes.name} 
+                    className="w-full h-full object-cover rounded-2xl"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-primary/10 rounded-2xl">
+                    <Store className="w-12 h-12 text-primary" />
+                  </div>
+                )}
+              </div>
+            </motion.div>
+
             <motion.h1 
-              className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-4"
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.4, duration: 0.5 }}
+              transition={{ delay: 0.1, duration: 0.5 }}
+              className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-white mb-4"
             >
-              {shop.attributes.name}
+              {attributes.name}
             </motion.h1>
             
-            {/* Status da Loja */}
             <motion.div 
-              className="flex items-center justify-center sm:justify-start mb-3"
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.5, duration: 0.5 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+              className="flex flex-col sm:flex-row items-center gap-4 text-white/90"
             >
               <ShopStatus 
-                shopStatusData={shop.attributes.shop_status}
-                shopScheduleConfig={shop.attributes.shop_schedule_config?.data?.attributes || shop.attributes.shop_schedule_config}
+                shopStatusData={attributes.shop_status}
+                shopScheduleConfig={attributes.shop_schedule_config?.data?.attributes || attributes.shop_schedule_config}
               />
+              {attributes.address && (
+                <div className="flex items-center gap-1.5 text-sm">
+                  <MapPin className="w-4 h-4 text-primary" />
+                  <span>{attributes.address}</span>
+                </div>
+              )}
             </motion.div>
 
-            {/* Informações de Contato */}
             <motion.div 
-              className="flex flex-col sm:flex-row items-center sm:items-start gap-3 text-white/90"
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.7, duration: 0.5 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+              className="mt-8 grid grid-cols-3 gap-6 sm:gap-12 text-white"
             >
-              {shop.attributes.cellphone && (
-                <div className="flex items-center gap-2">
-                  <Phone className="w-4 h-4" />
-                  <span className="text-sm">{shop.attributes.cellphone}</span>
-                </div>
-              )}
-
-              {shop.attributes.address && (
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
-                  <span className="text-sm">{shop.attributes.address}</span>
-                </div>
-              )}
+              <div className="flex flex-col items-center">
+                <Clock className="w-5 h-5 text-primary mb-1" />
+                <span className="text-[10px] uppercase font-bold text-white/60">Tempo</span>
+                <span className="text-sm font-bold">30-45 min</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <Package className="w-5 h-5 text-primary mb-1" />
+                <span className="text-[10px] uppercase font-bold text-white/60">Entrega</span>
+                <span className="text-sm font-bold">
+                  {attributes.shop_delivery_config?.data?.attributes?.delivery_fee_kind === 'fixed' 
+                    ? `R$ ${attributes.shop_delivery_config.data.attributes.amount.toFixed(2).replace('.', ',')}`
+                    : attributes.shop_delivery_config?.data?.attributes?.delivery_fee_kind === 'per_neighborhood'
+                      ? 'Bairros'
+                      : 'A combinar'}
+                </span>
+              </div>
+              <div className="flex flex-col items-center">
+                <CheckCircle className="w-5 h-5 text-primary mb-1" />
+                <span className="text-[10px] uppercase font-bold text-white/60">Mínimo</span>
+                <span className="text-sm font-bold">
+                  R$ {(attributes.shop_delivery_config?.data?.attributes?.minimum_order_value || 0).toFixed(2).replace('.', ',')}
+                </span>
+              </div>
             </motion.div>
-
-            {/* Descrição da Loja */}
-            {shop.attributes.description && (
-              <motion.div 
-                className="mt-3 text-white/80"
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.8, duration: 0.5 }}
-              >
-                <p className="text-sm max-w-2xl">{shop.attributes.description}</p>
-              </motion.div>
-            )}
           </div>
         </div>
-      </motion.div>
+      </div>
+
     </>
   );
 }

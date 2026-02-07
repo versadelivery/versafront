@@ -15,6 +15,7 @@ export interface ShopResponse {
             delivery_fee_kind: "to_be_agreed" | "fixed" | "per_neighborhood"
             amount: number
             min_value_free_delivery: string | null
+            minimum_order_value: number | null
             shop_delivery_neighborhoods: {
               data: Array<{
                 id: string
