@@ -54,6 +54,7 @@ export default function DeliverySettingsPage() {
   const [hasFreeDelivery, setHasFreeDelivery] = useState<boolean>(false);
   const [freeDeliveryThreshold, setFreeDeliveryThreshold] = useState<string>("");
   const [bulkAdjustValue, setBulkAdjustValue] = useState<string>("");
+  const [minOrderValue, setMinOrderValue] = useState<string>("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [currentNeighborhood, setCurrentNeighborhood] = useState<Neighborhood | null>(null);
@@ -71,6 +72,7 @@ export default function DeliverySettingsPage() {
       setFixedFee(deliveryConfig.amount?.toString() || "");
       setHasFreeDelivery(deliveryConfig.min_value_free_delivery !== null);
       setFreeDeliveryThreshold(deliveryConfig.min_value_free_delivery?.toString() || "");
+      setMinOrderValue(deliveryConfig.minimum_order_value?.toString() || "");
     }
   }, [deliveryConfig]);
 
@@ -157,7 +159,8 @@ export default function DeliverySettingsPage() {
     updateDeliveryConfig({
       delivery_fee_kind: deliveryType as "to_be_agreed" | "fixed" | "per_neighborhood",
       amount: parseFloat(fixedFee) || 0,
-      min_value_free_delivery: hasFreeDelivery ? parseFloat(freeDeliveryThreshold) : null
+      min_value_free_delivery: hasFreeDelivery ? parseFloat(freeDeliveryThreshold) : null,
+      minimum_order_value: parseFloat(minOrderValue) || 0
     });
   };
 
@@ -179,7 +182,38 @@ export default function DeliverySettingsPage() {
 
       <div className="w-full max-w-7xl mx-auto p-0 md:p-4 lg:p-6 bg-white">
         <Card className="p-4 md:p-6 shadow-none border-none rounded-xs bg-white">
-          <div className="space-y-6 md:space-y-8">
+          <div className="space-y-8 md:space-y-10">
+            {/* Valor Mínimo do Pedido */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-xl">
+                    <CheckCircle2 className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900">Valor Mínimo do Pedido</h3>
+                    <p className="text-sm text-muted-foreground font-medium">Define o valor total mínimo para que o cliente consiga finalizar um pedido</p>
+                  </div>
+                </div>
+                <div className="max-w-xs pl-11">
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">
+                      R$
+                    </span>
+                    <Input
+                      id="minOrderValue"
+                      value={minOrderValue}
+                      onChange={(e) => setMinOrderValue(e.target.value)}
+                      placeholder="0,00"
+                      className="h-12 text-base border-gray-300 focus:ring-primary pl-10 font-bold"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <Separator className="bg-gray-100" />
+
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div className="w-full max-w-md">
                 <Label className="text-muted-foreground">Tipo de Taxa de Entrega</Label>

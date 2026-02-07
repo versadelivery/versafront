@@ -12,6 +12,7 @@ export interface DeliveryConfig {
   delivery_fee_kind: "to_be_agreed" | "fixed" | "per_neighborhood";
   amount: number;
   min_value_free_delivery: number | null;
+  minimum_order_value: number | null;
   neighborhoods: DeliveryNeighborhood[];
 }
 
@@ -23,6 +24,7 @@ interface ApiDeliveryConfig {
       delivery_fee_kind: "to_be_agreed" | "fixed" | "per_neighborhood";
       amount: number;
       min_value_free_delivery: string | null;
+      minimum_order_value: string | null;
       shop_delivery_neighborhoods: {
         data: Array<{
           id: string;
@@ -47,12 +49,13 @@ export const deliveryService = {
       id: data.id,
       delivery_fee_kind: data.attributes.delivery_fee_kind,
       amount: data.attributes.amount,
-      min_value_free_delivery: data.attributes.min_value_free_delivery ? parseFloat(data.attributes.min_value_free_delivery) : null,
+      min_value_free_delivery: (data.attributes.min_value_free_delivery !== null && data.attributes.min_value_free_delivery !== undefined) ? parseFloat(data.attributes.min_value_free_delivery.toString()) : null,
+      minimum_order_value: (data.attributes.minimum_order_value !== null && data.attributes.minimum_order_value !== undefined) ? parseFloat(data.attributes.minimum_order_value.toString()) : null,
       neighborhoods: data.attributes.shop_delivery_neighborhoods.data.map(n => ({
         id: n.id,
         name: n.attributes.name,
         amount: n.attributes.amount,
-        min_value_free_delivery: n.attributes.min_value_free_delivery ? parseFloat(n.attributes.min_value_free_delivery) : null
+        min_value_free_delivery: (n.attributes.min_value_free_delivery !== null && n.attributes.min_value_free_delivery !== undefined) ? parseFloat(n.attributes.min_value_free_delivery.toString()) : null
       }))
     };
   },
