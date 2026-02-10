@@ -1,0 +1,18 @@
+[tools]
+node = "latest"
+
+[tasks.setup]
+description = "Instala dependências do projeto"
+run = "pnpm install"
+
+[tasks.dev]
+description = "Inicia o servidor de desenvolvimento"
+run = "pnpm dev"
+
+[tasks.build]
+description = "Builda o projeto para produção"
+run = "pnpm build"
+
+[tasks.lint]
+description = "Executa o linter"
+run = "pnpm lint"
