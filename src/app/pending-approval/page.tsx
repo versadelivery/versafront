@@ -5,12 +5,100 @@ import { Button } from "@/components/ui/button";
 import { Clock, LogOut } from "lucide-react";
 import { removeToken } from "@/lib/auth";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { useAuth } from "@/hooks/use-auth";
+import { createCableWithToken } from "@/lib/cable";
+import { toast } from "sonner";
+import api from "@/api/config";
+import { UserData } from "@/types/utils";
 
 export default function PendingApprovalPage() {
   const router = useRouter();
+  const { user, login } = useAuth();
+
+  const checkStatus = async () => {
+    try {
+      const response = await api.get("/shops");
+      // Se chegamos aqui sem erro 403, a loja ESTÁ aprovada (UserAuthenticatable permitiu)
+      const shopData = response.data.data;
+      
+      if (shopData && shopData.attributes.approved) {
+        toast.success("Loja aprovada! Redirecionando...");
+        
+        // Tenta recuperar o usuário do localStorage para garantir que temos os dados completos
+        const storedUser = localStorage.getItem('auth_user');
+        let updatedUser: UserData;
+        
+        if (storedUser) {
+          updatedUser = JSON.parse(storedUser);
+          if (updatedUser.shop) {
+            updatedUser.shop.attributes.approved = true;
+          }
+        } else if (user) {
+          updatedUser = { ...user };
+          if (updatedUser.shop) {
+            updatedUser.shop.attributes.approved = true;
+          }
+        } else {
+          // Fallback se não tivermos o usuário no estado ou storage ainda
+          // Redireciona mesmo assim, o useAuth no /admin vai cuidar do resto
+          router.push("/admin");
+          return;
+        }
+        
+        localStorage.setItem('auth_user', JSON.stringify(updatedUser));
+        router.push("/admin");
+      }
+    } catch (error: any) {
+      if (error.response?.status === 403) {
+        console.log("Ainda aguardando aprovação...");
+      } else {
+        console.error("Erro ao verificar status:", error);
+      }
+    }
+  };
+
+  useEffect(() => {
+    checkStatus();
+
+    if (!user?.shop?.id) return;
+
+    const cable = createCableWithToken();
+    if (!cable) return;
+
+    const subscription = cable.subscriptions.create(
+      {
+        channel: "ShopStatusChannel",
+      },
+      {
+        received: (data: { event: string }) => {
+          if (data.event === "approved") {
+            toast.success("Sua loja foi aprovada! Redirecionando...");
+            // Atualiza o localstorage para o próximo F5
+            const updatedUser = { ...user } as UserData;
+            if (updatedUser.shop) {
+              updatedUser.shop.attributes.approved = true;
+              localStorage.setItem('auth_user', JSON.stringify(updatedUser));
+            }
+            setTimeout(() => {
+              router.push("/admin");
+            }, 1000);
+          }
+        },
+        connected: () => console.log("Conectado ao ShopStatusChannel"),
+        disconnected: () => console.log("Desconectado do ShopStatusChannel"),
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+      cable.disconnect();
+    };
+  }, [user?.shop?.id, router]);
 
   const handleLogout = () => {
     removeToken();
+    localStorage.removeItem('auth_user');
     router.push("/login");
   };
 

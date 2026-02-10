@@ -38,4 +38,15 @@ api.interceptors.request.use((config) => {
   return config
 })
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 403 && error.response?.data?.code === "SHOP_UNAUTHORIZED") {
+      // Redireciona para a página de aguardando aprovação se a loja for desativada/não aprovada
+      window.location.href = "/pending-approval";
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api

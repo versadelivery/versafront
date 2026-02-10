@@ -1,19 +1,6 @@
 import { StaticImageData } from "next/image";
 
-export interface UserData {
-  email: string
-  name: string
-  role: string
-  shop: {
-    id: string
-    type: string
-    attributes: {
-      cellphone: string
-      name: string
-      slug: string
-    }
-  }
-}
+
 
 export interface ShopData {
   name: string
@@ -167,6 +154,7 @@ export interface UserData {
       cellphone: string;
       name: string;
       slug: string;
+      approved: boolean;
     };
   };
 }

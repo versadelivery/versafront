@@ -12,10 +12,17 @@ export function useAuth() {
 
   useEffect(() => {
     const token = getToken()
+    const storedUser = typeof window !== 'undefined' ? localStorage.getItem('auth_user') : null
+    
     if (!token) {
       setIsLoading(false)
       return
     }
+
+    if (storedUser) {
+      setUser(JSON.parse(storedUser))
+    }
+
     setIsLoading(false)
   }, [])
 
@@ -30,7 +37,7 @@ export function useAuth() {
     try {
       const response = await loginUser(data)
 
-      const shopApproved = response.data?.attributes?.shop?.data?.attributes?.approved
+      const shopApproved = response.user?.shop?.attributes?.approved
 
       if (shopApproved === false) {
         router.push('/pending-approval')
@@ -39,6 +46,7 @@ export function useAuth() {
 
       setToken(response.token)
       setUser(response.user)
+      localStorage.setItem('auth_user', JSON.stringify(response.user))
       toast.success('Login realizado com sucesso')
       router.push('/admin')
 
@@ -54,6 +62,7 @@ export function useAuth() {
   const logout = () => {
     removeToken()
     removeUser()
+    localStorage.removeItem('auth_user')
     toast.success('Logout realizado com sucesso')
     router.push('/login')
   }
