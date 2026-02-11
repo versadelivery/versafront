@@ -45,6 +45,21 @@ export interface Item{
     max_weight: number | null;
     priority: number;
     image_url: string | null;
+    cost?: number | null;
+    ncm_code?: string | null;
+    highlight?: boolean;
+    sunday_active?: boolean;
+    monday_active?: boolean;
+    tuesday_active?: boolean;
+    wednesday_active?: boolean;
+    thursday_active?: boolean;
+    friday_active?: boolean;
+    saturday_active?: boolean;
+    promotion_tag?: boolean;
+    best_seller_tag?: boolean;
+    new_tag?: boolean;
+    available_delivery?: boolean;
+    available_dine_in?: boolean;
     extra: {
       data: CatalogItemExtra[];
     };
@@ -67,6 +82,21 @@ export interface CatalogItemAttributes {
   max_weight: number | null;
   priority: number;
   image_url: string;
+  cost?: number | null;
+  ncm_code?: string | null;
+  highlight?: boolean;
+  sunday_active?: boolean;
+  monday_active?: boolean;
+  tuesday_active?: boolean;
+  wednesday_active?: boolean;
+  thursday_active?: boolean;
+  friday_active?: boolean;
+  saturday_active?: boolean;
+  promotion_tag?: boolean;
+  best_seller_tag?: boolean;
+  new_tag?: boolean;
+  available_delivery?: boolean;
+  available_dine_in?: boolean;
   group?: {
     data: any;
   };

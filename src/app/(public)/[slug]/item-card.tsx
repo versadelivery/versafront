@@ -55,11 +55,36 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onClick, className }) => {
                 </div>
               )}
               
-              {hasDiscount && (
-                <div className="absolute top-3 right-3 bg-primary text-white text-xs font-bold px-2 py-1 rounded-full shadow-md">
-                  {Math.round(
-                    ((attributes.price - (attributes.price_with_discount || 0)) / attributes.price * 100)
-                  )}% Desconto
+              {/* Tags centralizadas no topo, com largura adaptada ao texto */}
+              <div className="absolute top-2 inset-x-0 flex flex-col items-center gap-1.5 z-10 pointer-events-none">
+                {attributes.new_tag && (
+                  <div className="bg-green-500 text-white text-[10px] sm:text-xs font-bold px-3 py-1 rounded-full shadow-md whitespace-nowrap">
+                    NOVO!
+                  </div>
+                )}
+                {attributes.best_seller_tag && (
+                  <div className="bg-orange-500 text-white text-[10px] sm:text-xs font-bold px-3 py-1 rounded-full shadow-md whitespace-nowrap">
+                    MAIS VENDIDO
+                  </div>
+                )}
+                {attributes.highlight && (
+                  <div className="bg-yellow-500 text-white text-[10px] sm:text-xs font-bold px-3 py-1 rounded-full shadow-md whitespace-nowrap">
+                    DESTAQUE
+                  </div>
+                )}
+              </div>
+              
+              {/* Tag de desconto/promoção no canto superior direito */}
+              {(hasDiscount || attributes.promotion_tag) && (
+                <div className="absolute top-2 right-2 bg-primary text-white text-[10px] sm:text-xs font-bold px-2 py-1 rounded-full shadow-md z-10 whitespace-nowrap">
+                  {hasDiscount && parseFloat(attributes.price_with_discount || '0') < parseFloat(attributes.price) ? (
+                    (() => {
+                      const discountPercent = Math.round(
+                        ((parseFloat(attributes.price) - parseFloat(attributes.price_with_discount || '0')) / parseFloat(attributes.price)) * 100
+                      );
+                      return discountPercent > 0 ? `${discountPercent}% OFF` : 'PROMOÇÃO';
+                    })()
+                  ) : 'PROMOÇÃO'}
                 </div>
               )}
             </div>

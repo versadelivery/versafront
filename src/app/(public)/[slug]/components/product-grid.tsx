@@ -12,6 +12,30 @@ interface ProductGridProps {
   searchQuery: string;
 }
 
+/**
+ * Verifica se um item deve ser exibido no dia atual baseado nos flags de dias ativos
+ */
+function isItemActiveToday(item: CatalogItem): boolean {
+  const today = new Date().getDay(); // 0 = Domingo, 1 = Segunda, ..., 6 = Sábado
+  
+  const dayFlags: Record<number, keyof CatalogItem['attributes']> = {
+    0: 'sunday_active',
+    1: 'monday_active',
+    2: 'tuesday_active',
+    3: 'wednesday_active',
+    4: 'thursday_active',
+    5: 'friday_active',
+    6: 'saturday_active',
+  };
+  
+  const dayFlag = dayFlags[today];
+  const isActive = item.attributes[dayFlag];
+  
+  // Se o flag não existe ou é undefined, considera como true (compatibilidade com itens antigos)
+  // Se existe e é false, o item não deve ser exibido hoje
+  return isActive !== false;
+}
+
 export default function ProductGrid({ categories, activeCategory, searchQuery }: ProductGridProps) {
   if (typeof window !== 'undefined') {
     try {
@@ -26,17 +50,27 @@ export default function ProductGrid({ categories, activeCategory, searchQuery }:
 
   const allItems = categories.flatMap(group => 
     normalizeItems(group.attributes.items)
-  ).filter(item => 
-    item.attributes.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.attributes.description?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  ).filter(item => {
+    // Filtro por dia de exibição
+    if (!isItemActiveToday(item)) {
+      return false;
+    }
+    // Filtro por busca
+    return item.attributes.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+           item.attributes.description?.toLowerCase().includes(searchQuery.toLowerCase());
+  });
   
   const itemsByGroup = categories.reduce((acc, group) => {
     acc[group.attributes.name] = normalizeItems(group.attributes.items)
-      .filter(item => 
-        item.attributes.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.attributes.description?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+      .filter(item => {
+        // Filtro por dia de exibição
+        if (!isItemActiveToday(item)) {
+          return false;
+        }
+        // Filtro por busca
+        return item.attributes.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+               item.attributes.description?.toLowerCase().includes(searchQuery.toLowerCase());
+      });
     return acc;
   }, {} as Record<string, CatalogItem[]>);
 
