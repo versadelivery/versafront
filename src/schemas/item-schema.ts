@@ -41,6 +41,22 @@ export const itemSchema = z.object({
   catalog_item_prepare_methods_attributes: z.array(prepareMethodSchema).optional(),
   has_steps: z.boolean().optional(),
   catalog_item_steps_attributes: z.array(stepSchema).optional(),
+  // Novos campos
+  cost: z.number().min(0, "Custo deve ser maior ou igual a 0").optional(),
+  ncm_code: z.string().max(20, "Código NCM deve ter no máximo 20 caracteres").optional(),
+  highlight: z.boolean().optional(),
+  sunday_active: z.boolean().optional(),
+  monday_active: z.boolean().optional(),
+  tuesday_active: z.boolean().optional(),
+  wednesday_active: z.boolean().optional(),
+  thursday_active: z.boolean().optional(),
+  friday_active: z.boolean().optional(),
+  saturday_active: z.boolean().optional(),
+  promotion_tag: z.boolean().optional(),
+  best_seller_tag: z.boolean().optional(),
+  new_tag: z.boolean().optional(),
+  available_delivery: z.boolean().optional(),
+  available_dine_in: z.boolean().optional(),
 }).refine((data) => {
   if (data.item_type === 'weight') {
     return data.unit_of_measurement && data.min_weight && data.max_weight && data.measure_interval;

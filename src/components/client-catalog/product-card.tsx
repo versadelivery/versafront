@@ -85,14 +85,34 @@ export function ProductCard({ product, onAddToCart, onToggleFavorite }: ProductC
             )}
           </AnimatePresence>
 
-          <div className="absolute top-2 right-2 flex flex-col gap-2">
-            {hasDiscount && (
-              <Badge variant="default" className="bg-red-500 hover:bg-red-600">
-                {Math.round(((parseFloat(product.attributes.price) - parseFloat(product.attributes.price_with_discount!)) / parseFloat(product.attributes.price)) * 100)}% OFF
+          {/* Tags no canto superior esquerdo */}
+          <div className="absolute top-2 left-2 flex flex-col gap-1.5 z-10 max-w-[calc(50%-1rem)]">
+            {product.attributes.new_tag && (
+              <Badge variant="default" className="bg-green-500 hover:bg-green-600 text-white text-[10px] px-2 py-1 whitespace-nowrap">
+                NOVO!
+              </Badge>
+            )}
+            {product.attributes.best_seller_tag && (
+              <Badge variant="default" className="bg-orange-500 hover:bg-orange-600 text-white text-[10px] px-2 py-1 whitespace-nowrap">
+                MAIS VENDIDO
+              </Badge>
+            )}
+            {product.attributes.highlight && (
+              <Badge variant="default" className="bg-yellow-500 hover:bg-yellow-600 text-white text-[10px] px-2 py-1 whitespace-nowrap">
+                DESTAQUE
+              </Badge>
+            )}
+          </div>
+
+          {/* Tags no canto superior direito */}
+          <div className="absolute top-2 right-2 flex flex-col gap-1.5 z-10">
+            {(hasDiscount || product.attributes.promotion_tag) && (
+              <Badge variant="default" className="bg-primary hover:bg-primary/90 text-white text-[10px] px-2 py-1 whitespace-nowrap">
+                {hasDiscount ? `${Math.round(((parseFloat(product.attributes.price) - parseFloat(product.attributes.price_with_discount!)) / parseFloat(product.attributes.price)) * 100)}% OFF` : 'PROMOÇÃO'}
               </Badge>
             )}
             {hasExtras && (
-              <Badge variant="default" className="bg-green-500 hover:bg-green-600">
+              <Badge variant="default" className="bg-green-500 hover:bg-green-600 text-white text-[10px] px-2 py-1">
                 <PlusCircle className="h-3 w-3 mr-1" />
                 Extras
               </Badge>
