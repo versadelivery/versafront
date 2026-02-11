@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { formatPrice } from "@/utils/format-price";
 import { createPDVOrder } from "@/services/order-service";
 import { useAdminActionCable } from "@/lib/admin-cable";
+import { useShop } from "@/hooks/use-shop";
 
 interface CartItem {
   id: string;
@@ -137,9 +138,11 @@ export default function PDVPage() {
   // Calcular total do carrinho
   const cartTotal = cart.reduce((total: number, item: CartItem) => total + item.totalPrice, 0);
 
-  // Adicionar item ao carrinho
+  // Adicionar item ao carrinho (usa preço com desconto se houver)
   const addToCart = (item: any) => {
-    const basePrice = parseFloat(item.attributes.price);
+    const price = Number(item.attributes.price);
+    const discount = item.attributes.price_with_discount != null ? Number(item.attributes.price_with_discount) : null;
+    const basePrice = discount != null && discount < price ? discount : price;
     const cartItem: CartItem = {
       id: `${item.id}-${cartIdCounter}`,
       name: item.attributes.name,
@@ -404,13 +407,20 @@ export default function PDVPage() {
                       
                       {/* Grid de Produtos */}
                       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                        {group.attributes.items.map((item: any) => (
+                        {group.attributes.items.map((item: any) => {
+                          const attrs = item.data.attributes;
+                          const hasDiscount = attrs.price_with_discount != null && Number(attrs.price_with_discount) < Number(attrs.price);
+                          const showPromoBadge = hasDiscount || attrs.promotion_tag;
+                          const priceNum = Number(attrs.price);
+                          const priceWithDiscountNum = attrs.price_with_discount != null ? Number(attrs.price_with_discount) : null;
+
+                          return (
                           <Card key={item.data.id} className="overflow-hidden hover:shadow-lg transition-all duration-200 group">
                             <div className="aspect-video relative bg-gray-100">
-                              {item.data.attributes.image_url ? (
+                              {attrs.image_url ? (
                                 <Image
-                                  src={item.data.attributes.image_url}
-                                  alt={item.data.attributes.name}
+                                  src={attrs.image_url}
+                                  alt={attrs.name}
                                   fill
                                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                                   className="object-cover group-hover:scale-105 transition-transform duration-200"
@@ -420,43 +430,69 @@ export default function PDVPage() {
                                   <Package className="h-8 w-8 text-muted-foreground" />
                                 </div>
                               )}
-                              
-                              {/* Badge de preço promocional se houver */}
-                              {item.data.attributes.price_with_discount && (
-                                <div className="absolute top-2 right-2">
-                                  <Badge variant="destructive">PROMOÇÃO</Badge>
+
+                              {/* Tags no canto superior esquerdo */}
+                              <div className="absolute top-2 left-2 flex flex-col gap-1.5 z-10 max-w-[calc(50%-1rem)]">
+                                {attrs.new_tag && (
+                                  <span className="bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md whitespace-nowrap">
+                                    NOVO!
+                                  </span>
+                                )}
+                                {attrs.best_seller_tag && (
+                                  <span className="bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md whitespace-nowrap">
+                                    MAIS VENDIDO
+                                  </span>
+                                )}
+                                {attrs.highlight && (
+                                  <span className="bg-yellow-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md whitespace-nowrap">
+                                    DESTAQUE
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Badge de promoção/desconto no canto superior direito */}
+                              {showPromoBadge && (
+                                <div className="absolute top-2 right-2 z-10">
+                                  <Badge variant="destructive" className="text-[10px] px-2 py-0.5 whitespace-nowrap">
+                                    {(() => {
+                                      const pct = hasDiscount && priceNum > 0 && priceWithDiscountNum != null
+                                        ? Math.round(((priceNum - priceWithDiscountNum) / priceNum) * 100)
+                                        : 0;
+                                      return pct > 0 ? `${pct}% OFF` : 'PROMOÇÃO';
+                                    })()}
+                                  </Badge>
                                 </div>
                               )}
                             </div>
-                            
-                            <div className="p-4 space-y-3">
+
+                            <div className={`p-4 space-y-3 ${!attrs.image_url ? 'pt-5' : ''}`}>
                               <div>
                                 <h4 className="font-semibold text-lg mb-1 line-clamp-2">
-                                  {item.data.attributes.name}
+                                  {attrs.name}
                                 </h4>
                                 <p className="text-sm text-muted-foreground line-clamp-2">
-                                  {item.data.attributes.description}
+                                  {attrs.description}
                                 </p>
                               </div>
-                              
+
                               <div className="flex items-center justify-between">
                                 <div className="flex flex-col">
-                                  {item.data.attributes.price_with_discount ? (
+                                  {hasDiscount && priceWithDiscountNum != null ? (
                                     <>
                                       <span className="text-sm text-muted-foreground line-through">
-                                        {formatPrice(parseFloat(item.data.attributes.price))}
+                                        {formatPrice(priceNum)}
                                       </span>
                                       <span className="font-bold text-lg text-green-600">
-                                        {formatPrice(parseFloat(item.data.attributes.price_with_discount))}
+                                        {formatPrice(priceWithDiscountNum)}
                                       </span>
                                     </>
                                   ) : (
                                     <span className="font-bold text-lg text-primary">
-                                      {formatPrice(parseFloat(item.data.attributes.price))}
+                                      {formatPrice(priceNum)}
                                     </span>
                                   )}
                                 </div>
-                                
+
                                 <Button
                                   onClick={() => addToCart(item.data)}
                                   className="h-9 px-4"
@@ -467,7 +503,8 @@ export default function PDVPage() {
                               </div>
                             </div>
                           </Card>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   ))}

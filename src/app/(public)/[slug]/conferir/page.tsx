@@ -330,8 +330,8 @@ export default function CheckoutPage() {
         <p className="text-gray-600 mt-1">Revise seu pedido e finalize a compra</p>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-8">
-        <div className="lg:w-2/3 space-y-6">
+      <div className="flex flex-col lg:flex-row gap-8 lg:items-start">
+        <div className="lg:w-2/3 space-y-6 flex-shrink-0">
           {/* Alerta de Loja Fechada */}
           {!isShopOpen && !shopStatusLoading && (
             <Alert className="border-red-200 bg-red-50">
@@ -785,8 +785,8 @@ export default function CheckoutPage() {
           </Card>
         </div>
 
-        <div className="lg:w-1/3 space-y-6">
-          <Card className="rounded-xs sticky top-6 overflow-hidden border hover:shadow-lg transition-shadow duration-300 bg-gradient-to-br from-white to-gray-50">
+        <div className="lg:w-1/3 space-y-6 flex-shrink-0 lg:self-start">
+          <Card className="rounded-xs overflow-hidden border hover:shadow-lg transition-shadow duration-300 bg-gradient-to-br from-white to-gray-50">
             <CardHeader className="py-4 bg-primary">
               <CardTitle className="text-white">Resumo do pedido</CardTitle>
             </CardHeader>
