@@ -40,6 +40,21 @@ export interface FormValues {
   max_weight?: string;
   priority: string;
   price_with_discount?: string;
+  cost?: string;
+  ncm_code?: string;
+  highlight?: boolean;
+  sunday_active?: boolean;
+  monday_active?: boolean;
+  tuesday_active?: boolean;
+  wednesday_active?: boolean;
+  thursday_active?: boolean;
+  friday_active?: boolean;
+  saturday_active?: boolean;
+  promotion_tag?: boolean;
+  best_seller_tag?: boolean;
+  new_tag?: boolean;
+  available_delivery?: boolean;
+  available_dine_in?: boolean;
 }
 
 
@@ -58,6 +73,21 @@ export interface CatalogItem {
     priority: string;
     price_with_discount?: string;
     image_url?: string;
+    cost?: string;
+    ncm_code?: string;
+    highlight?: boolean;
+    sunday_active?: boolean;
+    monday_active?: boolean;
+    tuesday_active?: boolean;
+    wednesday_active?: boolean;
+    thursday_active?: boolean;
+    friday_active?: boolean;
+    saturday_active?: boolean;
+    promotion_tag?: boolean;
+    best_seller_tag?: boolean;
+    new_tag?: boolean;
+    available_delivery?: boolean;
+    available_dine_in?: boolean;
   };
 }
 
@@ -76,6 +106,21 @@ export interface UICatalogItem {
     priority: number;
     image_url?: string;
     price_with_discount?: string;
+    cost?: string;
+    ncm_code?: string;
+    highlight?: boolean;
+    sunday_active?: boolean;
+    monday_active?: boolean;
+    tuesday_active?: boolean;
+    wednesday_active?: boolean;
+    thursday_active?: boolean;
+    friday_active?: boolean;
+    saturday_active?: boolean;
+    promotion_tag?: boolean;
+    best_seller_tag?: boolean;
+    new_tag?: boolean;
+    available_delivery?: boolean;
+    available_dine_in?: boolean;
     extra: {
       data: Array<{
         id: string;

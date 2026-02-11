@@ -65,7 +65,9 @@ export default function GroupModal({ isOpen, onOpenChange }: { isOpen: boolean, 
     const formData = new FormData();
     formData.append('name', data.name);
     formData.append('priority', Number(data.priority).toString());
-    formData.append('image', data.image);
+    if (data.image instanceof File) {
+      formData.append('image', data.image);
+    }
     formData.append('description', data.description);
     createCatalogGroup(formData)
     onOpenChange(false)

@@ -17,6 +17,7 @@ import { ItemExtras, Extra } from "./item-extras-create"
 import { ItemPrepareMethods, PrepareMethod } from "./item-prepare-methods-create"
 import { ItemSteps } from "./item-steps-create";
 import { useCatalogGroup } from "../../../hooks/useCatalogGroup";
+import { toast } from "sonner";
 interface NewItemModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
@@ -39,6 +40,21 @@ const itemSchema = z.object({
   max_weight: z.number().min(0).optional(),
   measure_interval: z.number().min(0).optional(),
   price_with_discount: z.number().min(0).optional(),
+  cost: z.number().min(0).optional(),
+  ncm_code: z.string().optional(),
+  highlight: z.boolean().optional(),
+  sunday_active: z.boolean().optional(),
+  monday_active: z.boolean().optional(),
+  tuesday_active: z.boolean().optional(),
+  wednesday_active: z.boolean().optional(),
+  thursday_active: z.boolean().optional(),
+  friday_active: z.boolean().optional(),
+  saturday_active: z.boolean().optional(),
+  promotion_tag: z.boolean().optional(),
+  best_seller_tag: z.boolean().optional(),
+  new_tag: z.boolean().optional(),
+  available_delivery: z.boolean().optional(),
+  available_dine_in: z.boolean().optional(),
   catalog_item_extras_attributes: z.array(
     z.object({ 
       name: z.string().min(1, { message: 'Nome do adicional é obrigatório' }), 
@@ -78,12 +94,12 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
     setSteps(prev => prev.map((step, i) => i === stepIndex ? { ...step, options: step.options.filter((_, j) => j !== optionIndex) } : step));
   }
   
-  const formatPrice = (price: number) => {
-    if (price !== 0) {
-      return price.toFixed(2).replace('.', ',')
-    } else {
-      return '0,00'
+  const formatPrice = (price: number | string) => {
+    const num = typeof price === 'string' ? parseFloat(price) : price;
+    if (num != null && !isNaN(num) && num !== 0) {
+      return num.toFixed(2).replace('.', ',');
     }
+    return '0,00';
   }
   
   const form = useForm({
@@ -98,6 +114,21 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
       min_weight: 0,
       max_weight: 0,
       measure_interval: 0,
+      cost: 0,
+      ncm_code: '',
+      highlight: false,
+      sunday_active: true,
+      monday_active: true,
+      tuesday_active: true,
+      wednesday_active: true,
+      thursday_active: true,
+      friday_active: true,
+      saturday_active: true,
+      promotion_tag: false,
+      best_seller_tag: false,
+      new_tag: false,
+      available_delivery: true,
+      available_dine_in: true,
     },
     resolver: zodResolver(itemSchema)
   });
@@ -295,6 +326,27 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
         });
       });
     }
+    // Novos campos
+    if (data.cost) {
+      formData.append('cost', data.cost.toString());
+    }
+    if (data.ncm_code) {
+      formData.append('ncm_code', data.ncm_code);
+    }
+    formData.append('highlight', data.highlight ? 'true' : 'false');
+    formData.append('sunday_active', data.sunday_active ? 'true' : 'false');
+    formData.append('monday_active', data.monday_active ? 'true' : 'false');
+    formData.append('tuesday_active', data.tuesday_active ? 'true' : 'false');
+    formData.append('wednesday_active', data.wednesday_active ? 'true' : 'false');
+    formData.append('thursday_active', data.thursday_active ? 'true' : 'false');
+    formData.append('friday_active', data.friday_active ? 'true' : 'false');
+    formData.append('saturday_active', data.saturday_active ? 'true' : 'false');
+    formData.append('promotion_tag', data.promotion_tag ? 'true' : 'false');
+    formData.append('best_seller_tag', data.best_seller_tag ? 'true' : 'false');
+    formData.append('new_tag', data.new_tag ? 'true' : 'false');
+    formData.append('available_delivery', data.available_delivery ? 'true' : 'false');
+    formData.append('available_dine_in', data.available_dine_in ? 'true' : 'false');
+    
     createCatalogItem(formData);
     onOpenChange(false);
     form.reset();
@@ -593,10 +645,21 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
               <FormControl className="cursor-pointer">
                 <Switch
                   checked={hasExtras}
-                  onCheckedChange={handleExtrasToggle}
+                  onCheckedChange={(checked) => {
+                    if (!checked && extras.length > 0) {
+                      toast.info("Remova todos os adicionais cadastrados antes de desativar esta seção.");
+                      return;
+                    }
+                    handleExtrasToggle(checked);
+                  }}
                 />
               </FormControl>
             </FormItem>
+            {hasExtras && extras.length > 0 && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                Para desativar os adicionais, remova todos os itens cadastrados.
+              </p>
+            )}
 
             {hasExtras && (
               <ItemExtras
@@ -614,10 +677,21 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
               <FormControl className="cursor-pointer">
                 <Switch
                   checked={hasPrepareMethods}
-                  onCheckedChange={handlePrepareMethodsToggle}
+                  onCheckedChange={(checked) => {
+                    if (!checked && prepareMethods.length > 0) {
+                      toast.info("Remova todos os modos de preparo cadastrados antes de desativar esta seção.");
+                      return;
+                    }
+                    handlePrepareMethodsToggle(checked);
+                  }}
                 />
               </FormControl>
             </FormItem>
+            {hasPrepareMethods && prepareMethods.length > 0 && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                Para desativar os modos de preparo, remova todos os itens cadastrados.
+              </p>
+            )}
 
             {hasPrepareMethods && (
               <ItemPrepareMethods
@@ -635,10 +709,21 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
               <FormControl className="cursor-pointer">
                 <Switch
                   checked={hasSteps}
-                  onCheckedChange={handleStepsToggle}
+                  onCheckedChange={(checked) => {
+                    if (!checked && steps.length > 0) {
+                      toast.info("Remova todas as etapas e opções cadastradas antes de desativar esta seção.");
+                      return;
+                    }
+                    handleStepsToggle(checked);
+                  }}
                 />
               </FormControl>
             </FormItem>
+            {hasSteps && steps.length > 0 && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                Para desativar as etapas, remova todas as etapas e opções cadastradas.
+              </p>
+            )}
 
             {hasSteps && (
               <ItemSteps
@@ -651,6 +736,308 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
                 onRemoveStepOption={handleRemoveStepOption}
               />
             )}
+
+            <hr className="border-black/30 my-12 w-full" />
+
+            {/* Seção de Dados Fiscais */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-bold text-foreground">DADOS FISCAIS E CUSTOS</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="cost"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-bold text-foreground">
+                        CUSTO DO ITEM (Opcional)
+                      </FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2">R$</span>
+                          <Input
+                            placeholder="0,00"
+                            value={formatPrice(field.value as number)}
+                            onChange={(e) => field.onChange(handlePriceChange(e.target.value))}
+                            className="pl-10 h-12 border-black/30"
+                          />
+                        </div>
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="ncm_code"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-bold text-foreground">
+                        CÓDIGO NCM (Opcional)
+                      </FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Ex: 1234.56.78" className="border-black/30 border-[0.5px] h-12 placeholder:text-gray-400" />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            <hr className="border-black/30 my-12 w-full" />
+
+            {/* Seção de Regras de Exibição */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-bold text-foreground">REGRAS DE EXIBIÇÃO</h3>
+              
+              <FormField
+                control={form.control}
+                name="highlight"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg p-4 bg-muted/40">
+                    <FormLabel className="cursor-pointer text-sm font-bold text-foreground">
+                      DESTAQUE NO CARDÁPIO
+                    </FormLabel>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <div className="space-y-2">
+                <FormLabel className="text-sm font-bold text-foreground">DIAS ATIVOS</FormLabel>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <FormField
+                    control={form.control}
+                    name="sunday_active"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                        <FormControl>
+                          <input
+                            type="checkbox"
+                            checked={field.value}
+                            onChange={(e) => field.onChange(e.target.checked)}
+                            className="h-4 w-4"
+                          />
+                        </FormControl>
+                        <FormLabel className="text-xs font-normal cursor-pointer">Domingo</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="monday_active"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                        <FormControl>
+                          <input
+                            type="checkbox"
+                            checked={field.value}
+                            onChange={(e) => field.onChange(e.target.checked)}
+                            className="h-4 w-4"
+                          />
+                        </FormControl>
+                        <FormLabel className="text-xs font-normal cursor-pointer">Segunda</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="tuesday_active"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                        <FormControl>
+                          <input
+                            type="checkbox"
+                            checked={field.value}
+                            onChange={(e) => field.onChange(e.target.checked)}
+                            className="h-4 w-4"
+                          />
+                        </FormControl>
+                        <FormLabel className="text-xs font-normal cursor-pointer">Terça</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="wednesday_active"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                        <FormControl>
+                          <input
+                            type="checkbox"
+                            checked={field.value}
+                            onChange={(e) => field.onChange(e.target.checked)}
+                            className="h-4 w-4"
+                          />
+                        </FormControl>
+                        <FormLabel className="text-xs font-normal cursor-pointer">Quarta</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="thursday_active"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                        <FormControl>
+                          <input
+                            type="checkbox"
+                            checked={field.value}
+                            onChange={(e) => field.onChange(e.target.checked)}
+                            className="h-4 w-4"
+                          />
+                        </FormControl>
+                        <FormLabel className="text-xs font-normal cursor-pointer">Quinta</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="friday_active"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                        <FormControl>
+                          <input
+                            type="checkbox"
+                            checked={field.value}
+                            onChange={(e) => field.onChange(e.target.checked)}
+                            className="h-4 w-4"
+                          />
+                        </FormControl>
+                        <FormLabel className="text-xs font-normal cursor-pointer">Sexta</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="saturday_active"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                        <FormControl>
+                          <input
+                            type="checkbox"
+                            checked={field.value}
+                            onChange={(e) => field.onChange(e.target.checked)}
+                            className="h-4 w-4"
+                          />
+                        </FormControl>
+                        <FormLabel className="text-xs font-normal cursor-pointer">Sábado</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <hr className="border-black/30 my-12 w-full" />
+
+            {/* Seção de Tags Visuais */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-bold text-foreground">TAGS E SELOS VISUAIS</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="promotion_tag"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg p-4 bg-muted/40">
+                      <FormLabel className="cursor-pointer text-sm font-bold text-foreground">
+                        PROMOÇÃO
+                      </FormLabel>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="best_seller_tag"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg p-4 bg-muted/40">
+                      <FormLabel className="cursor-pointer text-sm font-bold text-foreground">
+                        MAIS VENDIDO
+                      </FormLabel>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="new_tag"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg p-4 bg-muted/40">
+                      <FormLabel className="cursor-pointer text-sm font-bold text-foreground">
+                        NOVIDADE!
+                      </FormLabel>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            <hr className="border-black/30 my-12 w-full" />
+
+            {/* Seção de Canais de Venda */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-bold text-foreground">CANAIS DE VENDA</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="available_delivery"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg p-4 bg-muted/40">
+                      <FormLabel className="cursor-pointer text-sm font-bold text-foreground">
+                        DELIVERY / RETIRADA
+                      </FormLabel>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="available_dine_in"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg p-4 bg-muted/40">
+                      <FormLabel className="cursor-pointer text-sm font-bold text-foreground">
+                        MESA (CONSUMO LOCAL)
+                      </FormLabel>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
 
             <Button onClick={form.handleSubmit(onSubmit)} className="w-full" disabled={isCreatingItem}>
               {isCreatingItem ? <Loader2 className="animate-spin" /> : 'CRIAR ITEM'}

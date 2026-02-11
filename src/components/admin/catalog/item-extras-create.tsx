@@ -33,11 +33,12 @@ export function ItemExtras({ extras, onExtraChange, onRemoveExtra, onAddExtra, i
     onExtraChange(index, 'price', numValue)
   }
 
-  const formatPrice = (price: number | undefined | null) => {
-    if (!price && price !== 0) {
+  const formatPrice = (price: number | string | undefined | null) => {
+    const num = typeof price === 'string' ? parseFloat(price) : price;
+    if (num == null || (num !== 0 && isNaN(num))) {
       return '0,00';
     }
-    return price.toFixed(2).replace('.', ',');
+    return num.toFixed(2).replace('.', ',');
   }
 
   return (

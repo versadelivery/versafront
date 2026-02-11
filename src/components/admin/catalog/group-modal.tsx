@@ -84,7 +84,7 @@ export default function GroupModalEdit({ isOpen, onOpenChange, editingGroup }: G
     const formData = new FormData();
     formData.append('name', data.name);
     formData.append('priority', data.priority.toString());
-    if (data.image) {
+    if (data.image instanceof File) {
       formData.append('image', data.image);
     }
     formData.append('description', data.description);

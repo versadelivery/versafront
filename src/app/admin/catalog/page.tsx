@@ -116,6 +116,10 @@ function CatalogPage() {
                                   min_weight: attrs.min_weight as number,
                                   max_weight: attrs.max_weight as number,
                                   image: attrs.image_url as string,
+                                  promotion_tag: attrs.promotion_tag as boolean,
+                                  best_seller_tag: attrs.best_seller_tag as boolean,
+                                  new_tag: attrs.new_tag as boolean,
+                                  highlight: attrs.highlight as boolean,
                                   catalog_item_extras_attributes: attrs.extra?.data as unknown as any[],
                                   catalog_item_prepare_methods_attributes: attrs.prepare_method?.data as unknown as any[],
                                   catalog_item_steps_attributes: attrs.steps?.data as unknown as any[]

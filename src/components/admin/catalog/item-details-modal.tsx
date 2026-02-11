@@ -73,11 +73,11 @@ export function ItemDetailsModal({ id, isOpen, onClose }: ItemDetailsModalProps)
                 <h4 className="font-medium text-gray-700">Preço</h4>
                 <div className="flex items-baseline gap-2">
                   <span className="text-2xl font-bold text-gray-900">
-                    R$ {item?.data.attributes.price_with_discount ? item?.data.attributes.price_with_discount.toFixed(2).replace('.', ',') : item?.data.attributes.price.toFixed(2).replace('.', ',')}
+                    R$ {(item?.data.attributes.price_with_discount != null ? Number(item.data.attributes.price_with_discount) : Number(item?.data.attributes.price)).toFixed(2).replace('.', ',')}
                   </span>
-                  {item?.data.attributes.price_with_discount && (
+                  {item?.data.attributes.price_with_discount != null && (
                     <span className="text-sm text-gray-500 line-through">
-                      R$ {item?.data.attributes.price.toFixed(2).replace('.', ',')}
+                      R$ {Number(item?.data.attributes.price).toFixed(2).replace('.', ',')}
                     </span>
                   )}
                 </div>

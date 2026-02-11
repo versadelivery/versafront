@@ -19,6 +19,10 @@ interface ItemCardProps {
     max_weight?: number;
     measure_interval?: number;
     image?: string;
+    promotion_tag?: boolean;
+    best_seller_tag?: boolean;
+    new_tag?: boolean;
+    highlight?: boolean;
     catalog_item_extras_attributes?: any[];
     catalog_item_prepare_methods_attributes?: any[];
     catalog_item_steps_attributes?: any[];
@@ -50,7 +54,7 @@ export function ItemCard({ item }: ItemCardProps) {
         <Button 
           variant="ghost" 
           size="icon" 
-          className="absolute top-2 right-2 z-10 bg-background/80 hover:bg-background backdrop-blur-sm"
+          className="absolute top-2 right-2 z-20 bg-background/80 hover:bg-background backdrop-blur-sm"
           onClick={(e) => {
             e.stopPropagation();
             handleEdit();
@@ -59,15 +63,8 @@ export function ItemCard({ item }: ItemCardProps) {
           <Edit className="h-4 w-4" />
         </Button>
 
-        {item.price_with_discount && (
-          <div className="absolute top-2 left-2 px-2 py-1 rounded-full z-10 bg-primary text-primary-foreground">
-            <span className="text-sm font-semibold">
-              - {((item.price - item.price_with_discount) / item.price * 100).toFixed(2)}%
-            </span>
-          </div>
-        )}
-
-        {item.image && (
+        {item.image ? (
+          // Quando há imagem, badges ficam dentro da área da imagem
           <div className="relative h-48 w-full">
             <Image
               src={fixImageUrl(item.image) || ''}
@@ -76,10 +73,69 @@ export function ItemCard({ item }: ItemCardProps) {
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               className="object-cover"
             />
+            
+            {/* Tags no canto superior esquerdo */}
+            <div className="absolute top-2 left-2 flex flex-col gap-1.5 z-10 max-w-[calc(50%-1rem)]">
+              {item.new_tag && (
+                <div className="bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md whitespace-nowrap">
+                  NOVO!
+                </div>
+              )}
+              {item.best_seller_tag && (
+                <div className="bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md whitespace-nowrap">
+                  MAIS VENDIDO
+                </div>
+              )}
+              {item.highlight && (
+                <div className="bg-yellow-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md whitespace-nowrap">
+                  DESTAQUE
+                </div>
+              )}
+            </div>
+            
+            {/* Tag de desconto/promoção no canto superior direito */}
+            {(item.price_with_discount || item.promotion_tag) && (
+              <div className="absolute top-2 right-2 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md z-10 whitespace-nowrap">
+                {item.price_with_discount && item.price_with_discount < item.price ? (
+                  `${Math.round(((item.price - item.price_with_discount) / item.price) * 100)}% OFF`
+                ) : 'PROMOÇÃO'}
+              </div>
+            )}
+          </div>
+        ) : (
+          // Quando NÃO há imagem, badges ficam acima do conteúdo com espaço adequado
+          <div className="relative">
+            {/* Tags no topo esquerdo */}
+            <div className="absolute top-2 left-2 flex flex-wrap gap-1.5 z-10 max-w-[calc(100%-4rem)]">
+              {item.new_tag && (
+                <div className="bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md whitespace-nowrap">
+                  NOVO!
+                </div>
+              )}
+              {item.best_seller_tag && (
+                <div className="bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md whitespace-nowrap">
+                  MAIS VENDIDO
+                </div>
+              )}
+              {item.highlight && (
+                <div className="bg-yellow-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md whitespace-nowrap">
+                  DESTAQUE
+                </div>
+              )}
+            </div>
+            
+            {/* Tag de desconto/promoção no topo direito */}
+            {(item.price_with_discount || item.promotion_tag) && (
+              <div className="absolute top-2 right-10 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md z-10 whitespace-nowrap">
+                {item.price_with_discount && item.price_with_discount < item.price ? (
+                  `${Math.round(((item.price - item.price_with_discount) / item.price) * 100)}% OFF`
+                ) : 'PROMOÇÃO'}
+              </div>
+            )}
           </div>
         )}
 
-        <div className="p-4 space-y-4">
+        <div className={`p-4 space-y-4 ${!item.image ? 'pt-12' : ''}`}>
           <div className="max-w-xs overflow-hidden">
             <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
               <Package className="h-4 w-4 flex-shrink-0" />
@@ -98,14 +154,14 @@ export function ItemCard({ item }: ItemCardProps) {
           <div className="space-y-2">
             <div className="flex justify-between items-center">
               <span className="text-lg font-bold text-gray-900">
-                R$ {item.price_with_discount ? item.price_with_discount.toFixed(2).replace('.', ',') : item.price.toFixed(2).replace('.', ',')}
+                R$ {(item.price_with_discount != null ? Number(item.price_with_discount) : Number(item.price)).toFixed(2).replace('.', ',')}
                 <span className="text-xs text-gray-500 ml-1">
                   {item.item_type === 'weight_per_g' ? 'por g' : item.item_type === 'weight_per_kg' ? 'por kg' : ''}
                 </span>
               </span>
-              {item.price_with_discount && (
+              {item.price_with_discount != null && (
                 <span className="text-sm text-gray-500 line-through">
-                  R$ {item.price.toFixed(2).replace('.', ',')} 
+                  R$ {Number(item.price).toFixed(2).replace('.', ',')} 
                   <span className="text-xs text-gray-500 ml-1">
                     {item.item_type === 'weight_per_g' ? 'por g' : item.item_type === 'weight_per_kg' ? 'por kg' : ''}
                   </span>
