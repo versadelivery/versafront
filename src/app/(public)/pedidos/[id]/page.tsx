@@ -29,8 +29,44 @@ import { toast } from "sonner";
 import React, { useState, useEffect } from "react";
 import { useClientActionCable, ClientOrderData } from "@/lib/client-cable";
 
+const ORDER_STATUS_KEYS = [
+  "received",      // 0
+  "accepted",      // 1
+  "in_analysis",   // 2
+  "in_preparation",// 3
+  "ready",        // 4
+  "left_for_delivery", // 5
+  "delivered",    // 6
+  "cancelled"     // 7
+] as const;
+
+function normalizeOrderStatus(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "received";
+  if (typeof value === "number" && value >= 0 && value <= 7) return ORDER_STATUS_KEYS[value];
+  if (typeof value === "string") {
+    const s = value.toLowerCase().trim();
+    if (ORDER_STATUS_KEYS.includes(s as typeof ORDER_STATUS_KEYS[number])) return s;
+  }
+  return "received";
+}
+
+function getPickupMessage(status: string): string {
+  const s = normalizeOrderStatus(status);
+  switch (s) {
+    case "ready":
+      return "Seu pedido está pronto para retirada na loja.";
+    case "in_preparation":
+      return "Seu pedido está sendo preparado. Quando estiver pronto, você poderá retirar na loja abaixo.";
+    case "accepted":
+    case "in_analysis":
+    case "received":
+    default:
+      return "Quando seu pedido estiver pronto, você poderá retirar na loja abaixo.";
+  }
+}
+
 const getStatusInfo = (status: string) => {
-  const statusMap = {
+  const statusMap: Record<string, { label: string; color: string; icon: typeof Clock; description: string }> = {
     ready: { 
       label: "Pronto", 
       color: "bg-emerald-500 text-white", 
@@ -62,7 +98,8 @@ const getStatusInfo = (status: string) => {
       description: "Seu pedido foi recebido e será processado em breve." 
     }
   };
-  return statusMap[status as keyof typeof statusMap] || statusMap.received;
+  const key = normalizeOrderStatus(status);
+  return statusMap[key] || statusMap.received;
 };
 
 const getPaymentMethodInfo = (method: string) => {
@@ -102,8 +139,7 @@ const formatDate = (dateString: string) => {
 export default function OrderDetailsPage({ params }: { params: Promise<{ slug: string, id: string }> }) {
   const router = useRouter();
   const { id } = React.use(params);
-  const { subscribeToOrder, disconnect, isConnected } = useClientActionCable(id);
-  const [connectionStatus, setConnectionStatus] = useState<string>('Conectando...');
+  const { subscribeToOrder, disconnect } = useClientActionCable(id);
   const [orderData, setOrderData] = useState<ClientOrderData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -120,11 +156,10 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ slug: s
     const unsubscribe = subscribeToOrder(handleOrderData);
 
     return () => {
-      if (unsubscribe) {
-        unsubscribe();
-      }
+      if (unsubscribe) unsubscribe();
       disconnect();
     };
+    // subscribeToOrder e disconnect são estáveis (useCallback no hook); re-executar só quando id mudar
   }, [id, subscribeToOrder, disconnect]);
 
   if (isLoading) {
@@ -164,40 +199,54 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ slug: s
     );
   }
 
+  const attrs = orderData.attributes ?? (orderData as any).data?.attributes ?? {}
   const order = {
-    id: orderData.attributes.id?.toString() || "0",
-    date: orderData.attributes.created_at || new Date().toISOString(),
-    status: orderData.attributes.status || "received",
-    total: parseFloat(orderData.attributes.total_items_price || "0"),
-    withdrawal: orderData.attributes.withdrawal || false,
-    payment_method: orderData.attributes.payment_method || "cash",
-    delivery_fee: parseFloat(orderData.attributes.delivery_fee || "0"),
-    items: orderData.attributes.items?.data?.map((item: any) => ({
-      id: item.id || "",
-      catalog_item_id: parseInt(item.attributes?.catalog_item?.data?.id || "0"),
-      name: item.attributes?.catalog_item?.data?.attributes?.name || "Item não informado",
-      price: parseFloat(item.attributes?.price || "0"),
-      quantity: item.attributes?.quantity || 0,
-      observation: item.attributes?.observation || "",
-      image: item.attributes?.catalog_item?.data?.attributes?.image_url || ""
-    })) || [],
+    id: attrs.id?.toString() || "0",
+    date: attrs.created_at || new Date().toISOString(),
+    status: normalizeOrderStatus(attrs.status),
+    total: parseFloat(attrs.total_items_price || "0"),
+    withdrawal: attrs.withdrawal || false,
+    payment_method: attrs.payment_method || "cash",
+    delivery_fee: parseFloat(attrs.delivery_fee || "0"),
+    items: attrs.items?.data?.map((item: any) => {
+      const price = parseFloat(item.attributes?.price || "0")
+      const priceWithDiscount = item.attributes?.price_with_discount != null && item.attributes?.price_with_discount !== ""
+        ? parseFloat(String(item.attributes.price_with_discount))
+        : null
+      const totalPrice = parseFloat(item.attributes?.total_price || "0")
+      const quantity = item.attributes?.quantity || 0
+      const unitPrice = priceWithDiscount != null ? priceWithDiscount : price
+      return {
+        id: item.id || "",
+        catalog_item_id: parseInt(item.attributes?.catalog_item?.data?.id || "0"),
+        name: item.attributes?.catalog_item?.data?.attributes?.name || "Item não informado",
+        price,
+        price_with_discount: priceWithDiscount,
+        total_price: totalPrice,
+        unit_price: unitPrice,
+        quantity,
+        observation: item.attributes?.observation || "",
+        image: item.attributes?.catalog_item?.data?.attributes?.image_url || ""
+      }
+    }) || [],
     shop: {
-      id: orderData.attributes.shop?.data?.id || "",
-      name: orderData.attributes.shop?.data?.attributes?.name || "Loja não informada",
-      phone: orderData.attributes.shop?.data?.attributes?.cellphone || "",
-      email: orderData.attributes.shop?.data?.attributes?.email || "contato@loja.com"
+      id: attrs.shop?.data?.id || "",
+      name: attrs.shop?.data?.attributes?.name || "Loja não informada",
+      phone: attrs.shop?.data?.attributes?.cellphone || "",
+      email: attrs.shop?.data?.attributes?.email || "contato@loja.com",
+      address: attrs.shop?.data?.attributes?.address || ""
     },
     customer: {
-      name: orderData.attributes.customer?.data?.attributes?.name || "Cliente não informado",
-      phone: orderData.attributes.customer?.data?.attributes?.cellphone || "",
-      email: orderData.attributes.customer?.data?.attributes?.email || ""
+      name: attrs.customer?.data?.attributes?.name || "Cliente não informado",
+      phone: attrs.customer?.data?.attributes?.cellphone || "",
+      email: attrs.customer?.data?.attributes?.email || ""
     },
     address: {
-      address: orderData.attributes.address?.data?.attributes?.address || "Endereço não informado",
-      neighborhood: (orderData.attributes.address?.data?.attributes?.shop_delivery_neighborhood as any)?.data?.attributes?.name || 
-                   orderData.attributes.address?.data?.attributes?.neighborhood || "",
-      complement: orderData.attributes.address?.data?.attributes?.complement || "",
-      reference: orderData.attributes.address?.data?.attributes?.reference || ""
+      address: attrs.address?.data?.attributes?.address || "Endereço não informado",
+      neighborhood: (attrs.address?.data?.attributes?.shop_delivery_neighborhood as any)?.data?.attributes?.name ||
+                   attrs.address?.data?.attributes?.neighborhood || "",
+      complement: attrs.address?.data?.attributes?.complement || "",
+      reference: attrs.address?.data?.attributes?.reference || ""
     },
     payment_details: {
       pix_key: "pix@email.com",
@@ -205,9 +254,9 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ slug: s
     },
     timeline: [
       { 
-        status: orderData.attributes.status, 
+        status: attrs.status, 
         label: "Pedido Realizado", 
-        date: orderData.attributes.created_at,
+        date: attrs.created_at,
         description: "Seu pedido foi recebido e está sendo processado"
       }
     ]
@@ -219,7 +268,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ slug: s
   const PaymentIcon = paymentInfo.icon;
   const dateInfo = formatDate(order.date);
 
-  const subtotal = order.items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+  const subtotal = order.items.reduce((sum: number, item: any) => sum + (item.total_price ?? item.price * item.quantity), 0);
   const deliveryFee = order.withdrawal ? 0 : order.delivery_fee;
   const total = subtotal + deliveryFee;
 
@@ -373,7 +422,14 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ slug: s
                           <div className="flex-1">
                             <h4 className="font-bold text-slate-900 text-lg mb-1">{item.name}</h4>
                             <p className="text-slate-600 mb-2">
-                              {formatCurrency(item.price)} cada
+                              {item.price_with_discount != null && item.price_with_discount < item.price ? (
+                                <>
+                                  <span className="line-through text-slate-400 mr-1">{formatCurrency(item.price)}</span>
+                                  <span>{formatCurrency(item.unit_price)}</span> cada
+                                </>
+                              ) : (
+                                <>{formatCurrency(item.unit_price)} cada</>
+                              )}
                             </p>
                             {item.observation && (
                               <div className="flex items-start gap-2 mb-2">
@@ -382,7 +438,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ slug: s
                               </div>
                             )}
                             <p className="font-bold text-slate-900">
-                              Total: {formatCurrency(item.price * item.quantity)}
+                              Total: {formatCurrency(item.total_price ?? item.price * item.quantity)}
                             </p>
                           </div>
                         </div>
@@ -449,9 +505,12 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ slug: s
                   </CardHeader>
                   <CardContent className="p-6">
                     <p className="text-slate-600 mb-3">
-                      Seu pedido estará disponível para retirada na loja.
+                      {getPickupMessage(order.status)}
                     </p>
                     <p className="font-bold text-slate-900">{order.shop.name}</p>
+                    {order.shop.address && (
+                      <p className="text-slate-700 mt-2">{order.shop.address}</p>
+                    )}
                   </CardContent>
                 </Card>
               )}

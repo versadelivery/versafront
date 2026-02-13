@@ -9,6 +9,7 @@ export interface ShopAttributes {
   email: string | null;
   image?: File | string | any;
   image_url?: string | any;
+  whatsapp_order_confirmation_template?: string | null;
 }
 
 export interface ShopResponse {

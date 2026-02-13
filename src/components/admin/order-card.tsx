@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
 import { formatPrice } from '@/app/(public)/[slug]/format-price';
 import { User } from '@/app/admin/settings/users/services/userService';
 import CancelOrderModal from './cancel-order-modal';
+import { buildWhatsAppOrderMessage, type WhatsAppOrderContext } from '@/lib/build-whatsapp-order-message';
 
 const getPaymentMethodLabel = (method: string) => {
   const methodMap: Record<string, string> = {
@@ -109,27 +110,27 @@ export default function OrderCard({
     }
   };
 
-  // Função para notificar via WhatsApp
+  // Função para notificar via WhatsApp: usa o template da loja (configurável em Notificações)
   const handleWhatsAppNotification = () => {
     const customerPhone = order.socketData?.attributes?.customer?.data?.attributes?.cellphone?.replace(/\D/g, '') || '';
-    const message = `Olá ${order.customerName}! Seu pedido #${order.id} está ${order.status === 'prontos' ? 'pronto para entrega' : 'em preparo'}. Em breve você receberá mais atualizações.`;
+    if (!customerPhone) {
+      toast.error('Telefone do cliente não informado');
+      return;
+    }
+    const template = order.socketData?.attributes?.shop?.data?.attributes?.whatsapp_order_confirmation_template ?? '';
+    const baseUrl = typeof window !== 'undefined' ? (process.env.NEXT_PUBLIC_SHOP_DOMAIN || window.location.origin) : '';
+    const ctx: WhatsAppOrderContext = {
+      orderId: order.id,
+      socketData: order.socketData ?? { attributes: {} },
+      customerName: order.customerName,
+      amount: order.amount,
+      deliveryType: order.deliveryType,
+    };
+    const message = buildWhatsAppOrderMessage(template, ctx, baseUrl);
     const whatsappUrl = `https://wa.me/55${customerPhone}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
-    
-    // Toast criativo para WhatsApp
-    toast.success('📱 WhatsApp aberto!', {
-      description: 'Mensagem personalizada pronta para envio',
-      duration: 3000,
-      icon: '💬',
-      style: {
-        background: 'linear-gradient(135deg, #009246 0%, #2C5530 100%)',
-        color: 'white',
-        border: 'none',
-        borderRadius: '12px',
-        fontSize: '14px',
-        fontWeight: '600'
-      }
-    });
+
+    toast.success('WhatsApp aberto!');
   };
 
   // Função para imprimir pedido
