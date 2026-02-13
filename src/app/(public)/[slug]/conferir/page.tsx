@@ -269,6 +269,7 @@ export default function CheckoutPage() {
       const orderId = response.order_id
       setOrder(response)
       toast.success("Pedido realizado com sucesso!")
+
       if (orderId) {
         router.push(`/pedidos/${orderId}`)
       } else {

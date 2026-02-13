@@ -1,6 +1,6 @@
 import { createConsumer } from "@rails/actioncable"
-import { getToken } from "./auth"
-import { useEffect, useRef, useState } from "react"
+import { getClientToken } from "./auth"
+import { useEffect, useRef, useState, useCallback } from "react"
 
 export interface ClientOrderData {
   id: string
@@ -51,7 +51,7 @@ export interface ClientOrderData {
 }
 
 export function createClientCableWithToken() {
-  const token = getToken()
+  const token = getClientToken()
   if (!token) return null
 
   const base = process.env.NEXT_PUBLIC_CABLE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
@@ -66,7 +66,7 @@ export function useClientActionCable(orderId: string) {
   const cableRef = useRef<any>(null)
 
   useEffect(() => {
-    const token = getToken()
+    const token = getClientToken()
     if (token && orderId) {
       const cable = createClientCableWithToken()
       if (cable) {
@@ -83,7 +83,7 @@ export function useClientActionCable(orderId: string) {
     }
   }, [orderId])
 
-  const subscribeToOrder = (onData: (data: ClientOrderData) => void) => {
+  const subscribeToOrder = useCallback((onData: (data: ClientOrderData) => void) => {
     if (!cableRef.current || !orderId) {
       console.error('Client Cable não está conectado ou orderId não fornecido')
       return () => {}
@@ -123,14 +123,15 @@ export function useClientActionCable(orderId: string) {
     return () => {
       subscription.unsubscribe()
     }
-  }
+  }, [orderId])
 
-  const disconnect = () => {
+  const disconnect = useCallback(() => {
     if (cableRef.current) {
       cableRef.current.disconnect()
+      cableRef.current = null
       setIsConnected(false)
     }
-  }
+  }, [])
 
   return {
     subscribeToOrder,

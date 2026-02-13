@@ -41,6 +41,41 @@ interface Order {
   socketData: AdminOrderData;
 }
 
+// Ordem de progressão dos status no painel (não regredir visualmente)
+const ORDER_STATUS_FLOW: Order['status'][] = [
+  'recebidos',
+  'aceitos',
+  'em_analise',
+  'em_preparo',
+  'prontos',
+  'saiu',
+  'entregue',
+  'cancelled',
+];
+
+const getStatusPriority = (status: Order['status']): number => {
+  const idx = ORDER_STATUS_FLOW.indexOf(status);
+  return idx === -1 ? 0 : idx;
+};
+
+// Escolhe o status "mais avançado" entre o atual e o vindo do servidor,
+// evitando que o pedido volte visualmente para uma coluna anterior.
+const mergeStatus = (current: Order['status'], incoming: Order['status']): Order['status'] => {
+  if (!incoming) return current;
+
+  // Cancelado sempre tem prioridade
+  if (incoming === 'cancelled' || current === 'cancelled') {
+    return 'cancelled';
+  }
+
+  const currentPriority = getStatusPriority(current);
+  const incomingPriority = getStatusPriority(incoming);
+
+  // Nunca regredir: se o servidor mandar um status "anterior",
+  // mantemos o status atual do painel.
+  return incomingPriority > currentPriority ? incoming : current;
+};
+
 // Função para converter dados do socket para o formato da interface Order
 const convertSocketDataToOrder = (socketOrder: AdminOrderData): Order => {
   const createdAt = new Date(socketOrder.attributes.created_at);
@@ -265,7 +300,9 @@ export default function OrderManagement() {
               return {
                 ...current,
                 ...incoming,
-                status: keepLocalStatus ? current.status : incoming.status,
+              status: keepLocalStatus
+                ? current.status
+                : mergeStatus(current.status, incoming.status),
                 paymentStatus: keepLocalPayment ? current.paymentStatus : incoming.paymentStatus,
               };
             });
@@ -325,7 +362,9 @@ export default function OrderManagement() {
           return {
             ...current,
             ...incoming,
-            status: keepLocalStatus ? current.status : incoming.status,
+            status: keepLocalStatus
+              ? current.status
+              : mergeStatus(current.status, incoming.status),
             paymentStatus: keepLocalPayment ? current.paymentStatus : incoming.paymentStatus,
           };
         });

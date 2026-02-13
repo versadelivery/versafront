@@ -1,4 +1,4 @@
-import { Settings, Users, Truck, CreditCard } from "lucide-react";
+import { Settings, Users, Truck, CreditCard, MessageCircle } from "lucide-react";
 
 export const settingsCards = [
   {
@@ -28,5 +28,12 @@ export const settingsCards = [
     title: "Meios de Pagamento",
     description: "Configure os meios de pagamento disponíveis",
     iconBgColor: "bg-purple-500"
+  },
+  {
+    href: "/admin/settings/notifications",
+    icon: MessageCircle,
+    title: "Notificações",
+    description: "Mensagem automática de confirmação de pedido via WhatsApp",
+    iconBgColor: "bg-green-600"
   },
 ];
