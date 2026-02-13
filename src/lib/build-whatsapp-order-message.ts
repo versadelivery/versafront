@@ -73,6 +73,8 @@ export interface WhatsAppOrderContext {
   customerName: string;
   amount: number;
   deliveryType: "delivery" | "pickup";
+  /** Status atual do pedido no painel (ex.: aceitos, em_preparo, prontos, saiu, entregue). Define a frase principal da mensagem. */
+  status?: "recebidos" | "aceitos" | "em_analise" | "em_preparo" | "prontos" | "saiu" | "entregue" | "cancelled";
 }
 
 /**
@@ -99,8 +101,31 @@ function buildItensDetalhados(ctx: WhatsAppOrderContext): string {
  * Substitui os placeholders do template pelos valores do pedido.
  * baseUrl: URL pública do app (ex: process.env.NEXT_PUBLIC_SHOP_DOMAIN ou window.location.origin).
  */
+/** Frase principal da mensagem conforme o status do pedido (coluna em que a loja clicou no WhatsApp). */
+function getMensagemPrincipal(
+  status: WhatsAppOrderContext["status"],
+  nomeLoja: string
+): string {
+  const nome = (nomeLoja || "Loja").toUpperCase();
+  switch (status) {
+    case "prontos":
+      return "Seu pedido está *pronto para retirada/entrega*!";
+    case "saiu":
+      return "Seu pedido *saiu para entrega*!";
+    case "entregue":
+      return "Seu pedido foi *entregue*!";
+    case "em_preparo":
+      return "Pedido *" + nome + "* em preparo.";
+    case "aceitos":
+    case "em_analise":
+    case "recebidos":
+    default:
+      return "Pedido *" + nome + "* aceito!";
+  }
+}
+
 /** Template padrão quando a loja não configurou um em Notificações. */
-export const DEFAULT_WHATSAPP_ORDER_TEMPLATE = `Pedido *{nome_loja}* aceito!
+export const DEFAULT_WHATSAPP_ORDER_TEMPLATE = `{mensagem_principal}
 
 *Link p/ acompanhar status:* {link_acompanhar}
 
@@ -176,8 +201,12 @@ export function buildWhatsAppOrderMessage(
       .filter(Boolean)
       .join(", ") || "";
 
+  const nomeLoja = shopAttrs.name ?? "";
+  const mensagemPrincipal = getMensagemPrincipal(ctx.status, nomeLoja);
+
   const replacements: Record<string, string> = {
-    "{nome_loja}": (shopAttrs.name ?? "").toUpperCase(),
+    "{mensagem_principal}": mensagemPrincipal,
+    "{nome_loja}": nomeLoja.toUpperCase(),
     "{link_acompanhar}": linkAcompanhar,
     "{senha}": senha,
     "{numero_pedido}": ctx.orderId,

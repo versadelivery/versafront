@@ -125,6 +125,7 @@ export default function OrderCard({
       customerName: order.customerName,
       amount: order.amount,
       deliveryType: order.deliveryType,
+      status: order.status,
     };
     const message = buildWhatsAppOrderMessage(template, ctx, baseUrl);
     const whatsappUrl = `https://wa.me/55${customerPhone}?text=${encodeURIComponent(message)}`;

@@ -11,6 +11,7 @@ import { Loader2 } from "lucide-react";
 import { DEFAULT_WHATSAPP_ORDER_TEMPLATE } from "@/lib/build-whatsapp-order-message";
 
 const PLACEHOLDERS = [
+  { key: "{mensagem_principal}", desc: "Frase conforme status (aceito / em preparo / pronto para entrega / saiu / entregue)" },
   { key: "{nome_loja}", desc: "Nome da loja (maiúsculas)" },
   { key: "{link_acompanhar}", desc: "Link para o cliente acompanhar o pedido" },
   { key: "{senha}", desc: "Senha do pedido (últimos 2 dígitos do ID)" },
