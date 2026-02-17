@@ -32,7 +32,7 @@ export default function CategoryNavigation({ categories, activeCategory, onChang
     onChange(categoryName);
     const element = document.getElementById(categoryName.toLowerCase().replace(/\s+/g, '-'));
     if (element) {
-      const offset = 180; // Offset for sticky header
+      const offset = 160; // header (64px) + search/nav bar (~96px)
       const bodyRect = document.body.getBoundingClientRect().top;
       const elementRect = element.getBoundingClientRect().top;
       const elementPosition = elementRect - bodyRect;

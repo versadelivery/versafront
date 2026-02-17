@@ -82,9 +82,9 @@ export default function ClientStoreContent({ shop }: ClientStoreContentProps) {
   };
 
   return (
-    <main className="min-h-screen pb-20 bg-background">
+    <main className="min-h-screen pb-20 bg-gray-50/40">
       {/* Sticky Search Only - Navigation is now part of the Grid sections */}
-      <div className="sticky top-0 z-40 w-full bg-background/95 backdrop-blur-md border-b border-border shadow-sm transition-all duration-300">
+      <div className="sticky top-16 z-40 w-full bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm">
         <div className="container mx-auto px-4 py-4 max-w-7xl space-y-4">
           <SearchBar onSearch={handleSearch} />
           

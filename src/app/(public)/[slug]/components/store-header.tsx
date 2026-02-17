@@ -1,10 +1,9 @@
 "use client"
 
 import { useClient } from "../client-context";
-import { Package, Store, Clock, Phone, MapPin, CheckCircle, XCircle } from 'lucide-react';
+import { Store, Clock, Truck, Receipt, MapPin, Package } from 'lucide-react';
 import Image from 'next/image';
 import { CartDrawer } from '../cart/cart-drawer';
-import { motion } from 'framer-motion';
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import AuthIndicator from './auth-indicator';
@@ -17,152 +16,154 @@ interface StoreHeaderProps {
 export default function StoreHeader({ shop }: StoreHeaderProps) {
   const { client } = useClient();
   const attributes = shop?.attributes || {};
-  
+
+  const deliveryFee = () => {
+    const config = attributes.shop_delivery_config?.data?.attributes;
+    if (!config) return 'A combinar';
+    if (config.delivery_fee_kind === 'fixed') {
+      return `R$ ${Number(config.amount).toFixed(2).replace('.', ',')}`;
+    }
+    if (config.delivery_fee_kind === 'per_neighborhood') return 'Por bairro';
+    return 'A combinar';
+  };
+
+  const minimumOrder = () => {
+    const min = attributes.shop_delivery_config?.data?.attributes?.minimum_order_value || 0;
+    return `R$ ${Number(min).toFixed(2).replace('.', ',')}`;
+  };
+
   return (
     <>
-      <header className="sticky top-0 z-50 w-full backdrop-blur-md bg-black/80 border-b border-gray-800">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4 max-w-7xl">
-          <motion.div 
-            className="flex items-center"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.4 }}
-          >
-            <Link href={`/${attributes.slug}`}>
-              <Image 
-                src="/logo/logo-inline.svg" 
-                alt="Versa Logo" 
-                width={100} 
-                height={28} 
+      {/* Top nav — clean, like admin header */}
+      <header className="sticky top-0 z-50 w-full bg-white border-b border-gray-100">
+        <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <Link href={`/${attributes.slug}`} className="flex items-center">
+              <Image
+                src="/logo/logo-inline-black.svg"
+                alt="Versa"
+                width={110}
+                height={30}
                 priority
-                className="h-auto w-[100px]"
+                className="h-auto w-[90px] md:w-[110px]"
               />
             </Link>
-          </motion.div>
-          
-          <div className="flex items-center justify-end gap-3 flex-1">
-            <AuthIndicator />
-            {client && (
-              <>
-                <Button variant="ghost" asChild className="hidden md:flex font-medium text-white hover:text-primary transition-colors">
-                  <Link href="/pedidos">
-                    <Package className="w-4 h-4 mr-2" />
-                    Meus Pedidos
-                  </Link>
-                </Button>
-                <Button variant="ghost" size="icon" asChild className="md:hidden text-white hover:text-primary">
-                  <Link href="/pedidos">
-                    <Package className="w-5 h-5" />
-                  </Link>
-                </Button>
-              </>
-            )}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.2, duration: 0.3 }}
-            >
+
+            <div className="flex items-center gap-2 sm:gap-3">
+              <AuthIndicator />
+              {client && (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    asChild
+                    className="hidden md:flex text-sm font-medium text-muted-foreground hover:text-foreground"
+                  >
+                    <Link href="/pedidos">
+                      <Package className="w-4 h-4 mr-1.5" />
+                      Meus Pedidos
+                    </Link>
+                  </Button>
+                  <Button variant="ghost" size="icon" asChild className="md:hidden h-9 w-9 text-muted-foreground">
+                    <Link href="/pedidos">
+                      <Package className="w-4 h-4" />
+                    </Link>
+                  </Button>
+                </>
+              )}
               <CartDrawer />
-            </motion.div>
+            </div>
           </div>
         </div>
       </header>
 
-      <div className="relative w-full">
-        {/* Banner Area - Centralized Hero */}
-        <div className="relative min-h-[320px] sm:min-h-[400px] md:min-h-[500px] flex items-center justify-center py-12 sm:py-20">
-          <div 
-            className="absolute inset-0 bg-cover bg-center"
-            style={{ 
-              backgroundImage: attributes.image_url 
-                ? `linear-gradient(to bottom, rgba(0,0,0,0.6), rgba(0,0,0,0.8)), url(${attributes.image_url})` 
-                : 'linear-gradient(135deg, var(--primary), #000)',
-            }}
-          />
-          
-          <div className="relative z-10 flex flex-col items-center text-center px-4 max-w-3xl">
-            <motion.div 
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.5 }}
-              className="mb-6"
-            >
-              <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-3xl bg-white dark:bg-card p-1.5 shadow-2xl overflow-hidden border-4 border-white/20">
-                {attributes.image_url ? (
-                  <img 
-                    src={attributes.image_url} 
-                    alt={attributes.name} 
-                    className="w-full h-full object-cover rounded-2xl"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-primary/10 rounded-2xl">
-                    <Store className="w-12 h-12 text-primary" />
-                  </div>
-                )}
-              </div>
-            </motion.div>
+      {/* Shop banner */}
+      <div className="w-full bg-white border-b border-gray-100">
+        {/* Cover image */}
+        {attributes.image_url && (
+          <div className="relative w-full h-[140px] sm:h-[200px] overflow-hidden bg-gray-100">
+            <img
+              src={attributes.image_url}
+              alt={attributes.name}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-black/20" />
+          </div>
+        )}
 
-            <motion.h1 
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.1, duration: 0.5 }}
-              className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-white mb-4"
-            >
-              {attributes.name}
-            </motion.h1>
-            
-            <motion.div 
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
-              className="flex flex-col sm:flex-row items-center gap-4 text-white/90"
-            >
-              <ShopStatus 
-                shopStatusData={attributes.shop_status}
-                shopScheduleConfig={attributes.shop_schedule_config?.data?.attributes || attributes.shop_schedule_config}
-              />
-              {attributes.address && (
-                <div className="flex items-center gap-1.5 text-sm">
-                  <MapPin className="w-4 h-4 text-primary" />
-                  <span>{attributes.address}</span>
+        {/* Shop identity */}
+        <div className="container mx-auto px-4 max-w-7xl py-4">
+          <div className="flex items-center gap-4">
+            {/* Logo */}
+            <div className="flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-white border border-gray-200 shadow-sm overflow-hidden">
+              {attributes.image_url ? (
+                <img
+                  src={attributes.image_url}
+                  alt={attributes.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gray-50">
+                  <Store className="w-6 h-6 text-muted-foreground" />
                 </div>
               )}
-            </motion.div>
+            </div>
 
-            <motion.div 
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.3, duration: 0.5 }}
-              className="mt-8 grid grid-cols-3 gap-6 sm:gap-12 text-white"
-            >
-              <div className="flex flex-col items-center">
-                <Clock className="w-5 h-5 text-primary mb-1" />
-                <span className="text-[10px] uppercase font-bold text-white/60">Tempo</span>
-                <span className="text-sm font-bold">30-45 min</span>
+            {/* Name + meta */}
+            <div className="flex-1 min-w-0">
+              <h1 className="text-base sm:text-lg font-bold text-foreground truncate leading-tight">
+                {attributes.name}
+              </h1>
+              <div className="flex flex-wrap items-center gap-2 mt-1">
+                <ShopStatus
+                  shopStatusData={attributes.shop_status}
+                  shopScheduleConfig={
+                    attributes.shop_schedule_config?.data?.attributes ||
+                    attributes.shop_schedule_config
+                  }
+                />
+                {attributes.address && (
+                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <MapPin className="w-3 h-3 flex-shrink-0" />
+                    {attributes.address}
+                  </span>
+                )}
               </div>
-              <div className="flex flex-col items-center">
-                <Package className="w-5 h-5 text-primary mb-1" />
-                <span className="text-[10px] uppercase font-bold text-white/60">Entrega</span>
-                <span className="text-sm font-bold">
-                  {attributes.shop_delivery_config?.data?.attributes?.delivery_fee_kind === 'fixed' 
-                    ? `R$ ${attributes.shop_delivery_config.data.attributes.amount.toFixed(2).replace('.', ',')}`
-                    : attributes.shop_delivery_config?.data?.attributes?.delivery_fee_kind === 'per_neighborhood'
-                      ? 'Bairros'
-                      : 'A combinar'}
-                </span>
+            </div>
+          </div>
+
+          {/* Stats row */}
+          <div className="flex items-center gap-5 mt-3 pt-3 border-t border-gray-100">
+            <div className="flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+              <div>
+                <p className="text-xs font-semibold text-foreground leading-none">30–45 min</p>
+                <p className="text-[10px] text-muted-foreground">Entrega</p>
               </div>
-              <div className="flex flex-col items-center">
-                <CheckCircle className="w-5 h-5 text-primary mb-1" />
-                <span className="text-[10px] uppercase font-bold text-white/60">Mínimo</span>
-                <span className="text-sm font-bold">
-                  R$ {(attributes.shop_delivery_config?.data?.attributes?.minimum_order_value || 0).toFixed(2).replace('.', ',')}
-                </span>
+            </div>
+
+            <div className="w-px h-5 bg-gray-200" />
+
+            <div className="flex items-center gap-1.5">
+              <Truck className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+              <div>
+                <p className="text-xs font-semibold text-foreground leading-none">{deliveryFee()}</p>
+                <p className="text-[10px] text-muted-foreground">Taxa de entrega</p>
               </div>
-            </motion.div>
+            </div>
+
+            <div className="w-px h-5 bg-gray-200" />
+
+            <div className="flex items-center gap-1.5">
+              <Receipt className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+              <div>
+                <p className="text-xs font-semibold text-foreground leading-none">{minimumOrder()}</p>
+                <p className="text-[10px] text-muted-foreground">Pedido mínimo</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-
     </>
   );
 }

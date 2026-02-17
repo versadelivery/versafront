@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
 
 export default function AuthIndicator() {
   const { client, logout } = useClient();
@@ -46,45 +45,35 @@ export default function AuthIndicator() {
 
   if (!client) {
     return (
-      <motion.div 
-        className="flex items-center"
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.4 }}
-      >
-        {/* Desktop Buttons */}
+      <div className="flex items-center">
+        {/* Desktop */}
         <div className="hidden sm:flex items-center gap-2">
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="sm"
             onClick={handleLogin}
-            className="text-white hover:bg-white/10 hover:text-white transition-colors duration-200"
+            className="text-sm font-medium text-muted-foreground hover:text-foreground"
           >
-            <LogIn className="w-4 h-4 mr-2" />
+            <LogIn className="w-4 h-4 mr-1.5" />
             Entrar
           </Button>
-          
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="sm"
             onClick={handleRegister}
-            className="bg-white/10 text-white border-white/20 hover:bg-white hover:text-black transition-all duration-200"
+            className="text-sm font-medium border-gray-200 hover:border-gray-300"
           >
-            <UserPlus className="w-4 h-4 mr-2" />
+            <UserPlus className="w-4 h-4 mr-1.5" />
             Cadastrar
           </Button>
         </div>
 
-        {/* Mobile Dropdown for Guests */}
+        {/* Mobile */}
         <div className="sm:hidden">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="icon"
-                className="text-white hover:bg-white/10 h-10 w-10 p-0 rounded-lg"
-              >
-                <User className="h-5 w-5" />
+              <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground">
+                <User className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
@@ -99,54 +88,43 @@ export default function AuthIndicator() {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-      </motion.div>
+      </div>
     );
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.4 }}
-    >
-      <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-        <DropdownMenuTrigger asChild>
-          <Button 
-            variant="ghost" 
-            className="flex items-center gap-2 text-white hover:bg-white/10 hover:text-white transition-colors duration-200 p-2"
-          >
-            <Avatar className="w-8 h-8">
-              <AvatarImage src={client.avatar_url} />
-              <AvatarFallback className="bg-primary/20 text-white text-xs">
-                {getInitials(client.name)}
-              </AvatarFallback>
-            </Avatar>
-            <span className="hidden sm:inline text-sm font-medium">
-              {client.name.split(' ')[0]}
-            </span>
-          </Button>
-        </DropdownMenuTrigger>
-        
-        <DropdownMenuContent 
-          align="end" 
-          className="w-56 bg-white border border-gray-200 shadow-lg"
+    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors p-2 h-auto"
         >
-          <div className="px-3 py-2">
-            <p className="text-sm font-medium text-gray-900">{client.name}</p>
-            <p className="text-xs text-gray-500">{client.email}</p>
-          </div>
-          
-          <DropdownMenuSeparator />
-          
-          <DropdownMenuItem 
-            onClick={handleLogout}
-            className="text-red-600 hover:text-red-700 hover:bg-red-50 cursor-pointer"
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            Sair
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </motion.div>
+          <Avatar className="w-8 h-8">
+            <AvatarImage src={client.avatar_url} />
+            <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
+              {getInitials(client.name)}
+            </AvatarFallback>
+          </Avatar>
+          <span className="hidden sm:inline text-sm font-medium">
+            {client.name.split(' ')[0]}
+          </span>
+        </Button>
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent align="end" className="w-56">
+        <div className="px-3 py-2">
+          <p className="text-sm font-medium text-foreground">{client.name}</p>
+          <p className="text-xs text-muted-foreground">{client.email}</p>
+        </div>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onClick={handleLogout}
+          className="text-destructive hover:text-destructive focus:text-destructive cursor-pointer"
+        >
+          <LogOut className="w-4 h-4 mr-2" />
+          Sair
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

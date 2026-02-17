@@ -13,20 +13,9 @@ interface ProductGridProps {
 }
 
 export default function ProductGrid({ categories, activeCategory, searchQuery }: ProductGridProps) {
-  if (typeof window !== 'undefined') {
-    try {
-      console.groupCollapsed('[Versa] ProductGrid input');
-      console.log('categories length:', categories?.length);
-      console.log('activeCategory:', activeCategory);
-      console.log('searchQuery:', searchQuery);
-      console.log('categories names:', (categories || []).map((g: any) => g?.attributes?.name));
-      console.groupEnd();
-    } catch {}
-  }
-
   const filteredCategories = categories.map(group => ({
     ...group,
-    items: normalizeItems(group.attributes.items).filter(item => 
+    items: normalizeItems(group.attributes.items).filter(item =>
       item.attributes.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.attributes.description?.toLowerCase().includes(searchQuery.toLowerCase())
     )
@@ -34,94 +23,68 @@ export default function ProductGrid({ categories, activeCategory, searchQuery }:
 
   if (filteredCategories.length === 0) {
     return (
-      <motion.div 
-        className="col-span-full py-20 px-4 text-center"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.4 }}
-      >
-        <div className="mx-auto max-w-md">
-          <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
-            <Search className="h-10 w-10 text-muted-foreground" />
+      <div className="py-20 px-4 text-center">
+        <div className="mx-auto max-w-sm">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Search className="h-7 w-7 text-muted-foreground" />
           </div>
-          <h3 className="text-2xl font-bold text-foreground mb-3">Nenhum produto encontrado</h3>
-          <p className="text-muted-foreground mb-8 text-lg">
-            {searchQuery 
-              ? `Não encontramos nenhum produto correspondente a "${searchQuery}". Tente outros termos.`
-              : "Não há produtos disponíveis no momento."}
+          <h3 className="text-lg font-semibold text-foreground mb-2">Nenhum produto encontrado</h3>
+          <p className="text-sm text-muted-foreground mb-6">
+            {searchQuery
+              ? `Nenhum resultado para "${searchQuery}".`
+              : 'Não há produtos disponíveis no momento.'}
           </p>
           {searchQuery && (
-            <button 
+            <button
               onClick={() => window.location.reload()}
-              className="px-8 py-3 bg-primary text-white rounded-full font-bold hover:bg-primary/90 transition-all shadow-lg shadow-primary/20"
+              className="px-6 py-2.5 bg-primary text-white rounded-full text-sm font-semibold hover:bg-primary/90 transition-colors"
             >
               Limpar busca
             </button>
           )}
         </div>
-      </motion.div>
+      </div>
     );
   }
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  };
-
   return (
-    <div className="space-y-12">
-      {filteredCategories.map((group, groupIndex) => (
-        <section 
-          key={group.id} 
+    <div className="space-y-10">
+      {filteredCategories.map((group) => (
+        <section
+          key={group.id}
           id={group.attributes.name.toLowerCase().replace(/\s+/g, '-')}
-          className="scroll-mt-48 group/section"
+          className="scroll-mt-48"
         >
-          <div className="flex items-center justify-between mb-4 px-1">
-            <h2 className="text-xl sm:text-2xl font-bold text-foreground group-hover/section:text-primary transition-colors">
+          <div className="flex items-center justify-between mb-5 px-0.5">
+            <h2 className="text-base font-bold text-foreground">
               {group.attributes.name}
             </h2>
-            <div className="flex gap-2">
-              <span className="text-xs font-medium text-muted-foreground bg-muted/50 px-2 py-1 rounded">
-                {group.items.length} itens
-              </span>
-            </div>
+            <span className="text-xs text-muted-foreground bg-gray-100 px-2.5 py-1 rounded-full">
+              {group.items.length} {group.items.length === 1 ? 'item' : 'itens'}
+            </span>
           </div>
-          
-          <div className="relative -mx-4 px-4">
-            <motion.div 
-              className="flex gap-4 sm:gap-6 overflow-x-auto no-scrollbar pb-6 pt-2"
-              variants={containerVariants}
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true, margin: "-100px" }}
-            >
-              {group.items.map((item: CatalogItem, index: number) => (
-                <div 
-                  key={item.id} 
-                  className="flex-shrink-0 w-[240px] sm:w-[300px] md:w-[350px]"
-                >
-                  <ProductCard item={item} index={index} />
-                </div>
-              ))}
-            </motion.div>
-          </div>
+
+          <motion.div
+            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.3 }}
+          >
+            {group.items.map((item: CatalogItem, index: number) => (
+              <motion.div
+                key={item.id}
+                initial={{ opacity: 0, y: 8 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.25, delay: index * 0.04 }}
+              >
+                <ProductCard item={item} index={index} />
+              </motion.div>
+            ))}
+          </motion.div>
         </section>
       ))}
-
-      <style jsx global>{`
-        .no-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
-        .no-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-      `}</style>
     </div>
   );
 }
