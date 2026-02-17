@@ -44,7 +44,7 @@ function CatalogPage() {
         />
         
         <div className="flex-1 px-4 sm:px-6 lg:px-8 max-w-8xl mx-auto w-full">
-          <ActionBar onNewGroup={() => setIsGroupModalOpen(true)} onNewItem={() => setIsItemModalOpen(true)} />
+          <ActionBar onNewGroup={() => setIsGroupModalOpen(true)} onNewItem={() => setIsItemModalOpen(true)} hasGroups={!!catalog?.data?.length} />
           
           <GroupModal isOpen={isGroupModalOpen} onOpenChange={setIsGroupModalOpen} />
           <GroupModalEdit isOpen={isGroupModalOpenEdit} onOpenChange={setIsGroupModalOpenEdit} editingGroup={editingGroup as never} />

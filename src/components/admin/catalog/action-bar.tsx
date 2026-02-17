@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 interface ActionBarProps {
   onNewGroup: () => void;
   onNewItem: () => void;
+  hasGroups?: boolean;
 }
 
-export function ActionBar({ onNewGroup, onNewItem }: ActionBarProps) {
+export function ActionBar({ onNewGroup, onNewItem, hasGroups = true }: ActionBarProps) {
   return (
     <div className="flex flex-col gap-4 mb-6 lg:gap-3 lg:flex-row">
       <div className="relative w-full lg:flex-1">
@@ -38,9 +39,10 @@ export function ActionBar({ onNewGroup, onNewItem }: ActionBarProps) {
           <span>Novo grupo</span>
         </Button>
 
-        <Button 
-          className="font-outfit rounded-lg cursor-pointer col-span-2 py-3 px-4 bg-primary hover:bg-primary/90 text-primary-foreground flex items-center justify-center gap-2 text-sm lg:col-auto lg:flex-1"
+        <Button
+          className="font-outfit rounded-lg cursor-pointer col-span-2 py-3 px-4 bg-primary hover:bg-primary/90 text-primary-foreground flex items-center justify-center gap-2 text-sm lg:col-auto lg:flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={onNewItem}
+          disabled={!hasGroups}
         >
           <Plus className="w-4 h-4" />
           <span>Novo item</span>
