@@ -1,4 +1,6 @@
-import { X, Package, Info, Scale, Clock, Plus, ChefHat, ListChecks, Loader2 } from "lucide-react";
+"use client";
+
+import { Package, Scale, Plus, ChefHat, ListChecks, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import {
@@ -7,8 +9,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useCatalogItem } from "../../../hooks/useCatalogGroup";
+import { useCatalogItem } from "@/hooks/useCatalogGroup";
 import { fixImageUrl } from "@/utils/image-url";
+
+// =============================================================================
+// TIPOS
+// =============================================================================
 
 interface ItemDetailsModalProps {
   id: number;
@@ -16,181 +22,221 @@ interface ItemDetailsModalProps {
   onClose: () => void;
 }
 
+// =============================================================================
+// COMPONENTE PRINCIPAL
+// =============================================================================
+
 export function ItemDetailsModal({ id, isOpen, onClose }: ItemDetailsModalProps) {
   const { catalogItem, isLoadingCatalogItem } = useCatalogItem(id.toString());
-  const item = catalogItem;
 
-  const getName = (obj: any) => {
-    if (!obj) return null;
-    return obj.attributes?.name || obj.name || obj.attributes?.description || obj.description || null;
+  // =============================================================================
+  // FUNÇÕES AUXILIARES
+  // =============================================================================
+
+  const formatPrice = (price: number) => {
+    return `R$ ${price.toFixed(2).replace('.', ',')}`;
   };
+
+  const getItemTypeLabel = (itemType: string) => {
+    switch (itemType) {
+      case 'weight_per_g': return 'por grama';
+      case 'weight_per_kg': return 'por quilo';
+      default: return 'por unidade';
+    }
+  };
+
+  const getWeightUnit = (itemType: string) => {
+    return itemType === 'weight_per_g' ? 'g' : 'kg';
+  };
+
+  // =============================================================================
+  // RENDER - LOADING
+  // =============================================================================
 
   if (isLoadingCatalogItem) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="flex justify-center items-center min-h-[300px] bg-white rounded-3xl border-none shadow-2xl">
-          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <DialogContent className="rounded-lg sm:max-w-[640px] p-0 bg-white">
+          <DialogHeader className="px-6 pt-6 pb-4">
+            <DialogTitle>Carregando...</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center justify-center h-40 gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Carregando detalhes...</p>
+          </div>
         </DialogContent>
       </Dialog>
     );
   }
 
-  const attrs = item?.data?.attributes;
+  // =============================================================================
+  // RENDER - ERRO
+  // =============================================================================
+
+  if (!catalogItem) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="rounded-lg sm:max-w-[640px] p-0 bg-white">
+          <DialogHeader className="px-6 pt-6 pb-4">
+            <DialogTitle>Erro</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center justify-center h-40 gap-3">
+            <p className="text-sm text-muted-foreground">Não foi possível carregar os detalhes do item</p>
+            <Button variant="outline" onClick={onClose}>Fechar</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // =============================================================================
+  // DADOS DO ITEM
+  // =============================================================================
+
+  const attrs = catalogItem.data.attributes;
+  const hasImage = !!attrs.image_url;
+  const hasDiscount = attrs.price_with_discount && attrs.price_with_discount < attrs.price;
+  const isWeightBased = attrs.item_type !== 'unit';
+  const hasExtras = attrs.extra?.data && attrs.extra.data.length > 0;
+  const hasPrepareMethods = attrs.prepare_method?.data && attrs.prepare_method.data.length > 0;
+  const hasSteps = attrs.steps?.data && attrs.steps.data.length > 0;
+
+  // =============================================================================
+  // RENDER
+  // =============================================================================
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[95vw] sm:max-w-[800px] p-0 bg-white border-none shadow-2xl rounded-3xl overflow-hidden max-h-[92vh] flex flex-col">
-        {/* Banner Area */}
-        <div className="relative h-64 sm:h-80 w-full bg-muted/20 overflow-hidden flex-shrink-0">
-          {attrs?.image_url ? (
-            <Image
-              src={fixImageUrl(attrs.image_url) || ''}
-              alt={attrs.name}
-              fill
-              sizes="(max-width: 768px) 100vw, 50vw"
-              className="object-cover"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
-              <Package className="h-24 w-24 text-muted-foreground/10" />
+      <DialogContent className="rounded-lg sm:max-w-[640px] p-0 bg-white max-h-[90vh] flex flex-col overflow-hidden">
+        {/* Header */}
+        <DialogHeader className="px-6 pt-6 pb-4 border-b border-gray-100">
+          <DialogTitle className="flex items-center gap-2 text-lg font-semibold">
+            <Package className="h-5 w-5" />
+            Detalhes do Item
+          </DialogTitle>
+        </DialogHeader>
+
+        {/* Conteúdo */}
+        <div className="flex-1 overflow-y-auto">
+          {/* Imagem */}
+          {hasImage && (
+            <div className="relative h-48 w-full bg-gray-50">
+              <Image
+                src={fixImageUrl(attrs.image_url) || ''}
+                alt={attrs.name}
+                fill
+                sizes="640px"
+                className="object-cover"
+                unoptimized
+              />
             </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-          <div className="absolute bottom-6 left-8 right-8">
-            <h2 className="text-2xl sm:text-4xl font-black text-white drop-shadow-md tracking-tight">
-              {attrs?.name}
-            </h2>
-          </div>
-        </div>
 
-        {/* Content Scroll Area */}
-        <div className="flex-1 overflow-y-auto p-8 sm:p-10 space-y-10 custom-scrollbar">
-          <div className="flex flex-col md:flex-row md:items-start justify-between gap-8">
-            <div className="flex-1 space-y-4">
-              <h4 className="text-xs uppercase tracking-widest font-bold text-muted-foreground/60">Descrição do Produto</h4>
-              {attrs?.description ? (
-                <p className="text-gray-600 text-lg leading-relaxed font-medium">
-                  {attrs.description}
-                </p>
-              ) : (
-                <p className="text-muted-foreground/40 italic font-medium">Nenhuma descrição detalhada informada.</p>
+          <div className="px-6 py-5 space-y-5">
+            {/* Nome e Descrição */}
+            <div>
+              <h2 className="text-xl font-bold text-foreground">{attrs.name}</h2>
+              {attrs.description && (
+                <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{attrs.description}</p>
               )}
             </div>
 
-            <div className="flex flex-col gap-6 min-w-[240px] bg-gray-50/50 p-6 rounded-3xl border border-gray-100">
-              <div className="space-y-1">
-                <span className="text-xs uppercase tracking-widest font-black text-primary/70">Preço Principal</span>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-black text-gray-900">
-                    R$ {attrs?.price_with_discount ? attrs.price_with_discount.toFixed(2).replace('.', ',') : attrs?.price.toFixed(2).replace('.', ',')}
+            {/* Preço */}
+            <div className="rounded-lg p-4 border border-gray-100 bg-white">
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-1">Preço</p>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold">
+                  {formatPrice(hasDiscount ? attrs.price_with_discount! : attrs.price)}
+                </span>
+                {hasDiscount && (
+                  <span className="text-sm text-muted-foreground line-through">
+                    {formatPrice(attrs.price)}
                   </span>
-                  {attrs?.price_with_discount && (
-                    <span className="text-sm font-bold text-muted-foreground/40 line-through">
-                      R$ {attrs.price.toFixed(2).replace('.', ',')}
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs font-bold text-muted-foreground/60 uppercase">
-                  Cobrado por {attrs?.item_type === 'weight_per_g' ? 'grama' : attrs?.item_type === 'weight_per_kg' ? 'quilo' : 'unidade'}
-                </p>
+                )}
               </div>
-
-              {attrs?.item_type !== 'unit' && (
-                <div className="space-y-3 pt-4 border-t border-gray-200/50">
-                  <div className="flex items-center gap-2 text-gray-800 font-bold text-sm">
-                    <Scale className="h-4 w-4 text-primary" />
-                    Especificações de Peso
-                  </div>
-                  <div className="space-y-2">
-                    {attrs?.min_weight && attrs?.max_weight && (
-                      <div className="flex justify-between items-center text-sm font-semibold">
-                        <span className="text-muted-foreground/60">Variação:</span>
-                        <span className="text-gray-800">{attrs.min_weight} - {attrs.max_weight} {attrs.item_type === 'weight_per_g' ? 'g' : 'kg'}</span>
-                      </div>
-                    )}
-                    {attrs?.measure_interval && (
-                      <div className="flex justify-between items-center text-sm font-semibold">
-                        <span className="text-muted-foreground/60">Intervalo:</span>
-                        <span className="text-gray-800 flex items-center gap-1.5">
-                          <Clock className="h-3.5 w-3.5 opacity-60" />
-                          {attrs.measure_interval} {attrs.item_type === 'weight_per_g' ? 'g' : 'kg'}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
+              <p className="text-xs text-muted-foreground mt-1">{getItemTypeLabel(attrs.item_type)}</p>
             </div>
-          </div>
 
-          {/* Additional Sections */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-            {attrs?.extra && attrs.extra.data.length > 0 && (
-              <div className="space-y-4">
-                <h4 className="text-sm font-black text-gray-800 flex items-center gap-3 uppercase tracking-widest">
-                  <Plus className="h-5 w-5 text-primary" />
-                  Adicionais Disponíveis
-                </h4>
-                <div className="grid grid-cols-1 gap-2">
-                  {attrs.extra.data.map((extra: any, index: number) => {
-                    const name = getName(extra);
-                    return name ? (
-                      <div key={index} className="flex justify-between items-center p-3 sm:p-4 bg-gray-50/50 rounded-2xl border border-gray-100 font-semibold text-gray-700">
-                        <span>{name}</span>
-                        {Number(extra.attributes?.price) > 0 && (
-                          <span className="text-primary/70 text-xs">+ R$ {Number(extra.attributes.price).toFixed(2).replace('.', ',')}</span>
-                        )}
-                      </div>
-                    ) : null;
-                  })}
+            {/* Peso */}
+            {isWeightBased && (attrs.min_weight || attrs.max_weight) && (
+              <div className="rounded-lg p-4 border border-gray-100 bg-white">
+                <div className="flex items-center gap-2 mb-2">
+                  <Scale className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold">Peso</span>
+                </div>
+                {attrs.min_weight && attrs.max_weight && (
+                  <p className="text-sm">De {attrs.min_weight} até {attrs.max_weight} {getWeightUnit(attrs.item_type)}</p>
+                )}
+                {attrs.measure_interval && (
+                  <p className="text-xs text-muted-foreground mt-1">Intervalo: {attrs.measure_interval} {getWeightUnit(attrs.item_type)}</p>
+                )}
+              </div>
+            )}
+
+            {/* Adicionais */}
+            {hasExtras && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Plus className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold">Adicionais</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {attrs.extra!.data.map((extra: any, index: number) => (
+                    <div key={extra.id || index} className="px-3 py-2 rounded-full border border-gray-100 bg-white">
+                      <span className="text-sm font-medium">{extra.attributes.name}</span>
+                      {Number(extra.attributes.price) > 0 && (
+                        <span className="text-xs text-primary ml-1.5">+ {formatPrice(parseFloat(extra.attributes.price))}</span>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
 
-            {attrs?.prepare_method && attrs.prepare_method.data.length > 0 && (
-              <div className="space-y-4">
-                <h4 className="text-sm font-black text-gray-800 flex items-center gap-3 uppercase tracking-widest">
-                  <ChefHat className="h-5 w-5 text-primary" />
-                  Métodos de Preparo
-                </h4>
-                <div className="grid grid-cols-1 gap-2">
-                  {attrs.prepare_method.data.map((method: any, index: number) => {
-                    const name = getName(method);
-                    return name ? (
-                      <div key={index} className="p-3 sm:p-4 bg-gray-50/50 rounded-2xl border border-gray-100 font-semibold text-gray-700">
-                        {name}
-                      </div>
-                    ) : null;
-                  })}
+            {/* Modos de Preparo */}
+            {hasPrepareMethods && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <ChefHat className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold">Modos de Preparo</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {attrs.prepare_method!.data.map((method: any, index: number) => (
+                    <div key={method.id || index} className="px-3 py-2 rounded-full border border-gray-100 bg-white">
+                      <span className="text-sm font-medium">{method.attributes.name}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
 
-            {attrs?.steps && attrs.steps.data.length > 0 && (
-              <div className="space-y-4 md:col-span-2">
-                <h4 className="text-sm font-black text-gray-800 flex items-center gap-3 uppercase tracking-widest">
-                  <ListChecks className="h-5 w-5 text-primary" />
-                  Etapas e Personalização
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {attrs.steps.data.map((step: any, index: number) => {
-                    const name = getName(step);
-                    return name ? (
-                      <div key={index} className="p-4 sm:p-6 bg-gray-50/50 rounded-3xl border border-gray-100 space-y-3">
-                        <span className="text-xs uppercase tracking-wider font-black text-primary/70">Passo {index + 1}</span>
-                        <p className="font-bold text-gray-800 text-lg">{name}</p>
-                        {step.attributes?.options?.data?.length > 0 && (
-                          <div className="flex flex-wrap gap-2 pt-2">
-                            {step.attributes.options.data.map((opt: any, i: number) => (
-                              <span key={i} className="px-2 py-1 bg-white rounded-lg border border-gray-100 text-[10px] font-bold text-muted-foreground uppercase">
-                                {getName(opt)}
-                              </span>
+            {/* Etapas */}
+            {hasSteps && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <ListChecks className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold">Etapas de Montagem</span>
+                </div>
+                <div className="space-y-2">
+                  {attrs.steps!.data.map((step: any, index: number) => (
+                    <div key={step.id || index} className="flex gap-3 p-3 rounded-lg border border-gray-100 bg-white">
+                      <div className="w-6 h-6 rounded-full bg-foreground text-white flex items-center justify-center text-xs font-bold shrink-0">
+                        {index + 1}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold">{step.attributes.name}</p>
+                        {step.attributes.options?.data?.length > 0 && (
+                          <div className="mt-1.5 space-y-0.5">
+                            {step.attributes.options.data.map((option: any, optIndex: number) => (
+                              <p key={option.id || optIndex} className="text-xs text-muted-foreground">
+                                • {option.attributes.name}
+                              </p>
                             ))}
                           </div>
                         )}
                       </div>
-                    ) : null;
-                  })}
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
@@ -198,9 +244,9 @@ export function ItemDetailsModal({ id, isOpen, onClose }: ItemDetailsModalProps)
         </div>
 
         {/* Footer */}
-        <div className="p-6 bg-gray-50/50 border-t border-gray-100 flex justify-end">
-          <Button onClick={onClose} variant="secondary" className="rounded-2xl px-8 font-bold">
-            Fechar Detalhes
+        <div className="px-6 py-4 border-t border-gray-100">
+          <Button variant="outline" className="w-full" onClick={onClose}>
+            Fechar
           </Button>
         </div>
       </DialogContent>

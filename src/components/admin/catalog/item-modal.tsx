@@ -1,663 +1,712 @@
 "use client";
 
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Textarea } from "@/components/ui/textarea";  
-import Image from "next/image";
-import { Camera, Loader2, Plus, Trash2, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { ItemExtras, Extra } from "./item-extras-create"
-import { ItemPrepareMethods, PrepareMethod } from "./item-prepare-methods-create"
-import { ItemSteps } from "./item-steps-create";
-import { useCatalogGroup } from "../../../hooks/useCatalogGroup";
+import Image from "next/image";
+import { Camera, Loader2, Plus, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useCatalogGroup } from "@/hooks/useCatalogGroup";
+
+// =============================================================================
+// TIPOS
+// =============================================================================
+
 interface NewItemModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-interface Step {
+interface Extra {
   name: string;
-  options: { name: string }[];
-  id?: string;
+  price: string;
 }
 
-const itemSchema = z.object({
-  name: z.string().min(1, { message: 'Nome é obrigatório' }),
-  description: z.string().min(1, { message: 'Descrição é obrigatória' }),
-  catalog_group_id: z.string().min(0, { message: 'Grupo é obrigatório' }),
-  image: z.instanceof(File).optional(),
-  price: z.number().min(0, { message: 'Preço é obrigatório' }),
-  item_type: z.enum(['unit', 'weight_per_kg', 'weight_per_g'], { message: 'Tipo de unidade é obrigatório' }),
-  min_weight: z.number().min(0).optional(),
-  max_weight: z.number().min(0).optional(),
-  measure_interval: z.number().min(0).optional(),
-  price_with_discount: z.number().min(0).optional(),
-  catalog_item_extras_attributes: z.array(
-    z.object({ 
-      name: z.string().min(1, { message: 'Nome do adicional é obrigatório' }), 
-      price: z.number().min(0.01, { message: 'Preço deve ser maior que zero' })
-    })
-  ).optional(),
-  catalog_item_prepare_methods_attributes: z.array(z.object({ name: z.string() })).optional(),
-  catalog_item_steps_attributes: z.array(z.object({ name: z.string(), catalog_item_step_options_attributes: z.array(z.object({ name: z.string() })) })).optional(),
-});
+interface PrepareMethod {
+  name: string;
+}
+
+interface StepOption {
+  name: string;
+}
+
+interface Step {
+  name: string;
+  options: StepOption[];
+}
+
+// =============================================================================
+// COMPONENTE PRINCIPAL
+// =============================================================================
 
 export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
+  // Hooks
   const { catalog, isLoading, createCatalogItem, isCreatingItem } = useCatalogGroup();
+
+  // Estados - Dados básicos
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [selectedGroupId, setSelectedGroupId] = useState('');
+  const [itemType, setItemType] = useState<'unit' | 'weight_per_kg' | 'weight_per_g'>('unit');
+  const [price, setPrice] = useState('');
+  const [minWeight, setMinWeight] = useState('');
+  const [maxWeight, setMaxWeight] = useState('');
+  const [measureInterval, setMeasureInterval] = useState('');
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+
+  // Estados - Desconto
   const [hasDiscount, setHasDiscount] = useState(false);
+  const [discountType, setDiscountType] = useState<'fixed' | 'percentage'>('fixed');
+  const [discountValue, setDiscountValue] = useState('');
+
+  // Estados - Extras/Adicionais
   const [hasExtras, setHasExtras] = useState(false);
-  const [extras, setExtras] = useState<Extra[]>([]);
-  const [prepareMethods, setPrepareMethods] = useState<{ name: string }[]>([]);
+  const [extras, setExtras] = useState<Extra[]>([{ name: '', price: '' }]);
+
+  // Estados - Modos de Preparo
   const [hasPrepareMethods, setHasPrepareMethods] = useState(false);
+  const [prepareMethods, setPrepareMethods] = useState<PrepareMethod[]>([{ name: '' }]);
+
+  // Estados - Etapas
   const [hasSteps, setHasSteps] = useState(false);
-  const [steps, setSteps] = useState<{ name: string; options: { name: string }[] }[]>([]);
+  const [steps, setSteps] = useState<Step[]>([{ name: '', options: [{ name: '' }] }]);
 
-  
-  const handlePriceChange = (value: string) => {
-    const numValue = parseFloat(value.replace(/\D/g, '')) / 100 || 0
-    return numValue
-  }
+  // Estados - Erros
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handleStepOptionChange = (stepIndex: number, optionIndex: number, value: string) => {
-    setSteps(prev => prev.map((step, i) => i === stepIndex ? { ...step, options: step.options.map((option, j) => j === optionIndex ? { ...option, name: value } : option) } : step));
-  }
+  // Variáveis derivadas
+  const priceNumber = parseFloat(price.replace(',', '.')) || 0;
 
-  const handleAddStepOption = (stepIndex: number) => {
-    setSteps(prev => prev.map((step, i) => i === stepIndex ? { ...step, options: [...step.options, { name: '' }] } : step));
-  }
-  
-  const handleRemoveStepOption = (stepIndex: number, optionIndex: number) => {
-    setSteps(prev => prev.map((step, i) => i === stepIndex ? { ...step, options: step.options.filter((_, j) => j !== optionIndex) } : step));
-  }
-  
-  const formatPrice = (price: number) => {
-    if (price !== 0) {
-      return price.toFixed(2).replace('.', ',')
-    } else {
-      return '0,00'
+  const calculateFinalPrice = () => {
+    if (!hasDiscount || !discountValue) return priceNumber;
+    const discountNum = parseFloat(discountValue.replace(',', '.')) || 0;
+    if (discountType === 'percentage') {
+      return Math.max(0, priceNumber - (priceNumber * discountNum / 100));
     }
-  }
-  
-  const form = useForm({
-    defaultValues: {
-      name: '',
-      description: '',
-      catalog_group_id: catalog?.data[0]?.id || '',
-      image: undefined,
-      price: 0,
-      price_with_discount: 0,
-      item_type: 'unit' as 'unit' | 'weight_per_kg' | 'weight_per_g',
-      min_weight: 0,
-      max_weight: 0,
-      measure_interval: 0,
-    },
-    resolver: zodResolver(itemSchema)
-  });
+    return Math.max(0, priceNumber - discountNum);
+  };
+
+  const finalPrice = calculateFinalPrice();
+
+  // =============================================================================
+  // EFEITOS
+  // =============================================================================
 
   useEffect(() => {
-    if (hasDiscount) {
-      form.setValue('price_with_discount', form.getValues('price_with_discount') as number);
-    } else {
-      form.setValue('price_with_discount', undefined);
+    if (isOpen && catalog?.data?.[0]?.id && !selectedGroupId) {
+      setSelectedGroupId(catalog.data[0].id);
     }
-    if (hasExtras) {
-      form.setValue('catalog_item_extras_attributes', extras);
-    } else {
-      form.setValue('catalog_item_extras_attributes', undefined);
-    }
-    if (hasPrepareMethods) {
-      form.setValue('catalog_item_prepare_methods_attributes', prepareMethods);
-    } else {
-      form.setValue('catalog_item_prepare_methods_attributes', undefined);
-    }
-    if (hasSteps) {
-      form.setValue('catalog_item_steps_attributes', steps.map(step => ({ ...step, catalog_item_step_options_attributes: step.options.map(option => ({ name: option.name })) })));
-    } else {
-      form.setValue('catalog_item_steps_attributes', undefined);
-    }
-  }, [hasExtras, hasPrepareMethods, hasSteps, hasDiscount]);
+  }, [isOpen, catalog]);
 
   useEffect(() => {
-    if (catalog?.data[0]?.id) {
-      form.setValue('catalog_group_id', catalog.data[0].id);
+    if (!isOpen) {
+      resetForm();
     }
-  }, [catalog, form]);
+  }, [isOpen]);
 
-  const handleAddPrepareMethod = () => {
-    setPrepareMethods(prev => [...prev, { name: '' }]);
+  // =============================================================================
+  // FUNÇÕES AUXILIARES
+  // =============================================================================
+
+  const resetForm = () => {
+    setName('');
+    setDescription('');
+    setSelectedGroupId(catalog?.data?.[0]?.id || '');
+    setItemType('unit');
+    setPrice('');
+    setMinWeight('');
+    setMaxWeight('');
+    setMeasureInterval('');
+    setPreviewImage(null);
+    setImageFile(null);
+    setHasDiscount(false);
+    setDiscountType('fixed');
+    setDiscountValue('');
+    setHasExtras(false);
+    setExtras([{ name: '', price: '' }]);
+    setHasPrepareMethods(false);
+    setPrepareMethods([{ name: '' }]);
+    setHasSteps(false);
+    setSteps([{ name: '', options: [{ name: '' }] }]);
+    setErrors({});
   };
 
-  const handleRemovePrepareMethod = (index: number) => {
-    setPrepareMethods(prev => prev.filter((_, i) => i !== index));
-    if (prepareMethods.length === 1) {
-      setHasPrepareMethods(false);
+  const formatPrice = (value: string) => {
+    const numValue = value.replace(/\D/g, '');
+    if (!numValue) return '';
+    const floatValue = parseFloat(numValue) / 100;
+    return floatValue.toFixed(2).replace('.', ',');
+  };
+
+  const clearError = (field: string) => {
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: '' }));
     }
   };
 
-  const handlePrepareMethodChange = (index: number, field: keyof PrepareMethod, value: string) => {
-    setPrepareMethods(prev => prev.map((method, i) => i === index ? { ...method, [field]: value } : method));
+  // =============================================================================
+  // VALIDAÇÃO
+  // =============================================================================
+
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    if (!name.trim()) {
+      newErrors.name = 'Nome é obrigatório';
+    } else if (name.trim().length < 2) {
+      newErrors.name = 'Mínimo 2 caracteres';
+    }
+
+    if (!description.trim()) {
+      newErrors.description = 'Descrição é obrigatória';
+    } else if (description.trim().length < 5) {
+      newErrors.description = 'Mínimo 5 caracteres';
+    }
+
+    if (!selectedGroupId) {
+      newErrors.group = 'Selecione um grupo';
+    }
+
+    if (!price) {
+      newErrors.price = 'Preço é obrigatório';
+    } else if (priceNumber <= 0) {
+      newErrors.price = 'Preço deve ser maior que zero';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  const handlePrepareMethodsToggle = (checked: boolean) => {
-    setHasPrepareMethods(checked);
-    if (checked) {
-      setPrepareMethods([{ name: '' }]);
-    } else {
-      setPrepareMethods([]);
-    }
-  };
+  // =============================================================================
+  // HANDLERS - IMAGEM
+  // =============================================================================
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      form.setValue('image', file)
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setPreviewImage(reader.result as string)
-      }
-      reader.readAsDataURL(file)
-    }
-  }
-
-  const handleChangeImageClick = () => {
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = 'image/*'
+  const handleSelectImage = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
     input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0]
+      const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
-        form.setValue('image', file)
-        const reader = new FileReader()
+        setImageFile(file);
+        const reader = new FileReader();
         reader.onloadend = () => {
-          setPreviewImage(reader.result as string)
-        }
-        reader.readAsDataURL(file)
+          setPreviewImage(reader.result as string);
+        };
+        reader.readAsDataURL(file);
       }
-    }
-    input.click()
-  }
+    };
+    input.click();
+  };
 
-  const handleDiscountToggle = (checked: boolean) => {
-    setHasDiscount(checked);
-    if (checked) {
-      form.setValue('price_with_discount', form.getValues('price'));
-    } else {
-      form.setValue('price_with_discount', undefined);
-    }
-  }
-  
-  const handleExtraChange = (index: number, field: keyof Extra, value: string | number) => {
-    setExtras(prev => prev.map((extra, i) => i === index ? { ...extra, [field]: value } : extra));
+  // =============================================================================
+  // HANDLERS - EXTRAS
+  // =============================================================================
+
+  const handleAddExtra = () => {
+    setExtras([...extras, { name: '', price: '' }]);
   };
 
   const handleRemoveExtra = (index: number) => {
-    setExtras(prev => prev.filter((_, i) => i !== index));
-    if (extras.length === 1) {
-      setHasExtras(false);
+    if (extras.length > 1) {
+      setExtras(extras.filter((_, i) => i !== index));
     }
   };
 
-  const handleAddExtra = () => {
-    setExtras(prev => [...prev, { name: '', price: 0 }]);
+  const handleExtraChange = (index: number, field: 'name' | 'price', value: string) => {
+    const newExtras = [...extras];
+    newExtras[index] = { ...newExtras[index], [field]: value };
+    setExtras(newExtras);
   };
 
-  const handleHasDiscountToggle = (checked: boolean) => {
-    setHasDiscount(checked);
-    if (checked) {
-      form.setValue('price_with_discount', form.getValues('price'));
-    } else {
-      form.setValue('price_with_discount', undefined);
-    }
-  }
-  const handleExtrasToggle = (checked: boolean) => {
-    setHasExtras(checked);
-    if (checked) {
-      setExtras([{ name: '', price: 0 }]);
-    } else {
-      setExtras([]);
+  // =============================================================================
+  // HANDLERS - MODOS DE PREPARO
+  // =============================================================================
+
+  const handleAddPrepareMethod = () => {
+    setPrepareMethods([...prepareMethods, { name: '' }]);
+  };
+
+  const handleRemovePrepareMethod = (index: number) => {
+    if (prepareMethods.length > 1) {
+      setPrepareMethods(prepareMethods.filter((_, i) => i !== index));
     }
   };
 
-  const handleStepChange = (stepIndex: number, field: keyof Step, value: string) => {
-    setSteps(prev => prev.map((step, i) => i === stepIndex ? { ...step, [field]: value } : step));
+  const handlePrepareMethodChange = (index: number, value: string) => {
+    const newMethods = [...prepareMethods];
+    newMethods[index] = { name: value };
+    setPrepareMethods(newMethods);
+  };
+
+  // =============================================================================
+  // HANDLERS - ETAPAS
+  // =============================================================================
+
+  const handleAddStep = () => {
+    setSteps([...steps, { name: '', options: [{ name: '' }] }]);
   };
 
   const handleRemoveStep = (index: number) => {
-    setSteps(prev => {
-      const newSteps = prev.filter((_, i) => i !== index);
-      if (newSteps.length === 0) {
-        setHasSteps(false);
-      }
-      return newSteps;
-    });
-  };
-
-  const handleAddStep = () => {
-    setSteps(prev => [...prev, { name: '', options: [{ name: '' }] }]);
-  };
-
-  const handleStepsToggle = (checked: boolean) => {
-    setHasSteps(checked);
-    if (checked) {
-      setSteps([{ name: '', options: [{ name: '' }] }]);
-    } else {
-      setSteps([]);
+    if (steps.length > 1) {
+      setSteps(steps.filter((_, i) => i !== index));
     }
   };
 
-  const onSubmit = (data: any) => {
+  const handleStepNameChange = (index: number, value: string) => {
+    const newSteps = [...steps];
+    newSteps[index] = { ...newSteps[index], name: value };
+    setSteps(newSteps);
+  };
+
+  const handleAddStepOption = (stepIndex: number) => {
+    const newSteps = [...steps];
+    newSteps[stepIndex].options.push({ name: '' });
+    setSteps(newSteps);
+  };
+
+  const handleRemoveStepOption = (stepIndex: number, optionIndex: number) => {
+    const newSteps = [...steps];
+    if (newSteps[stepIndex].options.length > 1) {
+      newSteps[stepIndex].options = newSteps[stepIndex].options.filter((_, i) => i !== optionIndex);
+      setSteps(newSteps);
+    }
+  };
+
+  const handleStepOptionChange = (stepIndex: number, optionIndex: number, value: string) => {
+    const newSteps = [...steps];
+    newSteps[stepIndex].options[optionIndex] = { name: value };
+    setSteps(newSteps);
+  };
+
+  // =============================================================================
+  // SUBMIT
+  // =============================================================================
+
+  const handleSubmit = () => {
+    if (!validateForm()) return;
+
     const formData = new FormData();
-    formData.append('name', data.name);
-    formData.append('description', data.description);
-    formData.append('item_type', data.item_type);
-    formData.append('unit_of_measurement', data.item_type === 'weight_per_kg' ? 'weight_per_kg' : data.item_type === 'weight_per_g' ? 'weight_per_g' : '');
-    formData.append('price', data.price.toString());
-    formData.append('catalog_group_id', data.catalog_group_id);
-    if (hasDiscount) {
-      formData.append('price_with_discount', data.price_with_discount.toString());
+    formData.append('name', name.trim());
+    formData.append('description', description.trim());
+    formData.append('catalog_group_id', selectedGroupId);
+    formData.append('item_type', itemType);
+    formData.append('price', priceNumber.toString());
+
+    // Desconto
+    if (hasDiscount && discountValue && finalPrice > 0 && finalPrice < priceNumber) {
+      formData.append('price_with_discount', finalPrice.toString());
     }
-    if (data.measure_interval) {
-      formData.append('measure_interval', data.measure_interval.toString());
+
+    // Campos de peso
+    if (itemType !== 'unit') {
+      if (minWeight) formData.append('min_weight', minWeight);
+      if (maxWeight) formData.append('max_weight', maxWeight);
+      if (measureInterval) formData.append('measure_interval', measureInterval);
     }
-    if (data.min_weight) {
-      formData.append('min_weight', data.min_weight.toString());
+
+    // Imagem
+    if (imageFile) {
+      formData.append('image', imageFile);
     }
-    if (data.max_weight) {
-      formData.append('max_weight', data.max_weight.toString());
-    }
-    if (data.image) {
-      formData.append('image', data.image);
-    }
-    if (hasExtras && extras.length > 0) {
-      extras.forEach((extra, index) => {
-        formData.append(`catalog_item_extras_attributes[${index}][name]`, extra.name);
-        formData.append(`catalog_item_extras_attributes[${index}][price]`, extra.price.toString());
+
+    // Extras - filtrar apenas os que têm nome preenchido
+    if (hasExtras) {
+      const validExtras = extras.filter((extra) => extra.name.trim() !== '');
+      validExtras.forEach((extra, index) => {
+        formData.append(`catalog_item_extras_attributes[${index}][name]`, extra.name.trim());
+        formData.append(`catalog_item_extras_attributes[${index}][price]`, (parseFloat(extra.price.replace(',', '.')) || 0).toString());
       });
     }
+
+    // Modos de preparo
     if (hasPrepareMethods) {
-      prepareMethods.forEach((method, index) => {
-        formData.append(`catalog_item_prepare_methods_attributes[${index}][name]`, method.name);
+      const validMethods = prepareMethods.filter((method) => method.name.trim() !== '');
+      validMethods.forEach((method, index) => {
+        formData.append(`catalog_item_prepare_methods_attributes[${index}][name]`, method.name.trim());
       });
     }
+
+    // Etapas
     if (hasSteps) {
-      steps.forEach((step, index) => {
-        formData.append(`catalog_item_steps_attributes[${index}][name]`, step.name);
-        step.options.forEach((option, optionIndex) => {
-          formData.append(`catalog_item_steps_attributes[${index}][catalog_item_step_options_attributes][${optionIndex}][name]`, option.name);
+      let stepIndex = 0;
+      steps.forEach((step) => {
+        if (step.name.trim() === '') return;
+        const validOptions = step.options.filter((option) => option.name.trim() !== '');
+        if (validOptions.length === 0) return;
+
+        formData.append(`catalog_item_steps_attributes[${stepIndex}][name]`, step.name.trim());
+        validOptions.forEach((option, optionIndex) => {
+          formData.append(`catalog_item_steps_attributes[${stepIndex}][catalog_item_step_options_attributes][${optionIndex}][name]`, option.name.trim());
         });
+        stepIndex++;
       });
     }
+
     createCatalogItem(formData);
-    onOpenChange(false);
-    form.reset();
-    setPreviewImage(null)
-    setHasDiscount(false)
-    setHasExtras(false)
-    setHasPrepareMethods(false)
-    setHasSteps(false)
-    setSteps([])
-    setExtras([])
-    setPrepareMethods([])
+    handleClose();
   };
 
-  const itemType = form.watch('item_type');
+  const handleClose = () => {
+    if (isCreatingItem) return;
+    resetForm();
+    onOpenChange(false);
+  };
+
+  // =============================================================================
+  // RENDER
+  // =============================================================================
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="rounded-xs sm:h-auto max-w-[95vw] sm:max-w-[720px] p-4 sm:p-6 md:p-8 bg-white max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#212121] [&::-webkit-scrollbar-thumb]:rounded-sm [&::-webkit-scrollbar]:px-2">
-        <DialogHeader>
-          <DialogTitle className="text-start text-xl md:text-2xl font-bold">
-            NOVO ITEM
-          </DialogTitle>
-          <DialogDescription>
-            Adicione um novo item ao seu catálogo
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="rounded-lg sm:max-w-[640px] p-0 bg-white max-h-[90vh] flex flex-col overflow-hidden">
+        {/* Header */}
+        <DialogHeader className="px-6 pt-6 pb-4 border-b border-gray-100">
+          <DialogTitle className="text-lg font-semibold">Novo Item</DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground">
+            Adicione um novo item ao catálogo
           </DialogDescription>
         </DialogHeader>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-bold text-foreground">
-                    NOME
-                  </FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="Ex: Hamburguer" className="border-black/30 border-[0.5px] h-12 placeholder:text-gray-400" />
-                  </FormControl>
-                </FormItem>
-              )}
+        {/* Formulário */}
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+          {/* SEÇÃO: DADOS BÁSICOS */}
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Dados do Item</p>
+
+          {/* Nome */}
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium">Nome *</label>
+            <Input
+              value={name}
+              onChange={(e) => { setName(e.target.value); clearError('name'); }}
+              placeholder="Ex: Hambúrguer Artesanal"
+              className={errors.name ? 'border-destructive' : ''}
             />
+            {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
+          </div>
 
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-bold text-foreground">
-                    DESCRIÇÃO
-                  </FormLabel>
-                  <FormControl>
-                    <Textarea {...field} placeholder="Digite a descrição do item" className="border-black/30 border-[0.5px] h-12 placeholder:text-gray-400" />
-                  </FormControl>
-                </FormItem>
-              )}
+          {/* Descrição */}
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium">Descrição *</label>
+            <Textarea
+              value={description}
+              onChange={(e) => { setDescription(e.target.value); clearError('description'); }}
+              placeholder="Descreva o item..."
+              rows={3}
+              className={errors.description ? 'border-destructive' : ''}
             />
+            {errors.description && <p className="text-xs text-destructive">{errors.description}</p>}
+          </div>
 
-            <hr className="border-black/30 my-12 w-full" />
+          {/* Grupo */}
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium">Grupo *</label>
+            <Select value={selectedGroupId} onValueChange={(v) => { setSelectedGroupId(v); clearError('group'); }}>
+              <SelectTrigger className={errors.group ? 'border-destructive' : ''}>
+                <SelectValue placeholder={isLoading ? "Carregando..." : "Selecione um grupo"} />
+              </SelectTrigger>
+              <SelectContent>
+                {catalog?.data?.map((group) => (
+                  <SelectItem key={group.id} value={group.id}>
+                    {group.attributes.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.group && <p className="text-xs text-destructive">{errors.group}</p>}
+          </div>
 
-            <div className="flex flex-row gap-4 w-full">
-              <FormField
-                control={form.control}
-                name="image"
-                render={({ field: { onChange, ...rest } }) => (
-                  <FormItem className="flex-1">
-                    <FormLabel className="text-sm font-bold text-foreground">IMAGEM</FormLabel>
-                    <div className="flex flex-col gap-2">
-                      {previewImage ? (
-                        <div className="flex items-center justify-center flex-col gap-2 w-[200px]">
-                          <Image
-                            src={previewImage}
-                            alt="Preview"
-                            width={200}
-                            height={200}
-                            className="rounded-xs object-cover w-[200px] h-[200px]"
-                          />
-                          <button
-                            type="button"
-                            onClick={handleChangeImageClick}
-                            className="cursor-pointer w-[200px] text-sm font-semibold h-10 bg-muted-foreground text-white rounded-xs flex items-center justify-center gap-2 hover:bg-muted-foreground/80 transition-colors"
-                          >
-                            TROCAR
-                            <Camera size={16} />
-                          </button>
-                        </div>
-                      ) : (
-                        <label className="flex h-12 items-center gap-2 border rounded cursor-pointer hover:bg-gray-100 max-w-48">
-                          <div className="w-12 h-full bg-black flex items-center justify-center rounded-l">
-                            <Camera size={32} className="text-white" />
-                          </div>
-                          <span className="font-semibold pl-4">Procurar</span>
-                          <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} name={rest.name} ref={rest.ref} />
-                        </label>
-                      )}
-                    </div>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="catalog_group_id"
-                render={({ field }) => (
-                  <FormItem className="flex-1 w-full">
-                    <FormLabel className="text-sm font-bold text-foreground w-full">
-                      GRUPO
-                    </FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      value={field.value}
-                    >
-                      <FormControl className="w-full h-12">
-                        <SelectTrigger className="border-black/30 border-[0.5px] h-12">
-                          <SelectValue placeholder={isLoading ? "Carregando grupos..." : "Selecione um grupo"} className="w-full p-4 h-12 placeholder:text-gray-400" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {isLoading ? (
-                          <SelectItem value="loading" disabled>Carregando grupos...</SelectItem>
-                        ) : (
-                          catalog?.data.map((group) => (
-                            <SelectItem key={group.id} value={group.id}>
-                              {group.attributes.name}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
+          {/* Tipo de Unidade */}
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium">Tipo de Unidade</label>
+            <Select value={itemType} onValueChange={(v) => setItemType(v as any)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="unit">Unidade</SelectItem>
+                <SelectItem value="weight_per_kg">Peso por kg</SelectItem>
+                <SelectItem value="weight_per_g">Peso por g</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Campos de peso */}
+          {itemType !== 'unit' && (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Peso Mínimo</label>
+                  <Input type="number" value={minWeight} onChange={(e) => setMinWeight(e.target.value)} placeholder="0" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Peso Máximo</label>
+                  <Input type="number" value={maxWeight} onChange={(e) => setMaxWeight(e.target.value)} placeholder="0" />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Intervalo de Medida</label>
+                <Input type="number" value={measureInterval} onChange={(e) => setMeasureInterval(e.target.value)} placeholder="0" />
+              </div>
+            </>
+          )}
+
+          {/* Preço */}
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium">
+              Preço * {itemType === 'weight_per_kg' ? '(por kg)' : itemType === 'weight_per_g' ? '(por g)' : ''}
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">R$</span>
+              <Input
+                value={price}
+                onChange={(e) => { setPrice(formatPrice(e.target.value)); clearError('price'); }}
+                placeholder="0,00"
+                className={`pl-10 ${errors.price ? 'border-destructive' : ''}`}
               />
             </div>
+            {errors.price && <p className="text-xs text-destructive">{errors.price}</p>}
+          </div>
 
-            <div className="flex flex-row gap-4 w-full">
-              <FormField
-                control={form.control}
-                name="item_type"
-                render={({ field }) => (
-                  <FormItem className="flex-1 w-full">
-                    <FormLabel className="text-sm font-bold text-foreground w-full">
-                      TIPO DE UNIDADE
-                    </FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl className="w-1/2 h-12">
-                        <SelectTrigger className="border-black/30 border-[0.5px] h-12">
-                          <SelectValue placeholder="Selecione o tipo de unidade" className="placeholder:text-gray-400" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="unit">Unidade</SelectItem>
-                        <SelectItem value="weight_per_kg">Peso por kg</SelectItem>
-                        <SelectItem value="weight_per_g">Peso por g</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
-            </div>
+          {/* Desconto */}
+          <div className="flex items-center justify-between rounded-lg p-3 bg-muted/40">
+            <span className="text-sm font-medium">Produto com desconto?</span>
+            <Switch checked={hasDiscount} onCheckedChange={(v) => { setHasDiscount(v); if (!v) setDiscountValue(''); }} />
+          </div>
 
-            {(itemType === 'weight_per_kg' || itemType === 'weight_per_g') && (
-              <>
-                <FormField
-                  control={form.control}
-                  name="min_weight"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-bold text-foreground">
-                        PESO MÍNIMO
-                      </FormLabel>
-                      <FormControl>
-                        <Input 
-                          min={0}
-                          type="number"
-                          {...field}
-                          onChange={(e) => field.onChange(Number(e.target.value))}
-                          className="border-black/30 border-[0.5px] h-12 placeholder:text-gray-400"
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
+          {hasDiscount && (
+            <div className="space-y-3">
+              <div className="flex gap-1 bg-muted/40 rounded-lg p-1">
+                <button
+                  type="button"
+                  onClick={() => setDiscountType('fixed')}
+                  className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${discountType === 'fixed' ? 'bg-white shadow-sm' : 'text-muted-foreground'}`}
+                >
+                  R$ Fixo
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDiscountType('percentage')}
+                  className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${discountType === 'percentage' ? 'bg-white shadow-sm' : 'text-muted-foreground'}`}
+                >
+                  % Porcentagem
+                </button>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">
+                  {discountType === 'percentage' ? 'Desconto (%)' : 'Valor do Desconto (R$)'}
+                </label>
+                <Input
+                  value={discountValue}
+                  onChange={(e) => {
+                    if (discountType === 'percentage') {
+                      const num = e.target.value.replace(/\D/g, '');
+                      const value = Math.min(100, parseInt(num) || 0);
+                      setDiscountValue(value ? value.toString() : '');
+                    } else {
+                      setDiscountValue(formatPrice(e.target.value));
+                    }
+                  }}
+                  placeholder={discountType === 'percentage' ? '0' : '0,00'}
                 />
+              </div>
 
-                <FormField
-                  control={form.control}
-                  name="max_weight"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-bold text-foreground">
-                        PESO MÁXIMO
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          min={0}
-                          type="number"
-                          {...field}
-                          onChange={(e) => field.onChange(Number(e.target.value))}
-                          className="border-black/30 border-[0.5px] h-12 placeholder:text-gray-400"
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="measure_interval"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-bold text-foreground">
-                        INTERVALO DE MEDIDA
-                      </FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number"
-                          min="0"
-                          {...field}
-                          onChange={(e) => field.onChange(Number(e.target.value))}
-                          className="border-black/30 border-[0.5px] h-12 placeholder:text-gray-400"
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              </>
-            )}
-
-            <FormField
-              control={form.control}
-              name="price"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-bold text-foreground">
-                    PREÇO {itemType === 'weight_per_kg' ? 'POR KG' : itemType === 'weight_per_g' ? 'POR GRAMA' : ''}
-                  </FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2">R$</span>
-                      <Input
-                        placeholder="0,00"
-                        value={formatPrice(field.value)}
-                        onChange={(e) => field.onChange(handlePriceChange(e.target.value))}
-                        className="pl-10 h-12 border-black/30"
-                        required
-                      />
-                    </div>
-                  </FormControl>
-                </FormItem>
+              {priceNumber > 0 && (
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-white border border-gray-100">
+                  <span className="text-sm text-muted-foreground">Preço final:</span>
+                  <span className="text-sm font-bold">R$ {finalPrice.toFixed(2).replace('.', ',')}</span>
+                </div>
               )}
-            />
+            </div>
+          )}
 
-            <div className="flex flex-col md:flex-row justify-between gap-4 w-full">
-              <FormItem className="flex flex-row items-center justify-between rounded-lg p-4 bg-muted/40">
-                <FormLabel className="text-sm font-bold text-foreground w-full">
-                  PRODUTO COM DESCONTO?
-                </FormLabel>
-                <FormControl>
-                  <Switch
-                    checked={hasDiscount}
-                    onCheckedChange={handleHasDiscountToggle}
+          {/* Imagem */}
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium">Imagem</label>
+            <button
+              type="button"
+              onClick={handleSelectImage}
+              className="w-full border border-dashed border-gray-300 rounded-lg h-28 flex flex-col items-center justify-center gap-2 hover:bg-muted/30 transition-colors overflow-hidden"
+            >
+              {previewImage ? (
+                <Image src={previewImage} alt="Preview" width={200} height={112} className="w-full h-full object-cover" />
+              ) : (
+                <>
+                  <Camera className="h-6 w-6 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Clique para adicionar</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          <hr className="border-gray-100" />
+
+          {/* SEÇÃO: ADICIONAIS */}
+          <div className="flex items-center justify-between rounded-lg p-3 bg-muted/40">
+            <span className="text-sm font-medium">Possui adicionais?</span>
+            <Switch checked={hasExtras} onCheckedChange={setHasExtras} />
+          </div>
+
+          {hasExtras && (
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">Campos vazios serão ignorados ao salvar</p>
+              {extras.map((extra, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <Input
+                    value={extra.name}
+                    onChange={(e) => handleExtraChange(index, 'name', e.target.value)}
+                    placeholder="Nome do adicional"
+                    className="flex-[2]"
                   />
-                </FormControl>
-              </FormItem>
-
-              <FormField
-                control={form.control}
-                name="price_with_discount"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-bold text-foreground">
-                      PREÇO COM DESCONTO
-                    </FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2">R$</span>
-                        <Input
-                          placeholder="0,00"
-                          value={formatPrice(field.value as number)}
-                          onChange={(e) => field.onChange(handlePriceChange(e.target.value))}
-                          className="pl-10 h-12 border-black/30"
-                          disabled={!hasDiscount}
-                        />
-                      </div>
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
+                  <div className="relative flex-1">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">R$</span>
+                    <Input
+                      value={extra.price}
+                      onChange={(e) => handleExtraChange(index, 'price', formatPrice(e.target.value))}
+                      placeholder="0,00"
+                      className="pl-8"
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 shrink-0"
+                    onClick={() => handleRemoveExtra(index)}
+                    disabled={extras.length <= 1}
+                  >
+                    <Trash2 className={`h-4 w-4 ${extras.length <= 1 ? 'text-muted-foreground/30' : 'text-destructive'}`} />
+                  </Button>
+                </div>
+              ))}
+              <button type="button" onClick={handleAddExtra} className="w-full border border-dashed border-gray-300 rounded-lg py-2 flex items-center justify-center gap-1.5 text-sm text-primary hover:bg-muted/30 transition-colors">
+                <Plus className="h-4 w-4" /> Adicionar
+              </button>
             </div>
+          )}
 
-            <hr className="border-black/30 my-12 w-full" />
+          <hr className="border-gray-100" />
 
-            <FormItem className="cursor-pointer flex flex-row items-center justify-between rounded-lg p-4 bg-muted/40">
-              <FormLabel className="cursor-pointer text-sm font-bold text-foreground w-full">
-                ADICIONAIS?
-              </FormLabel>
-              <FormControl className="cursor-pointer">
-                <Switch
-                  checked={hasExtras}
-                  onCheckedChange={handleExtrasToggle}
-                />
-              </FormControl>
-            </FormItem>
+          {/* SEÇÃO: MODOS DE PREPARO */}
+          <div className="flex items-center justify-between rounded-lg p-3 bg-muted/40">
+            <span className="text-sm font-medium">Possui modos de preparo?</span>
+            <Switch checked={hasPrepareMethods} onCheckedChange={setHasPrepareMethods} />
+          </div>
 
-            {hasExtras && (
-              <ItemExtras
-                extras={extras}
-                onExtraChange={handleExtraChange}
-                onRemoveExtra={handleRemoveExtra}
-                onAddExtra={handleAddExtra}
-              />
-            )}
+          {hasPrepareMethods && (
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">Campos vazios serão ignorados ao salvar</p>
+              {prepareMethods.map((method, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <Input
+                    value={method.name}
+                    onChange={(e) => handlePrepareMethodChange(index, e.target.value)}
+                    placeholder="Ex: Mal passado, Ao ponto..."
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 shrink-0"
+                    onClick={() => handleRemovePrepareMethod(index)}
+                    disabled={prepareMethods.length <= 1}
+                  >
+                    <Trash2 className={`h-4 w-4 ${prepareMethods.length <= 1 ? 'text-muted-foreground/30' : 'text-destructive'}`} />
+                  </Button>
+                </div>
+              ))}
+              <button type="button" onClick={handleAddPrepareMethod} className="w-full border border-dashed border-gray-300 rounded-lg py-2 flex items-center justify-center gap-1.5 text-sm text-primary hover:bg-muted/30 transition-colors">
+                <Plus className="h-4 w-4" /> Adicionar
+              </button>
+            </div>
+          )}
 
-            <FormItem className="flex flex-row items-center justify-between rounded-lg p-4 bg-muted/40">
-              <FormLabel className="cursor-pointer text-sm font-bold text-foreground w-full">
-                MODO DE PREPARO?
-              </FormLabel>
-              <FormControl className="cursor-pointer">
-                <Switch
-                  checked={hasPrepareMethods}
-                  onCheckedChange={handlePrepareMethodsToggle}
-                />
-              </FormControl>
-            </FormItem>
+          <hr className="border-gray-100" />
 
-            {hasPrepareMethods && (
-              <ItemPrepareMethods
-                prepareMethods={prepareMethods}
-                onPrepareMethodChange={handlePrepareMethodChange}
-                onRemovePrepareMethod={handleRemovePrepareMethod}
-                onAddPrepareMethod={handleAddPrepareMethod}
-              />
-            )}
+          {/* SEÇÃO: ETAPAS */}
+          <div className="flex items-center justify-between rounded-lg p-3 bg-muted/40">
+            <span className="text-sm font-medium">Possui etapas de montagem?</span>
+            <Switch checked={hasSteps} onCheckedChange={setHasSteps} />
+          </div>
 
-            <FormItem className="flex flex-row items-center justify-between rounded-lg p-4 bg-muted/40">
-              <FormLabel className="cursor-pointer text-sm font-bold text-foreground w-full">
-                ETAPAS?
-              </FormLabel>
-              <FormControl className="cursor-pointer">
-                <Switch
-                  checked={hasSteps}
-                  onCheckedChange={handleStepsToggle}
-                />
-              </FormControl>
-            </FormItem>
+          {hasSteps && (
+            <div className="space-y-3">
+              <p className="text-xs text-muted-foreground">Etapas ou opções vazias serão ignoradas ao salvar</p>
+              {steps.map((step, stepIndex) => (
+                <div key={stepIndex} className="bg-muted/30 rounded-lg p-3 space-y-2">
+                  {/* Nome da etapa */}
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={step.name}
+                      onChange={(e) => handleStepNameChange(stepIndex, e.target.value)}
+                      placeholder="Nome da etapa (ex: Escolha o pão)"
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 shrink-0"
+                      onClick={() => handleRemoveStep(stepIndex)}
+                      disabled={steps.length <= 1}
+                    >
+                      <Trash2 className={`h-4 w-4 ${steps.length <= 1 ? 'text-muted-foreground/30' : 'text-destructive'}`} />
+                    </Button>
+                  </div>
 
-            {hasSteps && (
-              <ItemSteps
-                steps={steps}
-                onStepChange={handleStepChange}
-                onRemoveStep={handleRemoveStep}
-                onAddStep={handleAddStep}
-                onStepOptionChange={handleStepOptionChange}
-                onAddStepOption={handleAddStepOption}
-                onRemoveStepOption={handleRemoveStepOption}
-              />
-            )}
+                  {/* Opções da etapa */}
+                  <div className="pl-3 border-l-2 border-gray-200 space-y-1.5">
+                    <p className="text-xs font-medium">Opções:</p>
+                    {step.options.map((option, optionIndex) => (
+                      <div key={optionIndex} className="flex items-center gap-2">
+                        <span className="text-muted-foreground text-sm">•</span>
+                        <Input
+                          value={option.name}
+                          onChange={(e) => handleStepOptionChange(stepIndex, optionIndex, e.target.value)}
+                          placeholder="Nome da opção"
+                          className="flex-1 h-8 text-sm"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 shrink-0"
+                          onClick={() => handleRemoveStepOption(stepIndex, optionIndex)}
+                          disabled={step.options.length <= 1}
+                        >
+                          <Trash2 className={`h-3.5 w-3.5 ${step.options.length <= 1 ? 'text-muted-foreground/30' : 'text-destructive'}`} />
+                        </Button>
+                      </div>
+                    ))}
+                    <button type="button" onClick={() => handleAddStepOption(stepIndex)} className="w-full border border-dashed border-gray-200 rounded-md py-1.5 flex items-center justify-center gap-1 text-xs text-primary hover:bg-white transition-colors">
+                      <Plus className="h-3 w-3" /> Nova opção
+                    </button>
+                  </div>
+                </div>
+              ))}
+              <button type="button" onClick={handleAddStep} className="w-full border border-dashed border-gray-300 rounded-lg py-2 flex items-center justify-center gap-1.5 text-sm text-primary hover:bg-muted/30 transition-colors">
+                <Plus className="h-4 w-4" /> Nova etapa
+              </button>
+            </div>
+          )}
+        </div>
 
-            <Button onClick={form.handleSubmit(onSubmit)} className="w-full" disabled={isCreatingItem}>
-              {isCreatingItem ? <Loader2 className="animate-spin" /> : 'CRIAR ITEM'}
-            </Button>
-          </form>
-        </Form>
+        {/* Footer */}
+        <div className="flex gap-3 px-6 py-4 border-t border-gray-100">
+          <Button type="button" variant="outline" className="flex-1" onClick={handleClose} disabled={isCreatingItem}>
+            Cancelar
+          </Button>
+          <Button type="button" className="flex-1" onClick={handleSubmit} disabled={isCreatingItem}>
+            {isCreatingItem ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Criar Item'}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
-} 
+}
