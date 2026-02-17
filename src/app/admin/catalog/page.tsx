@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import ProtectedRoute from "@/components/protected-route"
+import ProtectedRoute from "@/components/protected-route";
 import AdminHeader from "@/components/admin/catalog-header";
 import { useState } from "react";
 import GroupModal from "@/components/admin/catalog/group-modal-create";
@@ -8,32 +8,65 @@ import { NewItemModal } from "@/components/admin/catalog/item-modal";
 import { ActionBar } from "@/components/admin/catalog/action-bar";
 import { useCatalogGroup } from "@/hooks/useCatalogGroup";
 import { ItemCard } from "@/components/admin/catalog/item-card";
-import { Edit2, Loader2, Trash } from "lucide-react";
+import { Edit2, Loader2, Package, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import GroupModalEdit from "@/components/admin/catalog/group-modal";
 import { DeleteConfirmation } from "@/components/ui/delete-confirmation";
+
+// =============================================================================
+// FUNÇÕES AUXILIARES
+// =============================================================================
+
+const getPriorityColor = (priority?: number) => {
+  if (!priority) return "text-muted-foreground";
+  if (priority <= 3) return "text-red-500";
+  if (priority <= 6) return "text-amber-500";
+  return "text-emerald-500";
+};
+
+// =============================================================================
+// COMPONENTE PRINCIPAL
+// =============================================================================
 
 function CatalogPage() {
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
-  const [isGroupModalOpenEdit, setIsGroupModalOpenEdit] = useState(false);
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<string | null>(null);
   const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] = useState(false);
   const [groupIdToDelete, setGroupIdToDelete] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const { isLoading, catalog, deleteCatalogGroup, isDeletingGroup } = useCatalogGroup();
+
+  const groups = catalog?.data || [];
+  const validGroups = [...groups]
+    .filter((group: any) => group && group.attributes && group.attributes.name)
+    .sort((a: any, b: any) => (b.attributes.priority || 0) - (a.attributes.priority || 0));
+
+  const handleCreateGroup = () => {
+    setEditingGroup(null);
+    setIsGroupModalOpen(true);
+  };
+
   const handleEditGroup = (groupId: string) => {
     setEditingGroup(groupId);
-    setIsGroupModalOpenEdit(true);
+    setIsGroupModalOpen(true);
   };
 
   const handleDeleteGroup = async () => {
     if (groupIdToDelete) {
       await deleteCatalogGroup(groupIdToDelete);
-      // Close confirmation after successful deletion
       setIsDeleteConfirmationOpen(false);
     }
     setGroupIdToDelete(null);
   };
+
+  const handleCloseGroupModal = () => {
+    setIsGroupModalOpen(false);
+    setEditingGroup(null);
+  };
+
+  // =============================================================================
+  // RENDER
+  // =============================================================================
 
   return (
     <ProtectedRoute>
@@ -42,74 +75,121 @@ function CatalogPage() {
           title="CATÁLOGO"
           description="Gerencie seu catálogo, estoque e disponibilidade dos itens"
         />
-        
+
         <div className="flex-1 px-4 sm:px-6 lg:px-8 max-w-8xl mx-auto w-full">
-          <ActionBar onNewGroup={() => setIsGroupModalOpen(true)} onNewItem={() => setIsItemModalOpen(true)} hasGroups={!!catalog?.data?.length} />
-          
-          <GroupModal isOpen={isGroupModalOpen} onOpenChange={setIsGroupModalOpen} />
-          <GroupModalEdit isOpen={isGroupModalOpenEdit} onOpenChange={setIsGroupModalOpenEdit} editingGroup={editingGroup as never} />
+          <ActionBar
+            onNewGroup={handleCreateGroup}
+            onNewItem={() => setIsItemModalOpen(true)}
+            hasGroups={validGroups.length > 0}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+          />
+
+          <GroupModal
+            isOpen={isGroupModalOpen}
+            onOpenChange={(open) => {
+              if (!open) handleCloseGroupModal();
+            }}
+            editingGroup={editingGroup}
+          />
           <NewItemModal isOpen={isItemModalOpen} onOpenChange={setIsItemModalOpen} />
-          
+
+          {/* Loading */}
           {isLoading ? (
-            <div className="flex justify-center w-full py-12">
-              <Loader2 className="h-10 w-10 animate-spin" />
+            <div className="flex flex-col items-center justify-center w-full py-12 gap-3">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="text-sm text-muted-foreground">Carregando catálogo...</p>
+            </div>
+          ) : validGroups.length === 0 ? (
+            /* Empty State */
+            <div className="flex flex-col items-center justify-center py-16 gap-4">
+              <Package className="h-10 w-10 text-muted-foreground" />
+              <h3 className="text-base font-semibold text-foreground">Nenhum grupo encontrado</h3>
+              <p className="text-sm text-muted-foreground text-center max-w-xs leading-relaxed">
+                Crie seu primeiro grupo para começar a organizar seus produtos
+              </p>
+              <Button onClick={handleCreateGroup} className="gap-2">
+                <Plus className="h-4 w-4" />
+                Criar Primeiro Grupo
+              </Button>
             </div>
           ) : (
-            <div className="flex flex-col gap-6 w-full pb-8">
-              {catalog?.data?.map((group) => (
-                <div key={group.id} className="flex flex-col gap-4 bg-accent p-4 sm:p-6 lg:p-8 rounded-lg">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full gap-4">
-                    <h2 className="text-xl font-semibold text-gray-800 break-words">{group.attributes.name}</h2>
-                    <div className="flex gap-2 sm:gap-3">
-                      <Button 
-                        variant="ghost" 
-                        className="font-outfit rounded-xs py-2 px-4 sm:py-3 sm:px-6 flex items-center justify-center gap-2 bg-muted hover:bg-muted/80 border-none shadow-none text-muted-foreground text-sm"
-                        onClick={() => handleEditGroup(group.id)}
-                      >
-                        <Edit2 className="w-4 h-4" />
-                        <span>Editar</span>
-                      </Button>
-                      <Button 
-                        variant="destructive" 
-                        className="font-outfit rounded-xs py-2 px-4 sm:py-3 sm:px-6 flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 border-none shadow-none text-sm"
-                        onClick={() => {
-                          setGroupIdToDelete(group.id);
-                          setIsDeleteConfirmationOpen(true);
-                        }}
-                      >
-                        <Trash className="w-4 h-4 text-white" />
-                        <span className="text-white">Excluir</span>
-                      </Button>
+            /* Lista de Grupos */
+            <div className="flex flex-col gap-4 w-full pb-8">
+              {validGroups.map((group: any) => (
+                <div
+                  key={group.id}
+                  className="bg-white rounded-xl border border-gray-200 overflow-hidden"
+                >
+                  {/* Header do grupo */}
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                    <div className="flex-1 min-w-0 mr-3">
+                      <h2 className="text-base font-semibold text-foreground truncate">
+                        {group.attributes.name}
+                      </h2>
+                      {group.attributes.description && (
+                        <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                          {group.attributes.description}
+                        </p>
+                      )}
+                      {group.attributes.priority && (
+                        <p className={`text-[11px] font-medium mt-1 ${getPriorityColor(group.attributes.priority)}`}>
+                          Prioridade: {group.attributes.priority}
+                        </p>
+                      )}
                     </div>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 px-3 gap-1.5 text-xs text-muted-foreground"
+                      onClick={() => handleEditGroup(group.id)}
+                    >
+                      <Edit2 className="h-3.5 w-3.5" />
+                      Editar
+                    </Button>
                   </div>
-                  
-                  <div className="w-full">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-                      {(() => {
-                        const rawItems: any = (group.attributes as any).items;
-                        const items: any[] = Array.isArray(rawItems)
-                          ? rawItems
-                          : (rawItems?.data || []);
-                        if (items.length === 0) {
-                          return (
-                            <div className="col-span-full text-start text-gray-500 py-8">
-                              Este grupo não possui itens
-                            </div>
-                          );
-                        }
-                        return items.map((raw: any) => {
-                          const node = raw?.data ? raw.data : raw;
-                          const attrs = node.attributes;
-                          return (
-                            <div key={node.id} className="min-h-[350px] w-full">
-                              <ItemCard 
-                                key={node.id} 
+
+                  {/* Items do grupo */}
+                  <div className="p-3">
+                    {(() => {
+                      const rawItems: any = (group.attributes as any).items;
+                      const allItems: any[] = Array.isArray(rawItems)
+                        ? rawItems
+                        : rawItems?.data || [];
+
+                      const query = searchQuery.trim().toLowerCase();
+                      const items = query
+                        ? allItems.filter((raw: any) => {
+                            const node = raw?.data ? raw.data : raw;
+                            return node.attributes?.name?.toLowerCase().includes(query);
+                          })
+                        : allItems;
+
+                      if (items.length === 0) {
+                        return (
+                          <div className="text-center py-6">
+                            <p className="text-sm text-muted-foreground">
+                              {query ? "Nenhum item encontrado" : "Este grupo não possui itens"}
+                            </p>
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                          {items.map((raw: any) => {
+                            const node = raw?.data ? raw.data : raw;
+                            const attrs = node.attributes;
+                            return (
+                              <ItemCard
+                                key={node.id}
                                 item={{
                                   id: parseInt(node.id),
                                   catalog_group_id: parseInt(group.id),
                                   name: attrs.name,
                                   description: attrs.description,
-                                  item_type: attrs.item_type as 'unit' | 'weight_per_kg' | 'weight_per_g',
+                                  item_type: attrs.item_type as "unit" | "weight_per_kg" | "weight_per_g",
                                   price: attrs.price,
                                   price_with_discount: attrs.price_with_discount as number,
                                   measure_interval: attrs.measure_interval as number,
@@ -118,14 +198,14 @@ function CatalogPage() {
                                   image: attrs.image_url as string,
                                   catalog_item_extras_attributes: attrs.extra?.data as unknown as any[],
                                   catalog_item_prepare_methods_attributes: attrs.prepare_method?.data as unknown as any[],
-                                  catalog_item_steps_attributes: attrs.steps?.data as unknown as any[]
-                                }} 
+                                  catalog_item_steps_attributes: attrs.steps?.data as unknown as any[],
+                                }}
                               />
-                            </div>
-                          );
-                        });
-                      })()}
-                    </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               ))}
@@ -142,7 +222,7 @@ function CatalogPage() {
         type="grupo"
       />
     </ProtectedRoute>
-  )
+  );
 }
 
-export default CatalogPage
+export default CatalogPage;

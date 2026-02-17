@@ -1,4 +1,4 @@
-import { Filter, Plus, Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -6,48 +6,40 @@ interface ActionBarProps {
   onNewGroup: () => void;
   onNewItem: () => void;
   hasGroups?: boolean;
+  searchQuery: string;
+  onSearchChange: (value: string) => void;
 }
 
-export function ActionBar({ onNewGroup, onNewItem, hasGroups = true }: ActionBarProps) {
+export function ActionBar({ onNewGroup, onNewItem, hasGroups = true, searchQuery, onSearchChange }: ActionBarProps) {
   return (
-    <div className="flex flex-col gap-4 mb-6 lg:gap-3 lg:flex-row">
-      <div className="relative w-full lg:flex-1">
-        <div className="relative flex items-center bg-muted rounded-lg h-full px-8 opacity-60">
-          <Search className="absolute left-4 w-4 h-4 text-muted-foreground" />
-          <Input 
-            placeholder="Buscar itens..." 
-            className="rounded-lg font-outfit py-3 pl-10 pr-4 bg-transparent border-none shadow-none placeholder:text-muted-foreground focus-visible:ring-0 w-full text-sm"
-          />
-        </div>
+    <div className="flex gap-3 mb-6">
+      <div className="relative flex-[2]">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input
+          value={searchQuery}
+          onChange={(e) => onSearchChange(e.target.value)}
+          placeholder="Buscar por nome..."
+          className="pl-9 text-sm"
+        />
       </div>
 
-      <div className="grid grid-cols-2 gap-3 w-full lg:flex lg:gap-3 lg:w-auto">
-        <Button 
-          variant="ghost" 
-          className="font-outfit rounded-lg py-3 px-4 flex items-center justify-center gap-2 bg-muted hover:bg-muted/80 border-none shadow-none text-muted-foreground text-sm lg:flex-1 opacity-60"
-        >
-          <Filter className="w-4 h-4" />
-          <span className="whitespace-nowrap">Grupos</span>
-        </Button>
-        
-        <Button 
-          variant="ghost" 
-          className="font-outfit rounded-lg py-3 px-4 flex items-center justify-center gap-2 bg-muted hover:bg-muted/80 border-none shadow-none text-muted-foreground text-sm lg:flex-1"
-          onClick={onNewGroup}
-        >
-          <Plus className="w-4 h-4" />
-          <span>Novo grupo</span>
-        </Button>
+      <Button
+        variant="outline"
+        className="flex-1 py-2.5 px-4 flex items-center justify-center gap-2 text-sm text-muted-foreground"
+        onClick={onNewGroup}
+      >
+        <Plus className="w-4 h-4" />
+        <span>Novo Grupo</span>
+      </Button>
 
-        <Button
-          className="font-outfit rounded-lg cursor-pointer col-span-2 py-3 px-4 bg-primary hover:bg-primary/90 text-primary-foreground flex items-center justify-center gap-2 text-sm lg:col-auto lg:flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
-          onClick={onNewItem}
-          disabled={!hasGroups}
-        >
-          <Plus className="w-4 h-4" />
-          <span>Novo item</span>
-        </Button>
-      </div>
+      <Button
+        className="flex-1 py-2.5 px-4 flex items-center justify-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+        onClick={onNewItem}
+        disabled={!hasGroups}
+      >
+        <Plus className="w-4 h-4" />
+        <span>Novo Item</span>
+      </Button>
     </div>
   );
 }
