@@ -1,6 +1,9 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { scheduleService, ShopScheduleConfig, DaySchedule } from "../services/scheduleService";
 
+// Tipo para as chaves dos dias da semana
+export type DayKey = "sunday" | "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday";
+
 export interface WeekSchedule {
   sunday: DaySchedule;
   monday: DaySchedule;
