@@ -1,7 +1,8 @@
 "use client"
 
-import { Search } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { useState } from 'react';
+import { Search, ChevronDown } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import ProductCard from './product-card';
 import { normalizeItems } from '../normalize-items';
 import type { CatalogItem } from '../types';
@@ -14,6 +15,16 @@ interface ProductGridProps {
 }
 
 export default function ProductGrid({ categories, activeCategory, searchQuery, onClearSearch }: ProductGridProps) {
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+
+  const toggleGroup = (id: string) => {
+    setCollapsedGroups(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
   const filteredCategories = categories.map(group => ({
     ...group,
     items: normalizeItems(group.attributes.items).filter(item =>
@@ -50,42 +61,61 @@ export default function ProductGrid({ categories, activeCategory, searchQuery, o
 
   return (
     <div className="space-y-10">
-      {filteredCategories.map((group) => (
-        <section
-          key={group.id}
-          id={group.attributes.name.toLowerCase().replace(/\s+/g, '-')}
-          className="scroll-mt-48"
-        >
-          <div className="flex items-center justify-between mb-5 px-0.5">
-            <h2 className="text-base font-bold text-foreground">
-              {group.attributes.name}
-            </h2>
-            <span className="text-xs text-muted-foreground bg-gray-100 px-2.5 py-1 rounded-full">
-              {group.items.length} {group.items.length === 1 ? 'item' : 'itens'}
-            </span>
-          </div>
+      {filteredCategories.map((group) => {
+        const isCollapsed = collapsedGroups.has(group.id);
 
-          <motion.div
-            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true, margin: "-80px" }}
-            transition={{ duration: 0.3 }}
+        return (
+          <section
+            key={group.id}
+            id={group.attributes.name.toLowerCase().replace(/\s+/g, '-')}
+            className="scroll-mt-48"
           >
-            {group.items.map((item: CatalogItem, index: number) => (
-              <motion.div
-                key={item.id}
-                initial={{ opacity: 0, y: 8 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.25, delay: index * 0.04 }}
-              >
-                <ProductCard item={item} index={index} />
-              </motion.div>
-            ))}
-          </motion.div>
-        </section>
-      ))}
+            <div
+              className="flex items-center justify-between mb-5 px-0.5 cursor-pointer select-none"
+              onClick={() => toggleGroup(group.id)}
+            >
+              <div className="flex items-center gap-2.5">
+                <ChevronDown
+                  className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`}
+                />
+                <h2 className="text-base font-bold text-foreground">
+                  {group.attributes.name}
+                </h2>
+              </div>
+              <span className="text-xs text-muted-foreground bg-gray-100 px-2.5 py-1 rounded-full">
+                {group.items.length} {group.items.length === 1 ? 'item' : 'itens'}
+              </span>
+            </div>
+
+            <AnimatePresence initial={false}>
+              {!isCollapsed && (
+                <motion.div
+                  key="content"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2, ease: 'easeInOut' }}
+                  style={{ overflow: 'hidden' }}
+                >
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+                    {group.items.map((item: CatalogItem, index: number) => (
+                      <motion.div
+                        key={item.id}
+                        initial={{ opacity: 0, y: 8 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.25, delay: index * 0.04 }}
+                      >
+                        <ProductCard item={item} index={index} />
+                      </motion.div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </section>
+        );
+      })}
     </div>
   );
 }

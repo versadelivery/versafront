@@ -112,7 +112,7 @@ export default function OrdersPage() {
     return (
       <>
         {nav}
-        <div className="min-h-screen bg-gray-50/40 flex items-center justify-center px-4">
+        <div className="h-[calc(100vh-4rem)] bg-gray-50/40 flex items-center justify-center px-4">
           <div className="text-center max-w-sm">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <ShoppingBag className="w-7 h-7 text-muted-foreground" />
@@ -132,7 +132,7 @@ export default function OrdersPage() {
     return (
       <>
         {nav}
-        <div className="min-h-screen bg-gray-50/40 flex items-center justify-center">
+        <div className="h-[calc(100vh-4rem)] bg-gray-50/40 flex items-center justify-center">
           <div className="flex flex-col items-center gap-3">
             <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
             <p className="text-sm text-muted-foreground">Carregando pedidos...</p>
@@ -146,7 +146,7 @@ export default function OrdersPage() {
     return (
       <>
         {nav}
-        <div className="min-h-screen bg-gray-50/40 flex items-center justify-center px-4">
+        <div className="h-[calc(100vh-4rem)] bg-gray-50/40 flex items-center justify-center px-4">
           <div className="text-center max-w-sm">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <ShoppingBag className="w-7 h-7 text-muted-foreground" />

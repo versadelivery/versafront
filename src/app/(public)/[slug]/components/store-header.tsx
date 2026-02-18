@@ -103,7 +103,7 @@ export default function StoreHeader({ shop }: StoreHeaderProps) {
             </div>
 
             <div className="flex-1 min-w-0 pt-0.5">
-              <h1 className="text-xl sm:text-2xl font-bold text-muted-foreground uppercase tracking-wide leading-tight">
+              <h1 className="text-xl sm:text-2xl font-bold text-primary uppercase tracking-wide leading-tight">
                 {attributes.name}
               </h1>
               <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-2">
