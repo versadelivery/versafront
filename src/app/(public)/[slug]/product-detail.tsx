@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Sheet,
   SheetContent,
@@ -9,14 +9,107 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Slider } from "@/components/ui/slider";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { CatalogItem } from "./types";
 import { formatPrice } from "./format-price";
-import { Minus, Plus, Utensils, PlusCircle, ShoppingCart, X } from "lucide-react";
+import { Minus, Plus, Utensils, PlusCircle, ShoppingCart, X, Info } from "lucide-react";
 import { useCart } from "./cart/cart-context";
+
+const ITEM_H = 44;
+const VISIBLE = 5;
+const PAD = 2;
+
+function WeightPicker({ min, max, step, value, onChange }: {
+  min: number; max: number; step: number; value: number; onChange: (v: number) => void;
+}) {
+  const precision = (step.toString().split('.')[1] ?? '').length;
+
+  const options: number[] = [];
+  for (let i = 0; ; i++) {
+    const v = parseFloat((min + i * step).toFixed(precision));
+    if (v > max) break;
+    options.push(v);
+  }
+
+  const fmt = (v: number) => {
+    if (v < 1) return `${Math.round(v * 1000)}g`;
+    const str = v.toFixed(precision).replace(/\.?0+$/, '');
+    return `${str} kg`;
+  };
+
+  const listRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const idx = options.findIndex(o => Math.abs(o - value) < step * 0.01);
+    if (listRef.current && idx >= 0) {
+      listRef.current.scrollTop = idx * ITEM_H;
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleScroll = () => {
+    if (!listRef.current) return;
+    const idx = Math.round(listRef.current.scrollTop / ITEM_H);
+    const v = options[Math.max(0, Math.min(options.length - 1, idx))];
+    if (v !== undefined && Math.abs(v - value) > step * 0.001) onChange(v);
+  };
+
+  return (
+    <div
+      className="relative mx-auto overflow-hidden rounded-2xl border border-gray-100"
+      style={{ height: ITEM_H * VISIBLE, maxWidth: 240 }}
+    >
+      {/* Fade top */}
+      <div
+        className="absolute inset-x-0 top-0 z-10 pointer-events-none"
+        style={{ height: ITEM_H * PAD, background: 'linear-gradient(to bottom, white 40%, transparent)' }}
+      />
+      {/* Fade bottom */}
+      <div
+        className="absolute inset-x-0 bottom-0 z-10 pointer-events-none"
+        style={{ height: ITEM_H * PAD, background: 'linear-gradient(to top, white 40%, transparent)' }}
+      />
+      {/* Highlight row */}
+      <div
+        className="absolute inset-x-0 z-0 pointer-events-none bg-gray-50"
+        style={{ top: ITEM_H * PAD, height: ITEM_H, borderTop: '1px solid #e5e7eb', borderBottom: '1px solid #e5e7eb' }}
+      />
+      {/* Scroll list */}
+      <div
+        ref={listRef}
+        onScroll={handleScroll}
+        className="relative z-0 h-full overflow-y-scroll [&::-webkit-scrollbar]:hidden"
+        style={{ scrollSnapType: 'y mandatory', scrollbarWidth: 'none' }}
+      >
+        <div aria-hidden style={{ height: ITEM_H * PAD }} />
+        {options.map((v) => {
+          const selected = Math.abs(v - value) < step * 0.001;
+          return (
+            <div
+              key={v}
+              style={{ height: ITEM_H, scrollSnapAlign: 'center' }}
+              className={`flex items-center justify-center cursor-pointer transition-all duration-150 ${
+                selected
+                  ? 'text-base font-bold text-foreground'
+                  : 'text-sm font-normal text-muted-foreground'
+              }`}
+              onClick={() => {
+                const idx = options.indexOf(v);
+                listRef.current?.scrollTo({ top: idx * ITEM_H, behavior: 'smooth' });
+                onChange(v);
+              }}
+            >
+              {fmt(v)}
+            </div>
+          );
+        })}
+        <div aria-hidden style={{ height: ITEM_H * PAD }} />
+      </div>
+    </div>
+  );
+}
 
 interface ProductModalProps {
   product: CatalogItem;
@@ -181,41 +274,22 @@ export default function ProductModal({ product, trigger }: ProductModalProps) {
             {/* Quantidade / Peso */}
             <div>
               <p className="text-sm font-semibold text-foreground mb-3">
-                {isWeightBased ? 'Peso (kg)' : 'Quantidade'}
+                {isWeightBased ? 'Você gostaria de quanto?' : 'Quantidade'}
               </p>
 
               {isWeightBased ? (
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <button
-                      className="h-9 w-9 rounded-full border border-gray-200 flex items-center justify-center hover:bg-gray-50 disabled:opacity-40 transition-colors"
-                      onClick={() => setWeight(prev => Math.max(attributes.min_weight || 1, prev - (attributes.measure_interval || 0.5)))}
-                      disabled={weight <= (attributes.min_weight || 1)}
-                    >
-                      <Minus className="h-4 w-4 text-muted-foreground" />
-                    </button>
-                    <div className="flex-1">
-                      <Slider
-                        value={[weight]}
-                        min={attributes.min_weight || 1}
-                        max={attributes.max_weight || 10}
-                        step={attributes.measure_interval || 0.5}
-                        onValueChange={v => setWeight(v[0])}
-                      />
-                    </div>
-                    <button
-                      className="h-9 w-9 rounded-full border border-gray-200 flex items-center justify-center hover:bg-gray-50 disabled:opacity-40 transition-colors"
-                      onClick={() => setWeight(prev => Math.min(attributes.max_weight || 10, prev + (attributes.measure_interval || 0.5)))}
-                      disabled={weight >= (attributes.max_weight || 10)}
-                    >
-                      <Plus className="h-4 w-4 text-muted-foreground" />
-                    </button>
-                  </div>
-                  <div className="flex justify-between text-xs text-muted-foreground px-1">
-                    <span>{attributes.min_weight || 1}kg</span>
-                    <span className="font-semibold text-foreground">{weight}kg selecionado</span>
-                    <span>{attributes.max_weight || 10}kg</span>
-                  </div>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                    <Info className="w-3.5 h-3.5 flex-shrink-0" />
+                    Produtos por kg podem variar na pesagem.
+                  </p>
+                  <WeightPicker
+                    min={attributes.min_weight || 0.1}
+                    max={attributes.max_weight || 10}
+                    step={attributes.measure_interval || 0.1}
+                    value={weight}
+                    onChange={setWeight}
+                  />
                 </div>
               ) : (
                 <div className="inline-flex items-center rounded-full border border-gray-200 overflow-hidden bg-gray-50/50">
