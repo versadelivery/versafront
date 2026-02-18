@@ -72,7 +72,7 @@ export interface CatalogItem {
   attributes: {
     name: string;
     description: string;
-    item_type: 'unit' | 'weight_per_kg';
+    item_type: 'unit' | 'weight_per_g' | 'weight_per_kg';
     price: number;
     price_with_discount: number | null;
     measure_interval: number | null;
@@ -80,6 +80,21 @@ export interface CatalogItem {
     max_weight: number | null;
     priority: number;
     image_url: string | null;
+    cost?: number | null;
+    ncm_code?: string | null;
+    highlight?: boolean;
+    sunday_active?: boolean;
+    monday_active?: boolean;
+    tuesday_active?: boolean;
+    wednesday_active?: boolean;
+    thursday_active?: boolean;
+    friday_active?: boolean;
+    saturday_active?: boolean;
+    promotion_tag?: boolean;
+    best_seller_tag?: boolean;
+    new_tag?: boolean;
+    available_delivery?: boolean;
+    available_dine_in?: boolean;
     extra: {
       data: CatalogItemExtra[];
     };

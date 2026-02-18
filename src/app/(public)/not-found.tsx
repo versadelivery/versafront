@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { Compass, Map } from "lucide-react";
@@ -10,6 +10,23 @@ import Image from "next/image";
 export default function NotFound() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [countdown, setCountdown] = useState(10);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const particles = useMemo(() =>
+    Array.from({ length: 20 }).map((_, i) => ({
+      id: i,
+      width: Math.random() * 80 + 20,
+      height: Math.random() * 80 + 20,
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 100}%`,
+      animateY: Math.random() * 100 - 50,
+      duration: Math.random() * 10 + 10,
+    })),
+  []);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -38,28 +55,29 @@ export default function NotFound() {
   return (
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-b from-background to-secondary/20">
       <div className="absolute inset-0 overflow-hidden">
-        {Array.from({ length: 20 }).map((_, i) => (
+        {mounted && particles.map((p) => (
           <motion.div
-            key={i}
+            key={p.id}
             className="absolute rounded-full bg-primary/5"
             style={{
-              width: Math.random() * 80 + 20,
-              height: Math.random() * 80 + 20,
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
+              width: p.width,
+              height: p.height,
+              left: p.left,
+              top: p.top,
             }}
             animate={{
-              y: [0, Math.random() * 100 - 50],
+              y: [0, p.animateY],
               opacity: [0.1, 0.3, 0.1],
             }}
             transition={{
-              duration: Math.random() * 10 + 10,
+              duration: p.duration,
               repeat: Infinity,
               ease: "easeInOut",
             }}
           />
         ))}
       </div>
+
 
       <Card className="relative max-w-4xl w-full mx-4 overflow-hidden border border-border/40 bg-card/80 backdrop-blur-sm">
         <div className="relative z-10 flex flex-col lg:flex-row items-center p-6 lg:p-12">

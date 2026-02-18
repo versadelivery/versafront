@@ -14,6 +14,24 @@ interface ProductGridProps {
   onClearSearch: () => void;
 }
 
+const DAY_KEYS = [
+  'sunday_active',
+  'monday_active',
+  'tuesday_active',
+  'wednesday_active',
+  'thursday_active',
+  'friday_active',
+  'saturday_active',
+] as const;
+
+function isItemActiveToday(item: CatalogItem): boolean {
+  const attrs = item.attributes as any;
+  const dayKey = DAY_KEYS[new Date().getDay()];
+  // Se o campo não existe (undefined), o item é exibido normalmente
+  if (attrs[dayKey] === undefined) return true;
+  return !!attrs[dayKey];
+}
+
 export default function ProductGrid({ categories, activeCategory, searchQuery, onClearSearch }: ProductGridProps) {
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
@@ -27,11 +45,14 @@ export default function ProductGrid({ categories, activeCategory, searchQuery, o
 
   const filteredCategories = categories.map(group => ({
     ...group,
-    items: normalizeItems(group.attributes.items).filter(item =>
-      item.attributes.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.attributes.description?.toLowerCase().includes(searchQuery.toLowerCase())
+    items: normalizeItems(group.attributes.items).filter((item: CatalogItem) =>
+      isItemActiveToday(item) && (
+        item.attributes.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.attributes.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
     )
   })).filter(group => group.items.length > 0);
+
 
   if (filteredCategories.length === 0) {
     return (

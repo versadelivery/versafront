@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { CatalogItem } from './types';
-import { ListChecks, Utensils, PlusCircle, ChevronRight, Scale, Star } from 'lucide-react';
+import { Utensils, PlusCircle, ChevronRight, Scale } from 'lucide-react';
 import { formatPrice } from './format-price';
 import ProductModal from './product-detail';
 
@@ -11,11 +11,9 @@ interface ItemCardProps {
 }
 
 const ItemCard: React.FC<ItemCardProps> = ({ item, onClick, className }) => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const { attributes } = item;
 
   const handleClick = () => {
-    setIsModalOpen(true);
     onClick?.();
   };
 
@@ -28,7 +26,13 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onClick, className }) => {
 
   const hasDiscount = attributes.price_with_discount !== null && 
                       attributes.price_with_discount !== undefined &&
-                      attributes.price_with_discount < attributes.price;
+                      Number(attributes.price_with_discount) < Number(attributes.price);
+
+  const discountPercent = hasDiscount
+    ? Math.round(((Number(attributes.price) - Number(attributes.price_with_discount)) / Number(attributes.price)) * 100)
+    : 0;
+
+  const hasImage = !!attributes.image_url;
 
   return (
     <>
@@ -40,9 +44,9 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onClick, className }) => {
             className={`bg-white rounded-xs shadow-sm hover:shadow-md overflow-hidden cursor-pointer transition-all duration-300 flex flex-col h-full group ${className}`}
           >
             <div className="relative pt-[75%] overflow-hidden">
-              {attributes.image_url ? (
+              {hasImage ? (
                 <img 
-                  src={attributes.image_url} 
+                  src={attributes.image_url!} 
                   alt={attributes.name}
                   className="absolute top-0 left-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   onError={(e) => {
@@ -54,18 +58,64 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onClick, className }) => {
                   <Utensils className="w-12 h-12 text-gray-300" />
                 </div>
               )}
-              
-              {hasDiscount && (
-                <div className="absolute top-3 right-3 bg-primary text-white text-xs font-bold px-2 py-1 rounded-full shadow-md">
-                  {Math.round(
-                    ((attributes.price - (attributes.price_with_discount || 0)) / attributes.price * 100)
-                  )}% Desconto
+
+              {/* Tags no canto superior esquerdo */}
+              {hasImage && (
+                <div className="absolute top-2 left-2 flex flex-col gap-1 z-10">
+                  {attributes.new_tag && (
+                    <div className="bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md whitespace-nowrap">
+                      NOVO!
+                    </div>
+                  )}
+                  {attributes.best_seller_tag && (
+                    <div className="bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md whitespace-nowrap">
+                      MAIS VENDIDO
+                    </div>
+                  )}
+                  {attributes.highlight && (
+                    <div className="bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md whitespace-nowrap">
+                      DESTAQUE
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Badge de desconto */}
+              {(hasDiscount || attributes.promotion_tag) && (
+                <div className="absolute top-3 right-3 bg-primary text-white text-xs font-bold px-2 py-1 rounded-full shadow-md z-10">
+                  {hasDiscount ? `${discountPercent}% OFF` : 'PROMOÇÃO'}
                 </div>
               )}
             </div>
             
             <div className="p-3 sm:p-4 flex flex-col flex-grow">
               <div className="flex-grow">
+                {/* Tags sem imagem */}
+                {!hasImage && (
+                  <div className="flex flex-wrap gap-1 mb-1.5">
+                    {attributes.new_tag && (
+                      <div className="bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap">
+                        NOVO!
+                      </div>
+                    )}
+                    {attributes.best_seller_tag && (
+                      <div className="bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap">
+                        MAIS VENDIDO
+                      </div>
+                    )}
+                    {attributes.highlight && (
+                      <div className="bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap">
+                        DESTAQUE
+                      </div>
+                    )}
+                    {(hasDiscount || attributes.promotion_tag) && (
+                      <div className="bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap">
+                        {hasDiscount ? `${discountPercent}% OFF` : 'PROMOÇÃO'}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <h3 className="font-bold text-base sm:text-lg text-gray-900 line-clamp-2 mb-1 sm:mb-2 hover:break-words">
                   {attributes.name}
                 </h3>
@@ -79,15 +129,15 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onClick, className }) => {
                 {hasDiscount ? (
                   <div className="flex items-end gap-1 sm:gap-2">
                     <span className="text-primary font-bold text-lg sm:text-xl">
-                      {formatPrice(attributes.price_with_discount)}
+                      {formatPrice(Number(attributes.price_with_discount))}
                     </span>
                     <span className="text-gray-400 text-xs sm:text-sm line-through mb-0.5">
-                      {formatPrice(attributes.price)}
+                      {formatPrice(Number(attributes.price))}
                     </span>
                   </div>
                 ) : (
                   <span className="text-gray-900 font-bold text-lg sm:text-xl">
-                    {formatPrice(attributes.price)}
+                    {formatPrice(Number(attributes.price))}
                   </span>
                 )}
                 

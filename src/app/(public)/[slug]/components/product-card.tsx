@@ -17,6 +17,8 @@ export default function ProductCard({ item, index }: ProductCardProps) {
     attributes.price_with_discount !== undefined &&
     Number(attributes.price_with_discount) < Number(attributes.price);
 
+  const hasImage = !!attributes.image_url;
+
   return (
     <ProductModal
       product={item}
@@ -24,9 +26,9 @@ export default function ProductCard({ item, index }: ProductCardProps) {
         <div className="group relative bg-white hover:bg-gray-50/80 rounded-2xl border border-gray-100 hover:border-gray-200 hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col h-full overflow-hidden">
           {/* Image */}
           <div className="relative aspect-square w-full flex-shrink-0 overflow-hidden bg-gray-100">
-            {attributes.image_url ? (
+            {hasImage ? (
               <img
-                src={attributes.image_url}
+                src={attributes.image_url!}
                 alt={attributes.name}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 onError={(e) => {
@@ -39,19 +41,67 @@ export default function ProductCard({ item, index }: ProductCardProps) {
               </div>
             )}
 
-            {hasDiscount && (
-              <div className="absolute top-2 left-2 bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                {Math.round(
-                  ((Number(attributes.price) - Number(attributes.price_with_discount)) /
-                    Number(attributes.price)) *
-                    100
-                )}% OFF
+            {/* Tags no canto superior esquerdo (sobre a imagem) */}
+            {hasImage && (
+              <div className="absolute top-2 left-2 flex flex-col gap-1 z-10">
+                {attributes.new_tag && (
+                  <div className="bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md whitespace-nowrap">
+                    NOVO!
+                  </div>
+                )}
+                {attributes.best_seller_tag && (
+                  <div className="bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md whitespace-nowrap">
+                    MAIS VENDIDO
+                  </div>
+                )}
+                {attributes.highlight && (
+                  <div className="bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md whitespace-nowrap">
+                    DESTAQUE
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Badge de desconto/promoção no canto superior direito */}
+            {hasImage && (hasDiscount || attributes.promotion_tag) && (
+              <div className="absolute top-2 right-2 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md z-10 whitespace-nowrap">
+                {hasDiscount
+                  ? `${Math.round(((Number(attributes.price) - Number(attributes.price_with_discount)) / Number(attributes.price)) * 100)}% OFF`
+                  : 'PROMOÇÃO'}
               </div>
             )}
           </div>
 
           {/* Content */}
           <div className="p-3 flex flex-col flex-1 min-w-0">
+            {/* Tags sem imagem */}
+            {!hasImage && (
+              <div className="flex flex-wrap gap-1 mb-1.5">
+                {attributes.new_tag && (
+                  <div className="bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap">
+                    NOVO!
+                  </div>
+                )}
+                {attributes.best_seller_tag && (
+                  <div className="bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap">
+                    MAIS VENDIDO
+                  </div>
+                )}
+                {attributes.highlight && (
+                  <div className="bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap">
+                    DESTAQUE
+                  </div>
+                )}
+                {(hasDiscount || attributes.promotion_tag) && (
+                  <div className="bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap">
+                    {hasDiscount
+                      ? `${Math.round(((Number(attributes.price) - Number(attributes.price_with_discount)) / Number(attributes.price)) * 100)}% OFF`
+                      : 'PROMOÇÃO'}
+                  </div>
+                )}
+              </div>
+            )}
+
             <h3 className="font-semibold text-foreground text-xs sm:text-sm line-clamp-2 leading-snug mb-1 group-hover:text-primary transition-colors">
               {attributes.name}
             </h3>
