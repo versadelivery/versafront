@@ -2,7 +2,7 @@
 
 import { Edit2, Scale, Plus, ChefHat, ListChecks, ImageOff } from "lucide-react";
 import Image from "next/image";
-import { useState } from "react";
+import React, { useState } from "react";
 import { ItemDetailsModal } from "./item-details-modal";
 import { EditItemModal } from "./edit-item-modal";
 import { fixImageUrl } from "@/utils/image-url";
@@ -24,6 +24,10 @@ interface ItemCardProps {
     max_weight?: number;
     measure_interval?: number;
     image?: string;
+    new_tag?: boolean;
+    best_seller_tag?: boolean;
+    highlight?: boolean;
+    promotion_tag?: boolean;
     catalog_item_extras_attributes?: any[];
     catalog_item_prepare_methods_attributes?: any[];
     catalog_item_steps_attributes?: any[];
@@ -102,10 +106,34 @@ export function ItemCard({ item }: ItemCardProps) {
 
           {/* Badge desconto */}
           {hasDiscount && (
-            <div className="absolute top-2 left-2 bg-destructive text-white text-[10px] font-semibold px-2 py-0.5 rounded">
+            <div className="absolute bottom-2 right-2 bg-destructive text-white text-[10px] font-semibold px-2 py-0.5 rounded">
               -{discountPercentage}%
             </div>
           )}
+
+          {/* Tags visuais */}
+          <div className="absolute top-2 left-2 flex flex-col gap-0.5">
+            {item.new_tag && (
+              <div className="bg-green-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm whitespace-nowrap">
+                NOVO!
+              </div>
+            )}
+            {item.best_seller_tag && (
+              <div className="bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm whitespace-nowrap">
+                + VENDIDO
+              </div>
+            )}
+            {item.highlight && (
+              <div className="bg-blue-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm whitespace-nowrap">
+                DESTAQUE
+              </div>
+            )}
+            {item.promotion_tag && !hasDiscount && (
+              <div className="bg-primary text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm whitespace-nowrap">
+                PROMOÇÃO
+              </div>
+            )}
+          </div>
 
           {/* Botão editar */}
           <button

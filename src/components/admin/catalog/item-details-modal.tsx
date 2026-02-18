@@ -33,8 +33,9 @@ export function ItemDetailsModal({ id, isOpen, onClose }: ItemDetailsModalProps)
   // FUNÇÕES AUXILIARES
   // =============================================================================
 
-  const formatPrice = (price: number) => {
-    return `R$ ${price.toFixed(2).replace('.', ',')}`;
+  const formatPrice = (price: string | number) => {
+    const num = typeof price === 'string' ? parseFloat(price) : price;
+    return `R$ ${(num || 0).toFixed(2).replace('.', ',')}`;
   };
 
   const getItemTypeLabel = (itemType: string) => {

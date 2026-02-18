@@ -75,6 +75,12 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
   const [hasSteps, setHasSteps] = useState(false);
   const [steps, setSteps] = useState<Step[]>([{ name: '', options: [{ name: '' }] }]);
 
+  // Estados - Tags Visuais
+  const [newTag, setNewTag] = useState(false);
+  const [bestSellerTag, setBestSellerTag] = useState(false);
+  const [highlight, setHighlight] = useState(false);
+  const [promotionTag, setPromotionTag] = useState(false);
+
   // Estados - Erros
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -132,6 +138,10 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
     setPrepareMethods([{ name: '' }]);
     setHasSteps(false);
     setSteps([{ name: '', options: [{ name: '' }] }]);
+    setNewTag(false);
+    setBestSellerTag(false);
+    setHighlight(false);
+    setPromotionTag(false);
     setErrors({});
   };
 
@@ -313,6 +323,12 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
     if (imageFile) {
       formData.append('image', imageFile);
     }
+
+    // Tags visuais
+    formData.append('new_tag', newTag.toString());
+    formData.append('best_seller_tag', bestSellerTag.toString());
+    formData.append('highlight', highlight.toString());
+    formData.append('promotion_tag', promotionTag.toString());
 
     // Extras - filtrar apenas os que têm nome preenchido
     if (hasExtras) {
@@ -546,7 +562,28 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
 
           <hr className="border-gray-100" />
 
-          {/* SEÇÃO: ADICIONAIS */}
+          {/* Tags Visuais */}
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tags Visuais</p>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between rounded-lg p-3 bg-muted/40">
+              <span className="text-sm font-medium">Novo!</span>
+              <Switch checked={newTag} onCheckedChange={setNewTag} />
+            </div>
+            <div className="flex items-center justify-between rounded-lg p-3 bg-muted/40">
+              <span className="text-sm font-medium">Mais Vendido</span>
+              <Switch checked={bestSellerTag} onCheckedChange={setBestSellerTag} />
+            </div>
+            <div className="flex items-center justify-between rounded-lg p-3 bg-muted/40">
+              <span className="text-sm font-medium">Destaque</span>
+              <Switch checked={highlight} onCheckedChange={setHighlight} />
+            </div>
+            <div className="flex items-center justify-between rounded-lg p-3 bg-muted/40">
+              <span className="text-sm font-medium">Promoção</span>
+              <Switch checked={promotionTag} onCheckedChange={setPromotionTag} />
+            </div>
+          </div>
+
+          <hr className="border-gray-100" />
           <div className="flex items-center justify-between rounded-lg p-3 bg-muted/40">
             <span className="text-sm font-medium">Possui adicionais?</span>
             <Switch checked={hasExtras} onCheckedChange={setHasExtras} />
