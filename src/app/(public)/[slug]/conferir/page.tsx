@@ -1,14 +1,15 @@
 "use client"
 
-import { MapPin, CreditCard, Wallet, QrCode, Truck, ChevronDown, ChevronUp, Plus, Minus, X, CheckCircle2, Package, Store, Timer, User, LogIn, Clock, AlertTriangle, ChevronLeft, ShoppingCart } from 'lucide-react'
+import {
+  MapPin, CreditCard, Wallet, QrCode, Truck, ChevronDown, ChevronUp,
+  Plus, Minus, X, CheckCircle2, Store, LogIn, Clock, AlertTriangle,
+  ChevronLeft, ShoppingCart, Package, User
+} from 'lucide-react'
 import { toast } from "sonner"
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useCart } from '../cart/cart-context'
 import { useParams, useRouter } from 'next/navigation'
@@ -19,39 +20,37 @@ import { CreateOrderRequest, Order } from '@/types/order'
 import { createOrder } from '@/services/order-service'
 import { useShopBySlug } from '../use-slug'
 import { useShopStatusContext } from '@/contexts/ShopStatusContext'
+import Image from 'next/image'
+import favicon from "@/public/logo/favicon.svg"
+import logoInlineBlack from "@/public/logo/logo-inline-black.svg"
+import Link from 'next/link'
 
 type DeliveryOption = 'delivery' | 'pickup'
+type PaymentMethod = 'credit' | 'debit' | 'manual_pix' | 'cash'
 
 interface CartItemWithExtras {
-  id: string;
-  name: string;
-  price: number;
-  priceWithDiscount?: number;
-  quantity: number;
-  weight?: number;
-  image?: string;
-  extras?: Array<{
-    id: string;
-    name: string;
-    price: number;
-  }>;
-  prepareMethods?: Array<{
-    id: string;
-    name: string;
-  }>;
-  steps?: Array<{
-    id: string;
-    name: string;
-    selectedOption?: {
-      id: string;
-      name: string;
-    };
-  }>;
-  selectedExtras?: string[];
-  selectedMethods?: string[];
-  selectedOptions?: Record<string, string>;
-  totalPrice: number;
-  observation?: string;
+  id: string
+  name: string
+  price: number
+  priceWithDiscount?: number
+  quantity: number
+  weight?: number
+  image?: string
+  extras?: Array<{ id: string; name: string; price: number }>
+  prepareMethods?: Array<{ id: string; name: string }>
+  steps?: Array<{ id: string; name: string; selectedOption?: { id: string; name: string } }>
+  selectedExtras?: string[]
+  selectedMethods?: string[]
+  selectedOptions?: Record<string, string>
+  totalPrice: number
+  observation?: string
+}
+
+const PAYMENT_LABELS: Record<PaymentMethod, { label: string; icon: React.ReactNode }> = {
+  credit: { label: 'Crédito', icon: <CreditCard className="h-4 w-4" /> },
+  debit: { label: 'Débito', icon: <CreditCard className="h-4 w-4" /> },
+  manual_pix: { label: 'PIX', icon: <QrCode className="h-4 w-4" /> },
+  cash: { label: 'Dinheiro', icon: <Wallet className="h-4 w-4" /> },
 }
 
 export default function CheckoutPage() {
@@ -61,20 +60,13 @@ export default function CheckoutPage() {
   const { client } = useClient()
   const { isOpen: isShopOpen, loading: shopStatusLoading } = useShopStatusContext()
 
-  // Buscar dados da loja em tempo real usando o slug
-  const { data: shopData, isLoading: isLoadingShop } = useShopBySlug(storeSlug, { 
-    staleTime: 1000 * 60 * 5 // 5 minutos para sempre ter dados atualizados
+  const { data: shopData, isLoading: isLoadingShop } = useShopBySlug(storeSlug, {
+    staleTime: 1000 * 60 * 5
   })
 
-  const { 
-    items, 
-    totalPrice, 
-    removeItem, 
-    updateItemQuantity,
-    clearCart
-  } = useCart()
-  
-  const [paymentMethod, setPaymentMethod] = useState('credit_card')
+  const { items, totalPrice, removeItem, updateItemQuantity, clearCart } = useCart()
+
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('credit')
   const [deliveryOption, setDeliveryOption] = useState<DeliveryOption>('delivery')
   const [address, setAddress] = useState('')
   const [complement, setComplement] = useState('')
@@ -88,14 +80,12 @@ export default function CheckoutPage() {
   const [order, setOrder] = useState<Order | null>(null)
   const [itemObservations, setItemObservations] = useState<Record<string, string>>({})
   const [shouldAutoSubmitAfterLogin, setShouldAutoSubmitAfterLogin] = useState(false)
-  
-  // Extrair configurações da loja dos dados buscados em tempo real
+
   const shopDeliveryConfig = shopData?.data?.attributes?.shop_delivery_config?.data?.attributes || null
   const shopPaymentConfig = shopData?.data?.attributes?.shop_payment_config?.data?.attributes || null
   const shop = shopData
-  
+
   useEffect(() => {
-    
     const mappedItems = items.map((item: any) => ({
       id: item.id,
       name: item.attributes.name,
@@ -106,30 +96,19 @@ export default function CheckoutPage() {
       image: item.attributes.image_url || '',
       extras: item.selectedExtras?.map((extraId: string) => {
         const extra = item.attributes.extra.data.find((e: any) => e.id === extraId)
-        return extra ? {
-          id: extra.id,
-          name: extra.attributes.name,
-          price: parseFloat(extra.attributes.price)
-        } : null
-      }).filter((extra: any): extra is { id: string; name: string; price: number } => extra !== null) || [],
+        return extra ? { id: extra.id, name: extra.attributes.name, price: parseFloat(extra.attributes.price) } : null
+      }).filter(Boolean) || [],
       prepareMethods: item.selectedMethods?.map((methodId: string) => {
         const method = item.attributes.prepare_method.data.find((m: any) => m.id === methodId)
-        return method ? {
-          id: method.id,
-          name: method.attributes.name
-        } : null
-      }).filter((method: any): method is { id: string; name: string } => method !== null) || [],
+        return method ? { id: method.id, name: method.attributes.name } : null
+      }).filter(Boolean) || [],
       steps: item.attributes.steps.data.map((step: any) => {
         const selectedOptionId = item.selectedOptions?.[step.id]
         const selectedOption = selectedOptionId ? step.attributes.options.data.find((o: any) => o.id === selectedOptionId) : null
-        
         return {
           id: step.id,
           name: step.attributes.name,
-          selectedOption: selectedOption ? {
-            id: selectedOption.id,
-            name: selectedOption.attributes.name
-          } : undefined
+          selectedOption: selectedOption ? { id: selectedOption.id, name: selectedOption.attributes.name } : undefined
         }
       }),
       selectedExtras: item.selectedExtras || [],
@@ -140,145 +119,80 @@ export default function CheckoutPage() {
     }))
     setCartItems(mappedItems)
     setIsLoading(false)
-    const expandedState = mappedItems.reduce((acc: Record<string, boolean>, item) => {
-      if ((item.extras && item.extras.length > 0) || 
-          (item.prepareMethods && item.prepareMethods.length > 0) || 
-          (item.steps && item.steps.length > 0)) {
-        acc[item.id] = false
-      }
-      return acc
-    }, {})
-    setIsExpanded(expandedState)
   }, [items])
 
-  // UseEffect para auto-submit após login
   useEffect(() => {
     if (client && shouldAutoSubmitAfterLogin) {
       setShouldAutoSubmitAfterLogin(false)
-      // Pequeno delay para garantir que o estado foi atualizado
-      setTimeout(() => {
-        handleSubmitOrder()
-      }, 100)
+      setTimeout(() => { handleSubmitOrder() }, 100)
     }
   }, [client, shouldAutoSubmitAfterLogin])
 
-  // Removido o useEffect que redirecionava usuários não autenticados
-
-  const toggleItemExpansion = (itemId: string) => {
-    setIsExpanded(prev => ({
-      ...prev,
-      [itemId]: !prev[itemId]
-    }))
-  }
-
   const calculateDeliveryFee = () => {
-    if (deliveryOption !== 'delivery' || !selectedNeighborhood) {
-      return 0
-    }
-    
+    if (deliveryOption !== 'delivery' || !selectedNeighborhood) return 0
     if (shopDeliveryConfig?.delivery_fee_kind === 'fixed') {
       const minFree = Number(shopDeliveryConfig.min_value_free_delivery) || 0
-      if (minFree > 0 && totalPrice >= minFree) {
-        return 0
-      }
+      if (minFree > 0 && totalPrice >= minFree) return 0
       return shopDeliveryConfig.amount
     }
-    
     if (shopDeliveryConfig?.delivery_fee_kind === 'per_neighborhood') {
-      const selectedNeighborhoodData = shopDeliveryConfig.shop_delivery_neighborhoods.data.find(
-        n => n.id === selectedNeighborhood
-      )
-      if (!selectedNeighborhoodData) return 0
-
-      const minFree = Number(selectedNeighborhoodData.attributes.min_value_free_delivery) || 0
-      if (minFree > 0 && totalPrice >= minFree) {
-        return 0
-      }
-      return selectedNeighborhoodData.attributes.amount || 0
+      const nb = shopDeliveryConfig.shop_delivery_neighborhoods.data.find((n: any) => n.id === selectedNeighborhood)
+      if (!nb) return 0
+      const minFree = Number(nb.attributes.min_value_free_delivery) || 0
+      if (minFree > 0 && totalPrice >= minFree) return 0
+      return nb.attributes.amount || 0
     }
-    
     return 0
   }
 
-  const calculateTotal = () => {
-    return totalPrice + calculateDeliveryFee()
-  }
-
-  const handleQuantityChange = (itemId: string, newQuantity: number) => {
-    if (newQuantity < 1) return
-    updateItemQuantity(itemId, newQuantity)
-    setCartItems(prev => 
-      prev.map(item => 
-        item.id === itemId 
-          ? { ...item, quantity: newQuantity } 
-          : item
-      )
-    )
-  }
-
-  const handleRemoveItem = (itemId: string) => {
-    removeItem(itemId)
-    setCartItems(prev => prev.filter(item => item.id !== itemId))
-  }
+  const calculateTotal = () => totalPrice + calculateDeliveryFee()
 
   const handleSubmitOrder = async () => {
-    // Verificar se a loja está aberta
-    if (!isShopOpen || shopStatusLoading) {
-      console.log('Tentativa de finalizar pedido com loja fechada')
-      return
-    }
+    if (!isShopOpen || shopStatusLoading) return
 
-    // Verificar valor mínimo do pedido
     const minOrderValue = Number(shopDeliveryConfig?.minimum_order_value) || 0
     if (totalPrice < minOrderValue) {
-      toast.error(`O valor mínimo para pedidos nesta loja é R$ ${minOrderValue.toFixed(2).replace('.', ',')}`)
+      toast.error(`Valor mínimo: R$ ${minOrderValue.toFixed(2).replace('.', ',')}`)
       return
     }
 
-    // Verificar autenticação apenas no momento de finalizar a compra
     if (!client) {
-      // Definir flag para auto-submit após login
       setShouldAutoSubmitAfterLogin(true)
-      // Redirecionar para login, preservando a intenção de finalizar compra
-      const currentPath = window.location.pathname;
-      router.push(`/auth/login?redirect=${encodeURIComponent(currentPath)}`);
+      router.push(`/auth/login?redirect=${encodeURIComponent(window.location.pathname)}`)
       return
     }
 
     setIsSubmitting(true)
-    
-    // Determinar o nome do bairro e o ID quando necessário
+
     let neighborhoodName = selectedNeighborhood
     let neighborhoodId = null
-    
+
     if (shopDeliveryConfig?.delivery_fee_kind === 'per_neighborhood' && selectedNeighborhood) {
-      const selectedNeighborhoodData = shopDeliveryConfig.shop_delivery_neighborhoods.data.find(
-        n => n.id === selectedNeighborhood
-      )
-      if (selectedNeighborhoodData) {
-        neighborhoodName = selectedNeighborhoodData.attributes.name
-        neighborhoodId = selectedNeighborhoodData.id
+      const nb = shopDeliveryConfig.shop_delivery_neighborhoods.data.find((n: any) => n.id === selectedNeighborhood)
+      if (nb) {
+        neighborhoodName = nb.attributes.name
+        neighborhoodId = nb.id
       }
     }
-    
+
     const orderData: CreateOrderRequest = {
-        "order": {
-            "shop_id": Number(shop?.data.id),
-            "withdrawal": deliveryOption === 'pickup' ? true : false,
-            "payment_method": paymentMethod as 'manual_pix' | 'credit' | 'debit' | 'cash',
-            "address": {
-                "address": address,
-                "neighborhood": neighborhoodName,
-                "complement": complement,
-                "reference": reference,
-                ...(neighborhoodId && { shop_delivery_neighborhood_id: Number(neighborhoodId) })
-            },
-            "items": cartItems.map(item => ({
-              catalog_item_id: Number(item.id),
-              quantity: item.quantity,
-              observation: item.observation || ''
-            }))
-        }
+      order: {
+        shop_id: Number(shop?.data.id),
+        withdrawal: deliveryOption === 'pickup',
+        payment_method: paymentMethod as any,
+        address: {
+          address,
+          neighborhood: neighborhoodName,
+          complement,
+          reference,
+          ...(neighborhoodId && { shop_delivery_neighborhood_id: Number(neighborhoodId) })
+        },
+        items: cartItems.map(item => ({
+          catalog_item_id: Number(item.id),
+          quantity: item.quantity,
+          observation: item.observation || ''
+        }))
+      }
     }
 
     try {
@@ -286,12 +200,8 @@ export default function CheckoutPage() {
       const orderId = response.order_id
       setOrder(response)
       toast.success("Pedido realizado com sucesso!")
-      if (orderId) {
-        router.push(`/pedidos/${orderId}`)
-      } else {
-        console.error('ID do pedido não encontrado')
-      }
       clearCart()
+      if (orderId) router.push(`/pedidos/${orderId}`)
     } catch (error) {
       console.error('Erro ao enviar pedido:', error)
       toast.error("Erro ao enviar pedido. Tente novamente.")
@@ -299,613 +209,617 @@ export default function CheckoutPage() {
     }
   }
 
+  const deliveryFeeDisplay = () => {
+    if (deliveryOption !== 'delivery') return null
+    const fee = calculateDeliveryFee()
+    if (shopDeliveryConfig?.delivery_fee_kind === 'to_be_agreed') return 'A combinar'
+    if (fee === 0 && selectedNeighborhood) return 'Grátis'
+    if (fee > 0) return `R$ ${fee.toFixed(2).replace('.', ',')}`
+    return null
+  }
+
+  const minOrderValue = Number(shopDeliveryConfig?.minimum_order_value) || 0
+  const isBelowMinOrder = minOrderValue > 0 && totalPrice < minOrderValue
+
   if (isLoadingShop || isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-slate-600">Carregando informações do pedido...</p>
+        <div className="text-center space-y-3">
+          <div className="animate-spin rounded-full h-10 w-10 border-2 border-primary border-t-transparent mx-auto" />
+          <p className="text-sm text-muted-foreground">Carregando pedido...</p>
         </div>
       </div>
     )
   }
 
-  if (cartItems?.length === 0) {
+  if (cartItems.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <ShoppingCart className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Seu carrinho está vazio</h3>
-          <p className="text-slate-600 mb-6">Adicione itens ao carrinho para continuar</p>
-          <Button 
-            onClick={() => router.push(`/${storeSlug}`)}
-            className="flex items-center gap-2"
-          >
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto">
+            <ShoppingCart className="h-7 w-7 text-gray-400" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-gray-900">Carrinho vazio</h3>
+            <p className="text-sm text-muted-foreground mt-1">Adicione itens para continuar</p>
+          </div>
+          <Button onClick={() => router.push(`/${storeSlug}`)} variant="outline" size="sm" className="gap-2">
             <ChevronLeft className="h-4 w-4" />
-            Continuar Comprando
+            Voltar ao cardápio
           </Button>
         </div>
       </div>
     )
   }
 
+  const canSubmit = !isSubmitting && isShopOpen && !shopStatusLoading && !isBelowMinOrder &&
+    (deliveryOption === 'pickup' || !!address.trim())
+
   return (
-    <div className="p-4 sm:p-8 lg:p-12 bg-gray-200 min-h-screen">
-      {/* Cabeçalho com botão voltar */}
-      <div className="mb-6 md:mb-8">
-        <div className="flex items-center gap-4 mb-4">
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={() => router.push(`/${storeSlug}`)}
-            className="flex items-center gap-2 hover:bg-white/50 -ml-2"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Voltar ao Catálogo
-          </Button>
-        </div>
-        <h1 className="text-xl md:text-2xl font-extrabold text-gray-900">Conferir Pedido</h1>
-        <p className="text-gray-600 mt-1 text-sm md:text-base">Revise seu pedido e finalize a compra</p>
-      </div>
-
-      <div className="flex flex-col lg:flex-row gap-8">
-        <div className="lg:w-2/3 space-y-6">
-          {/* Alerta de Loja Fechada */}
-          {!isShopOpen && !shopStatusLoading && (
-            <Alert className="border-red-200 bg-red-50">
-              <AlertTriangle className="h-4 w-4 text-red-600" />
-              <AlertDescription className="text-red-800">
-                <strong>Loja fechada no momento.</strong> Você pode revisar seu carrinho, mas não pode finalizar a compra enquanto a loja estiver fechada.
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* Card de Status de Autenticação */}
-          {!client && (
-            <Card className="rounded-xs overflow-hidden border hover:shadow-lg transition-shadow duration-300 bg-gradient-to-br from-white to-gray-50">
-              <CardHeader className={`py-4 ${client ? 'bg-green-500' : 'bg-yellow-500'}`}>
-                <CardTitle className="flex items-center gap-2 text-white">
-                  {client ? <CheckCircle2 className="h-5 w-5" /> : <User className="h-5 w-5" />}
-                  <span>{client ? 'Usuário Autenticado' : 'Login Necessário'}</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6">
-                
-                  <div className="space-y-4">
-                    <p className="text-sm text-muted-foreground">
-                      Você pode navegar e adicionar itens ao carrinho sem fazer login, mas será necessário se autenticar para finalizar a compra.
-                    </p>
-                    <div className="flex gap-3">
-                      <Button 
-                        variant="outline" 
-                        className="flex items-center gap-2"
-                        onClick={() => {
-                          setShouldAutoSubmitAfterLogin(true)
-                          const currentPath = window.location.pathname;
-                          router.push(`/auth/login?redirect=${encodeURIComponent(currentPath)}`);
-                        }}
-                      >
-                        <LogIn className="h-4 w-4" />
-                        Fazer Login
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        className="flex items-center gap-2"
-                        onClick={() => {
-                          const currentPath = window.location.pathname;
-                          router.push(`/auth/register?redirect=${encodeURIComponent(currentPath)}`);
-                        }}
-                      >
-                        <User className="h-4 w-4" />
-                        Criar Conta
-                      </Button>
-                    </div>
-                  </div>
-                
-              </CardContent>
-            </Card>
-          )}
-          <Card className="rounded-xs overflow-hidden border hover:shadow-lg transition-shadow duration-300 bg-gradient-to-br from-white to-gray-50">
-            <CardHeader className="py-4 bg-primary">
-              <CardTitle className="flex items-center gap-2 text-white">
-                <Truck className="h-5 w-5" />
-                <span>Opções de entrega</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <RadioGroup 
-                value={deliveryOption} 
-                onValueChange={(value: string) => setDeliveryOption(value as DeliveryOption)}
-                className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="sticky top-0 z-50 w-full bg-white border-b border-gray-100">
+        <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => router.push(`/${storeSlug}`)}
+                className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 transition-colors text-gray-600 cursor-pointer"
               >
-                <div>
-                  <RadioGroupItem value="delivery" id="delivery" className="peer sr-only" />
-                  <Label
-                    htmlFor="delivery"
-                    className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-white cursor-pointer p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary transition-all duration-200"
-                  >
-                    <Truck className="h-6 w-6 mb-2 text-primary" />
-                    <span>Entrega</span>
-                    <span className="text-sm text-muted-foreground">
-                      {shopDeliveryConfig?.delivery_fee_kind === 'fixed' 
-                        ? `Taxa: R$ ${shopDeliveryConfig.amount.toFixed(2).replace('.', ',')}`
-                        : shopDeliveryConfig?.delivery_fee_kind === 'per_neighborhood'
-                          ? 'Taxa por bairro'
-                          : 'Taxa a combinar'
-                      }
-                    </span>
-                  </Label>
-                </div>
-                <div>
-                  <RadioGroupItem value="pickup" id="pickup" className="peer sr-only" />
-                  <Label
-                    htmlFor="pickup"
-                    className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-white cursor-pointer p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary transition-all duration-200"
-                  >
-                    <Store className="h-6 w-6 mb-2 text-primary" />
-                    <span>Retirada</span>
-                    <span className="text-sm text-muted-foreground">Sem taxa</span>
-                  </Label>
-                </div>
-              </RadioGroup>
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+              <Link href={`/${storeSlug}`} className="md:hidden">
+                <Image src={favicon} alt="Versa" width={100} height={100} priority />
+              </Link>
+              <Link href={`/${storeSlug}`} className="hidden md:block">
+                <Image src={logoInlineBlack} alt="Versa" width={190} height={60} priority />
+              </Link>
+            </div>
+            <span className="text-sm font-medium text-muted-foreground">Finalizar pedido</span>
+            <div className="w-8" />
+          </div>
+        </div>
+      </header>
 
-            </CardContent>
-          </Card>
+      {/* Content */}
+      <div className="max-w-6xl mx-auto px-4 py-6 sm:py-8">
+        <div className="flex flex-col lg:flex-row gap-6">
 
-          {deliveryOption !== 'pickup' && (
-            <Card className="rounded-xs overflow-hidden border hover:shadow-lg transition-shadow duration-300 bg-gradient-to-br from-white to-gray-50">
-              <CardHeader className="py-4 bg-primary">
-                <CardTitle className="flex items-center gap-2 text-white">
-                  <MapPin className="h-5 w-5" />
-                  <span>Endereço de entrega</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="address" className="mb-2 block font-medium">
-                      Endereço completo
-                    </Label>
-                    <Input
-                      id="address"
-                      placeholder="Rua, número, bairro"
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      className="border-gray-200 focus:border-primary focus:ring-primary/20"
-                    />
+          {/* ── Left column ── */}
+          <div className="flex-1 min-w-0 space-y-4">
+
+            {/* Loja fechada */}
+            {!isShopOpen && !shopStatusLoading && (
+              <Alert className="border-red-200 bg-red-50 rounded-xl">
+                <AlertTriangle className="h-4 w-4 text-red-500" />
+                <AlertDescription className="text-red-700 text-sm">
+                  Loja fechada no momento. Você não pode finalizar a compra agora.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Login aviso */}
+            {!client && (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl px-5 py-4 flex items-start gap-3">
+                <User className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-amber-800">Login necessário para finalizar</p>
+                  <div className="flex gap-2 mt-2">
+                    <button
+                      onClick={() => {
+                        setShouldAutoSubmitAfterLogin(true)
+                        router.push(`/auth/login?redirect=${encodeURIComponent(window.location.pathname)}`)
+                      }}
+                      className="text-xs font-semibold text-amber-700 underline underline-offset-2 cursor-pointer"
+                    >
+                      Fazer login
+                    </button>
+                    <span className="text-xs text-amber-600">·</span>
+                    <button
+                      onClick={() => router.push(`/auth/register?redirect=${encodeURIComponent(window.location.pathname)}`)}
+                      className="text-xs font-semibold text-amber-700 underline underline-offset-2 cursor-pointer"
+                    >
+                      Criar conta
+                    </button>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── Itens ── */}
+            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+              <div className="px-5 py-4 flex items-center justify-between border-b border-gray-100">
+                <div className="flex items-center gap-2">
+                  <Package className="h-4 w-4 text-primary" />
+                  <h2 className="font-semibold text-gray-900">Itens do pedido</h2>
+                </div>
+                <span className="text-xs text-muted-foreground bg-gray-100 px-2 py-0.5 rounded-full">
+                  {cartItems.reduce((s, i) => s + i.quantity, 0)} {cartItems.reduce((s, i) => s + i.quantity, 0) === 1 ? 'item' : 'itens'}
+                </span>
+              </div>
+
+              <div className="divide-y divide-gray-50">
+                {cartItems.map((item) => {
+                  const hasDetails = (item.extras?.length ?? 0) > 0 ||
+                    (item.prepareMethods?.length ?? 0) > 0 ||
+                    (item.steps?.length ?? 0) > 0
+
+                  return (
+                    <div key={item.id} className="px-5 py-4">
+                      <div className="flex gap-3">
+                        {/* Imagem */}
+                        <div className="flex-shrink-0">
+                          {item.image ? (
+                            <img
+                              src={item.image}
+                              alt={item.name}
+                              className="h-16 w-16 rounded-lg object-cover bg-gray-100"
+                            />
+                          ) : (
+                            <div className="h-16 w-16 rounded-lg bg-primary/5 border border-primary/10 flex items-center justify-center">
+                              <span className="text-primary/40 text-lg font-bold">
+                                {item.name.charAt(0).toUpperCase()}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <h3 className="text-sm font-semibold text-gray-900 leading-tight">{item.name}</h3>
+                            <button
+                              onClick={() => {
+                                removeItem(item.id)
+                                setCartItems(prev => prev.filter(i => i.id !== item.id))
+                              }}
+                              className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+
+                          <p className="text-sm font-medium text-primary mt-0.5">
+                            {item.priceWithDiscount ? (
+                              <>
+                                R$ {(item.priceWithDiscount * item.quantity).toFixed(2).replace('.', ',')}
+                                <span className="text-xs text-muted-foreground line-through ml-2">
+                                  R$ {(item.price * item.quantity).toFixed(2).replace('.', ',')}
+                                </span>
+                              </>
+                            ) : (
+                              <>R$ {item.totalPrice.toFixed(2).replace('.', ',')}</>
+                            )}
+                          </p>
+
+                          <div className="flex items-center justify-between mt-2">
+                            {/* Contador */}
+                            <div className="flex items-center gap-1 bg-gray-50 border border-gray-200 rounded-lg">
+                              <button
+                                onClick={() => {
+                                  if (item.quantity > 1) {
+                                    updateItemQuantity(item.id, item.quantity - 1)
+                                    setCartItems(prev => prev.map(i => i.id === item.id ? { ...i, quantity: i.quantity - 1 } : i))
+                                  }
+                                }}
+                                className="w-7 h-7 flex items-center justify-center text-gray-500 hover:text-primary transition-colors cursor-pointer"
+                              >
+                                <Minus className="h-3 w-3" />
+                              </button>
+                              <span className="text-xs font-bold text-gray-900 min-w-[1.25rem] text-center">{item.quantity}</span>
+                              <button
+                                onClick={() => {
+                                  updateItemQuantity(item.id, item.quantity + 1)
+                                  setCartItems(prev => prev.map(i => i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i))
+                                }}
+                                className="w-7 h-7 flex items-center justify-center text-gray-500 hover:text-primary transition-colors cursor-pointer"
+                              >
+                                <Plus className="h-3 w-3" />
+                              </button>
+                            </div>
+
+                            {hasDetails && (
+                              <button
+                                onClick={() => setIsExpanded(prev => ({ ...prev, [item.id]: !prev[item.id] }))}
+                                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                              >
+                                {isExpanded[item.id] ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                                {isExpanded[item.id] ? 'Menos' : 'Detalhes'}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Observação */}
+                      <div className="mt-3">
+                        <Input
+                          placeholder="Observação (ex: sem cebola)"
+                          value={itemObservations[item.id] || ''}
+                          onChange={(e) => {
+                            const val = e.target.value
+                            setItemObservations(prev => ({ ...prev, [item.id]: val }))
+                            setCartItems(prev => prev.map(ci => ci.id === item.id ? { ...ci, observation: val } : ci))
+                          }}
+                          className="h-8 text-xs bg-gray-50 border-gray-200 focus:border-primary/40 rounded-lg"
+                        />
+                      </div>
+
+                      {/* Detalhes expandidos */}
+                      <AnimatePresence>
+                        {isExpanded[item.id] && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.18, ease: 'easeInOut' }}
+                            className="overflow-hidden"
+                          >
+                            <div className="mt-3 bg-gray-50 rounded-lg p-3 space-y-2.5">
+                              {item.weight && (
+                                <div>
+                                  <span className="text-[10px] uppercase tracking-wider font-bold text-gray-400">Peso</span>
+                                  <p className="text-xs font-semibold text-gray-700 mt-0.5">{item.weight}kg</p>
+                                </div>
+                              )}
+                              {(item.extras?.length ?? 0) > 0 && (
+                                <div>
+                                  <span className="text-[10px] uppercase tracking-wider font-bold text-gray-400">Extras</span>
+                                  <ul className="mt-1 space-y-1">
+                                    {item.extras!.map(extra => (
+                                      <li key={extra.id} className="flex justify-between text-xs text-gray-600">
+                                        <span>{extra.name}</span>
+                                        <span className="font-semibold">+ R$ {extra.price.toFixed(2).replace('.', ',')}</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                              {(item.prepareMethods?.length ?? 0) > 0 && (
+                                <div>
+                                  <span className="text-[10px] uppercase tracking-wider font-bold text-gray-400">Preparo</span>
+                                  <div className="flex flex-wrap gap-1 mt-1">
+                                    {item.prepareMethods!.map(m => (
+                                      <span key={m.id} className="text-[10px] bg-white border border-gray-200 rounded px-2 py-0.5 text-gray-600">{m.name}</span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              {(item.steps?.length ?? 0) > 0 && (
+                                <div>
+                                  <span className="text-[10px] uppercase tracking-wider font-bold text-gray-400">Opções</span>
+                                  <div className="mt-1 space-y-1">
+                                    {item.steps!.map(step => (
+                                      <div key={step.id} className="flex justify-between text-xs text-gray-600">
+                                        <span>{step.name}</span>
+                                        <span className="font-semibold">{step.selectedOption?.name}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* ── Entrega ── */}
+            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+              <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
+                <Truck className="h-4 w-4 text-primary" />
+                <h2 className="font-semibold text-gray-900">Entrega</h2>
+              </div>
+
+              <div className="px-5 py-4 space-y-4">
+                {/* Toggle delivery/pickup */}
+                <div className="flex bg-gray-100 rounded-lg p-1 gap-1">
+                  <button
+                    onClick={() => setDeliveryOption('delivery')}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-all cursor-pointer ${
+                      deliveryOption === 'delivery'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-muted-foreground hover:text-gray-700'
+                    }`}
+                  >
+                    <Truck className="h-4 w-4" />
+                    Entrega
+                  </button>
+                  <button
+                    onClick={() => setDeliveryOption('pickup')}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-all cursor-pointer ${
+                      deliveryOption === 'pickup'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-muted-foreground hover:text-gray-700'
+                    }`}
+                  >
+                    <Store className="h-4 w-4" />
+                    Retirada
+                  </button>
+                </div>
+
+                {deliveryOption === 'delivery' && (
+                  <div className="space-y-3">
+                    <div>
+                      <Label htmlFor="address" className="text-xs font-medium text-gray-700 mb-1.5 block">Endereço</Label>
+                      <Input
+                        id="address"
+                        placeholder="Rua, número"
+                        value={address}
+                        onChange={(e) => setAddress(e.target.value)}
+                        className="border-gray-200 focus:border-primary/40 text-sm"
+                      />
+                    </div>
 
                     <div>
-                      <Label htmlFor="neighborhood" className="mb-2 block font-medium">
-                        Bairro
-                      </Label>
+                      <Label htmlFor="neighborhood" className="text-xs font-medium text-gray-700 mb-1.5 block">Bairro</Label>
                       {shopDeliveryConfig?.delivery_fee_kind === 'per_neighborhood' ? (
                         <select
                           id="neighborhood"
                           value={selectedNeighborhood}
                           onChange={(e) => setSelectedNeighborhood(e.target.value)}
-                          className="w-full rounded-md border border-gray-200 px-3 py-2 focus:border-primary focus:ring-primary/20"
-                          disabled={deliveryOption !== 'delivery'}
+                          className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:border-primary/40 focus:outline-none focus:ring-1 focus:ring-primary/20"
                         >
-                          <option value="">Selecione um bairro</option>
-                          {shopDeliveryConfig?.shop_delivery_neighborhoods.data.map((neighborhood) => (
-                            <option key={neighborhood.id} value={neighborhood.id}>
-                              {neighborhood.attributes.name} - R$ {neighborhood.attributes.amount.toFixed(2).replace('.', ',')}
+                          <option value="">Selecione o bairro</option>
+                          {shopDeliveryConfig?.shop_delivery_neighborhoods.data.map((nb: any) => (
+                            <option key={nb.id} value={nb.id}>
+                              {nb.attributes.name} · R$ {nb.attributes.amount.toFixed(2).replace('.', ',')}
                             </option>
                           ))}
                         </select>
                       ) : (
                         <Input
                           id="neighborhood"
-                          placeholder="Digite o bairro"
+                          placeholder="Bairro"
                           value={selectedNeighborhood}
                           onChange={(e) => setSelectedNeighborhood(e.target.value)}
-                          className="w-full rounded-md border border-gray-200 px-3 py-2 focus:border-primary focus:ring-primary/20"
-                          disabled={deliveryOption !== 'delivery'}
+                          className="border-gray-200 focus:border-primary/40 text-sm"
                         />
                       )}
                     </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="complement" className="mb-2 block font-medium">
-                        Complemento
-                      </Label>
-                      <Input
-                        id="complement"
-                        placeholder="Apartamento, bloco, etc."
-                        value={complement}
-                        onChange={(e) => setComplement(e.target.value)}
-                        className="border-gray-200 focus:border-primary focus:ring-primary/20"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="reference" className="mb-2 block font-medium">
-                        Ponto de referência
-                      </Label>
-                      <Input
-                        id="reference"
-                        placeholder="Ex: Próximo ao mercado"
-                        value={reference}
-                        onChange={(e) => setReference(e.target.value)}
-                        className="border-gray-200 focus:border-primary focus:ring-primary/20"
-                      />
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label htmlFor="complement" className="text-xs font-medium text-gray-700 mb-1.5 block">Complemento</Label>
+                        <Input
+                          id="complement"
+                          placeholder="Apto, bloco..."
+                          value={complement}
+                          onChange={(e) => setComplement(e.target.value)}
+                          className="border-gray-200 focus:border-primary/40 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="reference" className="text-xs font-medium text-gray-700 mb-1.5 block">Referência</Label>
+                        <Input
+                          id="reference"
+                          placeholder="Perto do..."
+                          value={reference}
+                          onChange={(e) => setReference(e.target.value)}
+                          className="border-gray-200 focus:border-primary/40 text-sm"
+                        />
+                      </div>
                     </div>
                   </div>
+                )}
+
+                {deliveryOption === 'pickup' && (
+                  <div className="flex items-start gap-2.5 bg-primary/5 border border-primary/10 rounded-lg px-4 py-3">
+                    <Store className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-gray-700">
+                      Você retirará o pedido diretamente no estabelecimento. Sem taxa de entrega.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ── Pagamento ── */}
+            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+              <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
+                <CreditCard className="h-4 w-4 text-primary" />
+                <h2 className="font-semibold text-gray-900">Pagamento</h2>
+              </div>
+
+              <div className="px-5 py-4 space-y-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {(Object.entries(PAYMENT_LABELS) as [PaymentMethod, { label: string; icon: React.ReactNode }][]).map(([method, cfg]) => {
+                    const available = shopPaymentConfig?.[method === 'manual_pix' ? 'manual_pix' : method]
+                    if (!available) return null
+                    const isSelected = paymentMethod === method
+                    return (
+                      <button
+                        key={method}
+                        onClick={() => setPaymentMethod(method)}
+                        className={`flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border-2 text-xs font-medium transition-all cursor-pointer ${
+                          isSelected
+                            ? 'border-primary bg-primary/5 text-primary'
+                            : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        {cfg.icon}
+                        {cfg.label}
+                      </button>
+                    )
+                  })}
                 </div>
-              </CardContent>
-            </Card>
+
+                {paymentMethod === 'cash' && (
+                  <div>
+                    <Label htmlFor="changeFor" className="text-xs font-medium text-gray-700 mb-1.5 block">Troco para</Label>
+                    <Input
+                      id="changeFor"
+                      placeholder="R$ 50,00"
+                      value={changeFor}
+                      onChange={(e) => setChangeFor(e.target.value)}
+                      className="border-gray-200 focus:border-primary/40 text-sm max-w-[180px]"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* CTA mobile */}
+            <div className="lg:hidden">
+              <OrderSummary
+                totalPrice={totalPrice}
+                deliveryOption={deliveryOption}
+                deliveryFeeDisplay={deliveryFeeDisplay()}
+                calculateTotal={calculateTotal}
+                cartItems={cartItems}
+                isBelowMinOrder={isBelowMinOrder}
+                minOrderValue={minOrderValue}
+                isSubmitting={isSubmitting}
+                isShopOpen={isShopOpen}
+                shopStatusLoading={shopStatusLoading}
+                client={client}
+                canSubmit={canSubmit}
+                onSubmit={handleSubmitOrder}
+              />
+            </div>
+          </div>
+
+          {/* ── Right column (sticky summary) ── */}
+          <div className="hidden lg:block w-80 flex-shrink-0">
+            <div className="sticky top-[73px]">
+              <OrderSummary
+                totalPrice={totalPrice}
+                deliveryOption={deliveryOption}
+                deliveryFeeDisplay={deliveryFeeDisplay()}
+                calculateTotal={calculateTotal}
+                cartItems={cartItems}
+                isBelowMinOrder={isBelowMinOrder}
+                minOrderValue={minOrderValue}
+                isSubmitting={isSubmitting}
+                isShopOpen={isShopOpen}
+                shopStatusLoading={shopStatusLoading}
+                client={client}
+                canSubmit={canSubmit}
+                onSubmit={handleSubmitOrder}
+              />
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Componente de resumo do pedido ──
+interface OrderSummaryProps {
+  totalPrice: number
+  deliveryOption: DeliveryOption
+  deliveryFeeDisplay: string | null
+  calculateTotal: () => number
+  cartItems: CartItemWithExtras[]
+  isBelowMinOrder: boolean
+  minOrderValue: number
+  isSubmitting: boolean
+  isShopOpen: boolean
+  shopStatusLoading: boolean
+  client: any
+  canSubmit: boolean
+  onSubmit: () => void
+}
+
+function OrderSummary({
+  totalPrice, deliveryOption, deliveryFeeDisplay, calculateTotal,
+  cartItems, isBelowMinOrder, minOrderValue, isSubmitting, isShopOpen,
+  shopStatusLoading, client, canSubmit, onSubmit
+}: OrderSummaryProps) {
+  const totalDiscount = cartItems.reduce((sum, item) => {
+    if (item.priceWithDiscount) {
+      return sum + (item.price - item.priceWithDiscount) * item.quantity
+    }
+    return sum
+  }, 0)
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+      <div className="px-5 py-4 border-b border-gray-100">
+        <h2 className="font-semibold text-gray-900">Resumo</h2>
+      </div>
+
+      <div className="px-5 py-4 space-y-3">
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between text-gray-600">
+            <span>Subtotal</span>
+            <span>R$ {totalPrice.toFixed(2).replace('.', ',')}</span>
+          </div>
+
+          {deliveryOption === 'delivery' && deliveryFeeDisplay && (
+            <div className="flex justify-between text-gray-600">
+              <span>Entrega</span>
+              <span className={deliveryFeeDisplay === 'Grátis' ? 'text-green-600 font-medium' : ''}>
+                {deliveryFeeDisplay}
+              </span>
+            </div>
           )}
 
-          <Card className="rounded-xs overflow-hidden border hover:shadow-lg transition-shadow duration-300 bg-gradient-to-br from-white to-gray-50">
-            <CardHeader className="py-4 bg-primary">
-              <CardTitle className="flex items-center gap-2 text-white">
-                <CreditCard className="h-5 w-5" />
-                <span>Forma de pagamento</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <RadioGroup 
-                value={paymentMethod} 
-                onValueChange={setPaymentMethod}
-                className="grid grid-cols-1 md:grid-cols-2 gap-4"
-              >
-                {shopPaymentConfig?.credit && <div>
-                  <RadioGroupItem value="credit" id="credit" className="peer sr-only" />
-                  <Label
-                    htmlFor="credit"
-                    className="flex items-center gap-3 rounded-md border-2 border-muted bg-white cursor-pointer p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary transition-all duration-200"
-                  >
-                    <CreditCard className="h-5 w-5 text-primary" />
-                    <span>Cartão de crédito</span>
-                  </Label>
-                </div>}
-                {shopPaymentConfig?.debit && <div>
-                  <RadioGroupItem value="debit" id="debit" className="peer sr-only" />
-                  <Label
-                    htmlFor="debit"
-                    className="flex items-center gap-3 rounded-md border-2 border-muted bg-white cursor-pointer p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary transition-all duration-200"
-                  >
-                    <CreditCard className="h-5 w-5 text-primary" />
-                    <span>Cartão de débito</span>
-                  </Label>
-                </div>}
-                {shopPaymentConfig?.manual_pix &&
-                <div>
-                  <RadioGroupItem value="manual_pix" id="pix" className="peer sr-only" />
-                  <Label
-                    htmlFor="pix"
-                    className="flex items-center gap-3 rounded-md border-2 border-muted bg-white cursor-pointer p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary transition-all duration-200"
-                  >
-                    <QrCode className="h-5 w-5 text-primary" />
-                    <span>PIX</span>
-                  </Label>
-                </div>
-                }
-                {shopPaymentConfig?.cash && <div>
-                  <RadioGroupItem value="cash" id="cash" className="peer sr-only" />
-                  <Label
-                    htmlFor="cash"
-                    className="flex items-center gap-3 rounded-md border-2 border-muted bg-white cursor-pointer p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary transition-all duration-200"
-                  >
-                    <Wallet className="h-5 w-5 text-primary" />
-                    <span>Dinheiro</span>
-                  </Label>
-                </div>}
-              </RadioGroup>
-
-              {paymentMethod === 'cash' && (
-                <div className="mt-4">
-                  <Label htmlFor="changeFor" className="mb-2 block font-medium">
-                    Troco para
-                  </Label>
-                  <Input
-                    id="changeFor"
-                    placeholder="Ex: R$ 50,00"
-                    value={changeFor}
-                    onChange={(e) => setChangeFor(e.target.value)}
-                    className="border-gray-200 focus:border-primary focus:ring-primary/20"
-                  />
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-xs overflow-hidden border hover:shadow-lg transition-shadow duration-300 bg-gradient-to-br from-white to-gray-50">
-              <CardHeader className="py-4 bg-primary">
-              <CardTitle className="flex items-center gap-2 text-white">
-                <Package className="h-5 w-5" />
-                <span>Seu pedido</span>
-                <Badge variant="secondary" className="px-2 py-1 ml-2 bg-primary/10 text-primary">
-                  {cartItems.reduce((sum, item) => sum + item.quantity, 0)} itens
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-6 space-y-6">
-              {cartItems.map((item, index) => {
-                const hasDetails = (item.extras?.length ?? 0) > 0 || 
-                                  (item.prepareMethods?.length ?? 0) > 0 || 
-                                  (item.steps?.length ?? 0) > 0;
-
-                return (
-                  <div key={item.id} className={`p-4 md:p-6 ${index !== cartItems.length - 1 ? 'border-b border-gray-100' : ''}`}>
-                    <div className="flex gap-4">
-                      <div className="relative flex-shrink-0">
-                        {item.image ? (
-                          <img 
-                            src={item.image} 
-                            alt={item.name}
-                            className="h-20 w-20 md:h-24 md:w-24 rounded-lg object-cover shadow-sm bg-white"
-                          />
-                        ) : (
-                          <div className="h-20 w-20 md:h-24 md:w-24 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center shadow-sm border border-primary/10">
-                            <span className="text-primary/40 text-xl font-bold">
-                              {item.name.charAt(0).toUpperCase()}
-                            </span>
-                          </div>
-                        )}
-                        <Badge className="absolute -top-2 -right-2 bg-primary text-primary-foreground h-6 min-w-[1.5rem] flex items-center justify-center border-2 border-white text-[10px] font-bold">
-                          {item.quantity}x
-                        </Badge>
-                      </div>
-                      
-                      <div className="flex-1 min-w-0 flex flex-col justify-between">
-                        <div className="flex justify-between items-start gap-2">
-                          <h3 className="font-bold text-gray-900 text-sm md:text-base leading-tight truncate">{item.name}</h3>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 -mt-1 -mr-1 transition-colors flex-shrink-0"
-                            onClick={() => handleRemoveItem(item.id)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        
-                        <p className="text-sm text-muted-foreground">
-                          {item.priceWithDiscount ? (
-                            <>
-                              <span className="text-primary font-medium">R$ {item.priceWithDiscount.toFixed(2).replace('.', ',')}</span>
-                              <span className="line-through text-xs ml-2">R$ {item.price.toFixed(2).replace('.', ',')}</span>
-                            </>
-                          ) : (
-                            <span className="font-medium">R$ {item.totalPrice.toFixed(2).replace('.', ',')}</span>
-                          )}
-                        </p>
-                        
-                        <div className="flex items-center justify-between mt-3">
-                          <div className="flex items-center gap-2 bg-gray-50 p-1 rounded-lg border border-gray-100">
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-7 w-7 bg-white shadow-sm hover:bg-primary/10 hover:text-primary transition-all active:scale-95"
-                              onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
-                            >
-                              <Minus className="h-3 w-3" />
-                            </Button>
-                            <span className="min-w-[1.2rem] text-center font-bold text-xs">{item.quantity}</span>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-7 w-7 bg-white shadow-sm hover:bg-primary/10 hover:text-primary transition-all active:scale-95"
-                              onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
-                            >
-                              <Plus className="h-3 w-3" />
-                            </Button>
-                          </div>
-                          
-                          {hasDetails && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="h-8 px-2 text-[10px] md:text-xs font-bold text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-full transition-colors flex items-center gap-1"
-                              onClick={() => toggleItemExpansion(item.id)}
-                            >
-                              {isExpanded[item.id] ? (
-                                <><ChevronUp className="h-3.5 w-3.5" /> Menos</>
-                              ) : (
-                                <><ChevronDown className="h-3.5 w-3.5" /> Detalhes</>
-                              )}
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 md:ml-[112px]">
-                      <div className="relative group">
-                        <Input
-                          placeholder="Adicionar observação (ex: sem cebola)"
-                          value={itemObservations[item.id] || ''}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setItemObservations(prev => ({ ...prev, [item.id]: val }));
-                            setCartItems(prev => prev.map(cartItem => 
-                              cartItem.id === item.id ? { ...cartItem, observation: val } : cartItem
-                            ));
-                          }}
-                          className="w-full text-[11px] md:text-xs h-9 bg-gray-50/50 border-gray-100 hover:border-gray-200 focus:border-primary/30 focus:bg-white transition-all rounded-lg pl-3"
-                        />
-                      </div>
-                    </div>
-                    
-                    <AnimatePresence>
-                      {isExpanded[item.id] && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                          transition={{ duration: 0.2, ease: "easeInOut" }}
-                          className="md:ml-[112px] mt-4 overflow-hidden"
-                        >
-                          <div className="bg-gray-50/80 rounded-xl p-4 border border-gray-100/50 space-y-4">
-                            {item.weight && (
-                              <div>
-                                <h4 className="text-[10px] uppercase tracking-widest font-black text-gray-400 mb-1">Peso Selecionado</h4>
-                                <p className="text-sm text-gray-700 font-bold">{item.weight}kg</p>
-                              </div>
-                            )}
-
-                            {item.extras && item.extras.length > 0 && (
-                              <div>
-                                <h4 className="text-[10px] uppercase tracking-widest font-black text-gray-400 mb-2">Extras Adicionados</h4>
-                                <ul className="space-y-2">
-                                  {item.extras.map((extra) => (
-                                    <li key={extra.id} className="flex justify-between items-center text-xs text-gray-600">
-                                      <div className="flex items-center gap-2">
-                                        <div className="w-1 h-1 rounded-full bg-primary" />
-                                        <span className="font-medium">{extra.name}</span>
-                                      </div>
-                                      <span className="font-bold text-gray-900 bg-white px-2 py-0.5 rounded-full border border-gray-100 shadow-sm">
-                                        + R$ {extra.price.toFixed(2).replace('.', ',')}
-                                      </span>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-
-                            {item.prepareMethods && item.prepareMethods.length > 0 && (
-                              <div>
-                                <h4 className="text-[10px] uppercase tracking-widest font-black text-gray-400 mb-2">Modo de Preparo</h4>
-                                <div className="flex flex-wrap gap-2">
-                                  {item.prepareMethods.map((method) => (
-                                    <Badge key={method.id} variant="secondary" className="bg-white text-gray-600 border-gray-100 font-bold text-[10px]">
-                                      {method.name}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                            {item.steps && item.steps.length > 0 && (
-                              <div>
-                                <h4 className="text-[10px] uppercase tracking-widest font-black text-gray-400 mb-2">Opções</h4>
-                                <div className="space-y-2">
-                                  {item.steps.map((step) => (
-                                    <div key={step.id} className="flex flex-col gap-1">
-                                      <span className="text-[10px] font-bold text-gray-500">{step.name}</span>
-                                      <span className="text-xs font-black text-gray-900 ml-1">{step.selectedOption?.name}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                );
-              })}
-            </CardContent>
-          </Card>
+          {totalDiscount > 0 && (
+            <div className="flex justify-between text-green-600">
+              <span>Desconto</span>
+              <span>- R$ {totalDiscount.toFixed(2).replace('.', ',')}</span>
+            </div>
+          )}
         </div>
 
-        <div className="lg:w-1/3 space-y-6">
-          <Card className="rounded-xs lg:sticky lg:top-6 overflow-hidden border hover:shadow-lg transition-shadow duration-300 bg-gradient-to-br from-white to-gray-50">
-            <CardHeader className="py-4 bg-primary">
-              <CardTitle className="text-white">Resumo do pedido</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-6 space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Subtotal</span>
-                  <span className="font-medium">R$ {totalPrice.toFixed(2).replace('.', ',') || 0}</span>
-                </div>
-                {deliveryOption === 'delivery' && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Taxa de entrega</span>
-                    <span className="font-medium">
-                      {calculateDeliveryFee() === 0 
-                        ? (shopDeliveryConfig?.delivery_fee_kind === 'to_be_agreed' ? 'Taxa a combinar' : <span className="text-green-500">Grátis</span>)
-                        : `R$ ${calculateDeliveryFee().toFixed(2).replace('.', ',')}`
-                      }
-                    </span>
-                  </div>
-                )}
-                {cartItems.some(item => item.priceWithDiscount) && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Descontos</span>
-                    <span className="text-green-500 font-medium">
-                      - R$ {cartItems.reduce((sum, item) => {
-                        if (item.priceWithDiscount) {
-                          return sum + ((item.price - item.priceWithDiscount) * item.quantity);
-                        }
-                        return sum;
-                      }, 0).toFixed(2).replace('.', ',')}
-                    </span>
-                  </div>
-                )}
-              </div>
-              
-              <Separator className="my-4" />
-              
-              {shopDeliveryConfig && (Number(shopDeliveryConfig.minimum_order_value) || 0) > 0 && totalPrice < (Number(shopDeliveryConfig.minimum_order_value) || 0) && (
-                <Alert variant="destructive" className="bg-red-50 border-red-200 text-red-700 py-3 rounded-xs mb-4">
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertDescription className="text-xs font-medium">
-                    O valor mínimo do pedido é R$ {(Number(shopDeliveryConfig.minimum_order_value) || 0).toFixed(2).replace('.', ',')}. 
-                    Faltam R$ {((Number(shopDeliveryConfig.minimum_order_value) || 0) - totalPrice).toFixed(2).replace('.', ',')} em produtos.
-                  </AlertDescription>
-                </Alert>
-              )}
-              
-              <div className="flex justify-between font-medium text-lg">
-                <span>Total</span>
-                <span className="text-primary">R$ {calculateTotal().toFixed(2).replace('.', ',')}</span>
-              </div>
-            </CardContent>
-            <CardFooter className="pt-4">
-              <Button 
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-all duration-300 rounded-xs" 
-                size="lg"
-                onClick={handleSubmitOrder}
-                disabled={isSubmitting || (deliveryOption === 'delivery' && !address.trim()) || !isShopOpen || shopStatusLoading}
-              >
-                {isSubmitting ? (
-                  <span className="flex items-center gap-2">
-                    <span className="h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></span>
-                    Finalizando...
-                  </span>
-                ) : !isShopOpen && !shopStatusLoading ? (
-                  <span className="flex items-center gap-2">
-                    <Clock className="h-5 w-5" />
-                    Loja Fechada
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-2">
-                    {client ? (
-                      <>
-                        <CheckCircle2 className="h-5 w-5" />
-                        Finalizar pedido
-                      </>
-                    ) : (
-                      <>
-                        <LogIn className="h-5 w-5" />
-                        Fazer login e finalizar
-                      </>
-                    )}
-                  </span>
-                )}
-              </Button>
-            </CardFooter>
-          </Card>
-          
-          <Card className="rounded-xs overflow-hidden border hover:shadow-lg transition-shadow duration-300 bg-white">
-            <CardHeader className="py-4 bg-primary">
-              <CardTitle className="text-lg text-white">Informações adicionais</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-6 text-sm text-muted-foreground space-y-2">
-              <p>
-                Ao finalizar o pedido, você concorda com nossos Termos de Serviço e Política de Privacidade.
-              </p>
-              <p>
-                Em caso de dúvidas, entre em contato com o estabelecimento.
-              </p>
-            </CardContent>
-          </Card>
+        <Separator />
+
+        <div className="flex justify-between font-semibold text-gray-900">
+          <span>Total</span>
+          <span className="text-primary">R$ {calculateTotal().toFixed(2).replace('.', ',')}</span>
         </div>
+
+        {isBelowMinOrder && (
+          <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
+            <AlertTriangle className="h-3.5 w-3.5 text-amber-500 flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-amber-700">
+              Mínimo R$ {minOrderValue.toFixed(2).replace('.', ',')}. Faltam R$ {(minOrderValue - totalPrice).toFixed(2).replace('.', ',')}.
+            </p>
+          </div>
+        )}
+
+        <button
+          onClick={onSubmit}
+          disabled={!canSubmit}
+          className={`w-full py-3 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
+            canSubmit
+              ? 'bg-primary text-white hover:bg-primary/90 active:scale-[0.98] cursor-pointer'
+              : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+          }`}
+        >
+          {isSubmitting ? (
+            <>
+              <span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              Finalizando...
+            </>
+          ) : !isShopOpen && !shopStatusLoading ? (
+            <>
+              <Clock className="h-4 w-4" />
+              Loja fechada
+            </>
+          ) : !client ? (
+            <>
+              <LogIn className="h-4 w-4" />
+              Entrar e finalizar
+            </>
+          ) : (
+            <>
+              <CheckCircle2 className="h-4 w-4" />
+              Finalizar pedido
+            </>
+          )}
+        </button>
+
+        <p className="text-[11px] text-center text-muted-foreground leading-relaxed">
+          Ao finalizar, você concorda com os Termos de Serviço.
+        </p>
       </div>
     </div>
   )
