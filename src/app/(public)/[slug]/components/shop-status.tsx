@@ -19,25 +19,21 @@ export default function ShopStatus({ shopStatusData, shopScheduleConfig }: ShopS
 
   if (loading) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
-        <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-pulse" />
+      <span className="border-l-2 border-gray-300 pl-2 text-xs font-medium text-gray-400">
         Verificando...
       </span>
     );
   }
 
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+    <span className={`border-l-2 pl-2 text-xs font-semibold ${
       shopStatus.isOpen
-        ? 'bg-green-100 text-green-700'
-        : 'bg-red-100 text-red-600'
+        ? 'border-green-500 text-green-600'
+        : 'border-red-500 text-red-600'
     }`}>
-      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-        shopStatus.isOpen ? 'bg-green-500' : 'bg-red-500'
-      }`} />
       {shopStatus.isOpen ? 'Aberto' : 'Fechado'}
       {!shopStatus.isOpen && shopStatus.nextOpenTime && (
-        <span className="font-normal opacity-80">· Abre às {shopStatus.nextOpenTime}</span>
+        <span className="font-normal ml-1 opacity-80">· Abre às {shopStatus.nextOpenTime}</span>
       )}
     </span>
   );

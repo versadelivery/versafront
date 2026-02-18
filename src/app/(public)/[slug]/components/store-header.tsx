@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import AuthIndicator from './auth-indicator';
 import ShopStatus from './shop-status';
+import favicon from "@/public/logo/favicon.svg";
+import logoInlineBlack from "@/public/logo/logo-inline-black.svg";
 
 interface StoreHeaderProps {
   shop: any;
@@ -34,19 +36,14 @@ export default function StoreHeader({ shop }: StoreHeaderProps) {
 
   return (
     <>
-      {/* Top nav — clean, like admin header */}
       <header className="sticky top-0 z-50 w-full bg-white border-b border-gray-100">
         <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <Link href={`/${attributes.slug}`} className="flex items-center">
-              <Image
-                src="/logo/logo-inline-black.svg"
-                alt="Versa"
-                width={110}
-                height={30}
-                priority
-                className="h-auto w-[90px] md:w-[110px]"
-              />
+            <Link href={`/${attributes.slug}`} className="md:hidden">
+              <Image src={favicon} alt="Versa" width={100} height={100} priority />
+            </Link>
+            <Link href={`/${attributes.slug}`} className="hidden md:block">
+              <Image src={logoInlineBlack} alt="Versa" width={190} height={60} priority />
             </Link>
 
             <div className="flex items-center gap-2 sm:gap-3">
@@ -77,9 +74,7 @@ export default function StoreHeader({ shop }: StoreHeaderProps) {
         </div>
       </header>
 
-      {/* Shop banner */}
       <div className="w-full bg-white border-b border-gray-100">
-        {/* Cover image — only when available */}
         {attributes.image_url && (
           <div className="relative w-full h-[140px] sm:h-[200px] overflow-hidden bg-gray-100">
             <img
@@ -91,10 +86,8 @@ export default function StoreHeader({ shop }: StoreHeaderProps) {
           </div>
         )}
 
-        {/* Identity block */}
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl pt-5 pb-4">
           <div className="flex items-start gap-4 sm:gap-5">
-            {/* Logo */}
             <div className="flex-shrink-0 w-14 h-14 sm:w-[72px] sm:h-[72px] rounded-2xl bg-white border border-gray-200 shadow-sm overflow-hidden">
               {attributes.image_url ? (
                 <img
@@ -109,12 +102,11 @@ export default function StoreHeader({ shop }: StoreHeaderProps) {
               )}
             </div>
 
-            {/* Name + meta */}
             <div className="flex-1 min-w-0 pt-0.5">
-              <h1 className="text-xl sm:text-2xl font-bold text-foreground leading-tight">
+              <h1 className="text-xl sm:text-2xl font-bold text-muted-foreground uppercase tracking-wide leading-tight">
                 {attributes.name}
               </h1>
-              <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1.5">
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-2">
                 <ShopStatus
                   shopStatusData={attributes.shop_status}
                   shopScheduleConfig={
@@ -132,7 +124,6 @@ export default function StoreHeader({ shop }: StoreHeaderProps) {
             </div>
           </div>
 
-          {/* Stats row */}
           <div className="flex flex-wrap items-center gap-4 sm:gap-6 mt-4 pt-4 border-t border-gray-100">
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-primary flex-shrink-0" />
