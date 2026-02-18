@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { formatPrice } from "@/utils/format-price";
 import { createPDVOrder } from "@/services/order-service";
 import { useAdminActionCable } from "@/lib/admin-cable";
+import { useShop } from "@/hooks/use-shop";
 
 interface CartItem {
   id: string;
@@ -421,7 +422,23 @@ export default function PDVPage() {
                                 </div>
                               )}
                               
-                              {/* Badge de preço promocional se houver */}
+                              {/* Tags visuais */}
+                              <div className="absolute top-2 left-2 flex flex-col gap-0.5">
+                                {item.data.attributes.new_tag && (
+                                  <span className="bg-green-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm whitespace-nowrap">NOVO!</span>
+                                )}
+                                {item.data.attributes.best_seller_tag && (
+                                  <span className="bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm whitespace-nowrap">+ VENDIDO</span>
+                                )}
+                                {item.data.attributes.highlight && (
+                                  <span className="bg-blue-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm whitespace-nowrap">DESTAQUE</span>
+                                )}
+                                {item.data.attributes.promotion_tag && !item.data.attributes.price_with_discount && (
+                                  <span className="bg-primary text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm whitespace-nowrap">PROMOÇÃO</span>
+                                )}
+                              </div>
+
+                              {/* Badge de desconto */}
                               {item.data.attributes.price_with_discount && (
                                 <div className="absolute top-2 right-2">
                                   <Badge variant="destructive">PROMOÇÃO</Badge>

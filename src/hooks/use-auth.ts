@@ -13,20 +13,25 @@ export function useAuth() {
   useEffect(() => {
     const token = getToken()
     const storedUser = typeof window !== 'undefined' ? localStorage.getItem('auth_user') : null
-    
+
     if (!token) {
       setIsLoading(false)
       return
     }
 
-    if (storedUser) {
-      setUser(JSON.parse(storedUser))
+    if (storedUser && storedUser !== 'undefined') {
+      try {
+        setUser(JSON.parse(storedUser))
+      } catch (e) {
+        console.error('Error parsing stored user', e)
+        localStorage.removeItem('auth_user')
+      }
     }
 
     setIsLoading(false)
   }, [])
 
-  const register = async (data: RegisterData)=> {
+  const register = async (data: RegisterData) => {
     const response = await registerShop(data)
     toast.success('Loja cadastrada com sucesso!')
     router.push('/pending-approval')

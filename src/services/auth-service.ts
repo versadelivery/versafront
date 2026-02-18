@@ -4,9 +4,18 @@ import { LoginData, RegisterData } from "@/types/utils"
 
 export const loginUser = async (data: LoginData) => {
   const response = await api.post(API_ENDPOINTS.LOGIN, data)
+
+  // O backend retorna um formato JSONAPI: { data: { id, attributes: { ... } }, token: "..." }
+  const userData = response.data.data
+
   return {
     token: response.data.token,
-    user: response.data.user
+    user: {
+      ...userData.attributes,
+      id: userData.id,
+      // O serializer aninha o shop em attributes.shop.data
+      shop: userData.attributes.shop?.data
+    }
   }
 }
 

@@ -184,7 +184,8 @@ export default function OrderManagement() {
   const socketOrdersCache = useRef<Map<string, Order>>(new Map());
 
   const { subscribeToAdminOrders, updateOrder, updateOrderDetails, isConnected } = useAdminActionCable();
-  const { orderAccepted, orderReady } = useRestaurantSounds();
+  const { orderAccepted, orderReady, newOrder } = useRestaurantSounds();
+  const seenOrderIdsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     const checkMobile = () => {
@@ -243,6 +244,17 @@ export default function OrderManagement() {
         const newOrders = convertedOrders.filter(socketOrder => 
           !prevOrders.some(prevOrder => prevOrder.id === socketOrder.id)
         );
+
+        // Tocar som de novo pedido para pedidos genuinamente novos
+        newOrders.forEach(order => {
+          if (!seenOrderIdsRef.current.has(order.id)) {
+            seenOrderIdsRef.current.add(order.id);
+            newOrder();
+          }
+        });
+
+        // Registrar todos os pedidos atuais como vistos
+        convertedOrders.forEach(order => seenOrderIdsRef.current.add(order.id));
 
         // Mesclar mantendo alterações locais recentes
         const now = Date.now();

@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
 import { formatPrice } from '@/app/(public)/[slug]/format-price';
 import { User } from '@/app/admin/settings/users/services/userService';
 import CancelOrderModal from './cancel-order-modal';
+import { buildWhatsAppOrderMessage } from '@/utils/whatsapp-template';
 
 const getPaymentMethodLabel = (method: string) => {
   const methodMap: Record<string, string> = {
@@ -112,24 +113,25 @@ export default function OrderCard({
   // Função para notificar via WhatsApp
   const handleWhatsAppNotification = () => {
     const customerPhone = order.socketData?.attributes?.customer?.data?.attributes?.cellphone?.replace(/\D/g, '') || '';
-    const message = `Olá ${order.customerName}! Seu pedido #${order.id} está ${order.status === 'prontos' ? 'pronto para entrega' : 'em preparo'}. Em breve você receberá mais atualizações.`;
+    const items = order.socketData?.attributes?.items?.data?.map((item: any) => ({
+      name: item.attributes.catalog_item.data.attributes.name,
+      quantity: item.attributes.quantity,
+      totalPrice: parseFloat(item.attributes.total_price || '0'),
+      observation: item.attributes.observation || undefined,
+    })) || [];
+
+    const message = buildWhatsAppOrderMessage({
+      orderId: order.id,
+      customerName: order.customerName,
+      status: order.status,
+      items,
+      paymentMethod: order.socketData?.attributes?.payment_method,
+      deliveryType: order.deliveryType,
+      total: order.amount,
+    });
+
     const whatsappUrl = `https://wa.me/55${customerPhone}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
-    
-    // Toast criativo para WhatsApp
-    toast.success('📱 WhatsApp aberto!', {
-      description: 'Mensagem personalizada pronta para envio',
-      duration: 3000,
-      icon: '💬',
-      style: {
-        background: 'linear-gradient(135deg, #009246 0%, #2C5530 100%)',
-        color: 'white',
-        border: 'none',
-        borderRadius: '12px',
-        fontSize: '14px',
-        fontWeight: '600'
-      }
-    });
   };
 
   // Função para imprimir pedido
@@ -211,10 +213,10 @@ export default function OrderCard({
   // Função para copiar impressão (formatação para WhatsApp/Telegram)
   const handleCopyPrintFormat = () => {
     const printText = `
-🍽️ *PEDIDO #${order.id}*
-📅 ${order.time}
+*PEDIDO #${order.id}*
+${order.time}
 
-👤 *CLIENTE*
+*CLIENTE*
 Nome: ${order.customerName}
 Telefone: ${order.socketData?.attributes?.customer?.data?.attributes?.cellphone || 'N/A'}
 ${order.deliveryType === 'delivery' && order.socketData?.attributes?.address?.data ? `
@@ -222,7 +224,7 @@ ${order.deliveryType === 'delivery' && order.socketData?.attributes?.address?.da
 ${order.socketData.attributes.address.data.attributes.address}
 Bairro: ${order.socketData.attributes.address.data.attributes.neighborhood}
 ${order.socketData.attributes.address.data.attributes.complement ? `Complemento: ${order.socketData.attributes.address.data.attributes.complement}` : ''}
-` : '🏪 *TIPO: Retirada na loja*'}
+` : '*TIPO: Retirada na loja*'}
 
 🛒 *ITENS*
 ${order.socketData?.attributes?.items?.data?.map((item: any) => `

@@ -61,6 +61,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
+        suppressHydrationWarning
         className={`${plusJakartaSans.variable} ${antarcticanMono.variable} antialiased bg-white`}
       >
         <Toaster position="top-center" />
