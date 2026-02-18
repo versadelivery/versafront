@@ -12,99 +12,94 @@ interface ClientStoreContentProps {
 
 export default function ClientStoreContent({ shop }: ClientStoreContentProps) {
   const [activeCategory, setActiveCategory] = useState('all');
+
+  // Valor bruto do input (atualiza imediatamente, sem delay)
+  const [searchInput, setSearchInput] = useState('');
+  // Valor com debounce usado no filtro dos produtos
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    // Store shop data in localStorage for client-side usage
+    const id = setTimeout(() => {
+      setSearchQuery(searchInput);
+    }, 350);
+    return () => clearTimeout(id);
+  }, [searchInput]);
+
+  useEffect(() => {
     localStorage.removeItem("shop");
     localStorage.setItem("shop", JSON.stringify(shop));
   }, [shop]);
 
   const rawGroups: any = shop?.data.attributes.catalog_groups;
 
-  // Debug logs: structure and normalization of groups
   if (typeof window !== 'undefined') {
     try {
-      // Log only once per page load
       if (!(window as any).__versa_logged_groups__) {
         (window as any).__versa_logged_groups__ = true;
         console.groupCollapsed('[Versa] Catalog groups payload debug');
         console.log('shop.id:', shop?.data?.id);
         console.log('catalog_groups raw:', rawGroups);
-        console.log('Array.isArray(rawGroups):', Array.isArray(rawGroups));
-        console.log('rawGroups?.data:', (rawGroups as any)?.data);
-        console.log('Array.isArray(rawGroups?.data):', Array.isArray((rawGroups as any)?.data));
-        console.log('rawGroups?.data?.data:', (rawGroups as any)?.data?.data);
-        console.log('Array.isArray(rawGroups?.data?.data):', Array.isArray((rawGroups as any)?.data?.data));
         console.groupEnd();
       }
     } catch {}
   }
+
   const normalizedGroups: any[] = Array.isArray(rawGroups)
     ? rawGroups
     : (Array.isArray(rawGroups?.data)
       ? rawGroups.data
       : (Array.isArray(rawGroups?.data?.data) ? rawGroups.data.data : []));
 
-  if (typeof window !== 'undefined') {
-    try {
-      console.groupCollapsed('[Versa] Catalog groups normalized');
-      console.log('normalizedGroups length:', normalizedGroups.length);
-      console.log('normalizedGroups ids:', normalizedGroups.map((g: any) => g.id));
-      console.log('normalizedGroups names:', normalizedGroups.map((g: any) => g.attributes?.name));
-      console.groupEnd();
-    } catch {}
-  }
-
   const groups = normalizedGroups
     .slice()
     .sort((a: any, b: any) => {
       const pa = Number(a.attributes?.priority ?? 0);
       const pb = Number(b.attributes?.priority ?? 0);
-      // menor número = maior prioridade (1 antes de 2)
       return pa - pb;
     });
 
-  if (typeof window !== 'undefined') {
-    try {
-      console.groupCollapsed('[Versa] Catalog groups after sort by priority');
-      console.table(groups.map((g: any) => ({ id: g.id, name: g.attributes?.name, priority: g.attributes?.priority })));
-      console.groupEnd();
-    } catch {}
-  }
-  
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-  };
-
-  const handleCategoryChange = (category: string) => {
-    setActiveCategory(category);
+  const handleClearSearch = () => {
+    setSearchInput('');
+    // searchQuery será limpo pelo useEffect após 350ms,
+    // mas zeramos imediatamente pra UX instantânea
+    setSearchQuery('');
   };
 
   return (
     <main className="min-h-screen pb-20 bg-gray-50/40">
-      {/* Sticky Search Only - Navigation is now part of the Grid sections */}
+      {/* Sticky search + nav bar */}
       <div className="sticky top-16 z-40 w-full bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm">
-        <div className="container mx-auto px-4 py-4 max-w-7xl space-y-4">
-          <SearchBar onSearch={handleSearch} />
-          
-          <CategoryNavigation 
-            categories={groups} 
-            activeCategory={activeCategory} 
-            onChange={handleCategoryChange} 
-          />
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
+          {/*
+            Mobile/tablet: busca em cima, abas embaixo
+            Desktop (lg+): abas à esquerda, busca à direita — mesma linha
+          */}
+          <div className="flex flex-col lg:flex-row lg:items-center lg:gap-6 py-2.5 lg:py-2">
+            {/* Categorias — flex-1 no desktop (order-1), segunda linha no mobile (order-2) */}
+            <div className="order-2 lg:order-1 lg:flex-1 min-w-0 mt-2 lg:mt-0 overflow-hidden">
+              <CategoryNavigation
+                categories={groups}
+                activeCategory={activeCategory}
+                onChange={setActiveCategory}
+              />
+            </div>
+
+            {/* Busca — full width no mobile (order-1), largura fixa no desktop (order-2) */}
+            <div className="order-1 lg:order-2 w-full lg:w-64 xl:w-72 flex-shrink-0">
+              <SearchBar value={searchInput} onChange={setSearchInput} />
+            </div>
+          </div>
         </div>
       </div>
-      
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
-        <ProductGrid 
-          categories={groups} 
+
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 max-w-7xl">
+        <ProductGrid
+          categories={groups}
           activeCategory={activeCategory}
           searchQuery={searchQuery}
+          onClearSearch={handleClearSearch}
         />
       </div>
     </main>
   );
 }
-
-

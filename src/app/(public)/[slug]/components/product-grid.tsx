@@ -1,7 +1,7 @@
 "use client"
 
 import { Search } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import ProductCard from './product-card';
 import { normalizeItems } from '../normalize-items';
 import type { CatalogItem } from '../types';
@@ -10,9 +10,10 @@ interface ProductGridProps {
   categories: any[];
   activeCategory: string;
   searchQuery: string;
+  onClearSearch: () => void;
 }
 
-export default function ProductGrid({ categories, activeCategory, searchQuery }: ProductGridProps) {
+export default function ProductGrid({ categories, activeCategory, searchQuery, onClearSearch }: ProductGridProps) {
   const filteredCategories = categories.map(group => ({
     ...group,
     items: normalizeItems(group.attributes.items).filter(item =>
@@ -36,8 +37,8 @@ export default function ProductGrid({ categories, activeCategory, searchQuery }:
           </p>
           {searchQuery && (
             <button
-              onClick={() => window.location.reload()}
-              className="px-6 py-2.5 bg-primary text-white rounded-full text-sm font-semibold hover:bg-primary/90 transition-colors"
+              onClick={onClearSearch}
+              className="px-6 py-2 bg-primary text-white rounded-full text-sm font-semibold hover:bg-primary/90 transition-colors"
             >
               Limpar busca
             </button>

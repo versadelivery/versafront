@@ -79,7 +79,7 @@ export default function StoreHeader({ shop }: StoreHeaderProps) {
 
       {/* Shop banner */}
       <div className="w-full bg-white border-b border-gray-100">
-        {/* Cover image */}
+        {/* Cover image — only when available */}
         {attributes.image_url && (
           <div className="relative w-full h-[140px] sm:h-[200px] overflow-hidden bg-gray-100">
             <img
@@ -91,11 +91,11 @@ export default function StoreHeader({ shop }: StoreHeaderProps) {
           </div>
         )}
 
-        {/* Shop identity */}
-        <div className="container mx-auto px-4 max-w-7xl py-4">
-          <div className="flex items-center gap-4">
+        {/* Identity block */}
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl pt-5 pb-4">
+          <div className="flex items-start gap-4 sm:gap-5">
             {/* Logo */}
-            <div className="flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-white border border-gray-200 shadow-sm overflow-hidden">
+            <div className="flex-shrink-0 w-14 h-14 sm:w-[72px] sm:h-[72px] rounded-2xl bg-white border border-gray-200 shadow-sm overflow-hidden">
               {attributes.image_url ? (
                 <img
                   src={attributes.image_url}
@@ -104,17 +104,17 @@ export default function StoreHeader({ shop }: StoreHeaderProps) {
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-gray-50">
-                  <Store className="w-6 h-6 text-muted-foreground" />
+                  <Store className="w-6 h-6 sm:w-7 sm:h-7 text-muted-foreground" />
                 </div>
               )}
             </div>
 
             {/* Name + meta */}
-            <div className="flex-1 min-w-0">
-              <h1 className="text-base sm:text-lg font-bold text-foreground truncate leading-tight">
+            <div className="flex-1 min-w-0 pt-0.5">
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground leading-tight">
                 {attributes.name}
               </h1>
-              <div className="flex flex-wrap items-center gap-2 mt-1">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1.5">
                 <ShopStatus
                   shopStatusData={attributes.shop_status}
                   shopScheduleConfig={
@@ -123,7 +123,7 @@ export default function StoreHeader({ shop }: StoreHeaderProps) {
                   }
                 />
                 {attributes.address && (
-                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground">
                     <MapPin className="w-3 h-3 flex-shrink-0" />
                     {attributes.address}
                   </span>
@@ -133,32 +133,32 @@ export default function StoreHeader({ shop }: StoreHeaderProps) {
           </div>
 
           {/* Stats row */}
-          <div className="flex items-center gap-5 mt-3 pt-3 border-t border-gray-100">
-            <div className="flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+          <div className="flex flex-wrap items-center gap-4 sm:gap-6 mt-4 pt-4 border-t border-gray-100">
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-primary flex-shrink-0" />
               <div>
-                <p className="text-xs font-semibold text-foreground leading-none">30–45 min</p>
-                <p className="text-[10px] text-muted-foreground">Entrega</p>
+                <p className="text-sm font-semibold text-foreground leading-none">30–45 min</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Entrega</p>
               </div>
             </div>
 
-            <div className="w-px h-5 bg-gray-200" />
+            <div className="w-px h-7 bg-gray-200 hidden sm:block" />
 
-            <div className="flex items-center gap-1.5">
-              <Truck className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+            <div className="flex items-center gap-2">
+              <Truck className="w-4 h-4 text-primary flex-shrink-0" />
               <div>
-                <p className="text-xs font-semibold text-foreground leading-none">{deliveryFee()}</p>
-                <p className="text-[10px] text-muted-foreground">Taxa de entrega</p>
+                <p className="text-sm font-semibold text-foreground leading-none">{deliveryFee()}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Taxa de entrega</p>
               </div>
             </div>
 
-            <div className="w-px h-5 bg-gray-200" />
+            <div className="w-px h-7 bg-gray-200 hidden sm:block" />
 
-            <div className="flex items-center gap-1.5">
-              <Receipt className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+            <div className="flex items-center gap-2">
+              <Receipt className="w-4 h-4 text-primary flex-shrink-0" />
               <div>
-                <p className="text-xs font-semibold text-foreground leading-none">{minimumOrder()}</p>
-                <p className="text-[10px] text-muted-foreground">Pedido mínimo</p>
+                <p className="text-sm font-semibold text-foreground leading-none">{minimumOrder()}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Pedido mínimo</p>
               </div>
             </div>
           </div>

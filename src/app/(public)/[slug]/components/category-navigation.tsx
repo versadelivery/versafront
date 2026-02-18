@@ -1,9 +1,6 @@
 "use client"
 
 import { useState, useEffect } from 'react';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { motion } from 'framer-motion';
 
 interface Category {
   id: string;
@@ -32,7 +29,7 @@ export default function CategoryNavigation({ categories, activeCategory, onChang
     onChange(categoryName);
     const element = document.getElementById(categoryName.toLowerCase().replace(/\s+/g, '-'));
     if (element) {
-      const offset = 160; // header (64px) + search/nav bar (~96px)
+      const offset = 130; // header (64px) + sticky bar (~66px)
       const bodyRect = document.body.getBoundingClientRect().top;
       const elementRect = element.getBoundingClientRect().top;
       const elementPosition = elementRect - bodyRect;
@@ -47,43 +44,38 @@ export default function CategoryNavigation({ categories, activeCategory, onChang
 
   return (
     <div className="w-full overflow-hidden">
-      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 px-1">
+      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
         <button
           onClick={() => scrollToCategory('all')}
           className={`
-            whitespace-nowrap px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-200
-            ${activeCategory === 'all' 
-              ? 'bg-primary text-white shadow-md shadow-primary/20 scale-105' 
-              : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'}
+            whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 flex-shrink-0
+            ${activeCategory === 'all'
+              ? 'bg-primary text-white shadow-sm'
+              : 'bg-gray-100 text-muted-foreground hover:bg-gray-200 hover:text-foreground'}
           `}
         >
           Tudo
         </button>
-        
+
         {categories.map(category => (
           <button
             key={category.id}
             onClick={() => scrollToCategory(category.attributes.name)}
             className={`
-              whitespace-nowrap px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-200
-              ${activeCategory === category.attributes.name 
-                ? 'bg-primary text-white shadow-md shadow-primary/20 scale-105' 
-                : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'}
+              whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 flex-shrink-0
+              ${activeCategory === category.attributes.name
+                ? 'bg-primary text-white shadow-sm'
+                : 'bg-gray-100 text-muted-foreground hover:bg-gray-200 hover:text-foreground'}
             `}
           >
             {category.attributes.name}
           </button>
         ))}
       </div>
-      
+
       <style jsx global>{`
-        .no-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
-        .no-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
     </div>
   );
