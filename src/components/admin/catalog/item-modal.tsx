@@ -39,6 +39,32 @@ interface Step {
 }
 
 // =============================================================================
+// CONSTANTES
+// =============================================================================
+
+const DAYS_OF_WEEK = [
+  { key: 'sunday_active', label: 'Dom' },
+  { key: 'monday_active', label: 'Seg' },
+  { key: 'tuesday_active', label: 'Ter' },
+  { key: 'wednesday_active', label: 'Qua' },
+  { key: 'thursday_active', label: 'Qui' },
+  { key: 'friday_active', label: 'Sex' },
+  { key: 'saturday_active', label: 'Sáb' },
+] as const;
+
+type DayKey = typeof DAYS_OF_WEEK[number]['key'];
+
+const DEFAULT_ACTIVE_DAYS: Record<DayKey, boolean> = {
+  sunday_active: true,
+  monday_active: true,
+  tuesday_active: true,
+  wednesday_active: true,
+  thursday_active: true,
+  friday_active: true,
+  saturday_active: true,
+};
+
+// =============================================================================
 // COMPONENTE PRINCIPAL
 // =============================================================================
 
@@ -80,6 +106,9 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
   const [bestSellerTag, setBestSellerTag] = useState(false);
   const [highlight, setHighlight] = useState(false);
   const [promotionTag, setPromotionTag] = useState(false);
+
+  // Estados - Dias da semana
+  const [activeDays, setActiveDays] = useState<Record<DayKey, boolean>>(DEFAULT_ACTIVE_DAYS);
 
   // Estados - Erros
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -142,6 +171,7 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
     setBestSellerTag(false);
     setHighlight(false);
     setPromotionTag(false);
+    setActiveDays(DEFAULT_ACTIVE_DAYS);
     setErrors({});
   };
 
@@ -329,6 +359,11 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
     formData.append('best_seller_tag', bestSellerTag.toString());
     formData.append('highlight', highlight.toString());
     formData.append('promotion_tag', promotionTag.toString());
+
+    // Dias da semana
+    DAYS_OF_WEEK.forEach(({ key }) => {
+      formData.append(key, activeDays[key].toString());
+    });
 
     // Extras - filtrar apenas os que têm nome preenchido
     if (hasExtras) {
@@ -581,6 +616,25 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
               <span className="text-sm font-medium">Promoção</span>
               <Switch checked={promotionTag} onCheckedChange={setPromotionTag} />
             </div>
+          </div>
+
+          <hr className="border-gray-100" />
+
+          {/* Disponibilidade Semanal */}
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Disponibilidade Semanal</p>
+          <div className="grid grid-cols-7 gap-1.5">
+            {DAYS_OF_WEEK.map(({ key, label }) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setActiveDays((prev) => ({ ...prev, [key]: !prev[key] }))}
+                className={`py-2 rounded-md text-sm font-medium transition-colors ${
+                  activeDays[key] ? 'bg-foreground text-white' : 'bg-muted/40 text-muted-foreground'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
           </div>
 
           <hr className="border-gray-100" />

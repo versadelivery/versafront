@@ -1,6 +1,6 @@
 "use client";
 
-import { Package, Scale, Plus, ChefHat, ListChecks, Loader2 } from "lucide-react";
+import { Package, Scale, Plus, ChefHat, ListChecks, Loader2, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import {
@@ -21,6 +21,20 @@ interface ItemDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
+
+// =============================================================================
+// CONSTANTES
+// =============================================================================
+
+const DAYS_OF_WEEK = [
+  { key: 'sunday_active', label: 'Dom' },
+  { key: 'monday_active', label: 'Seg' },
+  { key: 'tuesday_active', label: 'Ter' },
+  { key: 'wednesday_active', label: 'Qua' },
+  { key: 'thursday_active', label: 'Qui' },
+  { key: 'friday_active', label: 'Sex' },
+  { key: 'saturday_active', label: 'Sáb' },
+] as const;
 
 // =============================================================================
 // COMPONENTE PRINCIPAL
@@ -173,6 +187,26 @@ export function ItemDetailsModal({ id, isOpen, onClose }: ItemDetailsModalProps)
                 )}
               </div>
             )}
+
+            {/* Dias da Semana */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <CalendarDays className="h-4 w-4 text-primary" />
+                <span className="text-sm font-semibold">Dias Disponíveis</span>
+              </div>
+              <div className="grid grid-cols-7 gap-1.5">
+                {DAYS_OF_WEEK.map(({ key, label }) => (
+                  <div
+                    key={key}
+                    className={`py-2 rounded-md text-sm font-medium text-center ${
+                      (attrs as any)[key] !== false ? 'bg-foreground text-white' : 'bg-muted/40 text-muted-foreground line-through'
+                    }`}
+                  >
+                    {label}
+                  </div>
+                ))}
+              </div>
+            </div>
 
             {/* Adicionais */}
             {hasExtras && (
