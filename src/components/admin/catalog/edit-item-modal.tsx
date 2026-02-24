@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import Image from "next/image";
 import { Camera, Loader2, Plus, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useCatalogGroup, useCatalogItem } from "@/hooks/useCatalogGroup";
 import { updateCatalogItem } from "@/api/requests/catalog_item/requests";
 import { DeleteConfirmation } from "@/components/ui/delete-confirmation";
@@ -79,6 +80,7 @@ const DEFAULT_ACTIVE_DAYS: Record<DayKey, boolean> = {
 
 export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) {
   // Hooks
+  const queryClient = useQueryClient();
   const { catalog, isLoading } = useCatalogGroup();
   const { catalogItem, isLoadingCatalogItem, deleteCatalogItem, isDeletingCatalogItem } = useCatalogItem(id);
 
@@ -151,9 +153,16 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
   // EFEITOS
   // =============================================================================
 
+  // Busca dados frescos ao abrir o modal
+  useEffect(() => {
+    if (isOpen && id) {
+      queryClient.invalidateQueries({ queryKey: ['catalog-item', id] });
+    }
+  }, [isOpen]);
+
   // Popular campos quando item carrega
   useEffect(() => {
-    if (catalogItem) {
+    if (catalogItem && isOpen) {
       const item = catalogItem.data.attributes;
 
       setName(item.name || '');
@@ -239,7 +248,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
       originalHasPrepareMethods.current = item.prepare_method?.data?.length > 0;
       originalHasSteps.current = item.steps?.data?.length > 0;
     }
-  }, [catalogItem]);
+  }, [catalogItem, isOpen]);
 
   // =============================================================================
   // FUNÇÕES AUXILIARES
@@ -501,6 +510,8 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
       }
 
       await updateCatalogItem(formData);
+      queryClient.invalidateQueries({ queryKey: ['catalog'] });
+      queryClient.invalidateQueries({ queryKey: ['catalog-item', id] });
       toast.success('Item atualizado com sucesso');
       onOpenChange(false);
     } catch {
