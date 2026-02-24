@@ -10,7 +10,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Camera, Info, Loader2, Trash2 } from "lucide-react";
+import { Camera, Info, Loader2 } from "lucide-react";
 import { useCatalogGroup } from "@/hooks/useCatalogGroup";
 import { DeleteConfirmation } from "@/components/ui/delete-confirmation";
 import Image from "next/image";
@@ -22,19 +22,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-// =============================================================================
-// TIPOS
-// =============================================================================
-
 interface GroupModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   editingGroup?: string | null;
 }
-
-// =============================================================================
-// COMPONENTE PRINCIPAL
-// =============================================================================
 
 export default function GroupModal({ isOpen, onOpenChange, editingGroup }: GroupModalProps) {
   const {
@@ -48,7 +40,6 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
     isLoadingGroup,
   } = useCatalogGroup(editingGroup || undefined);
 
-  // Estados
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState("1");
@@ -58,11 +49,9 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Variáveis derivadas
   const isEditing = !!editingGroup;
   const isLoading = isCreatingGroup || isUpdatingGroup;
 
-  // Preencher formulário quando editando
   useEffect(() => {
     if (!isOpen) {
       resetForm();
@@ -78,7 +67,6 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
     }
   }, [isOpen, catalogGroup, isEditing]);
 
-  // Limpar formulário
   const resetForm = () => {
     setName("");
     setDescription("");
@@ -88,14 +76,12 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
     setErrors({});
   };
 
-  // Limpar erro de um campo
   const clearError = (field: string) => {
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: "" }));
     }
   };
 
-  // Validar formulário
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
@@ -126,7 +112,6 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
     return Object.keys(newErrors).length === 0;
   };
 
-  // Selecionar imagem
   const handleSelectImage = () => {
     fileInputRef.current?.click();
   };
@@ -144,14 +129,12 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
     }
   };
 
-  // Prioridade - apenas números
   const handlePriorityChange = (value: string) => {
     const numericValue = value.replace(/[^0-9]/g, "");
     setPriority(numericValue);
     clearError("priority");
   };
 
-  // Enviar formulário
   const handleSubmit = () => {
     if (!validateForm()) return;
 
@@ -174,14 +157,12 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
     handleClose();
   };
 
-  // Fechar modal
   const handleClose = () => {
     if (isLoading) return;
     resetForm();
     onOpenChange(false);
   };
 
-  // Confirmar exclusão
   const handleConfirmDelete = async () => {
     if (!editingGroup) return;
     deleteCatalogGroup(editingGroup);
@@ -189,45 +170,23 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
     handleClose();
   };
 
-  // =============================================================================
-  // RENDER
-  // =============================================================================
-
   return (
     <>
       <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent className="rounded-lg sm:max-w-[640px] p-0 bg-white max-h-[90vh] flex flex-col overflow-hidden">
-          {/* Header */}
-          <DialogHeader className="px-6 pt-6 pb-4 border-b border-gray-100 flex flex-row items-center justify-between">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b border-gray-100">
             <DialogTitle className="text-lg font-semibold">
               {isEditing ? "Editar Grupo" : "Novo Grupo"}
             </DialogTitle>
-            {isEditing && (
-              <button
-                type="button"
-                onClick={() => setShowDeleteModal(true)}
-                disabled={isLoading || isDeletingGroup}
-                className="p-2 rounded-lg hover:bg-red-50 transition-colors"
-              >
-                {isDeletingGroup ? (
-                  <Loader2 className="h-5 w-5 animate-spin text-destructive" />
-                ) : (
-                  <Trash2 className="h-5 w-5 text-destructive" />
-                )}
-              </button>
-            )}
           </DialogHeader>
 
-          {/* Loading */}
           {isEditing && isLoadingGroup ? (
             <div className="flex items-center justify-center h-40">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : (
             <>
-              {/* Formulário */}
               <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
-                {/* Imagem */}
                 <div>
                   <label className="text-sm font-medium text-foreground mb-1.5 block">
                     Imagem do Grupo {!isEditing && "*"}
@@ -269,7 +228,6 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
                   )}
                 </div>
 
-                {/* Nome */}
                 <div>
                   <label className="text-sm font-medium text-foreground mb-1.5 block">
                     Nome do grupo *
@@ -290,7 +248,6 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
                   )}
                 </div>
 
-                {/* Descrição */}
                 <div>
                   <label className="text-sm font-medium text-foreground mb-1.5 block">
                     Descrição *
@@ -312,7 +269,6 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
                   )}
                 </div>
 
-                {/* Prioridade */}
                 <div>
                   <div className="flex items-center gap-1.5 mb-1.5">
                     <label className="text-sm font-medium text-foreground">
@@ -345,16 +301,30 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
                 </div>
               </div>
 
-              {/* Footer */}
               <div className="px-6 py-4 border-t border-gray-100 flex gap-3">
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={handleClose}
-                  disabled={isLoading}
-                >
-                  Cancelar
-                </Button>
+                {isEditing ? (
+                  <Button
+                    variant="outline"
+                    className="flex-1 bg-destructive text-white hover:bg-destructive/90 border-destructive"
+                    onClick={() => setShowDeleteModal(true)}
+                    disabled={isLoading || isDeletingGroup}
+                  >
+                    {isDeletingGroup ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "Deletar grupo"
+                    )}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={handleClose}
+                    disabled={isLoading}
+                  >
+                    Cancelar
+                  </Button>
+                )}
                 <Button
                   className="flex-1"
                   onClick={handleSubmit}
@@ -374,7 +344,6 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
         </DialogContent>
       </Dialog>
 
-      {/* Modal de confirmação de exclusão */}
       <DeleteConfirmation
         isOpen={showDeleteModal}
         onOpenChange={setShowDeleteModal}
