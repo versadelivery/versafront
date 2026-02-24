@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import Image from "next/image";
 import { Camera, Loader2, Plus, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useCatalogGroup, useCatalogItem } from "@/hooks/useCatalogGroup";
 import { updateCatalogItem } from "@/api/requests/catalog_item/requests";
 import { DeleteConfirmation } from "@/components/ui/delete-confirmation";
@@ -95,6 +95,13 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] = useState(false);
+  const [showDisableWarning, setShowDisableWarning] = useState(false);
+  const [disableWarningItems, setDisableWarningItems] = useState<string[]>([]);
+
+  // Refs para rastrear se havia dados salvos ao carregar
+  const originalHasExtras = useRef(false);
+  const originalHasPrepareMethods = useRef(false);
+  const originalHasSteps = useRef(false);
 
   // Variáveis derivadas
   const priceNumber = parseFloat(price.replace(',', '.')) || 0;
@@ -186,6 +193,11 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
         setHasSteps(false);
         setSteps([{ name: '', options: [{ name: '' }] }]);
       }
+
+      // Registra estado original para detectar desativações com dados salvos
+      originalHasExtras.current = item.extra?.data?.length > 0;
+      originalHasPrepareMethods.current = item.prepare_method?.data?.length > 0;
+      originalHasSteps.current = item.steps?.data?.length > 0;
     }
   }, [catalogItem]);
 
@@ -345,9 +357,8 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
   // SUBMIT
   // =============================================================================
 
-  const handleSubmit = async () => {
-    if (!validateForm()) return;
-
+  const proceedWithSubmit = async () => {
+    setShowDisableWarning(false);
     setIsUpdating(true);
     try {
       const formData = new FormData();
@@ -393,6 +404,11 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
           formData.append(`catalog_item_extras_attributes[${index}][name]`, extra.name.trim());
           formData.append(`catalog_item_extras_attributes[${index}][price]`, (parseFloat(extra.price.replace(',', '.')) || 0).toString());
         });
+      } else if (originalHasExtras.current) {
+        extras.filter((e) => e.id).forEach((extra, index) => {
+          formData.append(`catalog_item_extras_attributes[${index}][id]`, extra.id!);
+          formData.append(`catalog_item_extras_attributes[${index}][_destroy]`, 'true');
+        });
       }
 
       // Modos de preparo
@@ -403,6 +419,11 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
             formData.append(`catalog_item_prepare_methods_attributes[${index}][id]`, method.id);
           }
           formData.append(`catalog_item_prepare_methods_attributes[${index}][name]`, method.name.trim());
+        });
+      } else if (originalHasPrepareMethods.current) {
+        prepareMethods.filter((m) => m.id).forEach((method, index) => {
+          formData.append(`catalog_item_prepare_methods_attributes[${index}][id]`, method.id!);
+          formData.append(`catalog_item_prepare_methods_attributes[${index}][_destroy]`, 'true');
         });
       }
 
@@ -427,6 +448,11 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
           });
           stepIndex++;
         });
+      } else if (originalHasSteps.current) {
+        steps.filter((s) => s.id).forEach((step, index) => {
+          formData.append(`catalog_item_steps_attributes[${index}][id]`, step.id!);
+          formData.append(`catalog_item_steps_attributes[${index}][_destroy]`, 'true');
+        });
       }
 
       await updateCatalogItem(formData);
@@ -437,6 +463,23 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
     } finally {
       setIsUpdating(false);
     }
+  };
+
+  const handleSubmit = async () => {
+    if (!validateForm()) return;
+
+    const warnings: string[] = [];
+    if (!hasExtras && originalHasExtras.current) warnings.push('adicionais');
+    if (!hasPrepareMethods && originalHasPrepareMethods.current) warnings.push('modos de preparo');
+    if (!hasSteps && originalHasSteps.current) warnings.push('etapas de montagem');
+
+    if (warnings.length > 0) {
+      setDisableWarningItems(warnings);
+      setShowDisableWarning(true);
+      return;
+    }
+
+    await proceedWithSubmit();
   };
 
   const handleDeleteItem = async () => {
@@ -823,6 +866,27 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
         isLoading={isDeletingCatalogItem}
         type="item"
       />
+
+      <Dialog open={showDisableWarning} onOpenChange={setShowDisableWarning}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Confirmar desativação</DialogTitle>
+            <DialogDescription>
+              Ao salvar, todos os{' '}
+              <strong>{disableWarningItems.join(' e ')}</strong> cadastrados serão
+              excluídos permanentemente. Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setShowDisableWarning(false)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={proceedWithSubmit} disabled={isUpdating}>
+              {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Confirmar e salvar'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
