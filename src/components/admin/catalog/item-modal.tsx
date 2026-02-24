@@ -599,7 +599,7 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
 
           {/* Tags Visuais */}
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tags Visuais</p>
-          <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-2">
             <div className="flex items-center justify-between rounded-lg p-3 bg-muted/40">
               <span className="text-sm font-medium">Novo!</span>
               <Switch checked={newTag} onCheckedChange={setNewTag} />

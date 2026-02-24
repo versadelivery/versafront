@@ -172,6 +172,24 @@ export function ItemDetailsModal({ id, isOpen, onClose }: ItemDetailsModalProps)
               <p className="text-xs text-muted-foreground mt-1">{getItemTypeLabel(attrs.item_type)}</p>
             </div>
 
+            {/* Tags visuais */}
+            {((attrs as any).new_tag || (attrs as any).best_seller_tag || (attrs as any).highlight || (attrs as any).promotion_tag) && (
+              <div className="flex flex-wrap gap-2">
+                {(attrs as any).new_tag && (
+                  <span className="bg-green-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">NOVO!</span>
+                )}
+                {(attrs as any).best_seller_tag && (
+                  <span className="bg-amber-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">+ VENDIDO</span>
+                )}
+                {(attrs as any).highlight && (
+                  <span className="bg-blue-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">DESTAQUE</span>
+                )}
+                {(attrs as any).promotion_tag && (
+                  <span className="bg-primary text-white text-xs font-bold px-2.5 py-1 rounded-full">PROMOÇÃO</span>
+                )}
+              </div>
+            )}
+
             {/* Peso */}
             {isWeightBased && (attrs.min_weight || attrs.max_weight) && (
               <div className="rounded-lg p-4 border border-gray-100 bg-white">

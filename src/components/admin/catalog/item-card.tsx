@@ -111,30 +111,6 @@ export function ItemCard({ item }: ItemCardProps) {
             </div>
           )}
 
-          {/* Tags visuais */}
-          <div className="absolute top-2 left-2 flex flex-col gap-0.5">
-            {item.new_tag && (
-              <div className="bg-green-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm whitespace-nowrap">
-                NOVO!
-              </div>
-            )}
-            {item.best_seller_tag && (
-              <div className="bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm whitespace-nowrap">
-                + VENDIDO
-              </div>
-            )}
-            {item.highlight && (
-              <div className="bg-blue-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm whitespace-nowrap">
-                DESTAQUE
-              </div>
-            )}
-            {item.promotion_tag && !hasDiscount && (
-              <div className="bg-primary text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm whitespace-nowrap">
-                PROMOÇÃO
-              </div>
-            )}
-          </div>
-
           {/* Botão editar */}
           <button
             className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-md p-1.5 hover:bg-white transition-colors"
@@ -181,6 +157,24 @@ export function ItemCard({ item }: ItemCardProps) {
                   : getWeightUnit()
                 }
               </span>
+            </div>
+          )}
+
+          {/* Tags visuais */}
+          {(item.new_tag || item.best_seller_tag || item.highlight || item.promotion_tag) && (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {item.new_tag && (
+                <span className="bg-green-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">NOVO!</span>
+              )}
+              {item.best_seller_tag && (
+                <span className="bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">+VENDIDO</span>
+              )}
+              {item.highlight && (
+                <span className="bg-blue-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">DESTAQUE</span>
+              )}
+              {item.promotion_tag && (
+                <span className="bg-primary text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">PROMOÇÃO</span>
+              )}
             </div>
           )}
 
