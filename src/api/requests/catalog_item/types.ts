@@ -36,6 +36,7 @@ interface CatalogItemExtra {
 
 export interface Item {
   name: string;
+  active: boolean;
   description: string;
   item_type: 'unit' | 'weight_per_g' | 'weight_per_kg';
   price: number;
@@ -73,6 +74,7 @@ export interface Item {
 
 export interface CatalogItemAttributes {
   name: string;
+  active: boolean;
   description: string;
   item_type: string;
   price: number;

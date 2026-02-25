@@ -10,7 +10,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Camera, Info, Loader2 } from "lucide-react";
+import { Camera, Info, Loader2, Power } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+
 import { useCatalogGroup } from "@/hooks/useCatalogGroup";
 import { DeleteConfirmation } from "@/components/ui/delete-confirmation";
 import Image from "next/image";
@@ -45,6 +47,8 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
   const [priority, setPriority] = useState("1");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [active, setActive] = useState(true);
+
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -64,6 +68,8 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
       setDescription(attrs.description || "");
       setPriority(attrs.priority?.toString() || "1");
       setImagePreview(attrs.image_url || null);
+      setActive(attrs.active ?? true);
+
     }
   }, [isOpen, catalogGroup, isEditing]);
 
@@ -73,6 +79,8 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
     setPriority("1");
     setImageFile(null);
     setImagePreview(null);
+    setActive(true);
+
     setErrors({});
   };
 
@@ -142,6 +150,8 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
     formData.append("name", name.trim());
     formData.append("description", description.trim());
     formData.append("priority", priority || "1");
+    formData.append("active", active.toString());
+
 
     if (imageFile) {
       formData.append("image", imageFile);
@@ -299,7 +309,25 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
                     <p className="text-xs text-destructive mt-1">{errors.priority}</p>
                   )}
                 </div>
+
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <Power className={`h-4 w-4 ${active ? 'text-green-500' : 'text-gray-400'}`} />
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Status do Grupo</p>
+                      <p className="text-xs text-muted-foreground">
+                        {active ? "O grupo está visível no cardápio" : "O grupo está oculto para clientes"}
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={active}
+                    onCheckedChange={setActive}
+                    disabled={isLoading}
+                  />
+                </div>
               </div>
+
 
               <div className="px-6 py-4 border-t border-gray-100 flex gap-3">
                 {isEditing ? (

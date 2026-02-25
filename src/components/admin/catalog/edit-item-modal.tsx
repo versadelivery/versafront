@@ -121,6 +121,8 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
 
   // Estados - Dias da semana
   const [activeDays, setActiveDays] = useState<Record<DayKey, boolean>>(DEFAULT_ACTIVE_DAYS);
+  const [active, setActive] = useState(true);
+
 
   // Estados - UI
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -137,6 +139,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
   // Variáveis derivadas
   const priceNumber = parseFloat(price.replace(',', '.')) || 0;
   const isFullyLoaded = !isLoading && !isLoadingCatalogItem && !!catalogItem;
+  const allActiveDays = Object.values(activeDays).every(v => v);
 
   const calculateFinalPrice = () => {
     if (!hasDiscount || !discountValue) return priceNumber;
@@ -174,6 +177,8 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
       setMaxWeight(item.max_weight ? item.max_weight.toString() : '');
       setMeasureInterval(item.measure_interval ? item.measure_interval.toString() : '');
       setPreviewImage(item.image_url ? (fixImageUrl(item.image_url) || null) : null);
+      setActive(item.active ?? true);
+
 
       // Desconto
       if (item.price_with_discount && item.price_with_discount < item.price) {
@@ -448,6 +453,8 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
         formData.append(key, activeDays[key].toString());
       });
 
+      formData.append('active', active.toString());
+
       // Extras
       if (hasExtras) {
         const validExtras = extras.filter((extra) => extra.name.trim() !== '');
@@ -586,6 +593,15 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
         {/* Formulário */}
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Dados do Item</p>
+
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">
+            <div className="flex flex-col gap-0.5">
+              <span className="text-sm font-medium">Item Ativo</span>
+              <span className="text-xs text-muted-foreground">O item aparecerá no cardápio se estiver ativo</span>
+            </div>
+            <Switch checked={active} onCheckedChange={setActive} />
+          </div>
+
 
           {/* Nome */}
           <div className="space-y-1.5">
@@ -779,21 +795,42 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
 
           <hr className="border-gray-100" />
 
-          {/* Disponibilidade Semanal */}
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Disponibilidade Semanal</p>
-          <div className="grid grid-cols-7 gap-1.5">
-            {DAYS_OF_WEEK.map(({ key, label }) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setActiveDays((prev) => ({ ...prev, [key]: !prev[key] }))}
-                className={`py-2 rounded-md text-sm font-medium transition-colors ${
-                  activeDays[key] ? 'bg-foreground text-white' : 'bg-muted/40 text-muted-foreground'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Disponibilidade Semanal</p>
+            <button
+              type="button"
+              onClick={() => {
+                const allActive = Object.values(activeDays).every(v => v);
+                const newState = {} as Record<DayKey, boolean>;
+                DAYS_OF_WEEK.forEach(day => newState[day.key] = !allActive);
+                setActiveDays(newState);
+              }}
+              className="text-[10px] font-medium text-primary hover:underline uppercase tracking-tight"
+            >
+              {allActiveDays ? 'Desmarcar todos' : 'Marcar todos'}
+            </button>
+          </div>
+          <div className="grid grid-cols-7 gap-2">
+            {DAYS_OF_WEEK.map(({ key, label }) => {
+              const isActive = activeDays[key];
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setActiveDays((prev) => ({ ...prev, [key]: !prev[key] }))}
+                  className={`relative flex flex-col items-center justify-center py-3 rounded-xl border-2 transition-all duration-200 ${
+                    isActive 
+                      ? 'bg-primary/5 border-primary text-primary shadow-sm' 
+                      : 'bg-transparent border-gray-100 text-gray-400 border-dashed hover:border-gray-300'
+                  }`}
+                >
+                  <span className={`text-[10px] font-bold uppercase mb-0.5 ${isActive ? 'text-primary' : 'text-gray-400'}`}>
+                    {label}
+                  </span>
+                  <div className={`w-1.5 h-1.5 rounded-full mt-1 ${isActive ? 'bg-primary' : 'bg-gray-200'}`} />
+                </button>
+              );
+            })}
           </div>
 
           <hr className="border-gray-100" />

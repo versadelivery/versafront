@@ -5,6 +5,7 @@ interface CatalogGroup {
   type: 'catalog_group';
   attributes: {
     name: string;
+    active: boolean;
     description: string;
     priority: number;
     image_url: string | null;

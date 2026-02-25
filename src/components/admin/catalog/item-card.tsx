@@ -6,6 +6,8 @@ import React, { useState } from "react";
 import { ItemDetailsModal } from "./item-details-modal";
 import { EditItemModal } from "./edit-item-modal";
 import { fixImageUrl } from "@/utils/image-url";
+import { Switch } from "@/components/ui/switch";
+import { useCatalogGroup } from "@/hooks/useCatalogGroup";
 
 // =============================================================================
 // TIPOS
@@ -28,6 +30,7 @@ interface ItemCardProps {
     best_seller_tag?: boolean;
     highlight?: boolean;
     promotion_tag?: boolean;
+    active: boolean;
     catalog_item_extras_attributes?: any[];
     catalog_item_prepare_methods_attributes?: any[];
     catalog_item_steps_attributes?: any[];
@@ -41,6 +44,7 @@ interface ItemCardProps {
 export function ItemCard({ item }: ItemCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const { toggleCatalogItemActive } = useCatalogGroup();
 
   // =============================================================================
   // FUNÇÕES AUXILIARES
@@ -85,7 +89,7 @@ export function ItemCard({ item }: ItemCardProps) {
   return (
     <>
       <div
-        className="bg-white rounded-xl border border-gray-200 overflow-hidden cursor-pointer hover:shadow-md transition-shadow duration-200 flex flex-col h-full"
+        className={`bg-white rounded-xl border border-gray-200 overflow-hidden cursor-pointer hover:shadow-md transition-shadow duration-200 flex flex-col h-full ${!item.active ? 'opacity-60' : ''}`}
         onClick={() => setIsDetailsOpen(true)}
       >
         {/* Imagem */}
@@ -106,24 +110,40 @@ export function ItemCard({ item }: ItemCardProps) {
 
           {/* Badge desconto */}
           {hasDiscount && (
-            <div className="absolute bottom-2 right-2 bg-destructive text-white text-[10px] font-semibold px-2 py-0.5 rounded">
+            <div className="absolute bottom-2 left-2 bg-destructive text-white text-[10px] font-semibold px-2 py-0.5 rounded">
               -{discountPercentage}%
             </div>
           )}
 
-          {/* Botão editar */}
-          <button
-            className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-md p-1.5 hover:bg-white transition-colors"
-            onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}
+          {/* Botões de Ação */}
+          <div 
+            className="absolute top-2 right-2 flex items-center bg-white/95 backdrop-blur-sm rounded-full py-1 px-2 shadow-sm border border-gray-100 gap-2"
+            onClick={(e) => e.stopPropagation()}
           >
-            <Edit2 className="h-3.5 w-3.5 text-muted-foreground" />
-          </button>
+            <div className="flex items-center">
+              <Switch
+                checked={item.active}
+                onCheckedChange={(checked) => {
+                  toggleCatalogItemActive({ id: item.id.toString(), active: checked });
+                }}
+                className="scale-[0.6] origin-center translate-x-[-15%]"
+              />
+            </div>
+            <div className="w-[1px] h-3 bg-gray-200 -ml-1" />
+            <button
+              className="text-muted-foreground hover:text-primary transition-colors pr-0.5"
+              onClick={() => setIsEditing(true)}
+            >
+              <Edit2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </div>
 
         {/* Conteúdo */}
         <div className="p-3 flex flex-col flex-1 gap-1">
           <h3 className="text-sm font-semibold text-foreground line-clamp-2 leading-tight">
             {item.name}
+            {!item.active && <span className="ml-2 text-[10px] font-normal text-muted-foreground italic">(Pausado)</span>}
           </h3>
 
           {item.description && (

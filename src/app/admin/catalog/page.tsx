@@ -10,6 +10,7 @@ import { useCatalogGroup } from "@/hooks/useCatalogGroup";
 import { ItemCard } from "@/components/admin/catalog/item-card";
 import { Edit2, Loader2, Package, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { DeleteConfirmation } from "@/components/ui/delete-confirmation";
 
 // =============================================================================
@@ -34,7 +35,7 @@ function CatalogPage() {
   const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] = useState(false);
   const [groupIdToDelete, setGroupIdToDelete] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const { isLoading, catalog, deleteCatalogGroup, isDeletingGroup } = useCatalogGroup();
+  const { isLoading, catalog, deleteCatalogGroup, isDeletingGroup, toggleCatalogGroupActive, toggleCatalogItemActive } = useCatalogGroup();
 
   const groups = catalog?.data || [];
   const validGroups = [...groups]
@@ -139,15 +140,29 @@ function CatalogPage() {
                       )}
                     </div>
 
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 px-3 gap-1.5 text-xs text-muted-foreground"
-                      onClick={() => handleEditGroup(group.id)}
-                    >
-                      <Edit2 className="h-3.5 w-3.5" />
-                      Editar
-                    </Button>
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2 mr-2">
+                        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                          {group.attributes.active ? "Ativo" : "Pausado"}
+                        </span>
+                        <Switch
+                          checked={group.attributes.active}
+                          onCheckedChange={(checked) => {
+                            toggleCatalogGroupActive({ id: group.id, active: checked });
+                          }}
+                        />
+                      </div>
+
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 px-3 gap-1.5 text-xs text-muted-foreground"
+                        onClick={() => handleEditGroup(group.id)}
+                      >
+                        <Edit2 className="h-3.5 w-3.5" />
+                        Editar
+                      </Button>
+                    </div>
                   </div>
 
                   {/* Items do grupo */}
@@ -188,6 +203,7 @@ function CatalogPage() {
                                   id: parseInt(node.id),
                                   catalog_group_id: parseInt(group.id),
                                   name: attrs.name,
+                                  active: attrs.active,
                                   description: attrs.description,
                                   item_type: attrs.item_type as "unit" | "weight_per_kg" | "weight_per_g",
                                   price: attrs.price,
