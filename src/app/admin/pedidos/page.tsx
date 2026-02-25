@@ -150,20 +150,6 @@ const statusConfig = {
   }
 };
 
-const mapOrderStatus = (status: Order['status']) => {
-  const statusMap = {
-    recebidos: 'processing',
-    aceitos: 'processing',
-    em_analise: 'processing',
-    em_preparo: 'preparing',
-    prontos: 'in_transit',
-    saiu: 'in_transit',
-    entregue: 'delivered',
-    cancelled: 'cancelled'
-  };
-  return statusMap[status] || 'processing';
-};
-
 export default function OrderManagement() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -179,9 +165,8 @@ export default function OrderManagement() {
   });
   const [isMobile, setIsMobile] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
-  const isUpdatingRef = useRef<Record<string, boolean>>({});
-  const lastLocalChangeRef = useRef<Record<string, { statusAt?: number; paymentAt?: number }>>({});
-  const socketOrdersCache = useRef<Map<string, Order>>(new Map());
+  // Pedidos que estão sendo atualizados no momento (impede conflitos com o WebSocket)
+  const updatingRef = useRef<Set<string>>(new Set());
 
   const { subscribeToAdminOrders, updateOrder, updateOrderDetails, isConnected } = useAdminActionCable();
   const { orderAccepted, orderReady, newOrder } = useRestaurantSounds();
@@ -199,297 +184,133 @@ export default function OrderManagement() {
 
   useEffect(() => {
     const unsubscribe = subscribeToAdminOrders((socketOrders: AdminOrderData[]) => {
-      
-      // Verificar se algum pedido está sendo atualizado no momento
-      const hasUpdatingOrders = Object.keys(isUpdatingRef.current).some(
-        orderId => isUpdatingRef.current[orderId]
-      );
-      
-      if (hasUpdatingOrders) {
-        // Aplicar atualização com delay para não conflitar com otimistic update
-        setTimeout(() => {
-          const convertedOrders = socketOrders.map(convertSocketDataToOrder);
-          // atualizar cache com dados vindos do servidor
-          socketOrdersCache.current = new Map(convertedOrders.map(o => [o.id, o]));
-          setOrders((prev) => {
-            const now = Date.now();
-            const prevById = new Map(prev.map(o => [o.id, o]));
-            return convertedOrders.map(incoming => {
-              const current = prevById.get(incoming.id);
-              if (!current) return incoming;
-              const last = lastLocalChangeRef.current[incoming.id] || {};
-              const keepLocalStatus = last.statusAt !== undefined && (now - (last.statusAt as number)) < 5000; // Aumentado para 5 segundos
-              const keepLocalPayment = last.paymentAt !== undefined && (now - (last.paymentAt as number)) < 5000;
-              
-              
-              return {
-                ...current,
-                ...incoming,
-                status: keepLocalStatus ? current.status : incoming.status,
-                paymentStatus: keepLocalPayment ? current.paymentStatus : incoming.paymentStatus,
-              };
-            });
-          });
-        }, 2000); // Reduzido para 2 segundos
-        return;
-      }
-      
-      // Detectar novos pedidos comparando com o estado atual
-      setOrders((prevOrders) => {
-        const convertedOrders = socketOrders.map(convertSocketDataToOrder);
-        // atualizar cache com dados vindos do servidor
-        socketOrdersCache.current = new Map(convertedOrders.map(o => [o.id, o]));
-        
-        // Verificar se há novos pedidos (pedidos que não existiam antes)
-        const newOrders = convertedOrders.filter(socketOrder => 
-          !prevOrders.some(prevOrder => prevOrder.id === socketOrder.id)
-        );
+      const convertedOrders = socketOrders.map(convertSocketDataToOrder);
 
-        // Tocar som de novo pedido para pedidos genuinamente novos
-        newOrders.forEach(order => {
-          if (!seenOrderIdsRef.current.has(order.id)) {
-            seenOrderIdsRef.current.add(order.id);
-            newOrder();
-          }
-        });
+      // Tocar som para pedidos genuinamente novos (fora do setState para evitar side effects)
+      convertedOrders.forEach(incoming => {
+        if (!seenOrderIdsRef.current.has(incoming.id)) {
+          seenOrderIdsRef.current.add(incoming.id);
+          newOrder();
+        }
+      });
 
-        // Registrar todos os pedidos atuais como vistos
-        convertedOrders.forEach(order => seenOrderIdsRef.current.add(order.id));
-
-        // Mesclar mantendo alterações locais recentes
-        const now = Date.now();
-        const prevById = new Map(prevOrders.map(o => [o.id, o]));
+      setOrders(prev => {
+        const prevById = new Map(prev.map(o => [o.id, o]));
         return convertedOrders.map(incoming => {
-          const current = prevById.get(incoming.id);
-          if (!current) return incoming;
-          const last = lastLocalChangeRef.current[incoming.id] || {};
-          const keepLocalStatus = last.statusAt !== undefined && (now - (last.statusAt as number)) < 5000; // Aumentado para 5 segundos
-          const keepLocalPayment = last.paymentAt !== undefined && (now - (last.paymentAt as number)) < 5000;
-          
-          return {
-            ...current,
-            ...incoming,
-            status: keepLocalStatus ? current.status : incoming.status,
-            paymentStatus: keepLocalPayment ? current.paymentStatus : incoming.paymentStatus,
-          };
+          // Preservar estado local enquanto um update está em andamento
+          if (updatingRef.current.has(incoming.id)) {
+            return prevById.get(incoming.id) ?? incoming;
+          }
+          return incoming;
         });
       });
-      
+
       setIsLoading(false);
     });
 
-    // Timeout para parar o loading se não receber dados em 10 segundos
-    const timeout = setTimeout(() => {
-      setIsLoading(false);
-    }, 10000);
+    const timeout = setTimeout(() => setIsLoading(false), 10000);
 
     return () => {
       unsubscribe();
       clearTimeout(timeout);
     };
-  }, []); // Remover dependência subscribeToAdminOrders
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const updateOrderStatus = useCallback(async (orderId: string, newStatus: Order['status']) => {
+    if (updatingRef.current.has(orderId)) return;
+    updatingRef.current.add(orderId);
 
-    // Marcar como atualizando
-    isUpdatingRef.current[orderId] = true;
-
-    // Mapear status do frontend para o backend
-    const statusMap: Record<Order['status'], string> = {
-      'recebidos': 'received',
-      'aceitos': 'accepted',
-      'em_analise': 'in_analysis',
-      'em_preparo': 'in_preparation',
-      'prontos': 'ready',
-      'saiu': 'left_for_delivery',
-      'entregue': 'delivered',
-      'cancelled': 'cancelled'
+    const backendStatusMap: Record<Order['status'], string> = {
+      recebidos:  'received',
+      aceitos:    'accepted',
+      em_analise: 'in_analysis',
+      em_preparo: 'in_preparation',
+      prontos:    'ready',
+      saiu:       'left_for_delivery',
+      entregue:   'delivered',
+      cancelled:  'cancelled',
     };
 
-    const backendStatus = statusMap[newStatus];
-    
-    // Primeiro atualizar o estado local de forma otimista
-    setOrders((prevOrders: Order[]) => {
-      const updatedOrders = prevOrders.map((order: Order) => 
-        order.id === orderId 
-          ? { 
-              ...order, 
-              status: newStatus,
-              readyTime: newStatus === 'prontos' ? new Date().toLocaleTimeString() : order.readyTime
-            }
-          : order
+    // Captura status original para reverter em caso de falha
+    let originalStatus: Order['status'] = newStatus;
+    setOrders(prev => {
+      const original = prev.find(o => o.id === orderId);
+      if (original) originalStatus = original.status;
+      return prev.map(o =>
+        o.id === orderId
+          ? { ...o, status: newStatus, readyTime: newStatus === 'prontos' ? new Date().toLocaleTimeString() : o.readyTime }
+          : o
       );
-      return updatedOrders;
     });
-    
-    // registrar momento da alteração local do status
-    lastLocalChangeRef.current[orderId] = {
-      ...(lastLocalChangeRef.current[orderId] || {}),
-      statusAt: Date.now(),
-    };
 
-
-    // Tocar som baseado no novo status
-    if (newStatus === 'aceitos') {
-      orderAccepted();
-    } else if (newStatus === 'prontos') {
-      orderReady();
-    }
+    if (newStatus === 'aceitos') orderAccepted();
+    else if (newStatus === 'prontos') orderReady();
 
     try {
-      // Enviar via websocket e aguardar resposta
-      const success = await updateOrder(orderId, backendStatus);
-      
-      if (success) {
-      } else {
-        // Reverter atualização otimista em caso de falha para o status vindo do servidor mais recente
-        setOrders((prevOrders: Order[]) => {
-          const current = prevOrders.find(o => o.id === orderId);
-          const serverOrder = socketOrdersCache.current.get(orderId);
-          const fallbackStatus = serverOrder?.status || current?.status || 'recebidos';
-          return prevOrders.map((order: Order) => 
-            order.id === orderId 
-              ? { ...order, status: fallbackStatus as Order['status'] }
-              : order
-          );
-        });
+      const success = await updateOrder(orderId, backendStatusMap[newStatus]);
+      if (!success) {
+        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: originalStatus } : o));
       }
     } catch (error) {
-      console.error('❌ Erro ao atualizar status do pedido:', error);
-      // Reverter atualização otimista em caso de erro
-      setOrders((prevOrders: Order[]) => {
-        const current = prevOrders.find(o => o.id === orderId);
-        const serverOrder = socketOrdersCache.current.get(orderId);
-        const fallbackStatus = serverOrder?.status || current?.status || 'recebidos';
-        return prevOrders.map((order: Order) => 
-          order.id === orderId 
-            ? { ...order, status: fallbackStatus as Order['status'] }
-            : order
-        );
-      });
+      console.error('Erro ao atualizar status do pedido:', error);
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: originalStatus } : o));
     } finally {
-      // Sempre limpar a flag após 3 segundos (dar tempo para o websocket responder)
-      setTimeout(() => {
-        delete isUpdatingRef.current[orderId];
-      }, 3000);
+      updatingRef.current.delete(orderId);
     }
-  }, [updateOrder]);
+  }, [updateOrder, orderAccepted, orderReady]);
 
-  const togglePaymentStatus = useCallback((orderId: string) => {
-    // Evitar múltiplas execuções usando ref
-    if (isUpdatingRef.current[orderId]) {
-      return;
-    }
+  const togglePaymentStatus = useCallback(async (orderId: string) => {
+    if (updatingRef.current.has(orderId)) return;
+    updatingRef.current.add(orderId);
 
-    isUpdatingRef.current[orderId] = true;
-
-    // Encontrar pedido atual e determinar novo status
-    let newPaymentStatus: 'pending' | 'paid' = 'pending';
-    
-    setOrders((prevOrders: Order[]) => {
-      const currentOrder = prevOrders.find((order: Order) => order.id === orderId);
-      if (!currentOrder) {
-        console.error('Pedido não encontrado:', orderId);
-        isUpdatingRef.current[orderId] = false;
-        return prevOrders;
-      }
-
-      newPaymentStatus = currentOrder.paymentStatus === 'pending' ? 'paid' : 'pending';
-      
-      // Atualizar estado local de forma otimista
-      const updatedOrders = prevOrders.map((order: Order) => 
-        order.id === orderId 
-          ? { ...order, paymentStatus: newPaymentStatus }
-          : order
-      );
-
-      // Enviar via websocket após atualizar estado
-      try {
-        updateOrder(orderId, undefined, newPaymentStatus === 'paid');
-      } catch (error) {
-        console.error('Erro ao atualizar status de pagamento:', error);
-      }
-
-      return updatedOrders;
+    let originalPaymentStatus: 'pending' | 'paid' = 'pending';
+    let newPaymentStatus: 'pending' | 'paid' = 'paid';
+    setOrders(prev => {
+      const current = prev.find(o => o.id === orderId);
+      if (!current) return prev;
+      originalPaymentStatus = current.paymentStatus;
+      newPaymentStatus = current.paymentStatus === 'paid' ? 'pending' : 'paid';
+      return prev.map(o => o.id === orderId ? { ...o, paymentStatus: newPaymentStatus } : o);
     });
 
-    // registrar momento da alteração local do pagamento
-    lastLocalChangeRef.current[orderId] = {
-      ...(lastLocalChangeRef.current[orderId] || {}),
-      paymentAt: Date.now(),
-    };
-
-    // Liberar o lock após um delay
-    setTimeout(() => {
-      isUpdatingRef.current[orderId] = false;
-    }, 2000);
+    try {
+      await updateOrder(orderId, undefined, newPaymentStatus === 'paid');
+    } catch (error) {
+      console.error('Erro ao atualizar pagamento:', error);
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, paymentStatus: originalPaymentStatus } : o));
+    } finally {
+      updatingRef.current.delete(orderId);
+    }
   }, [updateOrder]);
 
-  const updateDeliveryPerson = (orderId: string, deliveryPerson: string) => {
-    setOrders(orders.map((order: Order) => 
-      order.id === orderId 
-        ? { ...order, deliveryPerson }
-        : order
-    ));
-  };
+  const updateDeliveryPerson = useCallback((orderId: string, deliveryPerson: string) => {
+    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, deliveryPerson } : o));
+    updateOrder(orderId, undefined, undefined, deliveryPerson).catch(err =>
+      console.error('Erro ao atualizar entregador:', err)
+    );
+  }, [updateOrder]);
 
   const cancelOrder = useCallback(async (orderId: string, reason: string, reasonType?: string) => {
-    
-    // Verificar se já está atualizando
-    if (isUpdatingRef.current[orderId]) {
-      return;
-    }
+    if (updatingRef.current.has(orderId)) return;
+    updatingRef.current.add(orderId);
 
-    // Marcar como atualizando
-    isUpdatingRef.current[orderId] = true;
-
-    // Atualizar estado local de forma otimista
-    setOrders((prevOrders: Order[]) => {
-      const updatedOrders = prevOrders.map((order: Order) => 
-        order.id === orderId 
-          ? { ...order, status: 'cancelled' as Order['status'] }
-          : order
-      );
-      
-      return updatedOrders;
+    let originalStatus: Order['status'] = 'recebidos';
+    setOrders(prev => {
+      const original = prev.find(o => o.id === orderId);
+      if (original) originalStatus = original.status;
+      return prev.map(o => o.id === orderId ? { ...o, status: 'cancelled' as Order['status'] } : o);
     });
 
     try {
-      // Enviar cancelamento via websocket
       const success = await updateOrder(orderId, 'cancelled', undefined, undefined, reasonType || reason);
-      
-      if (success) {
-      } else {
-        // Reverter cancelamento otimista em caso de falha
-        setOrders((prevOrders: Order[]) => {
-          const current = prevOrders.find(o => o.id === orderId);
-          const serverOrder = socketOrdersCache.current.get(orderId);
-          const fallbackStatus = serverOrder?.status || current?.status || 'recebidos';
-          return prevOrders.map((order: Order) => 
-            order.id === orderId 
-              ? { ...order, status: fallbackStatus as Order['status'] }
-              : order
-          );
-        });
+      if (!success) {
+        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: originalStatus } : o));
       }
     } catch (error) {
-      console.error('❌ Erro ao cancelar pedido:', error);
-      // Reverter cancelamento otimista em caso de erro
-      setOrders((prevOrders: Order[]) => {
-        const current = prevOrders.find(o => o.id === orderId);
-        const serverOrder = socketOrdersCache.current.get(orderId);
-        const fallbackStatus = serverOrder?.status || current?.status || 'recebidos';
-        return prevOrders.map((order: Order) => 
-          order.id === orderId 
-            ? { ...order, status: fallbackStatus as Order['status'] }
-            : order
-        );
-      });
+      console.error('Erro ao cancelar pedido:', error);
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: originalStatus } : o));
     } finally {
-      // Sempre limpar a flag após 3 segundos
-      setTimeout(() => {
-        delete isUpdatingRef.current[orderId];
-      }, 3000);
+      updatingRef.current.delete(orderId);
     }
   }, [updateOrder]);
 
@@ -652,7 +473,7 @@ export default function OrderManagement() {
                   status: o.status,
                   createdAtLabel: o.time,
                   items: (o.socketData.attributes.items.data || []).map((it: any) => ({
-                    name: it.attributes.catalog_item.data.attributes.name,
+                    name: it.attributes.catalog_item?.data?.attributes?.name ?? it.attributes.name ?? 'Item removido',
                     qty: Number(it.attributes.quantity || 1),
                     note: it.attributes.observation || undefined,
                   })),
@@ -672,40 +493,44 @@ export default function OrderManagement() {
           order={{
             id: selectedOrder.id,
             date: selectedOrder.socketData.attributes.created_at,
-            status: mapOrderStatus(selectedOrder.status),
+            status: selectedOrder.status,
             payment_status: selectedOrder.paymentStatus,
             total: selectedOrder.amount,
             withdrawal: selectedOrder.deliveryType === 'pickup',
             payment_method: selectedOrder.socketData.attributes.payment_method,
+            delivery_fee: parseFloat(selectedOrder.socketData.attributes.delivery_fee || '0'),
             address: selectedOrder.socketData.attributes.address.data ? {
               address: selectedOrder.socketData.attributes.address.data.attributes.address,
               neighborhood: selectedOrder.socketData.attributes.address.data.attributes.neighborhood,
               complement: selectedOrder.socketData.attributes.address.data.attributes.complement,
               reference: selectedOrder.socketData.attributes.address.data.attributes.reference
             } : undefined,
-            items: selectedOrder.socketData.attributes.items.data.map(item => ({
+            items: selectedOrder.socketData.attributes.items.data.map(item => {
+              const catalogAttrs = item.attributes.catalog_item?.data?.attributes;
+              return {
               id: item.id,
-              catalog_item_id: parseInt(item.attributes.catalog_item.data.id),
-              name: item.attributes.catalog_item.data.attributes.name,
+              catalog_item_id: item.attributes.catalog_item?.data?.id ? parseInt(item.attributes.catalog_item.data.id) : undefined,
+              name: catalogAttrs?.name ?? item.attributes.name ?? 'Item removido',
               price: parseFloat(item.attributes.price),
               quantity: item.attributes.quantity,
               observation: item.attributes.observation,
-              image: item.attributes.catalog_item.data.attributes.image_url,
+              image: catalogAttrs?.image_url,
               weight: item.attributes.item_type === 'weight_per_kg' ? `${item.attributes.quantity}kg` : undefined,
-              extras: item.attributes.catalog_item.data.attributes.extra?.data?.map((extra: any) => ({
+              extras: catalogAttrs?.extra?.data?.map((extra: any) => ({
                 name: extra.attributes.name,
                 price: parseFloat(extra.attributes.price)
               })) || [],
-              prepare_methods: item.attributes.catalog_item.data.attributes.prepare_method?.data?.map((method: any) => ({
+              prepare_methods: catalogAttrs?.prepare_method?.data?.map((method: any) => ({
                 name: method.attributes.name
               })) || [],
-              steps: item.attributes.catalog_item.data.attributes.steps?.data?.map((step: any) => ({
+              steps: catalogAttrs?.steps?.data?.map((step: any) => ({
                 name: step.attributes.name,
                 options: step.attributes.options?.data?.map((option: any) => ({
                   name: option.attributes.name
                 })) || []
               })) || []
-            })),
+            };
+            }),
             shop: {
               name: selectedOrder.socketData.attributes.shop.data.attributes.name,
               phone: selectedOrder.socketData.attributes.shop.data.attributes.cellphone
@@ -717,60 +542,43 @@ export default function OrderManagement() {
             deliveryPerson: selectedOrder.deliveryPerson || (selectedOrder.socketData.attributes as any).delivery_person || ''
           }}
           onUpdateOrder={async (orderId, data) => {
-            
-            // Atualizar localmente primeiro para feedback imediato
+            // Atualizar estado local imediatamente (feedback otimista)
             setOrders(prev => prev.map(order => {
-              if (order.id === orderId) {
-                const updatedOrder = { ...order };
-                
-                // Atualizar dados do cliente
-                if (data.customer) {
-                  if (data.customer.name) {
-                    updatedOrder.customerName = data.customer.name;
-                  }
-                  if (data.customer.phone) {
-                    // Atualizar telefone no socketData
-                    if (updatedOrder.socketData?.attributes?.customer?.data?.attributes) {
-                      updatedOrder.socketData.attributes.customer.data.attributes.cellphone = data.customer.phone;
-                    }
-                  }
-                }
-                
-                // Atualizar dados do endereço
-                if (data.address && updatedOrder.socketData?.attributes?.address?.data?.attributes) {
-                  Object.assign(updatedOrder.socketData.attributes.address.data.attributes, data.address);
-                }
-                
-                // Atualizar dados da loja
-                if (data.shop && updatedOrder.socketData?.attributes?.shop?.data?.attributes) {
-                  Object.assign(updatedOrder.socketData.attributes.shop.data.attributes, data.shop);
-                }
-                
-                // Atualizar dados financeiros
-                if (data.total !== undefined) {
-                  updatedOrder.amount = data.total;
-                }
-                
-                // Atualizar entregador
-                if (data.deliveryPerson !== undefined) {
-                  updatedOrder.deliveryPerson = data.deliveryPerson;
-                  // Atualizar também no socketData
-                  if (updatedOrder.socketData?.attributes) {
-                    (updatedOrder.socketData.attributes as any).delivery_person = data.deliveryPerson;
-                  }
-                }
-                
-                return updatedOrder;
+              if (order.id !== orderId) return order;
+              const o = { ...order };
+              const attrs = o.socketData?.attributes as any;
+
+              if (data.customer?.name)  o.customerName = data.customer.name;
+              if (data.customer?.phone && attrs?.customer?.data?.attributes)
+                attrs.customer.data.attributes.cellphone = data.customer.phone;
+
+              if (data.address && attrs?.address?.data?.attributes)
+                Object.assign(attrs.address.data.attributes, data.address);
+
+              if (data.deliveryPerson !== undefined) {
+                o.deliveryPerson = data.deliveryPerson;
+                if (attrs) attrs.delivery_person = data.deliveryPerson;
               }
-              return order;
+
+              if (data.payment_method !== undefined && attrs)
+                attrs.payment_method = data.payment_method;
+
+              if (data.payment_status !== undefined)
+                o.paymentStatus = data.payment_status as 'pending' | 'paid';
+
+              if (data.delivery_fee !== undefined && attrs)
+                attrs.delivery_fee = String(data.delivery_fee);
+
+              if (data.total !== undefined) o.amount = data.total;
+
+              return o;
             }));
-            
+
             // Enviar via WebSocket
             try {
-              const success = await updateOrderDetails(orderId, data);
-
+              await updateOrderDetails(orderId, data);
             } catch (error) {
-              console.error('❌ Erro ao atualizar pedido:', error);
+              console.error('Erro ao atualizar pedido:', error);
             }
           }}
           onCancelOrder={async (orderId) => {

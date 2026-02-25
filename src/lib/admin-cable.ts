@@ -117,7 +117,6 @@ export function useAdminActionCable() {
             try {
               const orders: AdminOrderData[] = payload.data.data || []
               const pending = pendingConfirmationsRef.current || {}
-              console.log(pending)
 
               // Para cada pedido retornado, verificar promessas pendentes
               orders.forEach((socketOrder: AdminOrderData) => {
@@ -213,8 +212,6 @@ export function useAdminActionCable() {
   }, [])  // Array vazio para memoizar a função
 
   const updateOrder = useCallback((orderId: string, status?: string, paid_at?: boolean, deliveryPerson?: string, cancellationReason?: string): Promise<boolean> => {
-    console.log('🔄 updateOrder chamado:', { orderId, status, paid_at, deliveryPerson, cancellationReason });
-    
     return new Promise((resolve, reject) => {
       if (!subscriptionRef.current || !subscriptionRef.current.send) {
         console.error('❌ Subscription não está ativa');
@@ -268,11 +265,8 @@ export function useAdminActionCable() {
         };
       }
 
-      console.log('📤 Enviando dados via websocket:', updateData);
-
       try {
         subscriptionRef.current.send(updateData);
-        console.log('✅ Dados enviados com sucesso');
 
         // Registrar confirmação pendente: será resolvida quando o servidor enviar order_updated
         const pending = pendingConfirmationsRef.current || {}
@@ -327,8 +321,6 @@ export function useAdminActionCable() {
   }, [])
 
   const updateOrderDetails = useCallback((orderId: string, data: any): Promise<boolean> => {
-    console.log('🔄 updateOrderDetails chamado:', { orderId, data });
-    
     return new Promise((resolve, reject) => {
       if (!subscriptionRef.current || !subscriptionRef.current.send) {
         console.error('❌ Subscription não está ativa');
@@ -336,35 +328,32 @@ export function useAdminActionCable() {
         return;
       }
 
-      // Filtrar apenas os campos que o backend suporta
+      // Montar payload com os campos suportados pelo backend
       const supportedData: any = {};
-      
-      if (data.customer) {
-        supportedData.customer = data.customer;
-      }
-      
-      if (data.address) {
-        supportedData.address = data.address;
-      }
-      
-      if (data.shop) {
-        supportedData.shop = data.shop;
-      }
-      
-      if (data.items) {
-        supportedData.items = data.items;
-      }
-      
-      if (data.total !== undefined) {
-        supportedData.total = data.total;
+
+      if (data.customer)              supportedData.customer        = data.customer;
+      if (data.address)               supportedData.address         = data.address;
+      if (data.shop)                  supportedData.shop            = data.shop;
+      if (data.total !== undefined)   supportedData.total           = data.total;
+      if (data.deliveryPerson !== undefined) supportedData.delivery_person = data.deliveryPerson;
+      if (data.delivery_fee !== undefined)  supportedData.delivery_fee    = data.delivery_fee;
+      if (data.payment_method !== undefined) supportedData.payment_method = data.payment_method;
+
+      // payment_status: converter 'paid'/'pending' → paid_at: true/false (formato do backend)
+      if (data.payment_status !== undefined) {
+        supportedData.paid_at = data.payment_status === 'paid';
       }
 
-      if (data.deliveryPerson !== undefined) {
-        supportedData.delivery_person = data.deliveryPerson;
-      }
-
-      // Determinar se é uma edição completa ou atualização simples
+      // Items: edit_order espera array [{ id, price, quantity, observation }]
+      //        o modal envia mapa { id: { price, quantity, observation } } → converter aqui
       const hasItemsChanges = data.items && Object.keys(data.items).length > 0;
+      if (hasItemsChanges) {
+        supportedData.items = Object.entries(data.items).map(([id, itemData]: [string, any]) => ({
+          id,
+          ...itemData,
+        }));
+      }
+
       const event = hasItemsChanges ? "edit_order" : "update_order";
 
       const updateData = {
@@ -375,13 +364,9 @@ export function useAdminActionCable() {
         }
       };
 
-      console.log('📤 Enviando dados para o backend:', updateData);
-
       subscriptionRef.current.send(updateData);
 
-      // Simular sucesso por enquanto (o backend vai responder via WebSocket)
       setTimeout(() => {
-        console.log('✅ updateOrderDetails concluído');
         resolve(true);
       }, 100);
     });

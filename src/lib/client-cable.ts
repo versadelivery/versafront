@@ -1,5 +1,5 @@
 import { createConsumer } from "@rails/actioncable"
-import { getToken } from "./auth"
+import { getClientToken } from "./auth"
 import { useEffect, useRef, useState } from "react"
 
 export interface ClientOrderData {
@@ -51,7 +51,7 @@ export interface ClientOrderData {
 }
 
 export function createClientCableWithToken() {
-  const token = getToken()
+  const token = getClientToken()
   if (!token) return null
 
   const base = process.env.NEXT_PUBLIC_CABLE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
@@ -66,7 +66,7 @@ export function useClientActionCable(orderId: string) {
   const cableRef = useRef<any>(null)
 
   useEffect(() => {
-    const token = getToken()
+    const token = getClientToken()
     if (token && orderId) {
       const cable = createClientCableWithToken()
       if (cable) {
