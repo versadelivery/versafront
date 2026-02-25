@@ -7,6 +7,7 @@ import React, { useState } from "react";
 import { ItemDetailsModal } from "./item-details-modal";
 import { EditItemModal } from "./edit-item-modal";
 import { fixImageUrl } from "@/utils/image-url";
+import { Switch } from "@/components/ui/switch";
 
 // =============================================================================
 // TIPOS
@@ -29,6 +30,7 @@ interface ItemCardProps {
     best_seller_tag?: boolean;
     highlight?: boolean;
     promotion_tag?: boolean;
+    active: boolean;
     catalog_item_extras_attributes?: any[];
     catalog_item_prepare_methods_attributes?: any[];
     catalog_item_steps_attributes?: any[];
@@ -48,6 +50,7 @@ export function ItemCard({ item }: ItemCardProps) {
     e.stopPropagation();
     duplicateCatalogItem(item.id.toString());
   };
+  const { toggleCatalogItemActive } = useCatalogGroup();
 
   // =============================================================================
   // FUNÇÕES AUXILIARES
@@ -92,7 +95,7 @@ export function ItemCard({ item }: ItemCardProps) {
   return (
     <>
       <div
-        className="bg-white rounded-xl border border-gray-200 overflow-hidden cursor-pointer hover:shadow-md transition-shadow duration-200 flex flex-col h-full"
+        className={`bg-white rounded-xl border border-gray-200 overflow-hidden cursor-pointer hover:shadow-md transition-shadow duration-200 flex flex-col h-full ${!item.active ? 'opacity-60' : ''}`}
         onClick={() => setIsDetailsOpen(true)}
       >
         {/* Imagem */}
@@ -113,15 +116,16 @@ export function ItemCard({ item }: ItemCardProps) {
 
           {/* Badge desconto */}
           {hasDiscount && (
-            <div className="absolute bottom-2 right-2 bg-destructive text-white text-[10px] font-semibold px-2 py-0.5 rounded">
+            <div className="absolute bottom-2 left-2 bg-destructive text-white text-[10px] font-semibold px-2 py-0.5 rounded">
               -{discountPercentage}%
             </div>
           )}
 
           {/* Botões de Ação */}
-          <div className="absolute top-2 right-2 flex gap-1">
+          <div className="absolute top-2 right-2 flex items-center gap-2">
+            {/* Duplicar */}
             <button
-              className="bg-white/90 backdrop-blur-sm rounded-md p-1.5 hover:bg-white transition-colors group"
+              className="bg-white/95 backdrop-blur-sm rounded-full p-2 flex items-center justify-center shadow-sm border border-gray-100 hover:bg-white transition-colors group"
               onClick={handleDuplicate}
               disabled={isDuplicatingItem}
               title="Duplicar item"
@@ -132,13 +136,30 @@ export function ItemCard({ item }: ItemCardProps) {
                 <Copy className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
               )}
             </button>
-            <button
-              className="bg-white/90 backdrop-blur-sm rounded-md p-1.5 hover:bg-white transition-colors group"
-              onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}
-              title="Editar item"
+
+            {/* Container Ativo + Editar */}
+            <div 
+              className="bg-white/95 backdrop-blur-sm rounded-full py-1 px-2.5 flex items-center shadow-sm border border-gray-100 gap-2"
+              onClick={(e) => e.stopPropagation()}
             >
-              <Edit2 className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-            </button>
+              <div className="flex items-center -ml-1">
+                <Switch
+                  checked={item.active}
+                  onCheckedChange={(checked) => {
+                    toggleCatalogItemActive({ id: item.id.toString(), active: checked });
+                  }}
+                  className="scale-[0.55] origin-center"
+                />
+              </div>
+              <div className="w-[1px] h-3 bg-gray-200" />
+              <button
+                className="text-muted-foreground hover:text-primary transition-colors py-0.5"
+                onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}
+                title="Editar item"
+              >
+                <Edit2 className="h-3.5 w-3.5" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -146,6 +167,7 @@ export function ItemCard({ item }: ItemCardProps) {
         <div className="p-3 flex flex-col flex-1 gap-1">
           <h3 className="text-sm font-semibold text-foreground line-clamp-2 leading-tight">
             {item.name}
+            {!item.active && <span className="ml-2 text-[10px] font-normal text-muted-foreground italic">(Pausado)</span>}
           </h3>
 
           {item.description && (

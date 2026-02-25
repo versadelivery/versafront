@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCatalogGroup, getCatalog, createCatalogGroup, updateCatalogGroup, deleteCatalogGroup } from "@/api/requests/catalog/requests";
+import { toggleCatalogGroupActive, toggleCatalogItemActive } from "@/api/requests/catalog/toggle";
 import { CatalogItemResponse } from "@/api/requests/catalog_item/types";
 import { getCatalogItem, createCatalogItem, duplicateCatalogItem, destroyExtra, destroyStep, destroyPrepareMethod, deleteCatalogItem, destroyStepOption, updateStep, updateStepOption, updatePrepareMethod, updateExtra, updateCatalogItem } from "@/api/requests/catalog_item/requests";
 import { toast } from "sonner";
@@ -241,6 +242,30 @@ export const useCatalogGroup = (id?: string) => {
     },
   });
 
+  const toggleCatalogGroupActiveMutation = useMutation({
+    mutationFn: ({ id, active }: { id: string; active: boolean }) =>
+      toggleCatalogGroupActive(id, active),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["catalog"] });
+      toast.success("Status do grupo atualizado");
+    },
+    onError: () => {
+      toast.error("Erro ao atualizar status do grupo");
+    },
+  });
+
+  const toggleCatalogItemActiveMutation = useMutation({
+    mutationFn: ({ id, active }: { id: string; active: boolean }) =>
+      toggleCatalogItemActive(id, active),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["catalog"] });
+      toast.success("Status do item atualizado");
+    },
+    onError: () => {
+      toast.error("Erro ao atualizar status do item");
+    },
+  });
+
   return {
     catalog,
     isLoading,
@@ -248,6 +273,8 @@ export const useCatalogGroup = (id?: string) => {
     createCatalogGroup: createCatalogGroupMutation.mutate,
     updateCatalogGroup: updateCatalogGroupMutation.mutate,
     deleteCatalogGroup: deleteCatalogGroupMutation.mutate,
+    toggleCatalogGroupActive: toggleCatalogGroupActiveMutation.mutate,
+    toggleCatalogItemActive: toggleCatalogItemActiveMutation.mutate,
     isCreatingGroup: createCatalogGroupMutation.isPending,
     isUpdatingGroup: updateCatalogGroupMutation.isPending,
     isDeletingGroup: deleteCatalogGroupMutation.isPending,

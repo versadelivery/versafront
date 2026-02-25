@@ -1,9 +1,9 @@
 "use client"
 
 import {
-  MapPin, CreditCard, Wallet, QrCode, Truck, ChevronDown, ChevronUp,
-  Plus, Minus, X, CheckCircle2, Store, LogIn, Clock, AlertTriangle,
-  ChevronLeft, ShoppingCart, Package, User
+  CreditCard, Wallet, QrCode, Truck, ChevronDown, ChevronUp,
+  Plus, Minus, X, CheckCircle2, Store, Clock, AlertTriangle,
+  ChevronLeft, ShoppingCart, Package, User, Phone
 } from 'lucide-react'
 import { toast } from "sonner"
 import { Button } from '@/components/ui/button'
@@ -79,7 +79,8 @@ export default function CheckoutPage() {
   const [selectedNeighborhood, setSelectedNeighborhood] = useState<string>('')
   const [order, setOrder] = useState<Order | null>(null)
   const [itemObservations, setItemObservations] = useState<Record<string, string>>({})
-  const [shouldAutoSubmitAfterLogin, setShouldAutoSubmitAfterLogin] = useState(false)
+  const [guestName, setGuestName] = useState('')
+  const [guestPhone, setGuestPhone] = useState('')
 
   const shopDeliveryConfig = shopData?.data?.attributes?.shop_delivery_config?.data?.attributes || null
   const shopPaymentConfig = shopData?.data?.attributes?.shop_payment_config?.data?.attributes || null
@@ -121,12 +122,7 @@ export default function CheckoutPage() {
     setIsLoading(false)
   }, [items])
 
-  useEffect(() => {
-    if (client && shouldAutoSubmitAfterLogin) {
-      setShouldAutoSubmitAfterLogin(false)
-      setTimeout(() => { handleSubmitOrder() }, 100)
-    }
-  }, [client, shouldAutoSubmitAfterLogin])
+
 
   const calculateDeliveryFee = () => {
     if (deliveryOption !== 'delivery' || !selectedNeighborhood) return 0
@@ -156,9 +152,8 @@ export default function CheckoutPage() {
       return
     }
 
-    if (!client) {
-      setShouldAutoSubmitAfterLogin(true)
-      router.push(`/auth/login?redirect=${encodeURIComponent(window.location.pathname)}`)
+    if (!client && (!guestName.trim() || !guestPhone.trim())) {
+      toast.error('Preencha seu nome e telefone para continuar')
       return
     }
 
@@ -175,11 +170,14 @@ export default function CheckoutPage() {
       }
     }
 
+    const isGuest = !client
+
     const orderData: CreateOrderRequest = {
       order: {
         shop_id: Number(shop?.data.id),
         withdrawal: deliveryOption === 'pickup',
         payment_method: paymentMethod as any,
+        ...(isGuest && { customer_name: guestName.trim(), customer_phone: guestPhone.replace(/\D/g, '') }),
         address: {
           address,
           neighborhood: neighborhoodName,
@@ -196,7 +194,7 @@ export default function CheckoutPage() {
     }
 
     try {
-      const response = await createOrder(orderData)
+      const response = await createOrder(orderData, isGuest ? 'normal' : 'client')
       const orderId = response.order_id
       setOrder(response)
       toast.success("Pedido realizado com sucesso!")
@@ -253,7 +251,8 @@ export default function CheckoutPage() {
   }
 
   const canSubmit = !isSubmitting && isShopOpen && !shopStatusLoading && !isBelowMinOrder &&
-    (deliveryOption === 'pickup' || !!address.trim())
+    (deliveryOption === 'pickup' || !!address.trim()) &&
+    (!!client || (!!guestName.trim() && !!guestPhone.trim()))
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -298,29 +297,45 @@ export default function CheckoutPage() {
               </Alert>
             )}
 
-            {/* Login aviso */}
+            {/* Identificação do guest */}
             {!client && (
-              <div className="bg-amber-50 border border-amber-200 rounded-xl px-5 py-4 flex items-start gap-3">
-                <User className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-amber-800">Login necessário para finalizar</p>
-                  <div className="flex gap-2 mt-2">
+              <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
+                  <User className="h-4 w-4 text-primary" />
+                  <h2 className="font-semibold text-gray-900">Identificação</h2>
+                  <span className="ml-auto text-xs text-muted-foreground">
+                    Ou{' '}
                     <button
-                      onClick={() => {
-                        setShouldAutoSubmitAfterLogin(true)
-                        router.push(`/auth/login?redirect=${encodeURIComponent(window.location.pathname)}`)
-                      }}
-                      className="text-xs font-semibold text-amber-700 underline underline-offset-2 cursor-pointer"
+                      onClick={() => router.push(`/auth/login?redirect=${encodeURIComponent(window.location.pathname)}`)}
+                      className="font-semibold text-primary underline underline-offset-2 cursor-pointer"
                     >
-                      Fazer login
+                      faça login
                     </button>
-                    <span className="text-xs text-amber-600">·</span>
-                    <button
-                      onClick={() => router.push(`/auth/register?redirect=${encodeURIComponent(window.location.pathname)}`)}
-                      className="text-xs font-semibold text-amber-700 underline underline-offset-2 cursor-pointer"
-                    >
-                      Criar conta
-                    </button>
+                  </span>
+                </div>
+                <div className="px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="guestName" className="text-xs font-medium text-gray-700 mb-1.5 block">Nome</Label>
+                    <Input
+                      id="guestName"
+                      placeholder="Seu nome"
+                      value={guestName}
+                      onChange={(e) => setGuestName(e.target.value)}
+                      className="border-gray-200 focus:border-primary/40 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="guestPhone" className="text-xs font-medium text-gray-700 mb-1.5 block">Telefone</Label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                      <Input
+                        id="guestPhone"
+                        placeholder="(00) 00000-0000"
+                        value={guestPhone}
+                        onChange={(e) => setGuestPhone(e.target.value)}
+                        className="pl-8 border-gray-200 focus:border-primary/40 text-sm"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -803,11 +818,6 @@ function OrderSummary({
             <>
               <Clock className="h-4 w-4" />
               Loja fechada
-            </>
-          ) : !client ? (
-            <>
-              <LogIn className="h-4 w-4" />
-              Entrar e finalizar
             </>
           ) : (
             <>

@@ -109,6 +109,8 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
 
   // Estados - Dias da semana
   const [activeDays, setActiveDays] = useState<Record<DayKey, boolean>>(DEFAULT_ACTIVE_DAYS);
+  const [active, setActive] = useState(true);
+
 
   // Estados - Erros
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -173,6 +175,8 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
     setHighlight(false);
     setPromotionTag(false);
     setActiveDays(DEFAULT_ACTIVE_DAYS);
+    setActive(true);
+
     setErrors({});
   };
 
@@ -360,11 +364,13 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
     formData.append('best_seller_tag', bestSellerTag.toString());
     formData.append('highlight', highlight.toString());
     formData.append('promotion_tag', promotionTag.toString());
-
     // Dias da semana
     DAYS_OF_WEEK.forEach(({ key }) => {
       formData.append(key, activeDays[key].toString());
     });
+
+    formData.append('active', active.toString());
+
 
     // Extras - filtrar apenas os que têm nome preenchido
     if (hasExtras) {
@@ -428,6 +434,15 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
           {/* SEÇÃO: DADOS BÁSICOS */}
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Dados do Item</p>
+
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">
+            <div className="flex flex-col gap-0.5">
+              <span className="text-sm font-medium">Item Ativo</span>
+              <span className="text-xs text-muted-foreground">O item aparecerá no cardápio se estiver ativo</span>
+            </div>
+            <Switch checked={active} onCheckedChange={setActive} />
+          </div>
+
 
           {/* Nome */}
           <div className="space-y-1.5">
@@ -627,8 +642,9 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
             <button
               type="button"
               onClick={() => {
+                const allActive = Object.values(activeDays).every(v => v);
                 const newState = {} as Record<DayKey, boolean>;
-                DAYS_OF_WEEK.forEach(day => newState[day.key] = !allActiveDays);
+                DAYS_OF_WEEK.forEach(day => newState[day.key] = !allActive);
                 setActiveDays(newState);
               }}
               className="text-[10px] font-medium text-primary hover:underline uppercase tracking-tight"
@@ -636,27 +652,19 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
               {allActiveDays ? 'Desmarcar todos' : 'Marcar todos'}
             </button>
           </div>
-          <div className="grid grid-cols-7 gap-2">
-            {DAYS_OF_WEEK.map(({ key, label }) => {
-              const isActive = activeDays[key];
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setActiveDays((prev) => ({ ...prev, [key]: !prev[key] }))}
-                  className={`relative flex flex-col items-center justify-center py-3 rounded-xl border-2 transition-all duration-200 ${
-                    isActive 
-                      ? 'bg-primary/5 border-primary text-primary shadow-sm' 
-                      : 'bg-transparent border-gray-100 text-gray-400 border-dashed hover:border-gray-300'
-                  }`}
-                >
-                  <span className={`text-[10px] font-bold uppercase mb-0.5 ${isActive ? 'text-primary' : 'text-gray-400'}`}>
-                    {label}
-                  </span>
-                  <div className={`w-1.5 h-1.5 rounded-full mt-1 ${isActive ? 'bg-primary' : 'bg-gray-200'}`} />
-                </button>
-              );
-            })}
+          <div className="grid grid-cols-7 gap-1.5">
+            {DAYS_OF_WEEK.map(({ key, label }) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setActiveDays((prev) => ({ ...prev, [key]: !prev[key] }))}
+                className={`py-2 rounded-md text-sm font-medium transition-colors ${
+                  activeDays[key] ? 'bg-foreground text-white' : 'bg-muted/40 text-muted-foreground'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
           </div>
 
           <hr className="border-gray-100" />

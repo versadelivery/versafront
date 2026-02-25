@@ -76,25 +76,48 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const token = getClientToken();
-    if (!token) {
-      router.push(`/auth/login?redirect=/pedidos/${id}`);
-      return;
-    }
-
     if (!id) return;
 
-    const unsubscribe = subscribeToOrder((data: ClientOrderData) => {
-      setOrderData(data);
-      setIsLoading(false);
-      setError(null);
-    });
+    const clientToken = getClientToken();
 
-    return () => {
-      if (unsubscribe) unsubscribe();
-      disconnect();
-    };
-  }, [id, subscribeToOrder, disconnect, router]);
+    if (clientToken) {
+      // Cliente logado → usa ActionCable para atualizações em tempo real
+      const unsubscribe = subscribeToOrder((data: ClientOrderData) => {
+        setOrderData(data);
+        setIsLoading(false);
+        setError(null);
+      });
+
+      return () => {
+        if (unsubscribe) unsubscribe();
+        disconnect();
+      };
+    } else {
+      // Guest → busca via HTTP e faz polling a cada 10s
+      const fetchOrder = async () => {
+        try {
+          const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+          const res = await fetch(`${baseUrl}/orders/${id}`, {
+            headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' }
+          });
+          if (!res.ok) throw new Error('Pedido não encontrado');
+          const json = await res.json();
+          // O serializer retorna { data: { ... } }
+          const orderPayload = json?.data ?? json;
+          setOrderData(orderPayload);
+          setIsLoading(false);
+          setError(null);
+        } catch (err) {
+          setError('Não foi possível carregar o pedido.');
+          setIsLoading(false);
+        }
+      };
+
+      fetchOrder();
+      const interval = setInterval(fetchOrder, 10000);
+      return () => clearInterval(interval);
+    }
+  }, [id]);
 
   const shopSlug = typeof window !== 'undefined'
     ? (() => { try { return JSON.parse(localStorage.getItem('shop') || '{}')?.data?.attributes?.slug; } catch { return null; } })()
