@@ -139,15 +139,17 @@ function CatalogPage() {
                       )}
                     </div>
 
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 px-3 gap-1.5 text-xs text-muted-foreground"
-                      onClick={() => handleEditGroup(group.id)}
-                    >
-                      <Edit2 className="h-3.5 w-3.5" />
-                      Editar
-                    </Button>
+                    <div className="flex items-center gap-3">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 px-3 gap-1.5 text-xs text-muted-foreground"
+                        onClick={() => handleEditGroup(group.id)}
+                      >
+                        <Edit2 className="h-3.5 w-3.5" />
+                        Editar
+                      </Button>
+                    </div>
                   </div>
 
                   {/* Items do grupo */}

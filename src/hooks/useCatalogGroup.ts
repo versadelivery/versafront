@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCatalogGroup, getCatalog, createCatalogGroup, updateCatalogGroup, deleteCatalogGroup } from "@/api/requests/catalog/requests";
 import { CatalogItemResponse } from "@/api/requests/catalog_item/types";
-import { getCatalogItem, createCatalogItem, destroyExtra, destroyStep, destroyPrepareMethod, deleteCatalogItem, destroyStepOption, updateStep, updateStepOption, updatePrepareMethod, updateExtra } from "@/api/requests/catalog_item/requests";
+import { getCatalogItem, createCatalogItem, duplicateCatalogItem, destroyExtra, destroyStep, destroyPrepareMethod, deleteCatalogItem, destroyStepOption, updateStep, updateStepOption, updatePrepareMethod, updateExtra, updateCatalogItem } from "@/api/requests/catalog_item/requests";
 import { toast } from "sonner";
 
 interface EditStepProps {
@@ -79,7 +79,7 @@ export const useEditStep = ({ id, stepId, name, optionId, price }: EditStepProps
 }
 export const useDestroyItems = () => {
   const queryClient = useQueryClient();
-  
+
   const destroyExtraMutation = useMutation({
     mutationFn: ({ extraId, itemId }: { extraId: string, itemId: string }) => destroyExtra(extraId, itemId),
     onSuccess: (_, variables) => {
@@ -93,7 +93,7 @@ export const useDestroyItems = () => {
   });
 
   const destroyStepItemMutation = useMutation({
-    mutationFn: ({ itemId, stepId, optionId }: { itemId: string, stepId: string, optionId: string }) => 
+    mutationFn: ({ itemId, stepId, optionId }: { itemId: string, stepId: string, optionId: string }) =>
       destroyStepOption(itemId, stepId, optionId),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['catalog'] });
@@ -128,14 +128,14 @@ export const useDestroyItems = () => {
       toast.error("Erro ao deletar método de preparo");
     },
   });
-  
+
   return {
     destroyExtra: destroyExtraMutation.mutate,
     destroyStep: destroyStepMutation.mutate,
     destroyPrepareMethod: destroyPrepareMethodMutation.mutate,
     isDestroyingExtra: destroyExtraMutation.isPending,
     isDestroyingStep: destroyStepMutation.isPending,
-    isDestroyingPrepareMethod: destroyPrepareMethodMutation.isPending,    
+    isDestroyingPrepareMethod: destroyPrepareMethodMutation.isPending,
     destroyStepItem: destroyStepItemMutation.mutate,
     isDestroyingStepItem: destroyStepItemMutation.isPending,
   };
@@ -179,7 +179,7 @@ export const useCatalogGroup = (id?: string) => {
     refetchOnMount: true,
     refetchOnReconnect: true,
   });
-  
+
   const { data: catalogGroup, isLoading: isLoadingGroup, error: errorGroup, refetch: refetchGroup } = useQuery({
     queryKey: ["catalog-group", id],
     queryFn: () => getCatalogGroup(id as any),
@@ -230,6 +230,17 @@ export const useCatalogGroup = (id?: string) => {
     },
   });
 
+  const duplicateCatalogItemMutation = useMutation({
+    mutationFn: (id: string) => duplicateCatalogItem(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['catalog'] });
+      toast.success("Item duplicado com sucesso");
+    },
+    onError: () => {
+      toast.error("Erro ao duplicar item");
+    },
+  });
+
   return {
     catalog,
     isLoading,
@@ -242,6 +253,8 @@ export const useCatalogGroup = (id?: string) => {
     isDeletingGroup: deleteCatalogGroupMutation.isPending,
     createCatalogItem: createCatalogItemMutation.mutate,
     isCreatingItem: createCatalogItemMutation.isPending,
+    duplicateCatalogItem: duplicateCatalogItemMutation.mutate,
+    isDuplicatingItem: duplicateCatalogItemMutation.isPending,
     getCatalog: catalog,
     isLoadingCatalog: isLoading,
     refetchCatalog: refetch,

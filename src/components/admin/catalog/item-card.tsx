@@ -1,6 +1,7 @@
 "use client";
 
-import { Edit2, Scale, Plus, ChefHat, ListChecks, ImageOff } from "lucide-react";
+import { Edit2, Scale, Plus, ChefHat, ListChecks, ImageOff, Copy, Loader2 } from "lucide-react";
+import { useCatalogGroup } from "@/hooks/useCatalogGroup";
 import Image from "next/image";
 import React, { useState } from "react";
 import { ItemDetailsModal } from "./item-details-modal";
@@ -41,6 +42,12 @@ interface ItemCardProps {
 export function ItemCard({ item }: ItemCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const { duplicateCatalogItem, isDuplicatingItem } = useCatalogGroup();
+
+  const handleDuplicate = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    duplicateCatalogItem(item.id.toString());
+  };
 
   // =============================================================================
   // FUNÇÕES AUXILIARES
@@ -111,13 +118,28 @@ export function ItemCard({ item }: ItemCardProps) {
             </div>
           )}
 
-          {/* Botão editar */}
-          <button
-            className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-md p-1.5 hover:bg-white transition-colors"
-            onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}
-          >
-            <Edit2 className="h-3.5 w-3.5 text-muted-foreground" />
-          </button>
+          {/* Botões de Ação */}
+          <div className="absolute top-2 right-2 flex gap-1">
+            <button
+              className="bg-white/90 backdrop-blur-sm rounded-md p-1.5 hover:bg-white transition-colors group"
+              onClick={handleDuplicate}
+              disabled={isDuplicatingItem}
+              title="Duplicar item"
+            >
+              {isDuplicatingItem ? (
+                <Loader2 className="h-3.5 w-3.5 text-muted-foreground animate-spin" />
+              ) : (
+                <Copy className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+              )}
+            </button>
+            <button
+              className="bg-white/90 backdrop-blur-sm rounded-md p-1.5 hover:bg-white transition-colors group"
+              onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}
+              title="Editar item"
+            >
+              <Edit2 className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+            </button>
+          </div>
         </div>
 
         {/* Conteúdo */}
