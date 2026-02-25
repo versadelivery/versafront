@@ -114,7 +114,7 @@ export default function OrderCard({
   const handleWhatsAppNotification = () => {
     const customerPhone = order.socketData?.attributes?.customer?.data?.attributes?.cellphone?.replace(/\D/g, '') || '';
     const items = order.socketData?.attributes?.items?.data?.map((item: any) => ({
-      name: item.attributes.catalog_item.data.attributes.name,
+      name: item.attributes.catalog_item?.data?.attributes?.name || item.attributes.name || 'Item não encontrado',
       quantity: item.attributes.quantity,
       totalPrice: parseFloat(item.attributes.total_price || '0'),
       observation: item.attributes.observation || undefined,
@@ -173,7 +173,7 @@ export default function OrderCard({
               <div class="section-title">ITENS</div>
               ${order.socketData?.attributes?.items?.data?.map((item: any) => `
                 <div class="item">
-                  <p><strong>${item.attributes.quantity}x ${item.attributes.catalog_item.data.attributes.name}</strong></p>
+                  <p><strong>${item.attributes.quantity}x ${item.attributes.catalog_item?.data?.attributes?.name || item.attributes.name || 'Item não encontrado'}</strong></p>
                   <p>Preço: R$ ${parseFloat(item.attributes.total_price || '0').toFixed(2)}</p>
                   ${item.attributes.observation ? `<p><em>Obs: ${item.attributes.observation}</em></p>` : ''}
                 </div>
@@ -228,7 +228,7 @@ ${order.socketData.attributes.address.data.attributes.complement ? `Complemento:
 
 🛒 *ITENS*
 ${order.socketData?.attributes?.items?.data?.map((item: any) => `
-• ${item.attributes.quantity}x ${item.attributes.catalog_item.data.attributes.name}
+• ${item.attributes.quantity}x ${item.attributes.catalog_item?.data?.attributes?.name || item.attributes.name || 'Item não encontrado'}
   R$ ${parseFloat(item.attributes.total_price || '0').toFixed(2)}
   ${item.attributes.observation ? `_Obs: ${item.attributes.observation}_` : ''}
 `).join('') || 'Nenhum item'}
@@ -323,7 +323,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
             {order.socketData.attributes.items.data.slice(0, 2).map((item: any, index: number) => (
               <div key={item.id} className="flex justify-between items-center">
                 <span className="truncate">
-                  {item.attributes.quantity}x {item.attributes.catalog_item.data.attributes.name}
+                  {item.attributes.quantity}x {item.attributes.catalog_item?.data?.attributes?.name || item.attributes.name || 'Item não encontrado'}
                 </span>
                 <span className="ml-2">
                   {formatPrice(parseFloat(item.attributes.total_price || '0'))}
