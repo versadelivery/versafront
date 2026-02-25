@@ -128,6 +128,7 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
   };
 
   const finalPrice = calculateFinalPrice();
+  const allActiveDays = Object.values(activeDays).every(v => v);
 
   // =============================================================================
   // EFEITOS
@@ -635,21 +636,42 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
 
           <hr className="border-gray-100" />
 
-          {/* Disponibilidade Semanal */}
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Disponibilidade Semanal</p>
-          <div className="grid grid-cols-7 gap-1.5">
-            {DAYS_OF_WEEK.map(({ key, label }) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setActiveDays((prev) => ({ ...prev, [key]: !prev[key] }))}
-                className={`py-2 rounded-md text-sm font-medium transition-colors ${
-                  activeDays[key] ? 'bg-foreground text-white' : 'bg-muted/40 text-muted-foreground'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Disponibilidade Semanal</p>
+            <button
+              type="button"
+              onClick={() => {
+                const allActive = Object.values(activeDays).every(v => v);
+                const newState = {} as Record<DayKey, boolean>;
+                DAYS_OF_WEEK.forEach(day => newState[day.key] = !allActive);
+                setActiveDays(newState);
+              }}
+              className="text-[10px] font-medium text-primary hover:underline uppercase tracking-tight"
+            >
+              {allActiveDays ? 'Desmarcar todos' : 'Marcar todos'}
+            </button>
+          </div>
+          <div className="grid grid-cols-7 gap-2">
+            {DAYS_OF_WEEK.map(({ key, label }) => {
+              const isActive = activeDays[key];
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setActiveDays((prev) => ({ ...prev, [key]: !prev[key] }))}
+                  className={`relative flex flex-col items-center justify-center py-3 rounded-xl border-2 transition-all duration-200 ${
+                    isActive 
+                      ? 'bg-primary/5 border-primary text-primary shadow-sm' 
+                      : 'bg-transparent border-gray-100 text-gray-400 border-dashed hover:border-gray-300'
+                  }`}
+                >
+                  <span className={`text-[10px] font-bold uppercase mb-0.5 ${isActive ? 'text-primary' : 'text-gray-400'}`}>
+                    {label}
+                  </span>
+                  <div className={`w-1.5 h-1.5 rounded-full mt-1 ${isActive ? 'bg-primary' : 'bg-gray-200'}`} />
+                </button>
+              );
+            })}
           </div>
 
           <hr className="border-gray-100" />
