@@ -245,11 +245,30 @@ export const useCatalogGroup = (id?: string) => {
   const toggleCatalogGroupActiveMutation = useMutation({
     mutationFn: ({ id, active }: { id: string; active: boolean }) =>
       toggleCatalogGroupActive(id, active),
+    onMutate: async ({ id, active }) => {
+      await queryClient.cancelQueries({ queryKey: ["catalog"] });
+      const previousCatalog = queryClient.getQueryData(["catalog"]);
+      queryClient.setQueryData(["catalog"], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          data: old.data.map((group: any) =>
+            group.id === id
+              ? { ...group, attributes: { ...group.attributes, active } }
+              : group
+          )
+        };
+      });
+      return { previousCatalog };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["catalog"] });
       toast.success("Status do grupo atualizado");
     },
-    onError: () => {
+    onError: (err, variables, context) => {
+      if (context?.previousCatalog) {
+        queryClient.setQueryData(["catalog"], context.previousCatalog);
+      }
       toast.error("Erro ao atualizar status do grupo");
     },
   });
@@ -257,11 +276,42 @@ export const useCatalogGroup = (id?: string) => {
   const toggleCatalogItemActiveMutation = useMutation({
     mutationFn: ({ id, active }: { id: string; active: boolean }) =>
       toggleCatalogItemActive(id, active),
+    onMutate: async ({ id, active }) => {
+      await queryClient.cancelQueries({ queryKey: ["catalog"] });
+      const previousCatalog = queryClient.getQueryData(["catalog"]);
+      queryClient.setQueryData(["catalog"], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          data: old.data.map((group: any) => ({
+            ...group,
+            attributes: {
+              ...group.attributes,
+              items: group.attributes.items?.map((item: any) => {
+                // Handle both raw item and JSONAPI nested item
+                const itemId = item.id || item.data?.id;
+                if (itemId?.toString() === id.toString()) {
+                  if (item.attributes) {
+                    return { ...item, attributes: { ...item.attributes, active } };
+                  }
+                  return { ...item, active };
+                }
+                return item;
+              })
+            }
+          }))
+        };
+      });
+      return { previousCatalog };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["catalog"] });
       toast.success("Status do item atualizado");
     },
-    onError: () => {
+    onError: (err, variables, context) => {
+      if (context?.previousCatalog) {
+        queryClient.setQueryData(["catalog"], context.previousCatalog);
+      }
       toast.error("Erro ao atualizar status do item");
     },
   });
