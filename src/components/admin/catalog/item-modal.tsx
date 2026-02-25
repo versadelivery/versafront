@@ -109,6 +109,8 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
 
   // Estados - Dias da semana
   const [activeDays, setActiveDays] = useState<Record<DayKey, boolean>>(DEFAULT_ACTIVE_DAYS);
+  const [active, setActive] = useState(true);
+
 
   // Estados - Erros
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -172,6 +174,8 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
     setHighlight(false);
     setPromotionTag(false);
     setActiveDays(DEFAULT_ACTIVE_DAYS);
+    setActive(true);
+
     setErrors({});
   };
 
@@ -359,11 +363,13 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
     formData.append('best_seller_tag', bestSellerTag.toString());
     formData.append('highlight', highlight.toString());
     formData.append('promotion_tag', promotionTag.toString());
-
     // Dias da semana
     DAYS_OF_WEEK.forEach(({ key }) => {
       formData.append(key, activeDays[key].toString());
     });
+
+    formData.append('active', active.toString());
+
 
     // Extras - filtrar apenas os que têm nome preenchido
     if (hasExtras) {
@@ -427,6 +433,15 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
           {/* SEÇÃO: DADOS BÁSICOS */}
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Dados do Item</p>
+
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">
+            <div className="flex flex-col gap-0.5">
+              <span className="text-sm font-medium">Item Ativo</span>
+              <span className="text-xs text-muted-foreground">O item aparecerá no cardápio se estiver ativo</span>
+            </div>
+            <Switch checked={active} onCheckedChange={setActive} />
+          </div>
+
 
           {/* Nome */}
           <div className="space-y-1.5">

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCatalogGroup, getCatalog, createCatalogGroup, updateCatalogGroup, deleteCatalogGroup } from "@/api/requests/catalog/requests";
+import { toggleCatalogGroupActive, toggleCatalogItemActive } from "@/api/requests/catalog/toggle";
 import { CatalogItemResponse } from "@/api/requests/catalog_item/types";
 import { getCatalogItem, createCatalogItem, destroyExtra, destroyStep, destroyPrepareMethod, deleteCatalogItem, destroyStepOption, updateStep, updateStepOption, updatePrepareMethod, updateExtra } from "@/api/requests/catalog_item/requests";
 import { toast } from "sonner";
@@ -79,7 +80,7 @@ export const useEditStep = ({ id, stepId, name, optionId, price }: EditStepProps
 }
 export const useDestroyItems = () => {
   const queryClient = useQueryClient();
-  
+
   const destroyExtraMutation = useMutation({
     mutationFn: ({ extraId, itemId }: { extraId: string, itemId: string }) => destroyExtra(extraId, itemId),
     onSuccess: (_, variables) => {
@@ -93,7 +94,7 @@ export const useDestroyItems = () => {
   });
 
   const destroyStepItemMutation = useMutation({
-    mutationFn: ({ itemId, stepId, optionId }: { itemId: string, stepId: string, optionId: string }) => 
+    mutationFn: ({ itemId, stepId, optionId }: { itemId: string, stepId: string, optionId: string }) =>
       destroyStepOption(itemId, stepId, optionId),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['catalog'] });
@@ -128,14 +129,14 @@ export const useDestroyItems = () => {
       toast.error("Erro ao deletar método de preparo");
     },
   });
-  
+
   return {
     destroyExtra: destroyExtraMutation.mutate,
     destroyStep: destroyStepMutation.mutate,
     destroyPrepareMethod: destroyPrepareMethodMutation.mutate,
     isDestroyingExtra: destroyExtraMutation.isPending,
     isDestroyingStep: destroyStepMutation.isPending,
-    isDestroyingPrepareMethod: destroyPrepareMethodMutation.isPending,    
+    isDestroyingPrepareMethod: destroyPrepareMethodMutation.isPending,
     destroyStepItem: destroyStepItemMutation.mutate,
     isDestroyingStepItem: destroyStepItemMutation.isPending,
   };
@@ -179,7 +180,7 @@ export const useCatalogGroup = (id?: string) => {
     refetchOnMount: true,
     refetchOnReconnect: true,
   });
-  
+
   const { data: catalogGroup, isLoading: isLoadingGroup, error: errorGroup, refetch: refetchGroup } = useQuery({
     queryKey: ["catalog-group", id],
     queryFn: () => getCatalogGroup(id as any),
@@ -230,6 +231,30 @@ export const useCatalogGroup = (id?: string) => {
     },
   });
 
+  const toggleCatalogGroupActiveMutation = useMutation({
+    mutationFn: ({ id, active }: { id: string; active: boolean }) =>
+      toggleCatalogGroupActive(id, active),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["catalog"] });
+      toast.success("Status do grupo atualizado");
+    },
+    onError: () => {
+      toast.error("Erro ao atualizar status do grupo");
+    },
+  });
+
+  const toggleCatalogItemActiveMutation = useMutation({
+    mutationFn: ({ id, active }: { id: string; active: boolean }) =>
+      toggleCatalogItemActive(id, active),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["catalog"] });
+      toast.success("Status do item atualizado");
+    },
+    onError: () => {
+      toast.error("Erro ao atualizar status do item");
+    },
+  });
+
   return {
     catalog,
     isLoading,
@@ -237,6 +262,8 @@ export const useCatalogGroup = (id?: string) => {
     createCatalogGroup: createCatalogGroupMutation.mutate,
     updateCatalogGroup: updateCatalogGroupMutation.mutate,
     deleteCatalogGroup: deleteCatalogGroupMutation.mutate,
+    toggleCatalogGroupActive: toggleCatalogGroupActiveMutation.mutate,
+    toggleCatalogItemActive: toggleCatalogItemActiveMutation.mutate,
     isCreatingGroup: createCatalogGroupMutation.isPending,
     isUpdatingGroup: updateCatalogGroupMutation.isPending,
     isDeletingGroup: deleteCatalogGroupMutation.isPending,
