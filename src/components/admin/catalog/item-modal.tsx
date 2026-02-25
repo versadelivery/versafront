@@ -398,8 +398,7 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
       });
     }
 
-    createCatalogItem(formData);
-    handleClose();
+    createCatalogItem(formData, { onSuccess: handleClose });
   };
 
   const handleClose = () => {

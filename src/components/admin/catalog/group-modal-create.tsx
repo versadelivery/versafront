@@ -149,12 +149,10 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
 
     if (isEditing && editingGroup) {
       formData.append("id", editingGroup);
-      updateCatalogGroup(formData);
+      updateCatalogGroup(formData, { onSuccess: handleClose });
     } else {
-      createCatalogGroup(formData);
+      createCatalogGroup(formData, { onSuccess: handleClose });
     }
-
-    handleClose();
   };
 
   const handleClose = () => {
