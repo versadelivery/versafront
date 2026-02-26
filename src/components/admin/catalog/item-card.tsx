@@ -167,7 +167,11 @@ export function ItemCard({ item }: ItemCardProps) {
         <div className="p-3 flex flex-col flex-1 gap-1">
           <h3 className="text-sm font-semibold text-foreground line-clamp-2 leading-tight">
             {item.name}
-            {!item.active && <span className="ml-2 text-[10px] font-normal text-muted-foreground italic">(Pausado)</span>}
+            {!item.active && (
+              <span className="ml-2 text-[9px] font-bold text-muted-foreground bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200 uppercase tracking-wider">
+                Rascunho
+              </span>
+            )}
           </h3>
 
           {item.description && (
