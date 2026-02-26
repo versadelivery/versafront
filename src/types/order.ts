@@ -10,6 +10,10 @@ export interface OrderItem {
   catalog_item_id: number;
   quantity: number;
   observation?: string;
+  selected_extras?: string[];
+  selected_methods?: string[];
+  selected_options?: Record<string, string>;
+  selected_shared_complements?: string[];
 }
 
 export interface OrderData {
@@ -78,7 +82,7 @@ export interface Order {
   updated_at: string;
 }
 
-export type OrderStatus = 
+export type OrderStatus =
   | 'pending'
   | 'confirmed'
   | 'preparing'

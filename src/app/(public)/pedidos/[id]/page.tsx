@@ -174,6 +174,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
       quantity: item.attributes?.quantity ?? 0,
       observation: item.attributes?.observation ?? '',
       image: item.attributes?.catalog_item?.data?.attributes?.image_url ?? '',
+      complements: item.attributes?.complements ?? [],
     })),
     shop: {
       name: orderData.attributes.shop?.data?.attributes?.name ?? '—',
@@ -282,6 +283,15 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                           </p>
                           {item.observation && (
                             <p className="text-xs text-muted-foreground italic mt-1">"{item.observation}"</p>
+                          )}
+                          {item.complements && item.complements.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {item.complements.map((comp: any) => (
+                                <span key={comp.id} className="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+                                  + {comp.name}
+                                </span>
+                              ))}
+                            </div>
                           )}
                         </div>
                       </div>

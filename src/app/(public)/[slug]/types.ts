@@ -104,6 +104,19 @@ export interface CatalogItem {
     steps: {
       data: CatalogItemStep[];
     };
+    shared_complements: {
+      data: Array<{
+        id: string;
+        attributes: {
+          name: string;
+          options: Array<{
+            id: string;
+            name: string;
+            price: number;
+          }>;
+        };
+      }>;
+    };
   };
 }
 

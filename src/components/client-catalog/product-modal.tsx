@@ -22,6 +22,7 @@ interface ProductModalProps {
     extras?: { id: string; name: string; price: number }[]
     prepareMethod?: string
     steps?: Record<string, string>
+    sharedComplements?: { id: string; name: string; price: number }[]
   }) => void
 }
 
@@ -31,7 +32,9 @@ export function ProductModal({ product, isOpen, onClose, onAddToCart }: ProductM
   const [selectedExtras, setSelectedExtras] = useState<{id: string; name: string; price: number}[]>([])
   const [selectedPrepareMethod, setSelectedPrepareMethod] = useState<string[]>([])
   const [selectedSteps, setSelectedSteps] = useState<Record<string, string>>({})
+  const [selectedSharedComplements, setSelectedSharedComplements] = useState<{id: string; name: string; price: number}[]>([])
   const [validationError, setValidationError] = useState<string | null>(null)
+
 
   // Reset state when modal closes
   useEffect(() => {
@@ -41,6 +44,7 @@ export function ProductModal({ product, isOpen, onClose, onAddToCart }: ProductM
       setSelectedExtras([])
       setSelectedPrepareMethod([])
       setSelectedSteps({})
+      setSelectedSharedComplements([])
       setValidationError(null)
     }
   }, [isOpen])
@@ -73,7 +77,8 @@ export function ProductModal({ product, isOpen, onClose, onAddToCart }: ProductM
       weight: selectedWeight,
       extras: selectedExtras,
       prepareMethod: selectedPrepareMethod[0],
-      steps: selectedSteps
+      steps: selectedSteps,
+      sharedComplements: selectedSharedComplements
     })
     onClose()
   }
@@ -197,6 +202,49 @@ export function ProductModal({ product, isOpen, onClose, onAddToCart }: ProductM
             </ul>
           </div>
         )}
+
+        {product.attributes.shared_complements?.data?.length > 0 && (
+          <div className="space-y-4">
+            {product.attributes.shared_complements.data.map((group: any) => (
+              <div key={group.id} className="space-y-2">
+                <h4 className="font-medium text-gray-700 flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  {group.attributes.name}
+                </h4>
+                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {group.attributes.options.map((option: any) => (
+                    <li key={option.id} className="text-gray-600 bg-gray-50 p-2 rounded-md flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id={`shared-${option.id}`}
+                          checked={selectedSharedComplements.some(o => o.id === option.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedSharedComplements([...selectedSharedComplements, {
+                                id: option.id,
+                                name: option.name,
+                                price: option.price
+                              }])
+                            } else {
+                              setSelectedSharedComplements(selectedSharedComplements.filter(o => o.id !== option.id))
+                            }
+                          }}
+                        />
+                        <Label htmlFor={`shared-${option.id}`} className="cursor-pointer">
+                          {option.name}
+                        </Label>
+                      </div>
+                      {option.price > 0 && (
+                        <Badge variant="secondary">+ R$ {option.price.toFixed(2).replace('.', ',')}</Badge>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        )}
+
 
         {product.attributes.prepare_method?.data?.length > 0 && (
           <div className="space-y-2">

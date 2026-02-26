@@ -39,9 +39,11 @@ interface CartItemWithExtras {
   extras?: Array<{ id: string; name: string; price: number }>
   prepareMethods?: Array<{ id: string; name: string }>
   steps?: Array<{ id: string; name: string; selectedOption?: { id: string; name: string } }>
+  complements?: Array<{ id: string; name: string; price: number }>
   selectedExtras?: string[]
   selectedMethods?: string[]
   selectedOptions?: Record<string, string>
+  selectedSharedComplements?: string[]
   totalPrice: number
   observation?: string
 }
@@ -112,9 +114,18 @@ export default function CheckoutPage() {
           selectedOption: selectedOption ? { id: selectedOption.id, name: selectedOption.attributes.name } : undefined
         }
       }),
+      complements: item.selectedSharedComplements?.map((optionId: string) => {
+        let found: any = null
+        item.attributes.shared_complements?.data.forEach((group: any) => {
+          const opt = group.attributes.options.find((o: any) => o.id.toString() === optionId.toString())
+          if (opt) found = opt
+        })
+        return found ? { id: found.id, name: found.name, price: Number(found.price) } : null
+      }).filter(Boolean) || [],
       selectedExtras: item.selectedExtras || [],
       selectedMethods: item.selectedMethods || [],
       selectedOptions: item.selectedOptions || {},
+      selectedSharedComplements: item.selectedSharedComplements || [],
       totalPrice: item.totalPrice,
       observation: item.observation
     }))
@@ -188,7 +199,14 @@ export default function CheckoutPage() {
         items: cartItems.map(item => ({
           catalog_item_id: Number(item.id),
           quantity: item.quantity,
-          observation: item.observation || ''
+          observation: item.observation || '',
+          extras_ids: item.selectedExtras || [],
+          prepare_methods_ids: item.selectedMethods || [],
+          steps: Object.entries(item.selectedOptions || {}).map(([stepId, optionId]) => ({
+            catalog_item_step_id: stepId,
+            catalog_item_step_option_id: optionId
+          })),
+          selected_shared_complements_ids: item.selectedSharedComplements || []
         }))
       }
     }
@@ -199,6 +217,9 @@ export default function CheckoutPage() {
       setOrder(response)
       toast.success("Pedido realizado com sucesso!")
       clearCart()
+      if (isGuest && guestPhone) {
+        localStorage.setItem('guest_phone', guestPhone.replace(/\D/g, ''))
+      }
       if (orderId) router.push(`/pedidos/${orderId}`)
     } catch (error) {
       console.error('Erro ao enviar pedido:', error)

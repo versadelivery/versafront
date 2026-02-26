@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from "next/navigation";
 import { getClientToken } from "@/lib/auth";
-import { getCustomerOrders } from "@/services/order-service";
+import { getCustomerOrders, getOrdersByPhone } from "@/services/order-service";
 import { CustomerOrder } from "@/types/order";
 import { useCustomerOrdersWebSocket } from "@/hooks/use-customer-orders-websocket";
 import { formatCurrency } from "@/lib/utils";
@@ -62,11 +62,18 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<CustomerOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [unauthorized, setUnauthorized] = useState(false);
+  const [guestPhone, setGuestPhone] = useState<string | null>(null);
   const { subscribeToOrders, isLoading: wsLoading } = useCustomerOrdersWebSocket();
 
   useEffect(() => {
     const token = getClientToken();
-    if (!token) {
+    const storedGuestPhone = localStorage.getItem('guest_phone');
+    
+    if (storedGuestPhone) {
+      setGuestPhone(storedGuestPhone);
+    }
+
+    if (!token && !storedGuestPhone) {
       setUnauthorized(true);
       setLoading(false);
       return;
@@ -74,8 +81,17 @@ export default function OrdersPage() {
 
     const fetchOrders = async () => {
       try {
-        const response = await getCustomerOrders();
-        if (response) setOrders(response.data);
+        let response;
+        if (token) {
+          response = await getCustomerOrders();
+        } else if (storedGuestPhone) {
+          response = await getOrdersByPhone(storedGuestPhone);
+        }
+        
+        if (response) {
+          setOrders(response.data);
+          setUnauthorized(false);
+        }
       } catch {
       } finally {
         setLoading(false);
@@ -88,8 +104,8 @@ export default function OrdersPage() {
     });
 
     const fallback = setTimeout(() => {
-      if (wsLoading) fetchOrders();
-    }, 5000);
+      if (wsLoading || loading) fetchOrders();
+    }, 1000);
 
     return () => {
       unsubscribe();
@@ -112,16 +128,58 @@ export default function OrdersPage() {
     return (
       <>
         {nav}
-        <div className="h-[calc(100vh-4rem)] bg-gray-50/40 flex items-center justify-center px-4">
-          <div className="text-center max-w-sm">
+        <div className="h-[calc(100vh-4rem)] bg-gray-50/40 flex items-center justify-center px-4 py-12">
+          <div className="text-center w-full max-w-sm">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <ShoppingBag className="w-7 h-7 text-muted-foreground" />
             </div>
-            <h2 className="text-lg font-bold text-foreground mb-2">Você não está logado</h2>
-            <p className="text-sm text-muted-foreground mb-6">Faça login para ver seus pedidos.</p>
-            <Button onClick={() => router.push(`/auth/login?redirect=/pedidos`)} className="rounded-full">
-              Entrar na conta
-            </Button>
+            <h2 className="text-lg font-bold text-foreground mb-2">Acompanhe seus pedidos</h2>
+            <p className="text-sm text-muted-foreground mb-6">Entre na sua conta ou informe seu telefone usado na compra.</p>
+            
+            <div className="space-y-4">
+              <div className="p-4 bg-white border border-gray-100 rounded-2xl shadow-sm">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 text-left">Consultar por Telefone</p>
+                <form 
+                  className="flex flex-col gap-2"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const phone = (e.currentTarget.elements.namedItem('phone') as HTMLInputElement).value.replace(/\D/g, '');
+                    if (phone.length >= 10) {
+                      localStorage.setItem('guest_phone', phone);
+                      window.location.reload();
+                    }
+                  }}
+                >
+                  <input 
+                    name="phone"
+                    type="tel" 
+                    placeholder="(00) 00000-0000"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    required
+                  />
+                  <Button type="submit" className="w-full">
+                    Buscar Pedidos
+                  </Button>
+                </form>
+              </div>
+
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-gray-200" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-gray-50/40 px-2 text-muted-foreground">Ou acesse sua conta</span>
+                </div>
+              </div>
+
+              <Button 
+                variant="outline"
+                onClick={() => router.push(`/auth/login?redirect=/pedidos`)} 
+                className="w-full rounded-md"
+              >
+                Entrar na conta
+              </Button>
+            </div>
           </div>
         </div>
       </>
