@@ -9,6 +9,7 @@ export interface ShopAttributes {
   email: string | null;
   image?: File | string | any;
   image_url?: string | any;
+  auto_accept_orders: boolean;
 }
 
 export interface ShopResponse {
@@ -27,11 +28,13 @@ export const shopService = {
 
   updateShop: async (data: { shop: Partial<ShopAttributes> }) => {
     const formData = new FormData();
-    
+
     Object.entries(data.shop).forEach(([key, value]) => {
       if (value !== null && value !== undefined) {
         if (key === 'image' && value instanceof File) {
           formData.append('shop[image]', value);
+        } else if (typeof value === 'boolean') {
+          formData.append(`shop[${key}]`, value ? '1' : '0');
         } else {
           formData.append(`shop[${key}]`, value);
         }
@@ -42,7 +45,7 @@ export const shopService = {
         "Content-Type": "multipart/form-data",
       },
     });
-    
+
     return response.data;
   },
 }; 

@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { ImageIcon, Upload, MapPin, Phone, Mail } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import { useShop } from "@/hooks/use-shop";
 import { ShopAttributes } from "@/services/shop";
 import AdminHeader from "@/components/admin/catalog-header";
@@ -21,7 +22,7 @@ export default function GeneralSettingsPage() {
   const [initialData, setInitialData] = useState<Partial<ShopAttributes>>({});
 
   useEffect(() => {
-    if (shop && !isLoading && !isUpdating) {
+    if (shop && !isLoading) {
       const initial = {
         name: shop.name || "",
         description: shop.description || "",
@@ -29,22 +30,25 @@ export default function GeneralSettingsPage() {
         address: shop.address || "",
         email: shop.email || "",
         slug: shop.slug,
-        image: null
+        image: null,
+        auto_accept_orders: !!shop.auto_accept_orders
       };
 
-      // Se for a primeira vez ou o estabelecimento mudou, inicializa tudo
-      if (!(initialData as any).slug || (initialData as any).slug !== shop.slug) {
-        setInitialData(initial);
+      // Inicializa formData apenas se ainda não estiver preenchido ou se o estabelecimento mudou.
+      // Isso evita que o estado local seja sobrescrito enquanto o usuário edita.
+      if (!initialData.slug || initialData.slug !== shop.slug) {
         setFormData(initial);
-      } else {
-        // Se for o mesmo estabelecimento (ex: após um save), apenas sincroniza o initialData
-        // Isso permite resetar o status de 'hasChanges' sem perder edições não salvas (se houver)
-        setInitialData(initial);
       }
       
-      setLogoPreview(shop.image_url || null);
+      // Sempre mantém initialData sincronizado com o servidor para comparação de hasChanges.
+      // Isso garante que após um save bem-sucedido, hasChanges volte a ser false.
+      setInitialData(initial);
+      
+      if (!isUpdating && !formData.image) {
+        setLogoPreview(shop.image_url || null);
+      }
     }
-  }, [shop, isLoading, isUpdating]);
+  }, [shop, isLoading, initialData.slug]);
 
   useEffect(() => {
     if (initialData && formData) {
@@ -231,6 +235,28 @@ export default function GeneralSettingsPage() {
                       className="h-12 pl-10"
                     />
                   </div>
+                </div>
+              </div>
+
+              <Separator className="my-6 bg-gray-200 dark:bg-gray-800" />
+
+              <div className="space-y-6">
+                <h3 className="text-lg font-semibold text-foreground">
+                  Automação de Pedidos
+                </h3>
+                <div className="flex items-center justify-between p-4 rounded-xs border border-gray-100 bg-gray-50/50">
+                  <div className="space-y-0.5">
+                    <Label className="text-base font-medium">Aceite Automático</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Quando ativado, novos pedidos serão aceitos automaticamente sem intervenção manual.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={formData.auto_accept_orders || false}
+                    onCheckedChange={(checked) => 
+                      setFormData(prev => ({ ...prev, auto_accept_orders: checked }))
+                    }
+                  />
                 </div>
               </div>
             </div>
