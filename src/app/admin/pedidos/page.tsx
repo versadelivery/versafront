@@ -652,7 +652,7 @@ export default function OrderManagement() {
                   status: o.status,
                   createdAtLabel: o.time,
                   items: (o.socketData.attributes.items.data || []).map((it: any) => ({
-                    name: it.attributes.catalog_item.data.attributes.name,
+                    name: it.attributes.catalog_item?.data?.attributes?.name || it.attributes.name || 'Item não encontrado',
                     qty: Number(it.attributes.quantity || 1),
                     note: it.attributes.observation || undefined,
                   })),
@@ -685,21 +685,21 @@ export default function OrderManagement() {
             } : undefined,
             items: selectedOrder.socketData.attributes.items.data.map(item => ({
               id: item.id,
-              catalog_item_id: parseInt(item.attributes.catalog_item.data.id),
-              name: item.attributes.catalog_item.data.attributes.name,
+              catalog_item_id: item.attributes.catalog_item?.data?.id ? parseInt(item.attributes.catalog_item.data.id) : null,
+              name: item.attributes.catalog_item?.data?.attributes?.name || item.attributes.name || 'Item não encontrado',
               price: parseFloat(item.attributes.price),
               quantity: item.attributes.quantity,
               observation: item.attributes.observation,
-              image: item.attributes.catalog_item.data.attributes.image_url,
+              image: item.attributes.catalog_item?.data?.attributes?.image_url,
               weight: item.attributes.item_type === 'weight_per_kg' ? `${item.attributes.quantity}kg` : undefined,
-              extras: item.attributes.catalog_item.data.attributes.extra?.data?.map((extra: any) => ({
+              extras: item.attributes.catalog_item?.data?.attributes?.extra?.data?.map((extra: any) => ({
                 name: extra.attributes.name,
                 price: parseFloat(extra.attributes.price)
               })) || [],
-              prepare_methods: item.attributes.catalog_item.data.attributes.prepare_method?.data?.map((method: any) => ({
+              prepare_methods: item.attributes.catalog_item?.data?.attributes?.prepare_method?.data?.map((method: any) => ({
                 name: method.attributes.name
               })) || [],
-              steps: item.attributes.catalog_item.data.attributes.steps?.data?.map((step: any) => ({
+              steps: item.attributes.catalog_item?.data?.attributes?.steps?.data?.map((step: any) => ({
                 name: step.attributes.name,
                 options: step.attributes.options?.data?.map((option: any) => ({
                   name: option.attributes.name

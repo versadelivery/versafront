@@ -140,28 +140,32 @@ function CatalogPage() {
                       )}
                     </div>
 
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2 mr-2">
-                        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                          {group.attributes.active ? "Ativo" : "Pausado"}
-                        </span>
-                        <Switch
-                          checked={group.attributes.active}
-                          onCheckedChange={(checked) => {
-                            toggleCatalogGroupActive({ id: group.id, active: checked });
-                          }}
-                        />
-                      </div>
-
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 px-3 gap-1.5 text-xs text-muted-foreground"
-                        onClick={() => handleEditGroup(group.id)}
-                      >
-                        <Edit2 className="h-3.5 w-3.5" />
-                        Editar
-                      </Button>
+                    <div className="flex items-center gap-2">
+                        {/* Container Status/Editar do Grupo */}
+                        <div className="bg-gray-50/80 rounded-full py-1 px-3 flex items-center border border-gray-200 gap-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-tight">
+                              {group.attributes.active ? "Ativo" : "Pausado"}
+                            </span>
+                            <Switch
+                              checked={group.attributes.active}
+                              onCheckedChange={(checked) => {
+                                toggleCatalogGroupActive({ id: group.id, active: checked });
+                              }}
+                              className="scale-[0.6] origin-center"
+                            />
+                          </div>
+                          
+                          <div className="w-[1px] h-3 bg-gray-300" />
+                          
+                          <button
+                            className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground hover:text-primary transition-colors uppercase tracking-tight"
+                            onClick={() => handleEditGroup(group.id)}
+                          >
+                            <Edit2 className="h-3 w-3" />
+                            Editar
+                          </button>
+                        </div>
                     </div>
                   </div>
 

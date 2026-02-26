@@ -20,7 +20,7 @@ export async function fetchShopBySlugServer(slug: string): Promise<ShopFetchResu
       },
     };
 
-    const response = await fetch(`${apiUrl}/customers/shops/${slug}`, {
+    const response = await fetch(`${apiUrl}/customers/shops/${slug}?_t=${Date.now()}`, {
       ...baseOptions,
       ...(isDev
         ? { cache: 'no-store' as const }
@@ -49,7 +49,7 @@ export async function fetchShopBySlugServer(slug: string): Promise<ShopFetchResu
 export async function getAllShopSlugs(): Promise<string[]> {
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-    
+
     const response = await fetch(`${apiUrl}/customers/shops`, {
       headers: {
         "Content-Type": "application/json",
@@ -57,11 +57,11 @@ export async function getAllShopSlugs(): Promise<string[]> {
       },
       next: { revalidate: 86400 } // Revalidate once per day
     });
-    
+
     if (!response.ok) {
       throw new Error(`Failed to fetch shop slugs: ${response.status}`);
     }
-    
+
     const data = await response.json();
     return data.data.map((shop: any) => shop.attributes.slug);
   } catch (error) {

@@ -1,13 +1,13 @@
 "use client";
 
-import { Edit2, Scale, Plus, ChefHat, ListChecks, ImageOff } from "lucide-react";
+import { Edit2, Scale, Plus, ChefHat, ListChecks, ImageOff, Copy, Loader2 } from "lucide-react";
+import { useCatalogGroup } from "@/hooks/useCatalogGroup";
 import Image from "next/image";
 import React, { useState } from "react";
 import { ItemDetailsModal } from "./item-details-modal";
 import { EditItemModal } from "./edit-item-modal";
 import { fixImageUrl } from "@/utils/image-url";
 import { Switch } from "@/components/ui/switch";
-import { useCatalogGroup } from "@/hooks/useCatalogGroup";
 
 // =============================================================================
 // TIPOS
@@ -44,6 +44,12 @@ interface ItemCardProps {
 export function ItemCard({ item }: ItemCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const { duplicateCatalogItem, isDuplicatingItem } = useCatalogGroup();
+
+  const handleDuplicate = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    duplicateCatalogItem(item.id.toString());
+  };
   const { toggleCatalogItemActive } = useCatalogGroup();
 
   // =============================================================================
@@ -116,26 +122,44 @@ export function ItemCard({ item }: ItemCardProps) {
           )}
 
           {/* Botões de Ação */}
-          <div 
-            className="absolute top-2 right-2 flex items-center bg-white/95 backdrop-blur-sm rounded-full py-1 px-2 shadow-sm border border-gray-100 gap-2"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center">
-              <Switch
-                checked={item.active}
-                onCheckedChange={(checked) => {
-                  toggleCatalogItemActive({ id: item.id.toString(), active: checked });
-                }}
-                className="scale-[0.6] origin-center translate-x-[-15%]"
-              />
-            </div>
-            <div className="w-[1px] h-3 bg-gray-200 -ml-1" />
+          <div className="absolute top-2 right-2 flex items-center gap-2">
+            {/* Duplicar */}
             <button
-              className="text-muted-foreground hover:text-primary transition-colors pr-0.5"
-              onClick={() => setIsEditing(true)}
+              className="bg-white/95 backdrop-blur-sm rounded-full p-2 flex items-center justify-center shadow-sm border border-gray-100 hover:bg-white transition-colors group"
+              onClick={handleDuplicate}
+              disabled={isDuplicatingItem}
+              title="Duplicar item"
             >
-              <Edit2 className="h-3.5 w-3.5" />
+              {isDuplicatingItem ? (
+                <Loader2 className="h-3.5 w-3.5 text-muted-foreground animate-spin" />
+              ) : (
+                <Copy className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+              )}
             </button>
+
+            {/* Container Ativo + Editar */}
+            <div 
+              className="bg-white/95 backdrop-blur-sm rounded-full py-1 px-2.5 flex items-center shadow-sm border border-gray-100 gap-2"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center -ml-1">
+                <Switch
+                  checked={item.active}
+                  onCheckedChange={(checked) => {
+                    toggleCatalogItemActive({ id: item.id.toString(), active: checked });
+                  }}
+                  className="scale-[0.55] origin-center"
+                />
+              </div>
+              <div className="w-[1px] h-3 bg-gray-200" />
+              <button
+                className="text-muted-foreground hover:text-primary transition-colors py-0.5"
+                onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}
+                title="Editar item"
+              >
+                <Edit2 className="h-3.5 w-3.5" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -143,7 +167,11 @@ export function ItemCard({ item }: ItemCardProps) {
         <div className="p-3 flex flex-col flex-1 gap-1">
           <h3 className="text-sm font-semibold text-foreground line-clamp-2 leading-tight">
             {item.name}
-            {!item.active && <span className="ml-2 text-[10px] font-normal text-muted-foreground italic">(Pausado)</span>}
+            {!item.active && (
+              <span className="ml-2 text-[9px] font-bold text-muted-foreground bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200 uppercase tracking-wider">
+                Rascunho
+              </span>
+            )}
           </h3>
 
           {item.description && (

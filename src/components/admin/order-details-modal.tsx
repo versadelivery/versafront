@@ -19,7 +19,7 @@ import {
 
 interface OrderItem {
   id: string;
-  catalog_item_id: number;
+  catalog_item_id: number | null;
   name: string;
   price: number;
   quantity: number;
@@ -63,7 +63,7 @@ interface OrderDetailsModalProps {
       name: string;
       phone: string;
     };
-    customer: {
+    customer?: {
       name: string;
       phone: string;
     };
@@ -256,8 +256,8 @@ export default function OrderDetailsModal({ open, onOpenChange, order, onUpdateO
   const copyOrderInfo = () => {
     const orderInfo = `
 Pedido #${order.id}
-Cliente: ${order.customer.name}
-Telefone: ${order.customer.phone}
+Cliente: ${order.customer?.name || 'Não informado'}
+Telefone: ${order.customer?.phone || 'Não informado'}
 Valor: ${formatCurrency(order.total)}
 Status: ${statusInfo.label}
 Forma de pagamento: ${paymentInfo.label}
@@ -515,7 +515,7 @@ ${order.items.map(item =>
                         className="border rounded-xs px-2 py-1 text-sm bg-white w-[150px]"
                       >
                         <option value="">Selecione um entregador</option>
-                        {deliveryPeople.map(person => (
+                        {deliveryPeople.map((person: any) => (
                           <option key={person.id} value={person.name}>{person.name}</option>
                         ))}
                       </select>
