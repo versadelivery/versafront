@@ -817,32 +817,43 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
 
           <hr className="border-gray-100" />
           <div className="space-y-3">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Complementos Compartilhados</p>
+            <div className="flex items-center gap-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Complementos Compartilhados</p>
+            </div>
             {complementGroups.length === 0 ? (
               <p className="text-sm text-muted-foreground">Nenhuma lista de complementos cadastrada.</p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {complementGroups.map((group: any) => (
-                  <div key={group.id} className="flex items-center space-x-2 p-2 rounded-lg border border-gray-100 bg-gray-50/50">
-                    <Checkbox
-                      id={`comp-edit-${group.id}`}
-                      checked={selectedComplements.includes(group.id)}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          setSelectedComplements([...selectedComplements, group.id]);
-                        } else {
+                {complementGroups.map((group: any) => {
+                  const isSelected = selectedComplements.includes(group.id);
+                  return (
+                    <button
+                      key={group.id}
+                      type="button"
+                      onClick={() => {
+                        if (isSelected) {
                           setSelectedComplements(selectedComplements.filter(id => id !== group.id));
+                        } else {
+                          setSelectedComplements([...selectedComplements, group.id]);
                         }
                       }}
-                    />
-                    <label
-                      htmlFor={`comp-edit-${group.id}`}
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                      className={`flex items-center justify-between w-full p-3 rounded-lg border-2 transition-all cursor-pointer ${
+                        isSelected
+                          ? 'border-primary bg-primary/10 shadow-sm'
+                          : 'border-gray-200 bg-muted/40 hover:border-gray-300'
+                      }`}
                     >
-                      {group.attributes.name}
-                    </label>
-                  </div>
-                ))}
+                      <span className={`text-sm font-medium ${isSelected ? 'text-primary' : 'text-foreground'}`}>
+                        {group.attributes.name}
+                      </span>
+                      <Checkbox
+                        id={`comp-edit-${group.id}`}
+                        checked={isSelected}
+                        className="pointer-events-none"
+                      />
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
