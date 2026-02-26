@@ -217,6 +217,9 @@ export default function CheckoutPage() {
       setOrder(response)
       toast.success("Pedido realizado com sucesso!")
       clearCart()
+      if (isGuest && guestPhone) {
+        localStorage.setItem('guest_phone', guestPhone.replace(/\D/g, ''))
+      }
       if (orderId) router.push(`/pedidos/${orderId}`)
     } catch (error) {
       console.error('Erro ao enviar pedido:', error)
