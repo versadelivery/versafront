@@ -704,6 +704,10 @@ export default function OrderManagement() {
                 options: step.attributes.options?.data?.map((option: any) => ({
                   name: option.attributes.name
                 })) || []
+              })) || [],
+              complements: (item.attributes as any).complements?.map((comp: any) => ({
+                name: comp.name,
+                price: parseFloat(comp.price)
               })) || []
             })),
             shop: {

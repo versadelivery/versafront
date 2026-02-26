@@ -10,6 +10,9 @@ import Image from "next/image";
 import { Camera, Loader2, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useCatalogGroup } from "@/hooks/useCatalogGroup";
+import { useCatalogComplement } from "@/hooks/useCatalogComplement";
+import { Checkbox } from "@/components/ui/checkbox";
+
 
 // =============================================================================
 // TIPOS
@@ -110,6 +113,11 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
   // Estados - Dias da semana
   const [activeDays, setActiveDays] = useState<Record<DayKey, boolean>>(DEFAULT_ACTIVE_DAYS);
   const [active, setActive] = useState(true);
+
+  // Estados - Complementos Compartilhados
+  const { complementGroups } = useCatalogComplement();
+  const [selectedComplements, setSelectedComplements] = useState<string[]>([]);
+
 
 
   // Estados - Erros
@@ -370,6 +378,12 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
     });
 
     formData.append('active', active.toString());
+
+    // Complementos Compartilhados
+    selectedComplements.forEach((id) => {
+      formData.append('catalog_complement_group_ids[]', id);
+    });
+
 
 
     // Extras - filtrar apenas os que têm nome preenchido
@@ -675,10 +689,43 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
           </div>
 
           <hr className="border-gray-100" />
+          <div className="space-y-3">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Complementos Compartilhados</p>
+            {complementGroups.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhuma lista de complementos cadastrada.</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {complementGroups.map((group: any) => (
+                  <div key={group.id} className="flex items-center space-x-2 p-2 rounded-lg border border-gray-100 bg-gray-50/50">
+                    <Checkbox
+                      id={`comp-${group.id}`}
+                      checked={selectedComplements.includes(group.id)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedComplements([...selectedComplements, group.id]);
+                        } else {
+                          setSelectedComplements(selectedComplements.filter(id => id !== group.id));
+                        }
+                      }}
+                    />
+                    <label
+                      htmlFor={`comp-${group.id}`}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                    >
+                      {group.attributes.name}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <hr className="border-gray-100" />
           <div className="flex items-center justify-between rounded-lg p-3 bg-muted/40">
             <span className="text-sm font-medium">Possui adicionais?</span>
             <Switch checked={hasExtras} onCheckedChange={setHasExtras} />
           </div>
+
 
           {hasExtras && (
             <div className="space-y-2">

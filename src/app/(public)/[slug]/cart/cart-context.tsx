@@ -10,6 +10,7 @@ interface CartItem extends CatalogItem {
   selectedExtras?: string[]
   selectedMethods?: string[]
   selectedOptions?: Record<string, string>
+  selectedSharedComplements?: string[]
   totalPrice: number
 }
 
@@ -65,7 +66,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const existingItemIndex = prevItems.findIndex(
         item => item.id === newItem.id && 
         JSON.stringify(item.selectedExtras) === JSON.stringify(newItem.selectedExtras) &&
-        JSON.stringify(item.selectedOptions) === JSON.stringify(newItem.selectedOptions)
+        JSON.stringify(item.selectedOptions) === JSON.stringify(newItem.selectedOptions) &&
+        JSON.stringify(item.selectedSharedComplements) === JSON.stringify(newItem.selectedSharedComplements)
       )
       if (existingItemIndex >= 0) {
         const updatedItems = [...prevItems]

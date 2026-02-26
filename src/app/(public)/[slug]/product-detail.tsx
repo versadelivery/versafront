@@ -135,6 +135,8 @@ export default function ProductModal({ product, trigger }: ProductModalProps) {
     });
     return init;
   });
+  const [selectedSharedComplements, setSelectedSharedComplements] = useState<string[]>([]);
+
 
   const { attributes } = product;
   const isWeightBased = attributes.item_type === "weight_per_kg";
@@ -151,10 +153,21 @@ export default function ProductModal({ product, trigger }: ProductModalProps) {
   const calculatePrice = () => {
     const basePrice = hasDiscount ? attributes.price_with_discount! : attributes.price;
     let total = isWeightBased ? basePrice * weight : basePrice * quantity;
+    
+    // Extras
     selectedExtras.forEach(extraId => {
       const extra = attributes.extra.data.find(e => e.id === extraId);
       if (extra) total += parseFloat(extra.attributes.price);
     });
+
+    // Shared Complements
+    selectedSharedComplements.forEach(optionId => {
+      attributes.shared_complements?.data.forEach(group => {
+        const option = group.attributes.options.find(o => o.id.toString() === optionId.toString());
+        if (option) total += Number(option.price);
+      });
+    });
+
     return total;
   };
 
@@ -163,6 +176,7 @@ export default function ProductModal({ product, trigger }: ProductModalProps) {
     setWeight(product.attributes.min_weight || 1);
     setSelectedExtras([]);
     setSelectedMethods([]);
+    setSelectedSharedComplements([]);
     setSelectedOptions(() => {
       const init: Record<string, string> = {};
       product.attributes.steps.data.forEach(step => {
@@ -187,6 +201,7 @@ export default function ProductModal({ product, trigger }: ProductModalProps) {
       selectedExtras,
       selectedMethods,
       selectedOptions,
+      selectedSharedComplements,
       totalPrice: calculatePrice(),
     });
     setOpen(false);
@@ -352,6 +367,55 @@ export default function ProductModal({ product, trigger }: ProductModalProps) {
                       </label>
                     ))}
                   </div>
+                </div>
+              </>
+            )}
+
+            {/* Complementos Compartilhados */}
+            {attributes.shared_complements?.data?.length > 0 && (
+              <>
+                <Separator />
+                <div className="space-y-6">
+                  {attributes.shared_complements.data.map(group => (
+                    <div key={group.id}>
+                      <div className="flex items-center gap-2 mb-3">
+                        <PlusCircle className="w-4 h-4 text-primary" />
+                        <p className="text-sm font-semibold text-foreground">{group.attributes.name}</p>
+                        <span className="ml-auto text-xs text-muted-foreground">Opcional</span>
+                      </div>
+                      <div className="space-y-2">
+                        {group.attributes.options.map(option => (
+                          <label
+                            key={option.id}
+                            className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${
+                              selectedSharedComplements.includes(option.id.toString())
+                                ? 'border-primary bg-primary/5'
+                                : 'border-gray-100 hover:border-gray-200 bg-gray-50/40'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <Checkbox
+                                id={`shared-${option.id}`}
+                                checked={selectedSharedComplements.includes(option.id.toString())}
+                                onCheckedChange={() =>
+                                  setSelectedSharedComplements(prev =>
+                                    prev.includes(option.id.toString())
+                                      ? prev.filter(id => id !== option.id.toString())
+                                      : [...prev, option.id.toString()]
+                                  )
+                                }
+                                className="h-4 w-4 rounded"
+                              />
+                              <span className="text-sm font-medium">{option.name}</span>
+                            </div>
+                            <span className="text-sm font-semibold text-primary">
+                              +{formatPrice(Number(option.price))}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </>
             )}
