@@ -1,6 +1,6 @@
 "use client";
 
-import { Package, Scale, Plus, ChefHat, ListChecks, Loader2, CalendarDays } from "lucide-react";
+import { Package, Scale, Plus, ChefHat, ListChecks, Loader2, CalendarDays, Boxes } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import {
@@ -115,6 +115,7 @@ export function ItemDetailsModal({ id, isOpen, onClose }: ItemDetailsModalProps)
   const hasExtras = attrs.extra?.data && attrs.extra.data.length > 0;
   const hasPrepareMethods = attrs.prepare_method?.data && attrs.prepare_method.data.length > 0;
   const hasSteps = attrs.steps?.data && attrs.steps.data.length > 0;
+  const hasSharedComplements = attrs.shared_complements?.data && attrs.shared_complements.data.length > 0;
 
   // =============================================================================
   // RENDER
@@ -225,6 +226,37 @@ export function ItemDetailsModal({ id, isOpen, onClose }: ItemDetailsModalProps)
                 ))}
               </div>
             </div>
+
+            {/* Complementos Compartilhados */}
+            {hasSharedComplements && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Boxes className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold">Complementos Compartilhados</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {attrs.shared_complements!.data.map((group: any) => (
+                    <div key={group.id} className="p-3 rounded-xl border border-gray-100 bg-white space-y-2">
+                      <p className="text-sm font-bold text-foreground underline decoration-primary/30 underline-offset-4">
+                        {group.attributes.name}
+                      </p>
+                      {group.attributes.options && group.attributes.options.length > 0 && (
+                        <div className="space-y-1">
+                          {group.attributes.options.map((option: any) => (
+                            <div key={option.id} className="text-xs text-muted-foreground flex justify-between">
+                              <span>• {option.name}</span>
+                              {Number(option.price) > 0 && (
+                                <span className="text-primary font-medium">+ {formatPrice(parseFloat(option.price))}</span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Adicionais */}
             {hasExtras && (
