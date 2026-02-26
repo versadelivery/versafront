@@ -39,6 +39,10 @@ interface OrderItem {
       name: string;
     }>;
   }>;
+  complements?: Array<{
+    name: string;
+    price: number;
+  }>;
 }
 
 interface OrderDetailsModalProps {
@@ -619,6 +623,19 @@ ${order.items.map(item =>
                             {item.extras.map((extra: any, index: number) => (
                               <Badge key={index} variant="secondary" className="text-xs">
                                 {extra.name} (+{formatCurrency(extra.price)})
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {item.complements && item.complements.length > 0 && (
+                        <div className="mb-2">
+                          <span className="text-xs font-medium text-gray-600">Complementos:</span>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {item.complements.map((comp: any, index: number) => (
+                              <Badge key={index} variant="secondary" className="text-xs bg-orange-50 text-orange-700 hover:bg-orange-100 border-orange-200">
+                                {comp.name} (+{formatCurrency(comp.price)})
                               </Badge>
                             ))}
                           </div>

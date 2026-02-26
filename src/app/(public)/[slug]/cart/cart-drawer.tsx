@@ -21,6 +21,7 @@ interface CartItem extends CatalogItem {
   selectedExtras?: string[]
   selectedMethods?: string[]
   selectedOptions?: Record<string, string>
+  selectedSharedComplements?: string[]
   totalPrice: number
 }
 
@@ -179,6 +180,27 @@ export function CartDrawer() {
                                   return (
                                     <Badge key={extraId} variant="outline" className="text-xs">
                                       + {extra.attributes.name} (R$ {parseFloat(extra.attributes.price).toFixed(2)})
+                                    </Badge>
+                                  )
+                                })}
+                              </div>
+                            </div>
+                          )}
+
+                          {item.selectedSharedComplements && item.selectedSharedComplements.length > 0 && (
+                            <div className="mt-2">
+                              <p className="text-xs font-medium text-gray-500 mb-1">Complementos:</p>
+                              <div className="flex flex-wrap gap-1">
+                                {item.selectedSharedComplements.map(optionId => {
+                                  let foundOption: any = null
+                                  item.attributes.shared_complements.data.forEach(group => {
+                                    const opt = group.attributes.options.find(o => o.id.toString() === optionId.toString())
+                                    if (opt) foundOption = opt
+                                  })
+                                  if (!foundOption) return null
+                                  return (
+                                    <Badge key={optionId} variant="outline" className="text-xs">
+                                      + {foundOption.name} (R$ {Number(foundOption.price).toFixed(2)})
                                     </Badge>
                                   )
                                 })}

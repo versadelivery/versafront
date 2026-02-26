@@ -11,6 +11,9 @@ import { Camera, Loader2, Plus, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCatalogGroup, useCatalogItem } from "@/hooks/useCatalogGroup";
+import { useCatalogComplement } from "@/hooks/useCatalogComplement";
+import { Checkbox } from "@/components/ui/checkbox";
+
 import { updateCatalogItem } from "@/api/requests/catalog_item/requests";
 import { DeleteConfirmation } from "@/components/ui/delete-confirmation";
 import { toast } from "sonner";
@@ -122,6 +125,11 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
   // Estados - Dias da semana
   const [activeDays, setActiveDays] = useState<Record<DayKey, boolean>>(DEFAULT_ACTIVE_DAYS);
   const [active, setActive] = useState(true);
+
+  // Estados - Complementos Compartilhados
+  const { complementGroups } = useCatalogComplement();
+  const [selectedComplements, setSelectedComplements] = useState<string[]>([]);
+
 
 
   // Estados - UI
@@ -247,6 +255,14 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
         setHasSteps(false);
         setSteps([{ name: '', options: [{ name: '' }] }]);
       }
+
+      // Complementos Compartilhados
+      if (item.shared_complements?.data) {
+        setSelectedComplements(item.shared_complements.data.map((g: any) => g.id));
+      } else {
+        setSelectedComplements([]);
+      }
+
 
       // Registra estado original para detectar desativações com dados salvos
       originalHasExtras.current = item.extra?.data?.length > 0;
@@ -454,6 +470,12 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
       });
 
       formData.append('active', active.toString());
+
+      // Complementos Compartilhados
+      selectedComplements.forEach((id) => {
+        formData.append('catalog_complement_group_ids[]', id);
+      });
+
 
       // Extras
       if (hasExtras) {
@@ -794,9 +816,41 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
           </div>
 
           <hr className="border-gray-100" />
+          <div className="space-y-3">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Complementos Compartilhados</p>
+            {complementGroups.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhuma lista de complementos cadastrada.</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {complementGroups.map((group: any) => (
+                  <div key={group.id} className="flex items-center space-x-2 p-2 rounded-lg border border-gray-100 bg-gray-50/50">
+                    <Checkbox
+                      id={`comp-edit-${group.id}`}
+                      checked={selectedComplements.includes(group.id)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedComplements([...selectedComplements, group.id]);
+                        } else {
+                          setSelectedComplements(selectedComplements.filter(id => id !== group.id));
+                        }
+                      }}
+                    />
+                    <label
+                      htmlFor={`comp-edit-${group.id}`}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                    >
+                      {group.attributes.name}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
+          <hr className="border-gray-100" />
           <div className="flex items-center justify-between mb-2">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Disponibilidade Semanal</p>
+
             <button
               type="button"
               onClick={() => {

@@ -70,6 +70,9 @@ export interface Item {
   steps: {
     data: CatalogItemStep[];
   };
+  shared_complements: {
+    data: any[];
+  };
 }
 
 export interface CatalogItemAttributes {
@@ -110,6 +113,9 @@ export interface CatalogItemAttributes {
   };
   steps: {
     data: CatalogItemStep[];
+  };
+  shared_complements: {
+    data: any[];
   };
 }
 
