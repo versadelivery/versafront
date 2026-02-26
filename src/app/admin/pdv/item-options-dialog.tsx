@@ -26,10 +26,12 @@ interface ItemOptionsDialogProps {
   onClose: () => void;
   onAddToCart: (options: {
     extrasPrice: number;
+    complementsPrice: number;
     observation: string;
     selectedExtras: { id: string; name: string; price: number }[];
     selectedMethods: { id: string; name: string }[];
     selectedOptions: Record<string, { optionId: string; optionName: string }>;
+    selectedSharedComplements: { id: string; name: string; price: number }[];
   }) => void;
 }
 
@@ -41,6 +43,7 @@ export function ItemOptionsDialog({
 }: ItemOptionsDialogProps) {
   const [selectedExtraIds, setSelectedExtraIds] = useState<string[]>([]);
   const [selectedMethodIds, setSelectedMethodIds] = useState<string[]>([]);
+  const [selectedSharedComplementIds, setSelectedSharedComplementIds] = useState<string[]>([]);
   const [selectedOptions, setSelectedOptions] = useState<
     Record<string, string>
   >({});
@@ -51,6 +54,7 @@ export function ItemOptionsDialog({
     if (open && item) {
       setSelectedExtraIds([]);
       setSelectedMethodIds([]);
+      setSelectedSharedComplementIds([]);
       const initOptions: Record<string, string> = {};
       const steps: any[] = item.attributes?.steps?.data ?? [];
       steps.forEach((step: any) => {
@@ -72,6 +76,10 @@ export function ItemOptionsDialog({
   );
   const steps: any[] = useMemo(
     () => item?.attributes?.steps?.data ?? [],
+    [item]
+  );
+  const sharedComplements: any[] = useMemo(
+    () => item?.attributes?.shared_complements?.data ?? [],
     [item]
   );
 
@@ -97,7 +105,19 @@ export function ItemOptionsDialog({
     }, 0);
   }, [selectedExtraIds, extras]);
 
-  const totalPrice = basePrice + extrasTotal;
+  const complementsTotal = useMemo(() => {
+    return selectedSharedComplementIds.reduce((sum, optionId) => {
+      for (const group of sharedComplements) {
+        const option = (group.attributes?.options ?? []).find(
+          (o: any) => o.id.toString() === optionId
+        );
+        if (option) return sum + Number(option.price || 0);
+      }
+      return sum;
+    }, 0);
+  }, [selectedSharedComplementIds, sharedComplements]);
+
+  const totalPrice = basePrice + extrasTotal + complementsTotal;
 
   const toggleExtra = (id: string) => {
     setSelectedExtraIds((prev) =>
@@ -108,6 +128,12 @@ export function ItemOptionsDialog({
   const toggleMethod = (id: string) => {
     setSelectedMethodIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSharedComplement = (optionId: string) => {
+    setSelectedSharedComplementIds((prev) =>
+      prev.includes(optionId) ? prev.filter((x) => x !== optionId) : [...prev, optionId]
     );
   };
 
@@ -143,12 +169,26 @@ export function ItemOptionsDialog({
       }
     });
 
+    const selectedSharedComplementsData = selectedSharedComplementIds.map((optionId) => {
+      for (const group of sharedComplements) {
+        const option = (group.attributes?.options ?? []).find(
+          (o: any) => o.id.toString() === optionId
+        );
+        if (option) {
+          return { id: optionId, name: option.name, price: Number(option.price || 0) };
+        }
+      }
+      return { id: optionId, name: "", price: 0 };
+    });
+
     onAddToCart({
       extrasPrice: extrasTotal,
+      complementsPrice: complementsTotal,
       observation,
       selectedExtras: selectedExtrasData,
       selectedMethods: selectedMethodsData,
       selectedOptions: selectedOptionsData,
+      selectedSharedComplements: selectedSharedComplementsData,
     });
     onClose();
   };
@@ -371,10 +411,74 @@ export function ItemOptionsDialog({
               );
             })}
 
+            {/* Complementos Compartilhados */}
+            {sharedComplements.length > 0 && (
+              <>
+                {(extras.length > 0 || methods.length > 0 || steps.length > 0) && (
+                  <Separator />
+                )}
+                <section className="space-y-4">
+                  {sharedComplements.map((group: any) => {
+                    const options: any[] = group.attributes?.options ?? [];
+                    if (options.length === 0) return null;
+                    return (
+                      <div key={group.id} className="space-y-3">
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                            {group.attributes.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            Selecione quantos quiser
+                          </p>
+                        </div>
+                        <div className="space-y-2">
+                          {options.map((option: any) => {
+                            const optId = option.id.toString();
+                            const isSelected = selectedSharedComplementIds.includes(optId);
+                            const price = Number(option.price || 0);
+                            return (
+                              <label
+                                key={optId}
+                                htmlFor={`complement-${optId}`}
+                                className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                                  isSelected
+                                    ? "border-primary bg-primary/5"
+                                    : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                                }`}
+                              >
+                                <Checkbox
+                                  id={`complement-${optId}`}
+                                  checked={isSelected}
+                                  onCheckedChange={() => toggleSharedComplement(optId)}
+                                />
+                                <span
+                                  className={`flex-1 text-sm font-medium ${
+                                    isSelected ? "text-primary" : "text-gray-700"
+                                  }`}
+                                >
+                                  {option.name}
+                                </span>
+                                {price > 0 && (
+                                  <span className="text-sm font-semibold text-green-600">
+                                    +{formatPrice(price)}
+                                  </span>
+                                )}
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </section>
+              </>
+            )}
+
             {/* Observação */}
             {(extras.length > 0 ||
               methods.length > 0 ||
-              steps.length > 0) && <Separator />}
+              steps.length > 0 ||
+              sharedComplements.length > 0) && <Separator />}
             <section className="space-y-2">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Observação
@@ -397,9 +501,9 @@ export function ItemOptionsDialog({
             <span className="text-xl font-bold text-primary">
               {formatPrice(totalPrice)}
             </span>
-            {extrasTotal > 0 && (
+            {(extrasTotal > 0 || complementsTotal > 0) && (
               <span className="text-xs text-green-600">
-                (+{formatPrice(extrasTotal)} adicionais)
+                (+{formatPrice(extrasTotal + complementsTotal)} adicionais)
               </span>
             )}
           </div>

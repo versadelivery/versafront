@@ -32,6 +32,7 @@ interface CartItem {
   selectedExtras?: { id: string; name: string; price: number }[];
   selectedMethods?: { id: string; name: string }[];
   selectedStepOptions?: Record<string, { optionId: string; optionName: string }>;
+  selectedSharedComplements?: { id: string; name: string; price: number }[];
   totalPrice: number;
   observation?: string;
 }
@@ -125,8 +126,9 @@ export default function PDVPage() {
     const hasExtras = (attrs.extra?.data?.length ?? 0) > 0;
     const hasMethods = (attrs.prepare_method?.data?.length ?? 0) > 0;
     const hasSteps = (attrs.steps?.data?.length ?? 0) > 0;
+    const hasSharedComplements = (attrs.shared_complements?.data?.length ?? 0) > 0;
 
-    if (hasExtras || hasMethods || hasSteps) {
+    if (hasExtras || hasMethods || hasSteps || hasSharedComplements) {
       setOptionsItem(item);
     } else {
       addToCart(item);
@@ -138,10 +140,12 @@ export default function PDVPage() {
     item: any,
     options?: {
       extrasPrice?: number;
+      complementsPrice?: number;
       observation?: string;
       selectedExtras?: { id: string; name: string; price: number }[];
       selectedMethods?: { id: string; name: string }[];
       selectedOptions?: Record<string, { optionId: string; optionName: string }>;
+      selectedSharedComplements?: { id: string; name: string; price: number }[];
     }
   ) => {
     const attrs = item.attributes;
@@ -150,7 +154,7 @@ export default function PDVPage() {
     const basePrice = hasDiscount
       ? parseFloat(attrs.price_with_discount)
       : parseFloat(attrs.price);
-    const unitPrice = basePrice + (options?.extrasPrice ?? 0);
+    const unitPrice = basePrice + (options?.extrasPrice ?? 0) + (options?.complementsPrice ?? 0);
 
     const cartItem: CartItem = {
       id: `${item.id}-${cartIdCounter}`,
@@ -162,6 +166,7 @@ export default function PDVPage() {
       selectedExtras: options?.selectedExtras,
       selectedMethods: options?.selectedMethods,
       selectedStepOptions: options?.selectedOptions,
+      selectedSharedComplements: options?.selectedSharedComplements,
       observation: options?.observation,
     };
 
@@ -172,10 +177,12 @@ export default function PDVPage() {
 
   const handleOptionsAddToCart = (options: {
     extrasPrice: number;
+    complementsPrice: number;
     observation: string;
     selectedExtras: { id: string; name: string; price: number }[];
     selectedMethods: { id: string; name: string }[];
     selectedOptions: Record<string, { optionId: string; optionName: string }>;
+    selectedSharedComplements: { id: string; name: string; price: number }[];
   }) => {
     if (optionsItem) addToCart(optionsItem, options);
     setOptionsItem(null);
@@ -240,6 +247,15 @@ export default function PDVPage() {
             catalog_item_id: parseInt(item.id.split("-")[0]),
             quantity: item.quantity,
             observation: item.observation || notes || undefined,
+            extras_ids: item.selectedExtras?.map((e) => e.id) || [],
+            prepare_methods_ids: item.selectedMethods?.map((m) => m.id) || [],
+            steps: item.selectedStepOptions
+              ? Object.entries(item.selectedStepOptions).map(([stepId, opt]) => ({
+                  catalog_item_step_id: stepId,
+                  catalog_item_step_option_id: opt.optionId,
+                }))
+              : [],
+            selected_shared_complements_ids: item.selectedSharedComplements?.map((c) => c.id) || [],
           })),
         },
       };
@@ -415,7 +431,8 @@ export default function PDVPage() {
                           const hasOptions =
                             (attrs.extra?.data?.length ?? 0) > 0 ||
                             (attrs.prepare_method?.data?.length ?? 0) > 0 ||
-                            (attrs.steps?.data?.length ?? 0) > 0;
+                            (attrs.steps?.data?.length ?? 0) > 0 ||
+                            (attrs.shared_complements?.data?.length ?? 0) > 0;
 
                           return (
                             <Card
@@ -620,6 +637,18 @@ export default function PDVPage() {
                               {Object.values(item.selectedStepOptions).map((opt, i) => (
                                 <Badge key={i} variant="outline" className="text-[10px] h-4 px-1">
                                   {opt.optionName}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Complementos compartilhados */}
+                          {item.selectedSharedComplements && item.selectedSharedComplements.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {item.selectedSharedComplements.map((c) => (
+                                <Badge key={c.id} variant="secondary" className="text-[10px] h-4 px-1">
+                                  {c.name}
+                                  {c.price > 0 && ` +${formatPrice(c.price)}`}
                                 </Badge>
                               ))}
                             </div>
