@@ -9,7 +9,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ShoppingCart, Plus, Minus, Trash2, Search, CreditCard, MapPin, User, Phone, Package } from "lucide-react";
+import {
+  ShoppingCart, Plus, Minus, Trash2, Search,
+  CreditCard, MapPin, User, Package, Settings2,
+} from "lucide-react";
 import { useCatalogGroup } from "@/hooks/useCatalogGroup";
 import Image from "next/image";
 import { toast } from "sonner";
@@ -17,6 +20,7 @@ import { formatPrice } from "@/utils/format-price";
 import { createPDVOrder } from "@/services/order-service";
 import { useAdminActionCable } from "@/lib/admin-cable";
 import { useShop } from "@/hooks/use-shop";
+import { ItemOptionsDialog } from "./item-options-dialog";
 
 interface CartItem {
   id: string;
@@ -25,9 +29,10 @@ interface CartItem {
   quantity: number;
   image_url?: string;
   selectedExtras?: { id: string; name: string; price: number }[];
-  selectedPrepareMethod?: string;
-  selectedStepOptions?: { stepId: string; optionId: string; optionName: string }[];
+  selectedMethods?: { id: string; name: string }[];
+  selectedStepOptions?: Record<string, { optionId: string; optionName: string }>;
   totalPrice: number;
+  observation?: string;
 }
 
 interface CustomerInfo {
@@ -46,6 +51,7 @@ export default function PDVPage() {
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartIdCounter, setCartIdCounter] = useState(0);
+  const [optionsItem, setOptionsItem] = useState<any>(null);
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
     name: "",
     phone: "",
@@ -54,7 +60,7 @@ export default function PDVPage() {
     city: "",
     zipCode: "",
     complement: "",
-    reference: ""
+    reference: "",
   });
   const [orderType, setOrderType] = useState<"delivery" | "pickup">("delivery");
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "card" | "pix">("card");
@@ -67,180 +73,185 @@ export default function PDVPage() {
   const { catalog, isLoading } = useCatalogGroup();
   const { subscribeToAdminOrders } = useAdminActionCable();
 
-  // Conectar ao canal admin para receber atualizações via AnyCable (sem UI por enquanto)
   useEffect(() => {
-    const unsubscribe = subscribeToAdminOrders(() => {
-      // No momento não usamos os dados nesta tela; mantemos a conexão ativa
-    });
-    return () => {
-      if (unsubscribe) unsubscribe();
-    };
+    const unsubscribe = subscribeToAdminOrders(() => {});
+    return () => { if (unsubscribe) unsubscribe(); };
   }, [subscribeToAdminOrders]);
 
-  // Filtrar produtos baseado na busca e grupo selecionado
-  const filteredCatalog = catalog?.data?.map((group: any) => ({
-    ...group,
-    attributes: {
-      ...group.attributes,
-      items: group.attributes.items?.filter((item: any) =>
-        item.data.attributes.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.data.attributes.description.toLowerCase().includes(searchTerm.toLowerCase())
-      ) || []
-    }
-  })).filter((group: any) => {
-    // Filtrar por grupo selecionado se houver
-    if (selectedGroupId && group.id !== selectedGroupId) {
-      return false;
-    }
-    // Só mostrar grupos que têm itens após a filtragem de busca
-    return group.attributes.items.length > 0;
-  }) || [];
+  // Filtrar catálogo
+  const filteredCatalog =
+    catalog?.data
+      ?.map((group: any) => ({
+        ...group,
+        attributes: {
+          ...group.attributes,
+          items:
+            group.attributes.items?.filter(
+              (item: any) =>
+                item.attributes?.name
+                  ?.toLowerCase()
+                  .includes(searchTerm.toLowerCase()) ||
+                item.attributes?.description
+                  ?.toLowerCase()
+                  .includes(searchTerm.toLowerCase())
+            ) ?? [],
+        },
+      }))
+      .filter((group: any) => {
+        if (selectedGroupId && group.id !== selectedGroupId) return false;
+        return group.attributes.items.length > 0;
+      }) ?? [];
 
-  // Obter todos os grupos para o filtro
-  const allGroups = catalog?.data || [];
+  const allGroups = catalog?.data ?? [];
 
-  // Função para aplicar máscara de telefone
   const formatPhone = (value: string) => {
-    // Remove tudo que não é dígito
-    const numbers = value.replace(/\D/g, '');
-    
-    // Aplica a máscara baseada no tamanho
-    if (numbers.length <= 10) {
-      // Telefone fixo: (11) 1234-5678
-      return numbers.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3').replace(/-$/, '');
+    const n = value.replace(/\D/g, "");
+    if (n.length <= 10)
+      return n.replace(/(\d{2})(\d{4})(\d{0,4})/, "($1) $2-$3").replace(/-$/, "");
+    return n.replace(/(\d{2})(\d{5})(\d{0,4})/, "($1) $2-$3").replace(/-$/, "");
+  };
+
+  const formatCEP = (value: string) => {
+    const n = value.replace(/\D/g, "");
+    return n.replace(/(\d{5})(\d{0,3})/, "$1-$2").replace(/-$/, "");
+  };
+
+  const cartTotal = cart.reduce((t, item) => t + item.totalPrice, 0);
+
+  // Clique no item — abre modal se tiver opções, senão adiciona direto
+  const handleItemClick = (item: any) => {
+    const attrs = item.attributes;
+    const hasExtras = (attrs.extra?.data?.length ?? 0) > 0;
+    const hasMethods = (attrs.prepare_method?.data?.length ?? 0) > 0;
+    const hasSteps = (attrs.steps?.data?.length ?? 0) > 0;
+
+    if (hasExtras || hasMethods || hasSteps) {
+      setOptionsItem(item);
     } else {
-      // Celular: (11) 91234-5678
-      return numbers.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3').replace(/-$/, '');
+      addToCart(item);
     }
   };
 
-  // Handler para mudança do telefone com máscara
-  const handlePhoneChange = (e: any) => {
-    const formatted = formatPhone(e.target.value);
-    setCustomerInfo(prev => ({ ...prev, phone: formatted }));
-  };
+  // Adicionar ao carrinho — aceita opções de personalização
+  const addToCart = (
+    item: any,
+    options?: {
+      extrasPrice?: number;
+      observation?: string;
+      selectedExtras?: { id: string; name: string; price: number }[];
+      selectedMethods?: { id: string; name: string }[];
+      selectedOptions?: Record<string, { optionId: string; optionName: string }>;
+    }
+  ) => {
+    const attrs = item.attributes;
+    const hasDiscount =
+      attrs.price_with_discount && attrs.price_with_discount !== attrs.price;
+    const basePrice = hasDiscount
+      ? parseFloat(attrs.price_with_discount)
+      : parseFloat(attrs.price);
+    const unitPrice = basePrice + (options?.extrasPrice ?? 0);
 
-  // Função para aplicar máscara de CEP
-  const formatCEP = (value: string) => {
-    // Remove tudo que não é dígito
-    const numbers = value.replace(/\D/g, '');
-    
-    // Aplica a máscara: 12345-678
-    return numbers.replace(/(\d{5})(\d{0,3})/, '$1-$2').replace(/-$/, '');
-  };
-
-  // Handler para mudança do CEP com máscara
-  const handleCEPChange = (e: any) => {
-    const formatted = formatCEP(e.target.value);
-    setCustomerInfo(prev => ({ ...prev, zipCode: formatted }));
-  };
-
-  // Calcular total do carrinho
-  const cartTotal = cart.reduce((total: number, item: CartItem) => total + item.totalPrice, 0);
-
-  // Adicionar item ao carrinho
-  const addToCart = (item: any) => {
-    const basePrice = parseFloat(item.attributes.price);
     const cartItem: CartItem = {
       id: `${item.id}-${cartIdCounter}`,
-      name: item.attributes.name,
-      price: basePrice,
+      name: attrs.name,
+      price: unitPrice,
       quantity: 1,
-      image_url: item.attributes.image_url,
-      totalPrice: basePrice
+      image_url: attrs.image_url,
+      totalPrice: unitPrice,
+      selectedExtras: options?.selectedExtras,
+      selectedMethods: options?.selectedMethods,
+      selectedStepOptions: options?.selectedOptions,
+      observation: options?.observation,
     };
 
-    setCartIdCounter((prev: number) => prev + 1);
-    setCart((prev: CartItem[]) => [...prev, cartItem]);
-    toast.success(`${item.attributes.name} adicionado ao carrinho`);
+    setCartIdCounter((prev) => prev + 1);
+    setCart((prev) => [...prev, cartItem]);
+    toast.success(`${attrs.name} adicionado ao carrinho`);
   };
 
-  // Atualizar quantidade
+  const handleOptionsAddToCart = (options: {
+    extrasPrice: number;
+    observation: string;
+    selectedExtras: { id: string; name: string; price: number }[];
+    selectedMethods: { id: string; name: string }[];
+    selectedOptions: Record<string, { optionId: string; optionName: string }>;
+  }) => {
+    if (optionsItem) addToCart(optionsItem, options);
+    setOptionsItem(null);
+  };
+
   const updateQuantity = (itemId: string, newQuantity: number) => {
-    if (newQuantity <= 0) {
-      removeFromCart(itemId);
-      return;
-    }
-
-    setCart((prev: CartItem[]) => prev.map((item: CartItem) => 
-      item.id === itemId 
-        ? { ...item, quantity: newQuantity, totalPrice: item.price * newQuantity }
-        : item
-    ));
+    if (newQuantity <= 0) { removeFromCart(itemId); return; }
+    setCart((prev) =>
+      prev.map((item) =>
+        item.id === itemId
+          ? { ...item, quantity: newQuantity, totalPrice: item.price * newQuantity }
+          : item
+      )
+    );
   };
 
-  // Remover do carrinho
   const removeFromCart = (itemId: string) => {
-    setCart((prev: CartItem[]) => prev.filter((item: CartItem) => item.id !== itemId));
+    setCart((prev) => prev.filter((item) => item.id !== itemId));
   };
 
-  // Limpar carrinho
-  const clearCart = () => {
-    setCart([]);
-  };
+  const clearCart = () => setCart([]);
 
-  // Processar pedido
   const processOrder = async () => {
-    if (cart.length === 0) {
-      toast.error("Adicione itens ao carrinho");
-      return;
-    }
+    if (cart.length === 0) { toast.error("Adicione itens ao carrinho"); return; }
 
     if (orderType === "delivery" && (!customerInfo.name || !customerInfo.phone || !customerInfo.address)) {
-      toast.error("Preencha as informações de entrega");
-      return;
+      toast.error("Preencha as informações de entrega"); return;
+    }
+    if (orderType === "pickup" && (!customerInfo.name || !customerInfo.phone)) {
+      toast.error("Preencha o nome e telefone do cliente"); return;
     }
 
-    if (orderType === "pickup" && (!customerInfo.name || !customerInfo.phone)) {
-      toast.error("Preencha o nome e telefone do cliente");
-      return;
+    if (paymentMethod === "cash" && changeAmount) {
+      const changeValue = parseFloat(changeAmount);
+      if (changeValue < cartTotal) {
+        toast.error("O valor do troco deve ser maior ou igual ao total do pedido");
+        return;
+      }
     }
 
     setIsProcessingOrder(true);
-
     try {
       const orderData = {
         order: {
           shop_id: Number(shopId) || 0,
           withdrawal: orderType === "pickup",
-          payment_method: paymentMethod === "cash" ? "cash" as const : paymentMethod === "card" ? "credit" as const : "manual_pix" as const,
+          payment_method:
+            paymentMethod === "cash"
+              ? ("cash" as const)
+              : paymentMethod === "card"
+              ? ("credit" as const)
+              : ("manual_pix" as const),
           customer_name: customerInfo.name,
-          customer_phone: customerInfo.phone.replace(/\D/g, ''), // Remove formatação do telefone
+          customer_phone: customerInfo.phone.replace(/\D/g, ""),
           address: {
             address: customerInfo.address,
             neighborhood: customerInfo.neighborhood,
             complement: customerInfo.complement,
             reference: customerInfo.reference,
           },
-          items: cart.map((item: CartItem) => ({
-            catalog_item_id: parseInt(item.id.split('-')[0]),
+          items: cart.map((item) => ({
+            catalog_item_id: parseInt(item.id.split("-")[0]),
             quantity: item.quantity,
-            observation: notes
-          }))
-        }
+            observation: item.observation || notes || undefined,
+          })),
+        },
       };
 
-      console.log('🔍 PDV Order Data:', JSON.stringify(orderData, null, 2));
       const result = await createPDVOrder(orderData);
-      
       if (result) {
         toast.success("Pedido criado com sucesso!");
         clearCart();
-        setCustomerInfo({
-          name: "",
-          phone: "",
-          address: "",
-          neighborhood: "",
-          city: "",
-          zipCode: "",
-          complement: "",
-          reference: ""
-        });
+        setCustomerInfo({ name: "", phone: "", address: "", neighborhood: "", city: "", zipCode: "", complement: "", reference: "" });
         setNotes("");
         setChangeAmount("");
       }
     } catch (error: any) {
-      console.error("Erro ao processar pedido:", error);
       const errorMessage = error.response?.data?.error || "Erro ao processar pedido";
       toast.error(errorMessage);
     } finally {
@@ -251,12 +262,13 @@ export default function PDVPage() {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-foreground mb-2">PDV - Ponto de Venda</h1>
+        <h1 className="text-3xl font-bold text-foreground mb-2">PDV — Ponto de Venda</h1>
         <p className="text-muted-foreground">Gerencie vendas e crie pedidos para seus clientes</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Catálogo de Produtos */}
+
+        {/* ── Catálogo ─────────────────────────────────── */}
         <div className="lg:col-span-2 space-y-4">
           <Card>
             <CardHeader>
@@ -264,11 +276,11 @@ export default function PDVPage() {
                 <Package className="h-5 w-5" />
                 Catálogo de Produtos
               </CardTitle>
-              
-              {/* Barra de Busca e Filtros */}
+
+              {/* Busca e filtros */}
               <div className="space-y-3">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
                     placeholder="Buscar produtos..."
                     value={searchTerm}
@@ -280,14 +292,13 @@ export default function PDVPage() {
                       variant="ghost"
                       size="sm"
                       onClick={() => setSearchTerm("")}
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
                     >
                       ×
                     </Button>
                   )}
                 </div>
-                
-                {/* Filtro de Categorias */}
+
                 {allGroups.length > 1 && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
@@ -312,7 +323,10 @@ export default function PDVPage() {
                       >
                         Todas as categorias
                         <Badge variant="secondary" className="ml-2">
-                          {allGroups.reduce((total: number, group: any) => total + (group.attributes.items?.length || 0), 0)}
+                          {allGroups.reduce(
+                            (t: number, g: any) => t + (g.attributes.items?.length ?? 0),
+                            0
+                          )}
                         </Badge>
                       </Button>
                       {allGroups.map((group: any) => (
@@ -325,7 +339,7 @@ export default function PDVPage() {
                         >
                           {group.attributes.name}
                           <Badge variant="secondary" className="ml-2">
-                            {group.attributes.items?.length || 0}
+                            {group.attributes.items?.length ?? 0}
                           </Badge>
                         </Button>
                       ))}
@@ -333,41 +347,30 @@ export default function PDVPage() {
                   </div>
                 )}
 
-                {/* Indicadores de filtros ativos */}
                 {(searchTerm || selectedGroupId) && (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <span>Filtros ativos:</span>
                     {searchTerm && (
                       <Badge variant="outline" className="gap-1">
                         Busca: "{searchTerm}"
-                        <button
-                          onClick={() => setSearchTerm("")}
-                          className="ml-1 hover:text-foreground"
-                        >
-                          ×
-                        </button>
+                        <button onClick={() => setSearchTerm("")} className="ml-1 hover:text-foreground">×</button>
                       </Badge>
                     )}
                     {selectedGroupId && (
                       <Badge variant="outline" className="gap-1">
                         Categoria: {allGroups.find((g: any) => g.id === selectedGroupId)?.attributes?.name}
-                        <button
-                          onClick={() => setSelectedGroupId(null)}
-                          className="ml-1 hover:text-foreground"
-                        >
-                          ×
-                        </button>
+                        <button onClick={() => setSelectedGroupId(null)} className="ml-1 hover:text-foreground">×</button>
                       </Badge>
                     )}
                   </div>
                 )}
               </div>
             </CardHeader>
-            
+
             <CardContent>
               {isLoading ? (
                 <div className="text-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
                   <p className="text-muted-foreground">Carregando produtos...</p>
                 </div>
               ) : filteredCatalog.length === 0 ? (
@@ -386,14 +389,15 @@ export default function PDVPage() {
                 <div className="space-y-8">
                   {filteredCatalog.map((group: any) => (
                     <div key={group.id} className="space-y-4">
-                      {/* Cabeçalho do Grupo */}
+                      {/* Cabeçalho do grupo */}
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <h3 className="text-xl font-semibold text-primary">
                             {group.attributes.name}
                           </h3>
                           <Badge variant="outline">
-                            {group.attributes.items.length} {group.attributes.items.length === 1 ? 'produto' : 'produtos'}
+                            {group.attributes.items.length}{" "}
+                            {group.attributes.items.length === 1 ? "produto" : "produtos"}
                           </Badge>
                         </div>
                         {group.attributes.description && (
@@ -402,89 +406,130 @@ export default function PDVPage() {
                           </p>
                         )}
                       </div>
-                      
-                      {/* Grid de Produtos */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                        {group.attributes.items.map((item: any) => (
-                          <Card key={item.data.id} className="overflow-hidden hover:shadow-lg transition-all duration-200 group">
-                            <div className="aspect-video relative bg-gray-100">
-                              {item.data.attributes.image_url ? (
-                                <Image
-                                  src={item.data.attributes.image_url}
-                                  alt={item.data.attributes.name}
-                                  fill
-                                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                  className="object-cover group-hover:scale-105 transition-transform duration-200"
-                                />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center">
-                                  <Package className="h-8 w-8 text-muted-foreground" />
-                                </div>
-                              )}
-                              
-                              {/* Tags visuais */}
-                              <div className="absolute top-2 left-2 flex flex-col gap-0.5">
-                                {item.data.attributes.new_tag && (
-                                  <span className="bg-green-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm whitespace-nowrap">NOVO!</span>
-                                )}
-                                {item.data.attributes.best_seller_tag && (
-                                  <span className="bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm whitespace-nowrap">+ VENDIDO</span>
-                                )}
-                                {item.data.attributes.highlight && (
-                                  <span className="bg-blue-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm whitespace-nowrap">DESTAQUE</span>
-                                )}
-                                {item.data.attributes.promotion_tag && !item.data.attributes.price_with_discount && (
-                                  <span className="bg-primary text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm whitespace-nowrap">PROMOÇÃO</span>
-                                )}
-                              </div>
 
-                              {/* Badge de desconto */}
-                              {item.data.attributes.price_with_discount && (
-                                <div className="absolute top-2 right-2">
-                                  <Badge variant="destructive">PROMOÇÃO</Badge>
-                                </div>
-                              )}
-                            </div>
-                            
-                            <div className="p-4 space-y-3">
-                              <div>
-                                <h4 className="font-semibold text-lg mb-1 line-clamp-2">
-                                  {item.data.attributes.name}
-                                </h4>
-                                <p className="text-sm text-muted-foreground line-clamp-2">
-                                  {item.data.attributes.description}
-                                </p>
-                              </div>
-                              
-                              <div className="flex items-center justify-between">
-                                <div className="flex flex-col">
-                                  {item.data.attributes.price_with_discount ? (
-                                    <>
-                                      <span className="text-sm text-muted-foreground line-through">
-                                        {formatPrice(parseFloat(item.data.attributes.price))}
-                                      </span>
-                                      <span className="font-bold text-lg text-green-600">
-                                        {formatPrice(parseFloat(item.data.attributes.price_with_discount))}
-                                      </span>
-                                    </>
-                                  ) : (
-                                    <span className="font-bold text-lg text-primary">
-                                      {formatPrice(parseFloat(item.data.attributes.price))}
+                      {/* Grid de itens */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                        {group.attributes.items.map((item: any) => {
+                          const attrs = item.attributes;
+                          const hasDiscount =
+                            attrs.price_with_discount &&
+                            attrs.price_with_discount !== attrs.price;
+                          const hasOptions =
+                            (attrs.extra?.data?.length ?? 0) > 0 ||
+                            (attrs.prepare_method?.data?.length ?? 0) > 0 ||
+                            (attrs.steps?.data?.length ?? 0) > 0;
+
+                          return (
+                            <Card
+                              key={item.id}
+                              className="overflow-hidden hover:shadow-lg transition-all duration-200 group"
+                            >
+                              <div className="aspect-video relative bg-gray-100">
+                                {attrs.image_url ? (
+                                  <Image
+                                    src={attrs.image_url}
+                                    alt={attrs.name}
+                                    fill
+                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                    className="object-cover group-hover:scale-105 transition-transform duration-200"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center">
+                                    <Package className="h-8 w-8 text-muted-foreground" />
+                                  </div>
+                                )}
+
+                                {/* Tags */}
+                                <div className="absolute top-2 left-2 flex flex-col gap-0.5">
+                                  {attrs.new_tag && (
+                                    <span className="bg-green-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm whitespace-nowrap">
+                                      NOVO!
+                                    </span>
+                                  )}
+                                  {attrs.best_seller_tag && (
+                                    <span className="bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm whitespace-nowrap">
+                                      + VENDIDO
+                                    </span>
+                                  )}
+                                  {attrs.highlight && (
+                                    <span className="bg-blue-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm whitespace-nowrap">
+                                      DESTAQUE
+                                    </span>
+                                  )}
+                                  {attrs.promotion_tag && !attrs.price_with_discount && (
+                                    <span className="bg-primary text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm whitespace-nowrap">
+                                      PROMOÇÃO
                                     </span>
                                   )}
                                 </div>
-                                
-                                <Button
-                                  onClick={() => addToCart(item.data)}
-                                  className="h-9 px-4"
-                                >
-                                  <Plus className="h-4 w-4 mr-1" />
-                                  Adicionar
-                                </Button>
+
+                                {hasDiscount && (
+                                  <div className="absolute top-2 right-2">
+                                    <Badge variant="destructive">PROMOÇÃO</Badge>
+                                  </div>
+                                )}
+
+                                {/* Indicador de opções */}
+                                {hasOptions && (
+                                  <div className="absolute bottom-2 right-2">
+                                    <span className="bg-black/60 text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-full flex items-center gap-1">
+                                      <Settings2 className="h-2.5 w-2.5" />
+                                      Personalizável
+                                    </span>
+                                  </div>
+                                )}
                               </div>
-                            </div>
-                          </Card>
-                        ))}
+
+                              <div className="p-4 space-y-3">
+                                <div>
+                                  <h4 className="font-semibold text-lg mb-1 line-clamp-2">
+                                    {attrs.name}
+                                  </h4>
+                                  <p className="text-sm text-muted-foreground line-clamp-2">
+                                    {attrs.description}
+                                  </p>
+                                </div>
+
+                                <div className="flex items-center justify-between gap-2">
+                                  <div className="flex flex-col">
+                                    {hasDiscount ? (
+                                      <>
+                                        <span className="text-sm text-muted-foreground line-through">
+                                          {formatPrice(parseFloat(attrs.price))}
+                                        </span>
+                                        <span className="font-bold text-lg text-green-600">
+                                          {formatPrice(parseFloat(attrs.price_with_discount))}
+                                        </span>
+                                      </>
+                                    ) : (
+                                      <span className="font-bold text-lg text-primary">
+                                        {formatPrice(parseFloat(attrs.price))}
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  <Button
+                                    onClick={() => handleItemClick(item)}
+                                    className="h-9 px-3 gap-1.5 shrink-0"
+                                    size="sm"
+                                  >
+                                    {hasOptions ? (
+                                      <>
+                                        <Settings2 className="h-3.5 w-3.5" />
+                                        Personalizar
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Plus className="h-3.5 w-3.5" />
+                                        Adicionar
+                                      </>
+                                    )}
+                                  </Button>
+                                </div>
+                              </div>
+                            </Card>
+                          );
+                        })}
                       </div>
                     </div>
                   ))}
@@ -494,7 +539,7 @@ export default function PDVPage() {
           </Card>
         </div>
 
-        {/* Carrinho e Informações do Pedido */}
+        {/* ── Carrinho e Pedido ────────────────────────── */}
         <div className="space-y-6">
           {/* Carrinho */}
           <Card>
@@ -503,19 +548,19 @@ export default function PDVPage() {
                 <div className="flex items-center gap-2">
                   <ShoppingCart className="h-5 w-5" />
                   Carrinho
+                  {cart.length > 0 && (
+                    <Badge variant="secondary">{cart.reduce((t, i) => t + i.quantity, 0)}</Badge>
+                  )}
                 </div>
                 {cart.length > 0 && (
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary">{cart.length}</Badge>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={clearCart}
-                      className="h-8 px-2 text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearCart}
+                    className="h-8 px-2 text-red-500 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 )}
               </CardTitle>
             </CardHeader>
@@ -527,33 +572,78 @@ export default function PDVPage() {
                   <p className="text-sm text-muted-foreground">Adicione produtos para começar</p>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  <div className="max-h-96 overflow-y-auto space-y-2 pr-2">
-                    {cart.map((item: CartItem) => (
-                      <div key={item.id} className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+                <div className="space-y-3">
+                  <div className="max-h-96 overflow-y-auto space-y-2 pr-1">
+                    {cart.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-start gap-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors"
+                      >
                         {item.image_url && (
-                          <div className="w-12 h-12 relative flex-shrink-0">
+                          <div className="w-11 h-11 relative flex-shrink-0 rounded-md overflow-hidden">
                             <Image
                               src={item.image_url}
                               alt={item.name}
                               fill
-                              sizes="48px"
-                              className="object-cover rounded"
+                              sizes="44px"
+                              className="object-cover"
                             />
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-sm truncate">{item.name}</h4>
-                          <div className="flex items-center justify-between mt-1">
+                          <p className="font-medium text-sm leading-tight">{item.name}</p>
+
+                          {/* Extras selecionados */}
+                          {item.selectedExtras && item.selectedExtras.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {item.selectedExtras.map((e) => (
+                                <Badge key={e.id} variant="secondary" className="text-[10px] h-4 px-1">
+                                  {e.name}
+                                  {e.price > 0 && ` +${formatPrice(e.price)}`}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Métodos selecionados */}
+                          {item.selectedMethods && item.selectedMethods.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {item.selectedMethods.map((m) => (
+                                <Badge key={m.id} variant="outline" className="text-[10px] h-4 px-1">
+                                  {m.name}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Opções de steps */}
+                          {item.selectedStepOptions && Object.keys(item.selectedStepOptions).length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {Object.values(item.selectedStepOptions).map((opt, i) => (
+                                <Badge key={i} variant="outline" className="text-[10px] h-4 px-1">
+                                  {opt.optionName}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Observação */}
+                          {item.observation && (
+                            <p className="text-[11px] text-muted-foreground mt-1 italic">
+                              "{item.observation}"
+                            </p>
+                          )}
+
+                          <div className="flex items-center justify-between mt-2">
                             <span className="text-xs text-muted-foreground">
-                              {formatPrice(item.price)} x {item.quantity}
+                              {formatPrice(item.price)} × {item.quantity}
                             </span>
                             <span className="font-semibold text-sm text-primary">
                               {formatPrice(item.totalPrice)}
                             </span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 flex-shrink-0">
                           <Button
                             size="sm"
                             variant="ghost"
@@ -562,7 +652,7 @@ export default function PDVPage() {
                           >
                             <Minus className="h-3 w-3" />
                           </Button>
-                          <span className="text-sm font-medium w-6 text-center">
+                          <span className="text-sm font-medium w-5 text-center">
                             {item.quantity}
                           </span>
                           <Button
@@ -577,7 +667,7 @@ export default function PDVPage() {
                             size="sm"
                             variant="ghost"
                             onClick={() => removeFromCart(item.id)}
-                            className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
+                            className="h-7 w-7 p-0 text-red-500 hover:text-red-700"
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
@@ -585,19 +675,17 @@ export default function PDVPage() {
                       </div>
                     ))}
                   </div>
-                  
+
                   <Separator />
-                  
-                  <div className="bg-gray-50 p-3 rounded-lg">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm text-muted-foreground">Subtotal:</span>
+
+                  <div className="bg-gray-50 p-3 rounded-lg space-y-1.5">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">Subtotal:</span>
                       <span className="font-medium">{formatPrice(cartTotal)}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="font-semibold">Total:</span>
-                      <span className="font-bold text-lg text-primary">
-                        {formatPrice(cartTotal)}
-                      </span>
+                      <span className="font-bold text-lg text-primary">{formatPrice(cartTotal)}</span>
                     </div>
                   </div>
                 </div>
@@ -614,7 +702,10 @@ export default function PDVPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Select value={orderType} onValueChange={(value: "delivery" | "pickup") => setOrderType(value)}>
+              <Select
+                value={orderType}
+                onValueChange={(v: "delivery" | "pickup") => setOrderType(v)}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -626,7 +717,7 @@ export default function PDVPage() {
             </CardContent>
           </Card>
 
-          {/* Informações do Cliente */}
+          {/* Dados do cliente */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -636,21 +727,23 @@ export default function PDVPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
-                <div>
+                <div className="space-y-1.5">
                   <Label htmlFor="name" className="text-sm">Nome</Label>
                   <Input
                     id="name"
                     value={customerInfo.name}
-                    onChange={(e: any) => setCustomerInfo(prev => ({ ...prev, name: e.target.value }))}
+                    onChange={(e: any) => setCustomerInfo((p) => ({ ...p, name: e.target.value }))}
                     placeholder="Nome do cliente"
                   />
                 </div>
-                <div>
+                <div className="space-y-1.5">
                   <Label htmlFor="phone" className="text-sm">Telefone</Label>
                   <Input
                     id="phone"
                     value={customerInfo.phone}
-                    onChange={handlePhoneChange}
+                    onChange={(e: any) =>
+                      setCustomerInfo((p) => ({ ...p, phone: formatPhone(e.target.value) }))
+                    }
                     placeholder="(11) 99999-9999"
                     maxLength={15}
                   />
@@ -659,62 +752,64 @@ export default function PDVPage() {
 
               {orderType === "delivery" && (
                 <>
-                  <div>
+                  <div className="space-y-1.5">
                     <Label htmlFor="address" className="text-sm">Endereço</Label>
                     <Input
                       id="address"
                       value={customerInfo.address}
-                      onChange={(e: any) => setCustomerInfo(prev => ({ ...prev, address: e.target.value }))}
+                      onChange={(e: any) => setCustomerInfo((p) => ({ ...p, address: e.target.value }))}
                       placeholder="Rua, número"
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div>
+                    <div className="space-y-1.5">
                       <Label htmlFor="neighborhood" className="text-sm">Bairro</Label>
                       <Input
                         id="neighborhood"
                         value={customerInfo.neighborhood}
-                        onChange={(e: any) => setCustomerInfo(prev => ({ ...prev, neighborhood: e.target.value }))}
+                        onChange={(e: any) => setCustomerInfo((p) => ({ ...p, neighborhood: e.target.value }))}
                         placeholder="Bairro"
                       />
                     </div>
-                    <div>
+                    <div className="space-y-1.5">
                       <Label htmlFor="city" className="text-sm">Cidade</Label>
                       <Input
                         id="city"
                         value={customerInfo.city}
-                        onChange={(e: any) => setCustomerInfo(prev => ({ ...prev, city: e.target.value }))}
+                        onChange={(e: any) => setCustomerInfo((p) => ({ ...p, city: e.target.value }))}
                         placeholder="Cidade"
                       />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div>
+                    <div className="space-y-1.5">
                       <Label htmlFor="zipCode" className="text-sm">CEP</Label>
                       <Input
                         id="zipCode"
                         value={customerInfo.zipCode}
-                        onChange={handleCEPChange}
+                        onChange={(e: any) =>
+                          setCustomerInfo((p) => ({ ...p, zipCode: formatCEP(e.target.value) }))
+                        }
                         placeholder="00000-000"
                         maxLength={9}
                       />
                     </div>
-                    <div>
+                    <div className="space-y-1.5">
                       <Label htmlFor="complement" className="text-sm">Complemento</Label>
                       <Input
                         id="complement"
                         value={customerInfo.complement}
-                        onChange={(e: any) => setCustomerInfo(prev => ({ ...prev, complement: e.target.value }))}
+                        onChange={(e: any) => setCustomerInfo((p) => ({ ...p, complement: e.target.value }))}
                         placeholder="Apt, bloco"
                       />
                     </div>
                   </div>
-                  <div>
+                  <div className="space-y-1.5">
                     <Label htmlFor="reference" className="text-sm">Referência</Label>
                     <Input
                       id="reference"
                       value={customerInfo.reference}
-                      onChange={(e: any) => setCustomerInfo(prev => ({ ...prev, reference: e.target.value }))}
+                      onChange={(e: any) => setCustomerInfo((p) => ({ ...p, reference: e.target.value }))}
                       placeholder="Ponto de referência"
                     />
                   </div>
@@ -732,9 +827,12 @@ export default function PDVPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
+              <div className="space-y-1.5">
                 <Label className="text-sm">Método de Pagamento</Label>
-                <Select value={paymentMethod} onValueChange={(value: "cash" | "card" | "pix") => setPaymentMethod(value)}>
+                <Select
+                  value={paymentMethod}
+                  onValueChange={(v: "cash" | "card" | "pix") => setPaymentMethod(v)}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -746,50 +844,70 @@ export default function PDVPage() {
                 </Select>
               </div>
 
-              {paymentMethod === "cash" && (
-                <div>
-                  <Label htmlFor="change" className="text-sm">Troco para</Label>
-                  <Input
-                    id="change"
-                    type="number"
-                    step="0.01"
-                    value={changeAmount}
-                    onChange={(e: any) => setChangeAmount(e.target.value)}
-                    placeholder="0.00"
-                  />
-                  {changeAmount && cartTotal > 0 && (
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Troco: {formatPrice(parseFloat(changeAmount) - cartTotal)}
-                    </p>
-                  )}
-                </div>
-              )}
+              {paymentMethod === "cash" && (() => {
+                const changeValue = changeAmount ? parseFloat(changeAmount) : 0;
+                const isChangeInvalid = !!changeAmount && changeValue < cartTotal;
+                const changeBack = changeValue - cartTotal;
+                return (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="change" className="text-sm">Troco para</Label>
+                    <Input
+                      id="change"
+                      type="number"
+                      step="0.01"
+                      value={changeAmount}
+                      onChange={(e: any) => setChangeAmount(e.target.value)}
+                      placeholder="0.00"
+                      className={isChangeInvalid ? "border-red-500 focus-visible:ring-red-500" : ""}
+                    />
+                    {isChangeInvalid ? (
+                      <p className="text-sm text-red-500">
+                        Valor deve ser maior que o total do pedido
+                      </p>
+                    ) : changeAmount && cartTotal > 0 ? (
+                      <p className="text-sm text-muted-foreground">
+                        Troco: {formatPrice(changeBack)}
+                      </p>
+                    ) : null}
+                  </div>
+                );
+              })()}
 
-              <div>
-                <Label htmlFor="notes" className="text-sm">Observações</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="notes" className="text-sm">Observações gerais</Label>
                 <Textarea
                   id="notes"
                   value={notes}
                   onChange={(e: any) => setNotes(e.target.value)}
-                  placeholder="Observações do pedido..."
+                  placeholder="Observações gerais do pedido..."
                   rows={3}
                 />
               </div>
             </CardContent>
           </Card>
 
-          {/* Finalizar Pedido */}
+          {/* Finalizar */}
           <Button
             onClick={processOrder}
             disabled={cart.length === 0 || isProcessingOrder}
-            className="w-full h-12 text-lg font-semibold"
+            className="w-full h-12 text-base font-semibold gap-2"
             size="lg"
           >
-            {isProcessingOrder ? "Processando..." : `Finalizar Pedido - ${formatPrice(cartTotal)}`}
+            <ShoppingCart className="h-5 w-5" />
+            {isProcessingOrder
+              ? "Processando..."
+              : `Finalizar Pedido — ${formatPrice(cartTotal)}`}
           </Button>
         </div>
       </div>
+
+      {/* Modal de opções do item */}
+      <ItemOptionsDialog
+        item={optionsItem}
+        open={optionsItem !== null}
+        onClose={() => setOptionsItem(null)}
+        onAddToCart={handleOptionsAddToCart}
+      />
     </div>
   );
 }
-

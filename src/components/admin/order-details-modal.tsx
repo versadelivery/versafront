@@ -22,6 +22,7 @@ interface OrderItem {
   catalog_item_id: number | null;
   name: string;
   price: number;
+  total_price?: number;
   quantity: number;
   observation?: string;
   image?: string;
@@ -127,7 +128,7 @@ export default function OrderDetailsModal({ open, onOpenChange, order, onUpdateO
   }, [order]);
 
   // Calcular subtotal baseado nos itens editados
-  const editedSubtotal = (editedOrder.items || []).reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+  const editedSubtotal = (editedOrder.items || []).reduce((sum: number, item: any) => sum + (item.total_price ?? (item.price * item.quantity)), 0);
 
   const handleEdit = (type: 'customer' | 'order' | 'financial' | 'item' | 'shop', field: string, value: string | number) => {
     setEditingField({ type, field, value });
@@ -273,7 +274,7 @@ ${order.address.reference ? `Referência: ${order.address.reference}` : ''}
 ` : ''}
 Itens:
 ${order.items.map(item => 
-  `${item.quantity}x ${item.name} - ${formatCurrency(item.price * item.quantity)}`
+  `${item.quantity}x ${item.name} - ${formatCurrency(item.total_price ?? (item.price * item.quantity))}`
 ).join('\n')}
     `.trim();
     
@@ -681,7 +682,7 @@ ${order.items.map(item =>
                   
                   <div className="flex items-center gap-4 flex-shrink-0">
                     <div className="flex items-center gap-2">
-                      {renderEditableField('item', `price_${item.id}`, item.price * item.quantity, '', 'number')}
+                      {renderEditableField('item', `price_${item.id}`, item.total_price ?? (item.price * item.quantity), '', 'number')}
                     </div>
                     {isEditingMode && (
                       <Button variant="ghost" size="icon" className="h-6 w-6 text-red-400 hover:text-red-600">
