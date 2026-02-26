@@ -18,7 +18,9 @@ import {
   SquarePen,
   ChevronDown,
   ChevronUp,
-  ArrowRight
+  ArrowRight,
+  Router,
+  ArrowLeft
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import OrderDetailsModal from '@/components/admin/order-details-modal';
@@ -26,6 +28,8 @@ import { formatPrice } from '@/app/(public)/[slug]/format-price';
 import { useAdminActionCable, AdminOrderData } from '@/lib/admin-cable';
 import OrderCard from '@/components/admin/order-card';
 import { useRestaurantSounds } from '@/hooks/use-restaurant-sounds';
+import AdminHeader from '@/components/admin/catalog-header';
+import { useRouter } from 'next/navigation';
 // Controle de som foi movido para o Header global da administração
 
 interface Order {
@@ -196,6 +200,8 @@ export default function OrderManagement() {
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = subscribeToAdminOrders((socketOrders: AdminOrderData[]) => {
@@ -519,23 +525,33 @@ export default function OrderManagement() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Cabeçalho com botão PDV */}
       <div className="bg-white shadow-sm border-b">
-        <div className="max-w-[1920px] mx-auto p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Gerenciamento de Pedidos</h1>
-              <p className="text-gray-600">Visualize e gerencie todos os pedidos da sua loja</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <Button
-                onClick={() => window.location.href = '/admin/pdv'}
-                className="flex items-center gap-2 bg-primary hover:bg-primary/90"
-              >
-                <SquarePen className="h-4 w-4" />
-                Novo Pedido (PDV)
-              </Button>
-            </div>
+        <div className="max-w-[1920px] mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          
+          {/* Left: Voltar + Título */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <a
+              href="/admin"
+              className="group flex items-center gap-2 text-muted-foreground hover:text-primary transition-all duration-300 px-3 py-2 rounded-lg hover:bg-primary/10"
+            >
+              <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform duration-300" />
+              <span className="text-sm font-medium whitespace-nowrap">Voltar</span>
+            </a>
+
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">
+              Gerenciamento de Pedidos
+            </h1>
+          </div>
+
+          {/* Right: Botão PDV */}
+          <div className="flex-shrink-0">
+            <Button
+              onClick={() => window.location.href = '/admin/pdv'}
+              className="flex items-center gap-2 bg-primary hover:bg-primary/90 whitespace-nowrap"
+            >
+              <SquarePen className="h-4 w-4" />
+              Novo Pedido (PDV)
+            </Button>
           </div>
         </div>
       </div>
@@ -718,7 +734,10 @@ export default function OrderManagement() {
             customer: selectedOrder.socketData.attributes.customer?.data ? {
             name: selectedOrder.socketData.attributes.customer.data.attributes.name,
             phone: selectedOrder.socketData.attributes.customer.data.attributes.cellphone
-            } : undefined,
+            } : {
+              name: (selectedOrder.socketData.attributes.customer as any)?.name || 'Cliente',
+              phone: (selectedOrder.socketData.attributes.customer as any)?.cellphone || ''
+            },
             deliveryPerson: selectedOrder.deliveryPerson || (selectedOrder.socketData.attributes as any).delivery_person || ''
           }}
           onUpdateOrder={async (orderId, data) => {
