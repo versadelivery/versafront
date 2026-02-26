@@ -4,9 +4,9 @@ import { CreateOrderRequest, CustomerOrdersResponse } from "@/types/order";
 
 export const createOrder = async (data: CreateOrderRequest, type: 'normal' | 'client' = 'client') => {
   setTokenType(type);
-  
+
   const endpoint = type === 'client' ? API_ENDPOINTS.CUSTOMERS.ORDERS : API_ENDPOINTS.ORDERS;
-  
+
   try {
     const response = await api.post(endpoint, data);
     return response.data;
@@ -18,7 +18,7 @@ export const createOrder = async (data: CreateOrderRequest, type: 'normal' | 'cl
 
 export const createPDVOrder = async (data: CreateOrderRequest) => {
   setTokenType('admin');
-  
+
   try {
     const response = await api.post(API_ENDPOINTS.ADMIN_ORDERS, data);
     return response.data;
@@ -30,12 +30,24 @@ export const createPDVOrder = async (data: CreateOrderRequest) => {
 
 export const getCustomerOrders = async (): Promise<CustomerOrdersResponse | null> => {
   setTokenType('client');
-  
+
   try {
     const response = await api.get<CustomerOrdersResponse>(API_ENDPOINTS.CUSTOMERS.ORDERS);
     return response.data;
   } catch (error) {
     console.error('Erro ao buscar pedidos:', error);
+    return null;
+  }
+};
+
+export const getOrdersByPhone = async (phone: string): Promise<CustomerOrdersResponse | null> => {
+  try {
+    const response = await api.get<CustomerOrdersResponse>(`${API_ENDPOINTS.CUSTOMERS.ORDERS}/by_phone`, {
+      params: { phone }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao buscar pedidos por telefone:', error);
     return null;
   }
 };
