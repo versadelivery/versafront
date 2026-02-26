@@ -211,19 +211,26 @@ export function ItemDetailsModal({ id, isOpen, onClose }: ItemDetailsModalProps)
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <CalendarDays className="h-4 w-4 text-primary" />
-                <span className="text-sm font-semibold">Dias Disponíveis</span>
+                <span className="text-sm font-semibold">Disponibilidade Semanal</span>
               </div>
-              <div className="grid grid-cols-7 gap-1.5">
-                {DAYS_OF_WEEK.map(({ key, label }) => (
-                  <div
-                    key={key}
-                    className={`py-2 rounded-md text-sm font-medium text-center ${
-                      (attrs as any)[key] !== false ? 'bg-foreground text-white' : 'bg-muted/40 text-muted-foreground line-through'
-                    }`}
-                  >
-                    {label}
-                  </div>
-                ))}
+              <div className="grid grid-cols-7 gap-2">
+                {DAYS_OF_WEEK.map(({ key, label }) => {
+                  const isActive = (attrs as any)[key] !== false;
+                  return (
+                    <div
+                      key={key}
+                      className={`flex flex-col items-center justify-center py-3 rounded-xl border-2 transition-all duration-200 ${
+                        isActive 
+                          ? 'bg-primary border-primary shadow-sm' 
+                          : 'bg-gray-50/50 border-gray-100 text-gray-400 border-dashed opacity-60'
+                      }`}
+                    >
+                      <span className={`text-[10px] font-bold uppercase mb-0.5 ${isActive ? 'text-white' : 'text-gray-400'}`}>
+                        {label}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 

@@ -872,16 +872,15 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
                   key={key}
                   type="button"
                   onClick={() => setActiveDays((prev) => ({ ...prev, [key]: !prev[key] }))}
-                  className={`relative flex flex-col items-center justify-center py-3 rounded-xl border-2 transition-all duration-200 ${
+                  className={`relative cursor-pointer flex flex-col items-center justify-center py-3 rounded-xl border-2 transition-all duration-200 ${
                     isActive 
-                      ? 'bg-primary/5 border-primary text-primary shadow-sm' 
+                      ? 'bg-primary border-primary shadow-sm' 
                       : 'bg-transparent border-gray-100 text-gray-400 border-dashed hover:border-gray-300'
                   }`}
                 >
-                  <span className={`text-[10px] font-bold uppercase mb-0.5 ${isActive ? 'text-primary' : 'text-gray-400'}`}>
+                  <span className={`text-[10px] font-bold uppercase mb-0.5 ${isActive ? 'text-white' : 'text-gray-400'}`}>
                     {label}
                   </span>
-                  <div className={`w-1.5 h-1.5 rounded-full mt-1 ${isActive ? 'bg-primary' : 'bg-gray-200'}`} />
                 </button>
               );
             })}
