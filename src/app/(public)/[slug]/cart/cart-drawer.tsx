@@ -189,7 +189,7 @@ export function CartDrawer() {
 
                           {item.selectedSharedComplements && item.selectedSharedComplements.length > 0 && (
                             <div className="mt-2">
-                              <p className="text-xs font-medium text-gray-500 mb-1">Complementos:</p>
+                              <p className="text-xs font-medium text-gray-500 mb-1">Adicionais:</p>
                               <div className="flex flex-wrap gap-1">
                                 {item.selectedSharedComplements.map(optionId => {
                                   let foundOption: any = null

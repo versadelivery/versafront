@@ -125,7 +125,7 @@ export function ItemCard({ item }: ItemCardProps) {
           <div className="absolute top-2 right-2 flex items-center gap-2">
             {/* Duplicar */}
             <button
-              className="bg-white/95 backdrop-blur-sm rounded-full p-2 flex items-center justify-center shadow-sm border border-gray-100 hover:bg-white transition-colors group"
+              className="bg-white/95 cursor-pointer backdrop-blur-sm rounded-full p-2 flex items-center justify-center shadow-sm border border-gray-100 hover:bg-white transition-colors group"
               onClick={handleDuplicate}
               disabled={isDuplicatingItem}
               title="Duplicar item"
@@ -153,7 +153,7 @@ export function ItemCard({ item }: ItemCardProps) {
               </div>
               <div className="w-[1px] h-3 bg-gray-200" />
               <button
-                className="text-muted-foreground hover:text-primary transition-colors py-0.5"
+                className="cursor-pointer text-muted-foreground hover:text-primary transition-colors py-0.5"
                 onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}
                 title="Editar item"
               >

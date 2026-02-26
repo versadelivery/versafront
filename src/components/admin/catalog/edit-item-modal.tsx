@@ -818,10 +818,10 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
           <hr className="border-gray-100" />
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Complementos Compartilhados</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Adicionais Compartilhados</p>
             </div>
             {complementGroups.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nenhuma lista de complementos cadastrada.</p>
+              <p className="text-sm text-muted-foreground">Nenhuma lista de adicionais cadastrada.</p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {complementGroups.map((group: any) => {
@@ -839,8 +839,8 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
                       }}
                       className={`flex items-center justify-between w-full p-3 rounded-lg border-2 transition-all cursor-pointer ${
                         isSelected
-                          ? 'border-primary bg-primary/10 shadow-sm'
-                          : 'border-gray-200 bg-muted/40 hover:border-gray-300'
+                          ? 'border-primary shadow-sm'
+                          : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
                       <span className={`text-sm font-medium ${isSelected ? 'text-primary' : 'text-foreground'}`}>

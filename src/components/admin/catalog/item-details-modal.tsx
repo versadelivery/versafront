@@ -239,7 +239,7 @@ export function ItemDetailsModal({ id, isOpen, onClose }: ItemDetailsModalProps)
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <Boxes className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-semibold">Complementos Compartilhados</span>
+                  <span className="text-sm font-semibold">Adicionais Compartilhados</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {attrs.shared_complements!.data.map((group: any) => (
