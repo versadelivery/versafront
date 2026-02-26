@@ -21,6 +21,7 @@ import { createPDVOrder } from "@/services/order-service";
 import { useAdminActionCable } from "@/lib/admin-cable";
 import { useShop } from "@/hooks/use-shop";
 import { ItemOptionsDialog } from "./item-options-dialog";
+import AdminHeader from "@/components/admin/catalog-header";
 
 interface CartItem {
   id: string;
@@ -260,11 +261,8 @@ export default function PDVPage() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-foreground mb-2">PDV — Ponto de Venda</h1>
-        <p className="text-muted-foreground">Gerencie vendas e crie pedidos para seus clientes</p>
-      </div>
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto">
+      <AdminHeader title="Ponto de Venda (PDV)" description="Gerencie seus pedidos e vendas" className="!px-2" />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
@@ -390,25 +388,25 @@ export default function PDVPage() {
                   {filteredCatalog.map((group: any) => (
                     <div key={group.id} className="space-y-4">
                       {/* Cabeçalho do grupo */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <h3 className="text-xl font-semibold text-primary">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                          <h3 className="text-lg sm:text-xl font-semibold text-primary">
                             {group.attributes.name}
                           </h3>
-                          <Badge variant="outline">
+                          <Badge variant="outline" className="text-xs">
                             {group.attributes.items.length}{" "}
                             {group.attributes.items.length === 1 ? "produto" : "produtos"}
                           </Badge>
                         </div>
                         {group.attributes.description && (
-                          <p className="text-sm text-muted-foreground max-w-md">
+                          <p className="text-sm text-muted-foreground sm:max-w-md">
                             {group.attributes.description}
                           </p>
                         )}
                       </div>
 
                       {/* Grid de itens */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4">
                         {group.attributes.items.map((item: any) => {
                           const attrs = item.attributes;
                           const hasDiscount =
