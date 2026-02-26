@@ -84,6 +84,26 @@ export default function CheckoutPage() {
   const [guestName, setGuestName] = useState('')
   const [guestPhone, setGuestPhone] = useState('')
 
+  const handlePhoneChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    let numericValue = event.target.value.replace(/\D/g, '');
+
+    numericValue = numericValue.slice(0, 11);
+
+    let formattedValue = numericValue;
+
+    if (numericValue.length <= 10) {
+      formattedValue = numericValue.replace(/(\d{2})(\d{0,4})(\d{0,4})/, (_, d1, d2, d3) => {
+        return d2 ? `(${d1}) ${d2}${d3 ? `-${d3}` : ''}` : `(${d1}`;
+      });
+    } else {
+      formattedValue = numericValue.replace(/(\d{2})(\d{5})(\d{0,4})/, (_, d1, d2, d3) => {
+        return `(${d1}) ${d2}${d3 ? `-${d3}` : ''}`;
+      });
+    }
+
+    setGuestPhone(formattedValue);
+  };
+
   const shopDeliveryConfig = shopData?.data?.attributes?.shop_delivery_config?.data?.attributes || null
   const shopPaymentConfig = shopData?.data?.attributes?.shop_payment_config?.data?.attributes || null
   const shop = shopData
@@ -353,7 +373,7 @@ export default function CheckoutPage() {
                         id="guestPhone"
                         placeholder="(00) 00000-0000"
                         value={guestPhone}
-                        onChange={(e) => setGuestPhone(e.target.value)}
+                        onChange={handlePhoneChange}
                         className="pl-8 border-gray-200 focus:border-primary/40 text-sm"
                       />
                     </div>
@@ -392,7 +412,7 @@ export default function CheckoutPage() {
                               className="h-16 w-16 rounded-lg object-cover bg-gray-100"
                             />
                           ) : (
-                            <div className="h-16 w-16 rounded-lg bg-primary/5 border border-primary/10 flex items-center justify-center">
+                            <div className="h-16 w-16 rounded-lg border border-primary/10 flex items-center justify-center">
                               <span className="text-primary/40 text-lg font-bold">
                                 {item.name.charAt(0).toUpperCase()}
                               </span>
@@ -473,9 +493,9 @@ export default function CheckoutPage() {
                           placeholder="Observação (ex: sem cebola)"
                           value={itemObservations[item.id] || ''}
                           onChange={(e) => {
-                            const val = e.target.value
-                            setItemObservations(prev => ({ ...prev, [item.id]: val }))
-                            setCartItems(prev => prev.map(ci => ci.id === item.id ? { ...ci, observation: val } : ci))
+                            const val = e.target.value;
+                            setItemObservations(prev => ({ ...prev, [item.id]: val }));
+                            setCartItems(prev => prev.map(ci => ci.id === item.id ? { ...ci, observation: val } : ci));
                           }}
                           className="h-8 text-xs bg-gray-50 border-gray-200 focus:border-primary/40 rounded-lg"
                         />
@@ -644,7 +664,7 @@ export default function CheckoutPage() {
                 )}
 
                 {deliveryOption === 'pickup' && (
-                  <div className="flex items-start gap-2.5 bg-primary/5 border border-primary/10 rounded-lg px-4 py-3">
+                  <div className="flex items-start gap-2.5 border border-primary/10 rounded-lg px-4 py-3">
                     <Store className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
                     <p className="text-sm text-gray-700">
                       Você retirará o pedido diretamente no estabelecimento. Sem taxa de entrega.
@@ -673,7 +693,7 @@ export default function CheckoutPage() {
                         onClick={() => setPaymentMethod(method)}
                         className={`flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border-2 text-xs font-medium transition-all cursor-pointer ${
                           isSelected
-                            ? 'border-primary bg-primary/5 text-primary'
+                            ? 'border-primary text-primary'
                             : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
                         }`}
                       >
