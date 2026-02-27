@@ -55,8 +55,8 @@ export function createAdminCableWithToken() {
   const token = getToken()
   if (!token) return null
 
-  const base = process.env.NEXT_PUBLIC_CABLE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-  // If base already points to ws(s), keep it; otherwise convert http(s) -> ws(s)
+  const base = process.env.NEXT_PUBLIC_CABLE_URL || 'ws://localhost:8080'
+
   const wsBase = base.startsWith('ws') ? base : base.replace('http', 'ws').replace('https', 'wss')
   const hasQuery = wsBase.includes('?')
   const cableUrl = `${wsBase.replace(/\/$/, '')}${wsBase.endsWith('/cable') || wsBase.endsWith('/cable/') ? '' : '/cable'}${hasQuery ? '&' : '?'}token=${token}`
@@ -68,7 +68,6 @@ export function useAdminActionCable() {
   const [isConnected, setIsConnected] = useState(false)
   const cableRef = useRef<any>(null)
   const subscriptionRef = useRef<any>(null)
-  // pending confirmations: orderId -> array of pending promises waiting server confirmation
   const pendingConfirmationsRef = useRef<Record<string, Array<any>>>({});
 
   useEffect(() => {
@@ -91,8 +90,8 @@ export function useAdminActionCable() {
 
   const subscribeToAdminOrders = useCallback((onData: (data: AdminOrderData[]) => void) => {
     if (!cableRef.current) {
-      console.error('Admin Cable não está conectado')
-      return () => {}
+      const timeout = setTimeout(() => subscribeToAdminOrders(onData), 500);
+      return () => clearTimeout(timeout);
     }
 
     const subscription = cableRef.current.subscriptions.create(
@@ -103,19 +102,22 @@ export function useAdminActionCable() {
         received: (payload: any) => {
           if (!payload?.event) return
 
+          const rawData = payload.data?.data || payload.data;
+          if (!rawData) return;
+
           // Evento inicial
           if (payload.event === "initial_order_admin_data") {
-            onData(payload.data.data)
+            onData(rawData)
           }
 
           // Eventos futuros
           if (payload.event === "order_updated") {
             // primeiro repassa os dados para o caller
-            onData(payload.data.data)
+            onData(rawData)
 
             // então verifica se alguma confirmação pendente pode ser resolvida
             try {
-              const orders: AdminOrderData[] = payload.data.data || []
+              const orders: AdminOrderData[] = Array.isArray(rawData) ? rawData : (rawData?.data || [])
               const pending = pendingConfirmationsRef.current || {}
               console.log(pending)
 
@@ -214,7 +216,7 @@ export function useAdminActionCable() {
 
   const updateOrder = useCallback((orderId: string, status?: string, paid_at?: boolean, deliveryPerson?: string, cancellationReason?: string): Promise<boolean> => {
     console.log('🔄 updateOrder chamado:', { orderId, status, paid_at, deliveryPerson, cancellationReason });
-    
+
     return new Promise((resolve, reject) => {
       if (!subscriptionRef.current || !subscriptionRef.current.send) {
         console.error('❌ Subscription não está ativa');
@@ -303,7 +305,7 @@ export function useAdminActionCable() {
 
       } catch (error) {
         console.error('❌ Erro ao enviar dados via websocket:', error);
-        
+
         // Se houver erro, tentar reconectar
         if (cableRef.current) {
           console.log('🔄 Tentando reconectar...');
@@ -320,7 +322,7 @@ export function useAdminActionCable() {
             console.error('❌ Erro ao reconectar:', reconnectError);
           }
         }
-        
+
         resolve(false);
       }
     });
@@ -328,7 +330,7 @@ export function useAdminActionCable() {
 
   const updateOrderDetails = useCallback((orderId: string, data: any): Promise<boolean> => {
     console.log('🔄 updateOrderDetails chamado:', { orderId, data });
-    
+
     return new Promise((resolve, reject) => {
       if (!subscriptionRef.current || !subscriptionRef.current.send) {
         console.error('❌ Subscription não está ativa');
@@ -338,23 +340,23 @@ export function useAdminActionCable() {
 
       // Filtrar apenas os campos que o backend suporta
       const supportedData: any = {};
-      
+
       if (data.customer) {
         supportedData.customer = data.customer;
       }
-      
+
       if (data.address) {
         supportedData.address = data.address;
       }
-      
+
       if (data.shop) {
         supportedData.shop = data.shop;
       }
-      
+
       if (data.items) {
         supportedData.items = data.items;
       }
-      
+
       if (data.total !== undefined) {
         supportedData.total = data.total;
       }

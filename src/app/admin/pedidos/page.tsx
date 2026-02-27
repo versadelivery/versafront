@@ -205,53 +205,19 @@ export default function OrderManagement() {
 
   useEffect(() => {
     const unsubscribe = subscribeToAdminOrders((socketOrders: AdminOrderData[]) => {
-      
-      // Verificar se algum pedido está sendo atualizado no momento
-      const hasUpdatingOrders = Object.keys(isUpdatingRef.current).some(
-        orderId => isUpdatingRef.current[orderId]
-      );
-      
-      if (hasUpdatingOrders) {
-        // Aplicar atualização com delay para não conflitar com otimistic update
-        setTimeout(() => {
-          const convertedOrders = socketOrders.map(convertSocketDataToOrder);
-          // atualizar cache com dados vindos do servidor
-          socketOrdersCache.current = new Map(convertedOrders.map(o => [o.id, o]));
-          setOrders((prev) => {
-            const now = Date.now();
-            const prevById = new Map(prev.map(o => [o.id, o]));
-            return convertedOrders.map(incoming => {
-              const current = prevById.get(incoming.id);
-              if (!current) return incoming;
-              const last = lastLocalChangeRef.current[incoming.id] || {};
-              const keepLocalStatus = last.statusAt !== undefined && (now - (last.statusAt as number)) < 5000; // Aumentado para 5 segundos
-              const keepLocalPayment = last.paymentAt !== undefined && (now - (last.paymentAt as number)) < 5000;
-              
-              
-              return {
-                ...current,
-                ...incoming,
-                status: keepLocalStatus ? current.status : incoming.status,
-                paymentStatus: keepLocalPayment ? current.paymentStatus : incoming.paymentStatus,
-              };
-            });
-          });
-        }, 2000); // Reduzido para 2 segundos
-        return;
-      }
-      
-      // Detectar novos pedidos comparando com o estado atual
+      const convertedOrders = socketOrders.map(convertSocketDataToOrder);
+      const now = Date.now();
+
+      // Atualizar cache com dados vindos do servidor
+      socketOrdersCache.current = new Map(convertedOrders.map(o => [o.id, o]));
+
       setOrders((prevOrders) => {
-        const convertedOrders = socketOrders.map(convertSocketDataToOrder);
-        // atualizar cache com dados vindos do servidor
-        socketOrdersCache.current = new Map(convertedOrders.map(o => [o.id, o]));
-        
-        // Verificar se há novos pedidos (pedidos que não existiam antes)
+        // Detectar pedidos genuinamente novos (que não existiam no estado atual)
         const newOrders = convertedOrders.filter(socketOrder => 
           !prevOrders.some(prevOrder => prevOrder.id === socketOrder.id)
         );
 
-        // Tocar som de novo pedido para pedidos genuinamente novos
+        // Tocar som de novo pedido apenas para os novos
         newOrders.forEach(order => {
           if (!seenOrderIdsRef.current.has(order.id)) {
             seenOrderIdsRef.current.add(order.id);
@@ -259,18 +225,24 @@ export default function OrderManagement() {
           }
         });
 
-        // Registrar todos os pedidos atuais como vistos
+        // Registrar todos os IDs como vistos
         convertedOrders.forEach(order => seenOrderIdsRef.current.add(order.id));
 
-        // Mesclar mantendo alterações locais recentes
-        const now = Date.now();
+        // Mapear e Mesclar
         const prevById = new Map(prevOrders.map(o => [o.id, o]));
+        
         return convertedOrders.map(incoming => {
           const current = prevById.get(incoming.id);
           if (!current) return incoming;
+
+          // Verificar se este pedido específico está em processo de atualização local
+          const isUpdating = isUpdatingRef.current[incoming.id];
           const last = lastLocalChangeRef.current[incoming.id] || {};
-          const keepLocalStatus = last.statusAt !== undefined && (now - (last.statusAt as number)) < 5000; // Aumentado para 5 segundos
-          const keepLocalPayment = last.paymentAt !== undefined && (now - (last.paymentAt as number)) < 5000;
+          
+          // Se estamos atualizando localmente ou fizemos uma alteração nos últimos 5 segundos, 
+          // preservamos o estado local para evitar "flicker" (o famoso "jumping around")
+          const keepLocalStatus = isUpdating || (last.statusAt !== undefined && (now - last.statusAt) < 5000);
+          const keepLocalPayment = isUpdating || (last.paymentAt !== undefined && (now - last.paymentAt) < 5000);
           
           return {
             ...current,

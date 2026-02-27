@@ -14,7 +14,6 @@ export function useUsers() {
       setError(null);
       const response = await userService.getUsers();
       setUsers(response.data);
-      console.log('Usuários carregados:', response.data);
     } catch (err: any) {
       setError(err.message || 'Erro ao carregar usuários');
       console.error('Erro ao buscar usuários:', err);
@@ -79,7 +78,7 @@ export function useUsers() {
     const roleMap = {
       'owner': 'Proprietário',
       'manager': 'Gerente',
-      'employee': 'Funcionário', 
+      'employee': 'Funcionário',
       'delivery_man': 'Entregador'
     };
     return roleMap[role as keyof typeof roleMap] || role;
