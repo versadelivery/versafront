@@ -73,6 +73,8 @@ interface OrderDetailsModalProps {
       phone: string;
     };
     deliveryPerson?: string;
+    discount_amount?: number;
+    coupon_code?: string;
   };
   onUpdateOrder?: (orderId: string, data: Partial<any>) => Promise<void>;
   onCancelOrder?: (orderId: string) => Promise<void>;
@@ -559,6 +561,12 @@ ${order.items.map(item =>
                 <div className="space-y-3">
                   {renderEditableField('financial', 'subtotal', editedSubtotal, 'TOTAL DOS ITENS', 'number')}
                   {renderEditableField('financial', 'delivery_fee', deliveryFee, 'TAXA DE ENTREGA', 'number')}
+                  {order.coupon_code && order.discount_amount && order.discount_amount > 0 && (
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-green-600">CUPOM ({order.coupon_code}):</span>
+                      <span className="text-green-600">-{formatCurrency(order.discount_amount)}</span>
+                    </div>
+                  )}
                   {renderEditableField('financial', 'total', editedOrder.total, 'TOTAL', 'number')}
                 </div>
               </div>

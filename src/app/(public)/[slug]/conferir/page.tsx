@@ -3,7 +3,7 @@
 import {
   CreditCard, Wallet, QrCode, Truck, ChevronDown, ChevronUp,
   Plus, Minus, X, CheckCircle2, Store, Clock, AlertTriangle,
-  ChevronLeft, ShoppingCart, Package, User, Phone
+  ChevronLeft, ShoppingCart, Package, User, Phone, Tag, Loader2
 } from 'lucide-react'
 import { toast } from "sonner"
 import { Button } from '@/components/ui/button'
@@ -18,6 +18,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CreateOrderRequest, Order } from '@/types/order'
 import { createOrder } from '@/services/order-service'
+import { validateCoupon, ValidateCouponData } from '@/services/coupon-validate-service'
 import { useShopBySlug } from '../use-slug'
 import { useShopStatusContext } from '@/contexts/ShopStatusContext'
 import Image from 'next/image'
@@ -83,6 +84,11 @@ export default function CheckoutPage() {
   const [itemObservations, setItemObservations] = useState<Record<string, string>>({})
   const [guestName, setGuestName] = useState('')
   const [guestPhone, setGuestPhone] = useState('')
+  const [couponCode, setCouponCode] = useState('')
+  const [appliedCoupon, setAppliedCoupon] = useState<ValidateCouponData | null>(null)
+  const [couponError, setCouponError] = useState('')
+  const [couponLoading, setCouponLoading] = useState(false)
+  const [couponDiscount, setCouponDiscount] = useState(0)
 
   const handlePhoneChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     let numericValue = event.target.value.replace(/\D/g, '');
@@ -172,7 +178,44 @@ export default function CheckoutPage() {
     return 0
   }
 
-  const calculateTotal = () => totalPrice + calculateDeliveryFee()
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return
+    setCouponLoading(true)
+    setCouponError('')
+    try {
+      const response = await validateCoupon(couponCode.trim(), Number(shop?.data.id))
+      const couponData = response.data.attributes
+      const minOrder = parseFloat(couponData.minimum_order_value) || 0
+      if (minOrder > 0 && totalPrice < minOrder) {
+        setCouponError(`Valor mínimo do pedido: R$ ${minOrder.toFixed(2).replace('.', ',')}`)
+        setCouponLoading(false)
+        return
+      }
+      let discount = 0
+      if (couponData.discount_type === 'fixed_value') {
+        discount = Math.min(parseFloat(couponData.value), totalPrice)
+      } else {
+        discount = totalPrice * (parseFloat(couponData.value) / 100)
+      }
+      setAppliedCoupon(couponData)
+      setCouponDiscount(discount)
+      toast.success('Cupom aplicado!')
+    } catch (error: any) {
+      const msg = error.response?.data?.error || 'Cupom inválido'
+      setCouponError(msg)
+    } finally {
+      setCouponLoading(false)
+    }
+  }
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null)
+    setCouponDiscount(0)
+    setCouponCode('')
+    setCouponError('')
+  }
+
+  const calculateTotal = () => totalPrice + calculateDeliveryFee() - couponDiscount
 
   const handleSubmitOrder = async () => {
     if (!isShopOpen || shopStatusLoading) return
@@ -209,6 +252,7 @@ export default function CheckoutPage() {
         withdrawal: deliveryOption === 'pickup',
         payment_method: paymentMethod as any,
         ...(isGuest && { customer_name: guestName.trim(), customer_phone: guestPhone.replace(/\D/g, '') }),
+        ...(appliedCoupon && { coupon_code: appliedCoupon.code }),
         address: {
           address,
           neighborhood: neighborhoodName,
@@ -719,6 +763,61 @@ export default function CheckoutPage() {
               </div>
             </div>
 
+            {/* ── Cupom ── */}
+            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+              <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
+                <Tag className="h-4 w-4 text-primary" />
+                <h2 className="font-semibold text-gray-900">Cupom de desconto</h2>
+              </div>
+              <div className="px-5 py-4 space-y-3">
+                {appliedCoupon ? (
+                  <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      <div>
+                        <span className="text-sm font-semibold text-green-700">{appliedCoupon.code}</span>
+                        <p className="text-xs text-green-600">
+                          {appliedCoupon.discount_type === 'percentage'
+                            ? `${parseFloat(appliedCoupon.value)}% de desconto`
+                            : `R$ ${parseFloat(appliedCoupon.value).toFixed(2).replace('.', ',')} de desconto`}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleRemoveCoupon}
+                      className="text-green-600 hover:text-red-500 transition-colors cursor-pointer"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Digite o código do cupom"
+                        value={couponCode}
+                        onChange={(e) => { setCouponCode(e.target.value.toUpperCase()); setCouponError('') }}
+                        className="border-gray-200 focus:border-primary/40 text-sm uppercase"
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleApplyCoupon() }}
+                      />
+                      <Button
+                        onClick={handleApplyCoupon}
+                        disabled={couponLoading || !couponCode.trim()}
+                        variant="outline"
+                        size="sm"
+                        className="px-4 shrink-0"
+                      >
+                        {couponLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Aplicar'}
+                      </Button>
+                    </div>
+                    {couponError && (
+                      <p className="text-xs text-red-500">{couponError}</p>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+
             {/* CTA mobile */}
             <div className="lg:hidden">
               <OrderSummary
@@ -735,6 +834,8 @@ export default function CheckoutPage() {
                 client={client}
                 canSubmit={canSubmit}
                 onSubmit={handleSubmitOrder}
+                couponDiscount={couponDiscount}
+                appliedCouponCode={appliedCoupon?.code}
               />
             </div>
           </div>
@@ -756,6 +857,8 @@ export default function CheckoutPage() {
                 client={client}
                 canSubmit={canSubmit}
                 onSubmit={handleSubmitOrder}
+                couponDiscount={couponDiscount}
+                appliedCouponCode={appliedCoupon?.code}
               />
             </div>
           </div>
@@ -781,12 +884,14 @@ interface OrderSummaryProps {
   client: any
   canSubmit: boolean
   onSubmit: () => void
+  couponDiscount?: number
+  appliedCouponCode?: string
 }
 
 function OrderSummary({
   totalPrice, deliveryOption, deliveryFeeDisplay, calculateTotal,
   cartItems, isBelowMinOrder, minOrderValue, isSubmitting, isShopOpen,
-  shopStatusLoading, client, canSubmit, onSubmit
+  shopStatusLoading, client, canSubmit, onSubmit, couponDiscount = 0, appliedCouponCode
 }: OrderSummaryProps) {
   const totalDiscount = cartItems.reduce((sum, item) => {
     if (item.priceWithDiscount) {
@@ -819,8 +924,15 @@ function OrderSummary({
 
           {totalDiscount > 0 && (
             <div className="flex justify-between text-green-600">
-              <span>Desconto</span>
+              <span>Desconto itens</span>
               <span>- R$ {totalDiscount.toFixed(2).replace('.', ',')}</span>
+            </div>
+          )}
+
+          {couponDiscount > 0 && appliedCouponCode && (
+            <div className="flex justify-between text-green-600">
+              <span>Cupom ({appliedCouponCode})</span>
+              <span>- R$ {couponDiscount.toFixed(2).replace('.', ',')}</span>
             </div>
           )}
         </div>

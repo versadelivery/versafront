@@ -191,6 +191,8 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
       complement: orderData.attributes.address?.data?.attributes?.complement ?? '',
       reference: orderData.attributes.address?.data?.attributes?.reference ?? '',
     },
+    discount_amount: parseFloat((orderData.attributes as any).discount_amount ?? '0'),
+    coupon_code: (orderData.attributes as any).coupon_code ?? null,
   };
 
   const statusCfg = statusConfig[order.status] ?? statusConfig.received;
@@ -199,7 +201,8 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
   const dateInfo = formatDate(order.date);
   const subtotal = order.items.reduce((s: number, i: any) => s + i.price * i.quantity, 0);
   const deliveryFee = order.withdrawal ? 0 : order.delivery_fee;
-  const total = subtotal + deliveryFee;
+  const discountAmount = order.discount_amount ?? 0;
+  const total = Math.max(subtotal + deliveryFee - discountAmount, 0);
 
   const handleWhatsApp = () => {
     if (!order.shop.phone) return;
@@ -310,6 +313,12 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                     <div className="flex justify-between text-sm text-muted-foreground">
                       <span>Taxa de entrega</span>
                       <span>{formatCurrency(deliveryFee)}</span>
+                    </div>
+                  )}
+                  {order.coupon_code && discountAmount > 0 && (
+                    <div className="flex justify-between text-sm text-green-600">
+                      <span>Cupom ({order.coupon_code})</span>
+                      <span>-{formatCurrency(discountAmount)}</span>
                     </div>
                   )}
                   <div className="flex justify-between text-base font-bold text-foreground pt-1 border-t border-gray-100">

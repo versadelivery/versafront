@@ -27,6 +27,7 @@ export const API_ENDPOINTS = {
 
   // Coupons
   COUPONS: "/coupons",
+  VALIDATE_COUPON: "/coupons/validate",
 
   // Cash Register
   CASH_REGISTERS: "/cash_registers",

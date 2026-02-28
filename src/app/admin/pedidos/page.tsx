@@ -738,7 +738,9 @@ export default function OrderManagement() {
               name: (selectedOrder.socketData.attributes.customer as any)?.name || 'Cliente',
               phone: (selectedOrder.socketData.attributes.customer as any)?.cellphone || ''
             },
-            deliveryPerson: selectedOrder.deliveryPerson || (selectedOrder.socketData.attributes as any).delivery_person || ''
+            deliveryPerson: selectedOrder.deliveryPerson || (selectedOrder.socketData.attributes as any).delivery_person || '',
+            discount_amount: parseFloat(selectedOrder.socketData.attributes.discount_amount || '0'),
+            coupon_code: selectedOrder.socketData.attributes.coupon_code || undefined
           }}
           onUpdateOrder={async (orderId, data) => {
             

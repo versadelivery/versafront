@@ -12,12 +12,14 @@ import { Separator } from "@/components/ui/separator";
 import {
   ShoppingCart, Plus, Minus, Trash2, Search,
   CreditCard, MapPin, User, Package, Settings2,
+  Tag, X, CheckCircle2, Loader2,
 } from "lucide-react";
 import { useCatalogGroup } from "@/hooks/useCatalogGroup";
 import Image from "next/image";
 import { toast } from "sonner";
 import { formatPrice } from "@/utils/format-price";
 import { createPDVOrder } from "@/services/order-service";
+import { validateCoupon, ValidateCouponData } from "@/services/coupon-validate-service";
 import { useAdminActionCable } from "@/lib/admin-cable";
 import { useShop } from "@/hooks/use-shop";
 import { ItemOptionsDialog } from "./item-options-dialog";
@@ -69,6 +71,11 @@ export default function PDVPage() {
   const [changeAmount, setChangeAmount] = useState("");
   const [notes, setNotes] = useState("");
   const [isProcessingOrder, setIsProcessingOrder] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<ValidateCouponData | null>(null);
+  const [couponError, setCouponError] = useState("");
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponDiscount, setCouponDiscount] = useState(0);
   const { shop } = useShop();
   const shopId = shop?.id;
 
@@ -203,7 +210,49 @@ export default function PDVPage() {
     setCart((prev) => prev.filter((item) => item.id !== itemId));
   };
 
-  const clearCart = () => setCart([]);
+  const clearCart = () => {
+    setCart([]);
+    handleRemoveCoupon();
+  };
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim() || !shopId) return;
+    setCouponLoading(true);
+    setCouponError("");
+    try {
+      const response = await validateCoupon(couponCode.trim(), Number(shopId));
+      const couponData = response.data.attributes;
+      const minOrder = parseFloat(couponData.minimum_order_value) || 0;
+      if (minOrder > 0 && cartTotal < minOrder) {
+        setCouponError(`Valor mínimo do pedido: ${formatPrice(minOrder)}`);
+        setCouponLoading(false);
+        return;
+      }
+      let discount = 0;
+      if (couponData.discount_type === "fixed_value") {
+        discount = Math.min(parseFloat(couponData.value), cartTotal);
+      } else {
+        discount = cartTotal * (parseFloat(couponData.value) / 100);
+      }
+      setAppliedCoupon(couponData);
+      setCouponDiscount(discount);
+      toast.success("Cupom aplicado!");
+    } catch (error: any) {
+      const msg = error.response?.data?.error || "Cupom inválido";
+      setCouponError(msg);
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponDiscount(0);
+    setCouponCode("");
+    setCouponError("");
+  };
+
+  const orderTotal = cartTotal - couponDiscount;
 
   const processOrder = async () => {
     if (cart.length === 0) { toast.error("Adicione itens ao carrinho"); return; }
@@ -237,6 +286,7 @@ export default function PDVPage() {
               : ("manual_pix" as const),
           customer_name: customerInfo.name,
           customer_phone: customerInfo.phone.replace(/\D/g, ""),
+          ...(appliedCoupon && { coupon_code: appliedCoupon.code }),
           address: {
             address: customerInfo.address,
             neighborhood: customerInfo.neighborhood,
@@ -267,6 +317,7 @@ export default function PDVPage() {
         setCustomerInfo({ name: "", phone: "", address: "", neighborhood: "", city: "", zipCode: "", complement: "", reference: "" });
         setNotes("");
         setChangeAmount("");
+        handleRemoveCoupon();
       }
     } catch (error: any) {
       const errorMessage = error.response?.data?.error || "Erro ao processar pedido";
@@ -710,11 +761,76 @@ export default function PDVPage() {
                       <span className="text-muted-foreground">Subtotal:</span>
                       <span className="font-medium">{formatPrice(cartTotal)}</span>
                     </div>
+                    {couponDiscount > 0 && appliedCoupon && (
+                      <div className="flex justify-between items-center text-sm text-green-600">
+                        <span>Cupom ({appliedCoupon.code}):</span>
+                        <span>- {formatPrice(couponDiscount)}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between items-center">
                       <span className="font-semibold">Total:</span>
-                      <span className="font-bold text-lg text-primary">{formatPrice(cartTotal)}</span>
+                      <span className="font-bold text-lg text-primary">{formatPrice(orderTotal)}</span>
                     </div>
                   </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Cupom de Desconto */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Tag className="h-5 w-5" />
+                Cupom de Desconto
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {appliedCoupon ? (
+                <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    <div>
+                      <span className="text-sm font-semibold text-green-700">{appliedCoupon.code}</span>
+                      <p className="text-xs text-green-600">
+                        {appliedCoupon.discount_type === "percentage"
+                          ? `${parseFloat(appliedCoupon.value)}% de desconto`
+                          : `${formatPrice(parseFloat(appliedCoupon.value))} de desconto`}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRemoveCoupon}
+                    className="h-7 w-7 p-0 text-green-600 hover:text-red-500"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Código do cupom"
+                      value={couponCode}
+                      onChange={(e: any) => { setCouponCode(e.target.value.toUpperCase()); setCouponError(""); }}
+                      className="uppercase"
+                      onKeyDown={(e: any) => { if (e.key === "Enter") handleApplyCoupon(); }}
+                    />
+                    <Button
+                      onClick={handleApplyCoupon}
+                      disabled={couponLoading || !couponCode.trim()}
+                      variant="outline"
+                      size="sm"
+                      className="px-4 shrink-0"
+                    >
+                      {couponLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Aplicar"}
+                    </Button>
+                  </div>
+                  {couponError && (
+                    <p className="text-xs text-red-500">{couponError}</p>
+                  )}
                 </div>
               )}
             </CardContent>
@@ -923,7 +1039,7 @@ export default function PDVPage() {
             <ShoppingCart className="h-5 w-5" />
             {isProcessingOrder
               ? "Processando..."
-              : `Finalizar Pedido — ${formatPrice(cartTotal)}`}
+              : `Finalizar Pedido — ${formatPrice(orderTotal)}`}
           </Button>
         </div>
       </div>

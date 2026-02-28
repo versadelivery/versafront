@@ -293,6 +293,15 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
           </div>
         )}
 
+        {/* Cupom de desconto */}
+        {order.socketData?.attributes?.coupon_code && (
+          <div className={cn("text-xs mb-2", isPronto ? "text-white" : "text-green-600")}>
+            <div className="flex items-center gap-2">
+              <span>🏷️ Cupom: {order.socketData.attributes.coupon_code} (-{formatPrice(parseFloat(order.socketData.attributes.discount_amount || '0'))})</span>
+            </div>
+          </div>
+        )}
+
         <div className={cn("text-xs", isPronto ? "text-white" : "text-gray-400", "mb-2")}>ID: {order.id}</div>
         
         {/* Informações do cliente */}
