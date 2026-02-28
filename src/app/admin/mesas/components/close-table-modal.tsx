@@ -1,0 +1,211 @@
+"use client";
+
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { X, UtensilsCrossed, Loader2, Clock, Users } from "lucide-react";
+import { Table, TableSession, CloseTableSessionPayload } from "../services/table-service";
+
+interface CloseTableModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (id: string, data: CloseTableSessionPayload) => Promise<void>;
+  table: Table | null;
+  session: TableSession | null;
+}
+
+export default function CloseTableModal({
+  isOpen,
+  onClose,
+  onSubmit,
+  table,
+  session,
+}: CloseTableModalProps) {
+  const [formData, setFormData] = useState({
+    total_amount: "",
+    notes: "",
+  });
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  if (!isOpen || !table || !session) return null;
+
+  const sessionAttrs = session.attributes;
+
+  const formatDuration = (minutes: number) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hours > 0) return `${hours}h ${mins}min`;
+    return `${mins}min`;
+  };
+
+  const validateForm = () => {
+    const newErrors: { [key: string]: string } = {};
+    if (!formData.total_amount || Number(formData.total_amount) < 0) {
+      newErrors.total_amount = "Informe o valor total";
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+
+    setIsSubmitting(true);
+    try {
+      await onSubmit(session.id, {
+        total_amount: Number(formData.total_amount),
+        notes: formData.notes || undefined,
+      });
+      setFormData({ total_amount: "", notes: "" });
+      onClose();
+    } catch (error) {
+      console.error("Erro ao fechar comanda:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCurrencyInput = (raw: string) => {
+    const cleaned = raw.replace(/[^\d,]/g, "");
+    const normalized = cleaned.replace(",", ".");
+    const parts = normalized.split(".");
+    if (parts.length > 2) return;
+    if (parts[1] && parts[1].length > 2) return;
+    setFormData((prev) => ({ ...prev, total_amount: normalized }));
+    if (errors.total_amount) {
+      setErrors((prev) => ({ ...prev, total_amount: "" }));
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md bg-white shadow-2xl">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                <UtensilsCrossed className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold text-foreground">
+                  Fechar Comanda
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Mesa {table.attributes.number}
+                  {table.attributes.label ? ` - ${table.attributes.label}` : ""}
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+
+          <div className="bg-muted/50 rounded-lg p-4 mb-6 space-y-2">
+            {sessionAttrs.customer_name && (
+              <div className="flex items-center gap-2 text-sm">
+                <Users className="w-4 h-4 text-muted-foreground" />
+                <span className="text-muted-foreground">Cliente:</span>
+                <span className="font-medium">{sessionAttrs.customer_name}</span>
+              </div>
+            )}
+            <div className="flex items-center gap-2 text-sm">
+              <Users className="w-4 h-4 text-muted-foreground" />
+              <span className="text-muted-foreground">Pessoas:</span>
+              <span className="font-medium">{sessionAttrs.customer_count}</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <Clock className="w-4 h-4 text-muted-foreground" />
+              <span className="text-muted-foreground">Tempo:</span>
+              <span className="font-medium">{formatDuration(sessionAttrs.duration_minutes)}</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-muted-foreground ml-6">Aberto por:</span>
+              <span className="font-medium">{sessionAttrs.opened_by_name}</span>
+            </div>
+            {sessionAttrs.notes && (
+              <div className="text-sm mt-2">
+                <span className="text-muted-foreground">Obs:</span>{" "}
+                <span>{sessionAttrs.notes}</span>
+              </div>
+            )}
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="total_amount" className="text-sm font-medium text-foreground">
+                Valor total da comanda
+              </Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">
+                  R$
+                </span>
+                <Input
+                  id="total_amount"
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="Ex: 150,00"
+                  value={formData.total_amount.replace(".", ",")}
+                  onChange={(e) => handleCurrencyInput(e.target.value)}
+                  className={`h-11 pl-10 ${errors.total_amount ? "border-red-500" : ""}`}
+                />
+              </div>
+              {errors.total_amount && (
+                <p className="text-xs text-red-500">{errors.total_amount}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="close_notes" className="text-sm font-medium text-foreground">
+                Observacoes de fechamento (opcional)
+              </Label>
+              <Textarea
+                id="close_notes"
+                placeholder="Observacoes sobre o fechamento..."
+                value={formData.notes}
+                onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
+                rows={3}
+              />
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                className="flex-1 h-11"
+                disabled={isSubmitting}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                className="flex-1 h-11 bg-red-600 hover:bg-red-700 text-white"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Fechando...
+                  </>
+                ) : (
+                  "Fechar comanda"
+                )}
+              </Button>
+            </div>
+          </form>
+        </div>
+      </Card>
+    </div>
+  );
+}

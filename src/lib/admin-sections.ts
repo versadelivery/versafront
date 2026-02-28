@@ -16,6 +16,7 @@ import {
   MonitorSmartphone,
   LayoutDashboard,
   Contact,
+  UtensilsCrossed,
   type LucideIcon,
 } from "lucide-react"
 
@@ -121,6 +122,16 @@ export const adminSections: AdminSection[] = [
     iconBgColor: "bg-red-500",
     keywords: ["cupom", "cupons", "desconto", "promocao", "codigo", "voucher"],
     group: "Marketing",
+  },
+  {
+    id: "mesas",
+    title: "Mesas",
+    description: "Gerencie mesas e comandas do seu estabelecimento",
+    href: "/admin/mesas",
+    icon: UtensilsCrossed,
+    iconBgColor: "bg-orange-500",
+    keywords: ["mesas", "mesa", "comanda", "comandas", "table", "tables", "salao"],
+    group: "Páginas",
   },
   {
     id: "relatorios",

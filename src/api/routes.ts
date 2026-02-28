@@ -29,6 +29,14 @@ export const API_ENDPOINTS = {
   COUPONS: "/coupons",
   VALIDATE_COUPON: "/coupons/validate",
 
+  // Tables
+  TABLES: "/tables",
+  TABLES_UPDATE_POSITIONS: "/tables/update_positions",
+
+  // Table Sessions
+  TABLE_SESSIONS: "/table_sessions",
+  TABLE_SESSIONS_OPEN: "/table_sessions/open",
+
   // Cash Register
   CASH_REGISTERS: "/cash_registers",
   CASH_REGISTER_OPEN: "/cash_registers/open",
