@@ -2,7 +2,7 @@
 
 import ProtectedRoute from "@/components/protected-route";
 import AdminHeader from "@/components/admin/catalog-header";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import GroupModal from "@/components/admin/catalog/group-modal-create";
 import { NewItemModal } from "@/components/admin/catalog/item-modal";
 import { ActionBar } from "@/components/admin/catalog/action-bar";
@@ -31,6 +31,13 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import {
+  CatalogFiltersState,
+  StatusFilter,
+  ItemTypeFilter,
+  TagKey,
+  DEFAULT_FILTERS,
+} from "@/types/catalog-filters";
 
 
 // =============================================================================
@@ -83,12 +90,21 @@ function CatalogPage() {
   const [groupIdToDelete, setGroupIdToDelete] = useState<string | null>(null);
   const [tab, setTab] = useState<"catalog" | "complements">("catalog");
   const [searchQuery, setSearchQuery] = useState("");
+  const [filters, setFilters] = useState<CatalogFiltersState>(DEFAULT_FILTERS);
 
   const { isLoading, catalog, deleteCatalogGroup, isDeletingGroup, toggleCatalogGroupActive, toggleCatalogItemActive } = useCatalogGroup();
   const { reorderGroups, reorderItems } = useCatalogReorder();
 
   const groups = catalog?.data || [];
+  const hasActiveFilters = filters.status !== "all" || filters.tags.length > 0 || filters.itemType !== "all" || filters.discountOnly;
   const isSearching = searchQuery.trim().length > 0;
+  const isFiltering = isSearching || hasActiveFilters;
+
+  const handleStatusChange = useCallback((value: StatusFilter) => setFilters((f) => ({ ...f, status: value })), []);
+  const handleTagsChange = useCallback((tags: TagKey[]) => setFilters((f) => ({ ...f, tags })), []);
+  const handleItemTypeChange = useCallback((value: ItemTypeFilter) => setFilters((f) => ({ ...f, itemType: value })), []);
+  const handleDiscountOnlyChange = useCallback((value: boolean) => setFilters((f) => ({ ...f, discountOnly: value })), []);
+  const handleClearFilters = useCallback(() => setFilters(DEFAULT_FILTERS), []);
 
   const validGroups = useMemo(() =>
     [...groups]
@@ -182,32 +198,40 @@ function CatalogPage() {
     catalog_item_steps_attributes: node.attributes.steps?.data as unknown as any[],
   });
 
+  const filterItem = (node: any): boolean => {
+    const attrs = node.attributes || {};
+    const query = searchQuery.trim().toLowerCase();
+
+    if (query && !attrs.name?.toLowerCase().includes(query)) return false;
+    if (filters.status === "active" && !attrs.active) return false;
+    if (filters.status === "inactive" && attrs.active) return false;
+    if (filters.tags.length > 0) {
+      const hasTag = filters.tags.some((tag) => !!(attrs as any)[tag]);
+      if (!hasTag) return false;
+    }
+    if (filters.itemType !== "all" && attrs.item_type !== filters.itemType) return false;
+    if (filters.discountOnly && !attrs.price_with_discount) return false;
+
+    return true;
+  };
+
   const renderItems = (group: any) => {
     const rawItems: any = (group.attributes as any).items;
     const allItems: any[] = Array.isArray(rawItems)
       ? rawItems
       : rawItems?.data || [];
 
-    const query = searchQuery.trim().toLowerCase();
-    const items = query
+    const items = isFiltering
       ? allItems.filter((raw: any) => {
           const node = raw?.data ? raw.data : raw;
-          return node.attributes?.name?.toLowerCase().includes(query);
+          return filterItem(node);
         })
       : allItems;
 
-    if (items.length === 0) {
-      return (
-        <div className="text-center py-6">
-          <p className="text-sm text-muted-foreground">
-            {query ? "Nenhum item encontrado" : "Este grupo não possui itens"}
-          </p>
-        </div>
-      );
-    }
+    if (items.length === 0) return null;
 
-    // Se busca ativa, renderiza sem drag
-    if (isSearching) {
+    // Se filtro ou busca ativa, renderiza sem drag
+    if (isFiltering) {
       return (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
           {items.map((raw: any) => {
@@ -291,6 +315,12 @@ function CatalogPage() {
                 hasGroups={validGroups.length > 0}
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
+                filters={filters}
+                onStatusChange={handleStatusChange}
+                onTagsChange={handleTagsChange}
+                onItemTypeChange={handleItemTypeChange}
+                onDiscountOnlyChange={handleDiscountOnlyChange}
+                onClearFilters={handleClearFilters}
               />
 
               <GroupModal
@@ -330,75 +360,84 @@ function CatalogPage() {
                 >
                   <SortableContext items={groupIds} strategy={verticalListSortingStrategy}>
                     <div className="flex flex-col gap-4 w-full pb-8">
-                      {validGroups.map((group: any) => (
-                        <SortableGroupWrapper key={group.id} id={group.id} disabled={isSearching}>
-                          {({ dragHandleProps }) => (
-                            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                              {/* Header do grupo */}
-                              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-                                <div className="flex items-center flex-1 min-w-0 mr-3 gap-2">
-                                  {!isSearching && (
-                                    <div
-                                      className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors"
-                                      {...dragHandleProps}
-                                    >
-                                      <GripVertical className="h-4 w-4" />
+                      {validGroups.map((group: any) => {
+                        const itemsContent = renderItems(group);
+                        if (isFiltering && itemsContent === null) return null;
+
+                        return (
+                          <SortableGroupWrapper key={group.id} id={group.id} disabled={isFiltering}>
+                            {({ dragHandleProps }) => (
+                              <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                                {/* Header do grupo */}
+                                <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                                  <div className="flex items-center flex-1 min-w-0 mr-3 gap-2">
+                                    {!isFiltering && (
+                                      <div
+                                        className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors"
+                                        {...dragHandleProps}
+                                      >
+                                        <GripVertical className="h-4 w-4" />
+                                      </div>
+                                    )}
+                                    <div className="flex-1 min-w-0">
+                                      <h2 className="text-base font-semibold text-foreground truncate">
+                                        {group.attributes.name}
+                                      </h2>
+                                      {group.attributes.description && (
+                                        <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                                          {group.attributes.description}
+                                        </p>
+                                      )}
+                                      {group.attributes.priority && (
+                                        <p className={`text-[11px] font-medium mt-1 ${getPriorityColor(group.attributes.priority)}`}>
+                                          Prioridade: {group.attributes.priority}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  <div className="flex items-center gap-2">
+                                    {/* Container Status/Editar do Grupo */}
+                                    <div className="bg-gray-50/80 rounded-full py-1 px-3 flex items-center border border-gray-200 gap-3">
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-tight">
+                                          {group.attributes.active ? "Ativo" : "Pausado"}
+                                        </span>
+                                        <Switch
+                                          checked={group.attributes.active}
+                                          onCheckedChange={(checked) => {
+                                            toggleCatalogGroupActive({ id: group.id, active: checked });
+                                          }}
+                                          className="scale-[0.6] origin-center"
+                                        />
+                                      </div>
+
+                                      <div className="w-[1px] h-3 bg-gray-300" />
+
+                                      <button
+                                        className="cursor-pointer flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground hover:text-primary transition-colors uppercase tracking-tight"
+                                        onClick={() => handleEditGroup(group.id)}
+                                      >
+                                        <Edit2 className="h-3 w-3" />
+                                        Editar
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Items do grupo */}
+                                <div className="p-3">
+                                  {itemsContent || (
+                                    <div className="text-center py-6">
+                                      <p className="text-sm text-muted-foreground">Este grupo não possui itens</p>
                                     </div>
                                   )}
-                                  <div className="flex-1 min-w-0">
-                                    <h2 className="text-base font-semibold text-foreground truncate">
-                                      {group.attributes.name}
-                                    </h2>
-                                    {group.attributes.description && (
-                                      <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
-                                        {group.attributes.description}
-                                      </p>
-                                    )}
-                                    {group.attributes.priority && (
-                                      <p className={`text-[11px] font-medium mt-1 ${getPriorityColor(group.attributes.priority)}`}>
-                                        Prioridade: {group.attributes.priority}
-                                      </p>
-                                    )}
-                                  </div>
-                                </div>
-
-                                <div className="flex items-center gap-2">
-                                  {/* Container Status/Editar do Grupo */}
-                                  <div className="bg-gray-50/80 rounded-full py-1 px-3 flex items-center border border-gray-200 gap-3">
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-tight">
-                                        {group.attributes.active ? "Ativo" : "Pausado"}
-                                      </span>
-                                      <Switch
-                                        checked={group.attributes.active}
-                                        onCheckedChange={(checked) => {
-                                          toggleCatalogGroupActive({ id: group.id, active: checked });
-                                        }}
-                                        className="scale-[0.6] origin-center"
-                                      />
-                                    </div>
-
-                                    <div className="w-[1px] h-3 bg-gray-300" />
-
-                                    <button
-                                      className="cursor-pointer flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground hover:text-primary transition-colors uppercase tracking-tight"
-                                      onClick={() => handleEditGroup(group.id)}
-                                    >
-                                      <Edit2 className="h-3 w-3" />
-                                      Editar
-                                    </button>
-                                  </div>
                                 </div>
                               </div>
-
-                              {/* Items do grupo */}
-                              <div className="p-3">
-                                {renderItems(group)}
-                              </div>
-                            </div>
-                          )}
-                        </SortableGroupWrapper>
-                      ))}
+                            )}
+                          </SortableGroupWrapper>
+                        );
+                      })}
                     </div>
                   </SortableContext>
                 </DndContext>
