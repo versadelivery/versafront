@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { ImageIcon, Upload, MapPin, Phone, Mail, ShoppingBag } from "lucide-react";
+import { ImageIcon, Upload, MapPin, Phone, Mail, ShoppingBag, Wallet } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { useShop } from "@/hooks/use-shop";
@@ -31,7 +31,9 @@ export default function GeneralSettingsPage() {
         email: shop.email || "",
         slug: shop.slug,
         image: null,
-        auto_accept_orders: shop.auto_accept_orders ?? false
+        auto_accept_orders: shop.auto_accept_orders ?? false,
+        auto_open_cash_register: shop.auto_open_cash_register ?? false,
+        auto_open_cash_register_time: shop.auto_open_cash_register_time ?? null
       };
 
       // Se for a primeira vez ou o estabelecimento mudou, inicializa tudo
@@ -263,6 +265,56 @@ export default function GeneralSettingsPage() {
                     setFormData(prev => ({ ...prev, auto_accept_orders: checked }))
                   }
                 />
+              </div>
+            </div>
+
+            <Separator className="my-6 bg-gray-200 dark:bg-gray-800" />
+
+            {/* Seção de Caixa */}
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold text-foreground">
+                Caixa
+              </h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Wallet className="w-5 h-5 text-muted-foreground" />
+                    <div>
+                      <Label htmlFor="auto_open_cash_register" className="text-sm font-medium">
+                        Abrir caixa automaticamente
+                      </Label>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Quando ativado, o caixa será aberto automaticamente no horário configurado todos os dias
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    id="auto_open_cash_register"
+                    checked={formData.auto_open_cash_register ?? false}
+                    onCheckedChange={(checked) =>
+                      setFormData(prev => ({
+                        ...prev,
+                        auto_open_cash_register: checked,
+                        ...(!checked && { auto_open_cash_register_time: null })
+                      }))
+                    }
+                  />
+                </div>
+                {formData.auto_open_cash_register && (
+                  <div className="ml-8 space-y-1">
+                    <Label htmlFor="auto_open_cash_register_time" className="text-sm text-muted-foreground">
+                      Horário de abertura
+                    </Label>
+                    <Input
+                      id="auto_open_cash_register_time"
+                      name="auto_open_cash_register_time"
+                      type="time"
+                      value={formData.auto_open_cash_register_time || ""}
+                      onChange={handleInputChange}
+                      className="h-12 w-40"
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
