@@ -3,6 +3,7 @@ import { adminSections } from "@/lib/admin-sections"
 const dashboardSectionIds = [
   "pedidos",
   "catalogo",
+  "clientes",
   "financeiro",
   "settings",
   "marketing",

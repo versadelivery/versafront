@@ -22,6 +22,12 @@ export const API_ENDPOINTS = {
     ORDERS: "/customers/orders",
   },
 
+  // Admin Customers
+  ADMIN_CUSTOMERS: "/admin_customers",
+
+  // Coupons
+  COUPONS: "/coupons",
+
   // Cash Register
   CASH_REGISTERS: "/cash_registers",
   CASH_REGISTER_OPEN: "/cash_registers/open",
