@@ -1,5 +1,6 @@
 "use client"
 
+import { memo } from 'react';
 import { Utensils, Plus } from 'lucide-react';
 import { formatPrice } from '../format-price';
 import { CatalogItem } from '../types';
@@ -10,7 +11,7 @@ interface ProductCardProps {
   index: number;
 }
 
-export default function ProductCard({ item, index }: ProductCardProps) {
+const ProductCard = memo(function ProductCard({ item, index }: ProductCardProps) {
   const { attributes } = item;
 
   const hasDiscount = attributes.price_with_discount !== null &&
@@ -139,4 +140,6 @@ export default function ProductCard({ item, index }: ProductCardProps) {
       }
     />
   );
-}
+});
+
+export default ProductCard;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import {
   Sheet,
   SheetContent,
@@ -155,10 +155,10 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
     ? Math.round(((attributes.price - (attributes.price_with_discount || 0)) / attributes.price) * 100)
     : 0;
 
-  const calculatePrice = () => {
+  const calculatedPrice = useMemo(() => {
     const basePrice = hasDiscount ? attributes.price_with_discount! : attributes.price;
     let total = isWeightBased ? basePrice * weight : basePrice * quantity;
-    
+
     // Extras
     selectedExtras.forEach(extraId => {
       const extra = attributes.extra.data.find(e => e.id === extraId);
@@ -174,7 +174,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
     });
 
     return total;
-  };
+  }, [hasDiscount, attributes, isWeightBased, weight, quantity, selectedExtras, selectedSharedComplements]);
 
   const resetState = () => {
     setQuantity(1);
@@ -207,7 +207,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
       selectedMethods,
       selectedOptions,
       selectedSharedComplements,
-      totalPrice: calculatePrice(),
+      totalPrice: calculatedPrice,
     });
     setOpen(false);
     resetState();
@@ -267,7 +267,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
 
             <div className="flex items-baseline gap-2 mt-1 flex-wrap">
               <span className={`text-xl font-bold ${hasDiscount ? 'text-primary' : 'text-foreground'}`}>
-                {formatPrice(calculatePrice())}
+                {formatPrice(calculatedPrice)}
               </span>
               {hasDiscount && (
                 <span className="text-muted-foreground text-sm line-through">
@@ -518,7 +518,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
             onClick={handleAddToCart}
           >
             <ShoppingCart className="w-4 h-4" />
-            Adicionar ao carrinho · {formatPrice(calculatePrice())}
+            Adicionar ao carrinho · {formatPrice(calculatedPrice)}
           </Button>
         </div>
       </SheetContent>

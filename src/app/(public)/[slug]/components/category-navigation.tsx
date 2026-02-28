@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react';
+import { memo } from 'react';
 
 interface Category {
   id: string;
@@ -16,15 +16,7 @@ interface CategoryNavigationProps {
   onChange: (category: string) => void;
 }
 
-export default function CategoryNavigation({ categories, activeCategory, onChange }: CategoryNavigationProps) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) return null;
-
+const CategoryNavigation = memo(function CategoryNavigation({ categories, activeCategory, onChange }: CategoryNavigationProps) {
   const scrollToCategory = (categoryName: string) => {
     onChange(categoryName);
     const element = document.getElementById(categoryName.toLowerCase().replace(/\s+/g, '-'));
@@ -79,4 +71,6 @@ export default function CategoryNavigation({ categories, activeCategory, onChang
       `}</style>
     </div>
   );
-}
+});
+
+export default CategoryNavigation;

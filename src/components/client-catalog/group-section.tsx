@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, memo } from 'react'
 import { Group, Item } from '@/types/client-catalog'
 import { ProductCard } from './product-card'
-import { motion, AnimatePresence } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { ProductModal } from './product-modal'
@@ -14,7 +14,7 @@ interface GroupSectionProps {
   onToggleFavorite: (id: string) => void
 }
 
-export function GroupSection({ group, onAddToCart, onToggleFavorite }: GroupSectionProps) {
+export const GroupSection = memo(function GroupSection({ group, onAddToCart, onToggleFavorite }: GroupSectionProps) {
   const [imagesLoaded, setImagesLoaded] = useState(false)
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set())
   const [isExpanded, setIsExpanded] = useState(true)
@@ -51,12 +51,11 @@ export function GroupSection({ group, onAddToCart, onToggleFavorite }: GroupSect
     images.forEach(loadImage)
   }, [group])
 
-  const handleAddToCart = (product: Item) => {
-    // Se o produto não precisa de customização, adiciona direto
+  const handleAddToCart = useCallback((product: Item) => {
     if (
-      product.attributes.item_type !== 'weight' && 
-      !product.attributes.extra?.data?.length && 
-      !product.attributes.prepare_method?.data?.length && 
+      product.attributes.item_type !== 'weight' &&
+      !product.attributes.extra?.data?.length &&
+      !product.attributes.prepare_method?.data?.length &&
       !product.attributes.steps?.data?.length
     ) {
       onAddToCart(product.id)
@@ -64,16 +63,11 @@ export function GroupSection({ group, onAddToCart, onToggleFavorite }: GroupSect
       setSelectedProduct(product)
       setIsModalOpen(true)
     }
-  }
+  }, [onAddToCart])
 
   if (!imagesLoaded) {
     return (
-      <motion.div 
-        className="space-y-6"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.3 }}
-      >
+      <div className="space-y-6">
         <div className="flex items-center gap-4">
           <Skeleton className="h-16 w-16 rounded-xl" />
           <div className="space-y-2">
@@ -91,51 +85,28 @@ export function GroupSection({ group, onAddToCart, onToggleFavorite }: GroupSect
             </div>
           ))}
         </div>
-      </motion.div>
+      </div>
     )
   }
 
   return (
-    <motion.section 
-      className="space-y-8"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <motion.div 
-        className="flex items-center gap-4 p-4 bg-white rounded-xl shadow-sm cursor-pointer"
-        whileHover={{ scale: 1.01 }}
-        transition={{ duration: 0.2 }}
+    <section className="space-y-8">
+      <div
+        className="flex items-center gap-4 p-4 bg-white rounded-xl shadow-sm cursor-pointer hover:scale-[1.01] transition-transform duration-200"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         {group.image ? (
-          <motion.img 
-            src={group.image} 
+          <img
+            src={group.image}
             alt={group.name}
             className="h-16 w-16 rounded-xl object-cover"
-            whileHover={{ scale: 1.05 }}
-            transition={{ duration: 0.2 }}
           />
         ) : (
-          <motion.div
-            className="h-16 w-16 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center"
-            animate={{
-              background: [
-                'linear-gradient(45deg, rgba(99, 102, 241, 0.2), rgba(99, 102, 241, 0.1))',
-                'linear-gradient(45deg, rgba(99, 102, 241, 0.1), rgba(99, 102, 241, 0.2))',
-                'linear-gradient(45deg, rgba(99, 102, 241, 0.2), rgba(99, 102, 241, 0.1))',
-              ],
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-              ease: 'linear',
-            }}
-          >
+          <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
             <span className="text-primary/50 text-2xl font-bold">
               {group.name.charAt(0).toUpperCase()}
             </span>
-          </motion.div>
+          </div>
         )}
         <div className="flex-1">
           <h3 className="text-xl font-semibold text-gray-900">{group.name}</h3>
@@ -146,30 +117,24 @@ export function GroupSection({ group, onAddToCart, onToggleFavorite }: GroupSect
         ) : (
           <ChevronDown className="h-6 w-6 text-gray-400 transition-transform duration-200" />
         )}
-      </motion.div>
+      </div>
 
       <AnimatePresence>
         {isExpanded && (
-          <motion.div 
+          <motion.div
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.2 }}
           >
-            {group.items.map((item: Item, index: number) => (
-              <motion.div
+            {group.items.map((item: Item) => (
+              <ProductCard
                 key={item.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <ProductCard
-                  product={item}
-                  onAddToCart={() => handleAddToCart(item)}
-                  onToggleFavorite={onToggleFavorite}
-                />
-              </motion.div>
+                product={item}
+                onAddToCart={() => handleAddToCart(item)}
+                onToggleFavorite={onToggleFavorite}
+              />
             ))}
           </motion.div>
         )}
@@ -186,6 +151,6 @@ export function GroupSection({ group, onAddToCart, onToggleFavorite }: GroupSect
           }}
         />
       )}
-    </motion.section>
+    </section>
   )
-}
+})

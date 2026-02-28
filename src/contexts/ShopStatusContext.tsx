@@ -72,12 +72,9 @@ export const ShopStatusProvider: React.FC<ShopStatusProviderProps> = ({
     };
 
     window.addEventListener('storage', handleStorageChange);
-    // Também verificar quando o componente monta (para mudanças na mesma aba)
-    const interval = setInterval(checkStatus, 1000);
-    
+
     return () => {
       window.removeEventListener('storage', handleStorageChange);
-      clearInterval(interval);
     };
   }, []);
 

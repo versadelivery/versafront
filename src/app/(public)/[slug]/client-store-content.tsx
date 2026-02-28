@@ -95,7 +95,7 @@ export default function ClientStoreContent({ shop }: ClientStoreContentProps) {
   return (
     <main className="min-h-screen pb-20 bg-gray-50/40">
       {/* Sticky search + nav bar */}
-      <div className="sticky top-16 z-40 w-full bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm">
+      <div className="sticky top-16 z-40 w-full bg-white border-b border-gray-100 shadow-sm">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
           {/*
             Mobile/tablet: busca em cima, abas embaixo

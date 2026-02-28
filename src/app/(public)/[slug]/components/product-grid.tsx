@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Search, ChevronDown } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import ProductCard from './product-card';
 import { normalizeItems } from '../normalize-items';
 import type { CatalogItem } from '../types';
@@ -120,15 +120,7 @@ export default function ProductGrid({ categories, activeCategory, searchQuery, o
                 >
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                     {group.items.map((item: CatalogItem, index: number) => (
-                      <motion.div
-                        key={item.id}
-                        initial={{ opacity: 0, y: 8 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.25, delay: index * 0.04 }}
-                      >
-                        <ProductCard item={item} index={index} />
-                      </motion.div>
+                      <ProductCard key={item.id} item={item} index={index} />
                     ))}
                   </div>
                 </motion.div>

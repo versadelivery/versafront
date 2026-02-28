@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, ReactNode, useEffect } from 'react'
+import { createContext, useContext, useState, useMemo, useCallback, ReactNode, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { CatalogItem } from '../types'
 
@@ -27,6 +27,28 @@ interface CartContextType {
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
+
+function arraysEqual(a?: string[], b?: string[]): boolean {
+  if (!a && !b) return true
+  if (!a || !b) return false
+  if (a.length !== b.length) return false
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false
+  }
+  return true
+}
+
+function optionsEqual(a?: Record<string, string>, b?: Record<string, string>): boolean {
+  if (!a && !b) return true
+  if (!a || !b) return false
+  const keysA = Object.keys(a)
+  const keysB = Object.keys(b)
+  if (keysA.length !== keysB.length) return false
+  for (const key of keysA) {
+    if (a[key] !== b[key]) return false
+  }
+  return true
+}
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const params = useParams()
@@ -58,16 +80,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [slug])
 
-  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0)
-  const totalPrice = items.reduce((sum, item) => sum + item.totalPrice, 0)
+  const totalItems = useMemo(
+    () => items.reduce((sum, item) => sum + item.quantity, 0),
+    [items]
+  )
+  const totalPrice = useMemo(
+    () => items.reduce((sum, item) => sum + item.totalPrice, 0),
+    [items]
+  )
 
-  const addItem = (newItem: CartItem) => {
+  const addItem = useCallback((newItem: CartItem) => {
     setItems(prevItems => {
       const existingItemIndex = prevItems.findIndex(
-        item => item.id === newItem.id && 
-        JSON.stringify(item.selectedExtras) === JSON.stringify(newItem.selectedExtras) &&
-        JSON.stringify(item.selectedOptions) === JSON.stringify(newItem.selectedOptions) &&
-        JSON.stringify(item.selectedSharedComplements) === JSON.stringify(newItem.selectedSharedComplements)
+        item => item.id === newItem.id &&
+        arraysEqual(item.selectedExtras, newItem.selectedExtras) &&
+        optionsEqual(item.selectedOptions, newItem.selectedOptions) &&
+        arraysEqual(item.selectedSharedComplements, newItem.selectedSharedComplements)
       )
       if (existingItemIndex >= 0) {
         const updatedItems = [...prevItems]
@@ -78,18 +106,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }
         return updatedItems
       }
-      
+
       return [...prevItems, newItem]
     })
-  }
+  }, [])
 
-  const removeItem = (id: string) => {
+  const removeItem = useCallback((id: string) => {
     setItems(prevItems => prevItems.filter(item => item.id !== id))
-  }
+  }, [])
 
-  const updateItemQuantity = (id: string, quantity: number) => {
+  const updateItemQuantity = useCallback((id: string, quantity: number) => {
     if (quantity < 1) return
-    
+
     setItems(prevItems =>
       prevItems.map(item =>
         item.id === id
@@ -101,15 +129,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
           : item
       )
     )
-  }
+  }, [])
 
-  const clearCart = () => {
+  const clearCart = useCallback(() => {
     setItems([])
-  }
+  }, [])
 
-  const clearAllCarts = () => {
+  const clearAllCarts = useCallback(() => {
     if (typeof window !== 'undefined') {
-      // Remove todos os carrinhos do localStorage
       const keys = Object.keys(localStorage)
       keys.forEach(key => {
         if (key.startsWith('cart_')) {
@@ -118,26 +145,26 @@ export function CartProvider({ children }: { children: ReactNode }) {
       })
       setItems([])
     }
-  }
+  }, [])
 
-  const getCurrentShopSlug = () => {
+  const getCurrentShopSlug = useCallback(() => {
     return slug || ''
-  }
+  }, [slug])
+
+  const value = useMemo(() => ({
+    items,
+    totalItems,
+    totalPrice,
+    addItem,
+    removeItem,
+    updateItemQuantity,
+    clearCart,
+    clearAllCarts,
+    getCurrentShopSlug
+  }), [items, totalItems, totalPrice, addItem, removeItem, updateItemQuantity, clearCart, clearAllCarts, getCurrentShopSlug])
 
   return (
-    <CartContext.Provider
-      value={{
-        items,
-        totalItems,
-        totalPrice,
-        addItem,
-        removeItem,
-        updateItemQuantity,
-        clearCart,
-        clearAllCarts,
-        getCurrentShopSlug
-      }}
-    >
+    <CartContext.Provider value={value}>
       {children}
     </CartContext.Provider>
   )
