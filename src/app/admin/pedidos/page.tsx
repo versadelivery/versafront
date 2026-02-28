@@ -740,6 +740,7 @@ export default function OrderManagement() {
             },
             deliveryPerson: selectedOrder.deliveryPerson || (selectedOrder.socketData.attributes as any).delivery_person || '',
             discount_amount: parseFloat(selectedOrder.socketData.attributes.discount_amount || '0'),
+            payment_adjustment_amount: parseFloat(selectedOrder.socketData.attributes.payment_adjustment_amount || '0'),
             coupon_code: selectedOrder.socketData.attributes.coupon_code || undefined
           }}
           onUpdateOrder={async (orderId, data) => {

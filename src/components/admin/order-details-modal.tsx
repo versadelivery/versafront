@@ -74,6 +74,7 @@ interface OrderDetailsModalProps {
     };
     deliveryPerson?: string;
     discount_amount?: number;
+    payment_adjustment_amount?: number;
     coupon_code?: string;
   };
   onUpdateOrder?: (orderId: string, data: Partial<any>) => Promise<void>;
@@ -565,6 +566,16 @@ ${order.items.map(item =>
                     <div className="flex items-center justify-between">
                       <span className="font-medium text-green-600">CUPOM ({order.coupon_code}):</span>
                       <span className="text-green-600">-{formatCurrency(order.discount_amount)}</span>
+                    </div>
+                  )}
+                  {order.payment_adjustment_amount && order.payment_adjustment_amount !== 0 && (
+                    <div className="flex items-center justify-between">
+                      <span className={`font-medium ${order.payment_adjustment_amount < 0 ? 'text-green-600' : 'text-orange-600'}`}>
+                        {order.payment_adjustment_amount < 0 ? 'DESC.' : 'ACRESC.'} {paymentInfo.label.toUpperCase()}:
+                      </span>
+                      <span className={order.payment_adjustment_amount < 0 ? 'text-green-600' : 'text-orange-600'}>
+                        {order.payment_adjustment_amount < 0 ? '-' : '+'}{formatCurrency(Math.abs(order.payment_adjustment_amount))}
+                      </span>
                     </div>
                   )}
                   {renderEditableField('financial', 'total', editedOrder.total, 'TOTAL', 'number')}

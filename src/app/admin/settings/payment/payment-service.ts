@@ -1,5 +1,8 @@
 import api from "@/api/config";
 
+export type AdjustmentType = "none" | "discount" | "surcharge";
+export type ValueType = "fixed" | "percentage";
+
 export type ShopPaymentConfig = {
   data: {
     id: string;
@@ -9,6 +12,18 @@ export type ShopPaymentConfig = {
       debit: boolean;
       credit: boolean;
       manual_pix: boolean;
+      cash_adjustment_type: AdjustmentType;
+      cash_adjustment_value: string;
+      cash_value_type: ValueType;
+      debit_adjustment_type: AdjustmentType;
+      debit_adjustment_value: string;
+      debit_value_type: ValueType;
+      credit_adjustment_type: AdjustmentType;
+      credit_adjustment_value: string;
+      credit_value_type: ValueType;
+      manual_pix_adjustment_type: AdjustmentType;
+      manual_pix_adjustment_value: string;
+      manual_pix_value_type: ValueType;
     };
   };
 };

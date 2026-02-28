@@ -39,6 +39,18 @@ export interface ShopResponse {
             debit: boolean
             credit: boolean
             manual_pix: boolean
+            cash_adjustment_type: string
+            cash_adjustment_value: string
+            cash_value_type: string
+            debit_adjustment_type: string
+            debit_adjustment_value: string
+            debit_value_type: string
+            credit_adjustment_type: string
+            credit_adjustment_value: string
+            credit_value_type: string
+            manual_pix_adjustment_type: string
+            manual_pix_adjustment_value: string
+            manual_pix_value_type: string
           }
         }
       }

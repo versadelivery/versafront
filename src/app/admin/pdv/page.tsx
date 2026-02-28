@@ -22,6 +22,7 @@ import { createPDVOrder } from "@/services/order-service";
 import { validateCoupon, ValidateCouponData } from "@/services/coupon-validate-service";
 import { useAdminActionCable } from "@/lib/admin-cable";
 import { useShop } from "@/hooks/use-shop";
+import { usePayment } from "@/app/admin/settings/payment/usePayment";
 import { ItemOptionsDialog } from "./item-options-dialog";
 import AdminHeader from "@/components/admin/catalog-header";
 
@@ -78,6 +79,7 @@ export default function PDVPage() {
   const [couponDiscount, setCouponDiscount] = useState(0);
   const { shop } = useShop();
   const shopId = shop?.id;
+  const { paymentMethodsData } = usePayment();
 
   const { catalog, isLoading } = useCatalogGroup();
   const { subscribeToAdminOrders } = useAdminActionCable();
@@ -126,6 +128,27 @@ export default function PDVPage() {
   };
 
   const cartTotal = cart.reduce((t, item) => t + item.totalPrice, 0);
+
+  const pdvPaymentMethodToApi = (m: "cash" | "card" | "pix") =>
+    m === "cash" ? "cash" : m === "card" ? "credit" : "manual_pix";
+
+  const calculatePdvPaymentAdjustment = (): number => {
+    const attrs = paymentMethodsData?.data?.attributes;
+    if (!attrs) return 0;
+    const attrKey = pdvPaymentMethodToApi(paymentMethod);
+    const adjType = attrs[`${attrKey}_adjustment_type` as keyof typeof attrs] as string;
+    if (!adjType || adjType === "none") return 0;
+    const adjValue = parseFloat(String(attrs[`${attrKey}_adjustment_value` as keyof typeof attrs] || "0"));
+    const valType = attrs[`${attrKey}_value_type` as keyof typeof attrs] as string;
+    if (adjValue <= 0) return 0;
+    const amount = valType === "percentage" ? cartTotal * (adjValue / 100) : adjValue;
+    return adjType === "discount" ? -amount : amount;
+  };
+
+  const paymentAdjustment = calculatePdvPaymentAdjustment();
+
+  const getPaymentMethodLabel = (m: "cash" | "card" | "pix") =>
+    m === "cash" ? "Dinheiro" : m === "card" ? "Cartão" : "PIX";
 
   // Clique no item — abre modal se tiver opções, senão adiciona direto
   const handleItemClick = (item: any) => {
@@ -252,7 +275,39 @@ export default function PDVPage() {
     setCouponError("");
   };
 
-  const orderTotal = cartTotal - couponDiscount;
+  const orderTotal = Math.max(cartTotal - couponDiscount + paymentAdjustment, 0);
+
+  // Métodos de pagamento disponíveis (dinâmico baseado na config da loja)
+  const availablePaymentMethods = (() => {
+    const attrs = paymentMethodsData?.data?.attributes;
+    const methods: { value: "cash" | "card" | "pix"; label: string }[] = [];
+    if (!attrs) return [{ value: "card" as const, label: "Cartão" }, { value: "cash" as const, label: "Dinheiro" }, { value: "pix" as const, label: "PIX" }];
+    if (attrs.credit || attrs.debit) methods.push({ value: "card", label: "Cartão" });
+    if (attrs.cash) methods.push({ value: "cash", label: "Dinheiro" });
+    if (attrs.manual_pix) methods.push({ value: "pix", label: "PIX" });
+    return methods;
+  })();
+
+  // Garantir que o método de pagamento selecionado está disponível
+  useEffect(() => {
+    if (availablePaymentMethods.length > 0 && !availablePaymentMethods.some(m => m.value === paymentMethod)) {
+      setPaymentMethod(availablePaymentMethods[0].value);
+    }
+  }, [paymentMethodsData]);
+
+  const getAdjustmentLabel = (m: "cash" | "card" | "pix"): string => {
+    const attrs = paymentMethodsData?.data?.attributes;
+    if (!attrs) return "";
+    const attrKey = pdvPaymentMethodToApi(m);
+    const adjType = attrs[`${attrKey}_adjustment_type` as keyof typeof attrs] as string;
+    if (!adjType || adjType === "none") return "";
+    const adjValue = parseFloat(String(attrs[`${attrKey}_adjustment_value` as keyof typeof attrs] || "0"));
+    const valType = attrs[`${attrKey}_value_type` as keyof typeof attrs] as string;
+    if (adjValue <= 0) return "";
+    const sign = adjType === "discount" ? "-" : "+";
+    if (valType === "percentage") return ` (${sign}${adjValue}%)`;
+    return ` (${sign}R$ ${adjValue.toFixed(2).replace(".", ",")})`;
+  };
 
   const processOrder = async () => {
     if (cart.length === 0) { toast.error("Adicione itens ao carrinho"); return; }
@@ -767,6 +822,12 @@ export default function PDVPage() {
                         <span>- {formatPrice(couponDiscount)}</span>
                       </div>
                     )}
+                    {paymentAdjustment !== 0 && (
+                      <div className={`flex justify-between items-center text-sm ${paymentAdjustment < 0 ? "text-green-600" : "text-orange-600"}`}>
+                        <span>{paymentAdjustment < 0 ? "Desc." : "Acresc."} {getPaymentMethodLabel(paymentMethod)}:</span>
+                        <span>{paymentAdjustment < 0 ? "- " : "+ "}{formatPrice(Math.abs(paymentAdjustment))}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between items-center">
                       <span className="font-semibold">Total:</span>
                       <span className="font-bold text-lg text-primary">{formatPrice(orderTotal)}</span>
@@ -980,9 +1041,11 @@ export default function PDVPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="card">Cartão</SelectItem>
-                    <SelectItem value="cash">Dinheiro</SelectItem>
-                    <SelectItem value="pix">PIX</SelectItem>
+                    {availablePaymentMethods.map((m) => (
+                      <SelectItem key={m.value} value={m.value}>
+                        {m.label}{getAdjustmentLabel(m.value)}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

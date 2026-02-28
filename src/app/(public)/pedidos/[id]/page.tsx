@@ -192,6 +192,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
       reference: orderData.attributes.address?.data?.attributes?.reference ?? '',
     },
     discount_amount: parseFloat((orderData.attributes as any).discount_amount ?? '0'),
+    payment_adjustment_amount: parseFloat((orderData.attributes as any).payment_adjustment_amount ?? '0'),
     coupon_code: (orderData.attributes as any).coupon_code ?? null,
   };
 
@@ -202,7 +203,8 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
   const subtotal = order.items.reduce((s: number, i: any) => s + i.price * i.quantity, 0);
   const deliveryFee = order.withdrawal ? 0 : order.delivery_fee;
   const discountAmount = order.discount_amount ?? 0;
-  const total = Math.max(subtotal + deliveryFee - discountAmount, 0);
+  const paymentAdjustment = order.payment_adjustment_amount ?? 0;
+  const total = Math.max(subtotal + deliveryFee - discountAmount + paymentAdjustment, 0);
 
   const handleWhatsApp = () => {
     if (!order.shop.phone) return;
@@ -319,6 +321,14 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                     <div className="flex justify-between text-sm text-green-600">
                       <span>Cupom ({order.coupon_code})</span>
                       <span>-{formatCurrency(discountAmount)}</span>
+                    </div>
+                  )}
+                  {paymentAdjustment !== 0 && (
+                    <div className={`flex justify-between text-sm ${paymentAdjustment < 0 ? 'text-green-600' : 'text-orange-600'}`}>
+                      <span>{paymentAdjustment < 0 ? 'Desc.' : 'Acresc.'} {paymentLabel}</span>
+                      <span>
+                        {paymentAdjustment < 0 ? '-' : '+'}{formatCurrency(Math.abs(paymentAdjustment))}
+                      </span>
                     </div>
                   )}
                   <div className="flex justify-between text-base font-bold text-foreground pt-1 border-t border-gray-100">

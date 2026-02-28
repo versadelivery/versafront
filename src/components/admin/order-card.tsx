@@ -302,6 +302,19 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
           </div>
         )}
 
+        {/* Ajuste de pagamento */}
+        {order.socketData?.attributes?.payment_adjustment_amount && parseFloat(order.socketData.attributes.payment_adjustment_amount) !== 0 && (() => {
+          const adj = parseFloat(order.socketData.attributes.payment_adjustment_amount);
+          const isDiscount = adj < 0;
+          return (
+            <div className={cn("text-xs mb-2", isPronto ? "text-white" : isDiscount ? "text-green-600" : "text-orange-600")}>
+              <div className="flex items-center gap-2">
+                <span>{isDiscount ? "🟢" : "🟠"} {isDiscount ? "Desc." : "Acresc."} pagamento: {isDiscount ? "-" : "+"}{formatPrice(Math.abs(adj))}</span>
+              </div>
+            </div>
+          );
+        })()}
+
         <div className={cn("text-xs", isPronto ? "text-white" : "text-gray-400", "mb-2")}>ID: {order.id}</div>
         
         {/* Informações do cliente */}
