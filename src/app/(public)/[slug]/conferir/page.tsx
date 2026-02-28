@@ -178,8 +178,8 @@ export default function CheckoutPage() {
     if (!isShopOpen || shopStatusLoading) return
 
     const minOrderValue = Number(shopDeliveryConfig?.minimum_order_value) || 0
-    if (totalPrice < minOrderValue) {
-      toast.error(`Valor mínimo: R$ ${minOrderValue.toFixed(2).replace('.', ',')}`)
+    if (deliveryOption === 'delivery' && totalPrice < minOrderValue) {
+      toast.error(`Valor mínimo para entrega: R$ ${minOrderValue.toFixed(2).replace('.', ',')}`)
       return
     }
 
@@ -258,7 +258,7 @@ export default function CheckoutPage() {
   }
 
   const minOrderValue = Number(shopDeliveryConfig?.minimum_order_value) || 0
-  const isBelowMinOrder = minOrderValue > 0 && totalPrice < minOrderValue
+  const isBelowMinOrder = deliveryOption === 'delivery' && minOrderValue > 0 && totalPrice < minOrderValue
 
   if (isLoadingShop || isLoading) {
     return (
