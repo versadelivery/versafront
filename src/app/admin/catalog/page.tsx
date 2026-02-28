@@ -102,7 +102,7 @@ function CatalogPage() {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              Complementos
+              Adicionais
             </button>
           </div>
 
@@ -189,7 +189,7 @@ function CatalogPage() {
                             <div className="w-[1px] h-3 bg-gray-300" />
 
                             <button
-                              className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground hover:text-primary transition-colors uppercase tracking-tight"
+                              className="cursor-pointer flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground hover:text-primary transition-colors uppercase tracking-tight"
                               onClick={() => handleEditGroup(group.id)}
                             >
                               <Edit2 className="h-3 w-3" />

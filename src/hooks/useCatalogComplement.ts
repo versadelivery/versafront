@@ -19,10 +19,10 @@ export const useCatalogComplement = () => {
         mutationFn: createCatalogComplementGroup,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["catalog-complement-groups"] });
-            toast.success("Lista de complementos criada com sucesso");
+            toast.success("Lista de adicionais criada com sucesso");
         },
         onError: () => {
-            toast.error("Erro ao criar lista de complementos");
+            toast.error("Erro ao criar lista de adicionais");
         },
     });
 
@@ -30,10 +30,10 @@ export const useCatalogComplement = () => {
         mutationFn: ({ id, data }: { id: string; data: any }) => updateCatalogComplementGroup(id, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["catalog-complement-groups"] });
-            toast.success("Lista de complementos atualizada com sucesso");
+            toast.success("Lista de adicionais atualizada com sucesso");
         },
         onError: () => {
-            toast.error("Erro ao atualizar lista de complementos");
+            toast.error("Erro ao atualizar lista de adicionais");
         },
     });
 
@@ -41,10 +41,10 @@ export const useCatalogComplement = () => {
         mutationFn: deleteCatalogComplementGroup,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["catalog-complement-groups"] });
-            toast.success("Lista de complementos deletada com sucesso");
+            toast.success("Lista de adicionais deletada com sucesso");
         },
         onError: () => {
-            toast.error("Erro ao deletar lista de complementos");
+            toast.error("Erro ao deletar lista de adicionais");
         },
     });
 

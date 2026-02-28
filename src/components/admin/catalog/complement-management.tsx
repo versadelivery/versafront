@@ -41,7 +41,7 @@ export function ComplementManagement() {
     return (
       <div className="flex flex-col items-center justify-center py-12 gap-3">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground">Carregando complementos...</p>
+        <p className="text-sm text-muted-foreground">Carregando adicionais...</p>
       </div>
     );
   }
@@ -50,7 +50,7 @@ export function ComplementManagement() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold">Complementos Compartilhados</h2>
+          <h2 className="text-lg font-semibold">Adicionais Compartilhados</h2>
           <p className="text-sm text-muted-foreground">
             Gerencie listas de adicionais que podem ser vinculadas a múltiplos itens.
           </p>
@@ -66,7 +66,7 @@ export function ComplementManagement() {
           <ListChecks className="h-10 w-10 text-muted-foreground" />
           <h3 className="text-base font-semibold">Nenhuma lista encontrada</h3>
           <p className="text-sm text-muted-foreground text-center max-w-xs">
-            Crie sua primeira lista de complementos (ex: Adicionais de Hambúrguer) para começar.
+            Crie sua primeira lista de adicionais (ex: Adicionais de Hambúrguer) para começar.
           </p>
           <Button onClick={handleCreate} variant="outline" className="gap-2">
             <Plus className="h-4 w-4" />
@@ -117,7 +117,7 @@ export function ComplementManagement() {
         onOpenChange={setIsDeleteOpen}
         onConfirm={handleConfirmDelete}
         isLoading={isDeleting}
-        type="lista de complementos"
+        type="lista de adicionais"
       />
     </div>
   );

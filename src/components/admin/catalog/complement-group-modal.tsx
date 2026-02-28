@@ -99,7 +99,7 @@ export function ComplementGroupModal({ isOpen, onOpenChange, groupId }: Compleme
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden flex flex-col max-h-[90vh]">
         <DialogHeader className="px-6 pt-6 pb-4 border-b">
-          <DialogTitle>{isEditing ? "Editar Lista" : "Nova Lista de Complementos"}</DialogTitle>
+          <DialogTitle>{isEditing ? "Editar Lista" : "Nova Lista de Adicionais"}</DialogTitle>
           <DialogDescription>
             Configure o nome da lista e suas opções.
           </DialogDescription>
