@@ -42,7 +42,7 @@ export const adminSections: AdminSection[] = [
   },
   {
     id: "pedidos",
-    title: "Pedidos",
+    title: "Gerenciamento de Pedidos",
     description: "Gerencie os pedidos da sua loja",
     href: "/admin/pedidos",
     icon: ShoppingCart,
@@ -112,7 +112,7 @@ export const adminSections: AdminSection[] = [
   },
   {
     id: "suporte",
-    title: "Suporte",
+    title: "Central de Suporte",
     description: "Área de atendimento e auxílio ao lojista",
     href: "/admin/suporte",
     icon: Headset,
@@ -134,7 +134,7 @@ export const adminSections: AdminSection[] = [
   },
   {
     id: "settings-general",
-    title: "Dados da Loja",
+    title: "Configurações Gerais",
     description: "Nome, logo, endereço e horários",
     href: "/admin/settings/general",
     icon: Store,
@@ -144,7 +144,7 @@ export const adminSections: AdminSection[] = [
   },
   {
     id: "settings-users",
-    title: "Usuários",
+    title: "Gerenciamento de Usuários",
     description: "Gerencie usuários e permissões",
     href: "/admin/settings/users",
     icon: Users,
@@ -154,7 +154,7 @@ export const adminSections: AdminSection[] = [
   },
   {
     id: "settings-delivery",
-    title: "Entregas",
+    title: "Configurações de Entrega",
     description: "Zonas de entrega e taxas",
     href: "/admin/settings/delivery",
     icon: Truck,
@@ -164,7 +164,7 @@ export const adminSections: AdminSection[] = [
   },
   {
     id: "settings-payment",
-    title: "Pagamentos",
+    title: "Configurações de Pagamento",
     description: "Métodos de pagamento aceitos",
     href: "/admin/settings/payment",
     icon: Wallet,
@@ -174,7 +174,7 @@ export const adminSections: AdminSection[] = [
   },
   {
     id: "settings-notifications",
-    title: "Notificações",
+    title: "Notificações WhatsApp",
     description: "Templates de mensagens WhatsApp",
     href: "/admin/settings/notifications",
     icon: Bell,
