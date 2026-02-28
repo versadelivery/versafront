@@ -1,6 +1,6 @@
 import axios from "axios"
 import { API_BASE_URL } from "@/api/routes"
-import { getClientToken, getToken, removeToken } from "@/lib/auth"  
+import { getClientToken, getToken, removeToken, removeClientToken } from "@/lib/auth"
 
 type TokenType = 'normal' | 'client' | 'admin'
 
@@ -41,10 +41,20 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    if (error.response?.status === 401) {
+      if (currentTokenType === 'client') {
+        removeClientToken()
+        localStorage.removeItem('client')
+      } else {
+        removeToken()
+        localStorage.removeItem('auth_user')
+      }
+    }
+
     if (error.response?.status === 403 && error.response?.data?.code === "SHOP_UNAUTHORIZED") {
-      // Redireciona para a página de aguardando aprovação se a loja for desativada/não aprovada
       window.location.href = "/pending-approval";
     }
+
     return Promise.reject(error);
   }
 );
