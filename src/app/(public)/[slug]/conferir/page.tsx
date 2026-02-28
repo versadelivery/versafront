@@ -215,7 +215,38 @@ export default function CheckoutPage() {
     setCouponError('')
   }
 
-  const calculateTotal = () => totalPrice + calculateDeliveryFee() - couponDiscount
+  const calculatePaymentAdjustment = (): number => {
+    if (!shopPaymentConfig) return 0
+    const attrKey = paymentMethod === 'manual_pix' ? 'manual_pix' : paymentMethod
+    const adjType = shopPaymentConfig[`${attrKey}_adjustment_type` as keyof typeof shopPaymentConfig] as string
+    if (!adjType || adjType === 'none') return 0
+    const adjValue = parseFloat(String(shopPaymentConfig[`${attrKey}_adjustment_value` as keyof typeof shopPaymentConfig] || '0'))
+    const valType = shopPaymentConfig[`${attrKey}_value_type` as keyof typeof shopPaymentConfig] as string
+    if (adjValue <= 0) return 0
+    const amount = valType === 'percentage' ? totalPrice * (adjValue / 100) : adjValue
+    return adjType === 'discount' ? -amount : amount
+  }
+
+  const paymentAdjustment = calculatePaymentAdjustment()
+
+  const getPaymentAdjustmentBadge = (method: PaymentMethod): { label: string; color: string } | null => {
+    if (!shopPaymentConfig) return null
+    const attrKey = method === 'manual_pix' ? 'manual_pix' : method
+    const adjType = shopPaymentConfig[`${attrKey}_adjustment_type` as keyof typeof shopPaymentConfig] as string
+    if (!adjType || adjType === 'none') return null
+    const adjValue = parseFloat(String(shopPaymentConfig[`${attrKey}_adjustment_value` as keyof typeof shopPaymentConfig] || '0'))
+    const valType = shopPaymentConfig[`${attrKey}_value_type` as keyof typeof shopPaymentConfig] as string
+    if (adjValue <= 0) return null
+    const sign = adjType === 'discount' ? '-' : '+'
+    const suffix = valType === 'percentage' ? '%' : ''
+    const display = valType === 'percentage' ? adjValue : adjValue.toFixed(2).replace('.', ',')
+    return {
+      label: `${sign}${display}${suffix}`,
+      color: adjType === 'discount' ? 'text-green-600 bg-green-50' : 'text-orange-600 bg-orange-50'
+    }
+  }
+
+  const calculateTotal = () => totalPrice + calculateDeliveryFee() - couponDiscount + paymentAdjustment
 
   const handleSubmitOrder = async () => {
     if (!isShopOpen || shopStatusLoading) return
@@ -285,9 +316,10 @@ export default function CheckoutPage() {
         localStorage.setItem('guest_phone', guestPhone.replace(/\D/g, ''))
       }
       if (orderId) router.push(`/pedidos/${orderId}`)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao enviar pedido:', error)
-      toast.error("Erro ao enviar pedido. Tente novamente.")
+      const message = error.response?.data?.error || "Erro ao enviar pedido. Tente novamente."
+      toast.error(message)
       setIsSubmitting(false)
     }
   }
@@ -731,16 +763,22 @@ export default function CheckoutPage() {
                     const available = shopPaymentConfig?.[method === 'manual_pix' ? 'manual_pix' : method]
                     if (!available) return null
                     const isSelected = paymentMethod === method
+                    const badge = getPaymentAdjustmentBadge(method)
                     return (
                       <button
                         key={method}
                         onClick={() => setPaymentMethod(method)}
-                        className={`flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border-2 text-xs font-medium transition-all cursor-pointer ${
+                        className={`relative flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border-2 text-xs font-medium transition-all cursor-pointer ${
                           isSelected
                             ? 'border-primary text-primary'
                             : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
                         }`}
                       >
+                        {badge && (
+                          <span className={`absolute -top-2 -right-2 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${badge.color}`}>
+                            {badge.label}
+                          </span>
+                        )}
                         {cfg.icon}
                         {cfg.label}
                       </button>
@@ -836,6 +874,8 @@ export default function CheckoutPage() {
                 onSubmit={handleSubmitOrder}
                 couponDiscount={couponDiscount}
                 appliedCouponCode={appliedCoupon?.code}
+                paymentAdjustment={paymentAdjustment}
+                paymentMethodLabel={PAYMENT_LABELS[paymentMethod].label}
               />
             </div>
           </div>
@@ -859,6 +899,8 @@ export default function CheckoutPage() {
                 onSubmit={handleSubmitOrder}
                 couponDiscount={couponDiscount}
                 appliedCouponCode={appliedCoupon?.code}
+                paymentAdjustment={paymentAdjustment}
+                paymentMethodLabel={PAYMENT_LABELS[paymentMethod].label}
               />
             </div>
           </div>
@@ -886,12 +928,15 @@ interface OrderSummaryProps {
   onSubmit: () => void
   couponDiscount?: number
   appliedCouponCode?: string
+  paymentAdjustment?: number
+  paymentMethodLabel?: string
 }
 
 function OrderSummary({
   totalPrice, deliveryOption, deliveryFeeDisplay, calculateTotal,
   cartItems, isBelowMinOrder, minOrderValue, isSubmitting, isShopOpen,
-  shopStatusLoading, client, canSubmit, onSubmit, couponDiscount = 0, appliedCouponCode
+  shopStatusLoading, client, canSubmit, onSubmit, couponDiscount = 0, appliedCouponCode,
+  paymentAdjustment = 0, paymentMethodLabel
 }: OrderSummaryProps) {
   const totalDiscount = cartItems.reduce((sum, item) => {
     if (item.priceWithDiscount) {
@@ -933,6 +978,16 @@ function OrderSummary({
             <div className="flex justify-between text-green-600">
               <span>Cupom ({appliedCouponCode})</span>
               <span>- R$ {couponDiscount.toFixed(2).replace('.', ',')}</span>
+            </div>
+          )}
+
+          {paymentAdjustment !== 0 && paymentMethodLabel && (
+            <div className={`flex justify-between ${paymentAdjustment < 0 ? 'text-green-600' : 'text-orange-600'}`}>
+              <span>{paymentAdjustment < 0 ? 'Desc.' : 'Acresc.'} {paymentMethodLabel}</span>
+              <span>
+                {paymentAdjustment < 0 ? '- ' : '+ '}
+                R$ {Math.abs(paymentAdjustment).toFixed(2).replace('.', ',')}
+              </span>
             </div>
           )}
         </div>

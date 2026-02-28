@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { UserPlus, Search, Edit, Eye, Contact } from "lucide-react";
+import { UserPlus, Search, Edit, Eye, Contact, Ban, CheckCircle } from "lucide-react";
 import AdminHeader from "@/components/admin/catalog-header";
 import CustomerModal from "./components/customer-modal";
 import { useCustomers } from "./hooks/useCustomers";
@@ -28,6 +28,7 @@ export default function CustomersPage() {
     handleSearch,
     createCustomer,
     updateCustomer,
+    toggleBlock,
   } = useCustomers();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -44,6 +45,13 @@ export default function CustomersPage() {
     setSelectedCustomer(customer);
     setIsEditing(true);
     setIsModalOpen(true);
+  };
+
+  const handleToggleBlock = async (customer: any) => {
+    const isBlocked = customer.attributes.blocked;
+    const action = isBlocked ? "desbloquear" : "bloquear";
+    if (!confirm(`Tem certeza que deseja ${action} o cliente "${customer.attributes.name}"?`)) return;
+    await toggleBlock(customer.id, !isBlocked);
   };
 
   const handleSaveCustomer = async (data: any) => {
@@ -93,6 +101,7 @@ export default function CustomersPage() {
                   <TableHead className="font-semibold text-foreground py-4">Nome</TableHead>
                   <TableHead className="font-semibold text-foreground py-4">Celular</TableHead>
                   <TableHead className="font-semibold text-foreground py-4">E-mail</TableHead>
+                  <TableHead className="font-semibold text-foreground py-4 text-center">Status</TableHead>
                   <TableHead className="font-semibold text-foreground py-4 text-center">Pedidos</TableHead>
                   <TableHead className="font-semibold text-foreground py-4 text-center">Ações</TableHead>
                 </TableRow>
@@ -100,13 +109,13 @@ export default function CustomersPage() {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                       Carregando...
                     </TableCell>
                   </TableRow>
                 ) : customers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                       <div className="flex flex-col items-center gap-2">
                         <Contact className="h-8 w-8 text-muted-foreground" />
                         <p>Nenhum cliente encontrado</p>
@@ -118,7 +127,7 @@ export default function CustomersPage() {
                   </TableRow>
                 ) : (
                   customers.map((customer) => (
-                    <TableRow key={customer.id} className="hover:bg-muted/30">
+                    <TableRow key={customer.id} className={`hover:bg-muted/30 ${customer.attributes.blocked ? "opacity-60" : ""}`}>
                       <TableCell className="font-medium py-4">
                         {customer.attributes.name}
                       </TableCell>
@@ -127,6 +136,17 @@ export default function CustomersPage() {
                       </TableCell>
                       <TableCell className="py-4 text-muted-foreground">
                         {customer.attributes.email}
+                      </TableCell>
+                      <TableCell className="py-4 text-center">
+                        {customer.attributes.blocked ? (
+                          <Badge variant="destructive" className="border-0">
+                            Bloqueado
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="bg-green-100 text-green-700 border-0">
+                            Ativo
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell className="py-4 text-center">
                         <Badge variant="secondary" className="bg-violet-100 text-violet-700 border-0">
@@ -152,6 +172,24 @@ export default function CustomersPage() {
                           >
                             <Edit className="h-3 w-3 mr-1" />
                             Editar
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className={`h-8 px-3 text-xs border-muted ${customer.attributes.blocked ? "hover:bg-green-600 hover:text-white" : "hover:bg-red-600 hover:text-white"}`}
+                            onClick={() => handleToggleBlock(customer)}
+                          >
+                            {customer.attributes.blocked ? (
+                              <>
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                Desbloquear
+                              </>
+                            ) : (
+                              <>
+                                <Ban className="h-3 w-3 mr-1" />
+                                Bloquear
+                              </>
+                            )}
                           </Button>
                         </div>
                       </TableCell>

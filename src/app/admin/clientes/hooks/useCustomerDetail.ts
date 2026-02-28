@@ -27,11 +27,24 @@ export function useCustomerDetail(id: string) {
     }
   }, [id, fetchCustomer]);
 
+  const toggleBlock = async (blocked: boolean) => {
+    try {
+      setError(null);
+      await customerService.toggleBlock(id, blocked);
+      await fetchCustomer();
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.error || err.message || "Erro ao alterar bloqueio do cliente";
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    }
+  };
+
   return {
     customer,
     orders,
     loading,
     error,
+    toggleBlock,
     refetch: fetchCustomer,
   };
 }

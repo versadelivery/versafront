@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Edit, User, Mail, Phone, Calendar, ShoppingCart } from "lucide-react";
+import { ArrowLeft, Edit, User, Mail, Phone, Calendar, ShoppingCart, Ban, CheckCircle } from "lucide-react";
 import AdminHeader from "@/components/admin/catalog-header";
 import CustomerModal from "../components/customer-modal";
 import { useCustomerDetail } from "../hooks/useCustomerDetail";
@@ -67,9 +67,17 @@ export default function CustomerDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
-  const { customer, orders, loading, refetch } = useCustomerDetail(id);
+  const { customer, orders, loading, toggleBlock, refetch } = useCustomerDetail(id);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleToggleBlock = async () => {
+    if (!customer) return;
+    const isBlocked = customer.attributes.blocked;
+    const action = isBlocked ? "desbloquear" : "bloquear";
+    if (!confirm(`Tem certeza que deseja ${action} o cliente "${customer.attributes.name}"?`)) return;
+    await toggleBlock(!isBlocked);
+  };
 
   const handleSave = async (data: any) => {
     await customerService.updateCustomer(id, { customer: data });
@@ -128,20 +136,50 @@ export default function CustomerDetailPage() {
                 <User className="w-7 h-7 text-violet-600" />
               </div>
               <div>
-                <h2 className="text-2xl font-semibold">{customer.attributes.name}</h2>
+                <div className="flex items-center gap-3">
+                  <h2 className="text-2xl font-semibold">{customer.attributes.name}</h2>
+                  {customer.attributes.blocked ? (
+                    <Badge variant="destructive" className="border-0">
+                      Bloqueado
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary" className="bg-green-100 text-green-700 border-0">
+                      Ativo
+                    </Badge>
+                  )}
+                </div>
                 <p className="text-sm text-muted-foreground">
                   Cliente #{customer.id}
                 </p>
               </div>
             </div>
-            <Button
-              variant="outline"
-              className="gap-2"
-              onClick={() => setIsModalOpen(true)}
-            >
-              <Edit className="h-4 w-4" />
-              Editar
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                className="gap-2"
+                onClick={() => setIsModalOpen(true)}
+              >
+                <Edit className="h-4 w-4" />
+                Editar
+              </Button>
+              <Button
+                variant="outline"
+                className={`gap-2 ${customer.attributes.blocked ? "hover:bg-green-600 hover:text-white" : "hover:bg-red-600 hover:text-white"}`}
+                onClick={handleToggleBlock}
+              >
+                {customer.attributes.blocked ? (
+                  <>
+                    <CheckCircle className="h-4 w-4" />
+                    Desbloquear
+                  </>
+                ) : (
+                  <>
+                    <Ban className="h-4 w-4" />
+                    Bloquear
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

@@ -9,6 +9,7 @@ export interface Customer {
     name: string;
     email: string;
     cellphone: string;
+    blocked: boolean;
     orders_count: number;
     created_at: string;
   };
@@ -75,6 +76,11 @@ export const customerService = {
 
   updateCustomer: async (id: string, data: UpdateCustomerRequest): Promise<{ data: Customer }> => {
     const response = await api.put(`${API_ENDPOINTS.ADMIN_CUSTOMERS}/${id}`, data);
+    return response.data;
+  },
+
+  toggleBlock: async (id: string, blocked: boolean): Promise<{ data: Customer }> => {
+    const response = await api.patch(`${API_ENDPOINTS.ADMIN_CUSTOMERS}/${id}/toggle_block`, { blocked });
     return response.data;
   },
 };

@@ -61,6 +61,18 @@ export function useCustomers() {
     }
   };
 
+  const toggleBlock = async (id: string, blocked: boolean) => {
+    try {
+      setError(null);
+      await customerService.toggleBlock(id, blocked);
+      await fetchCustomers(searchTerm || undefined);
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.error || err.message || "Erro ao alterar bloqueio do cliente";
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    }
+  };
+
   return {
     customers,
     loading,
@@ -69,6 +81,7 @@ export function useCustomers() {
     handleSearch,
     createCustomer,
     updateCustomer,
+    toggleBlock,
     refetch: () => fetchCustomers(searchTerm || undefined),
   };
 }
