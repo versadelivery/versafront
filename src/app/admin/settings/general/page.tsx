@@ -6,8 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { ImageIcon, Upload, MapPin, Phone, Mail } from "lucide-react";
+import { ImageIcon, Upload, MapPin, Phone, Mail, ShoppingBag } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import { useShop } from "@/hooks/use-shop";
 import { ShopAttributes } from "@/services/shop";
 import AdminHeader from "@/components/admin/catalog-header";
@@ -29,7 +30,8 @@ export default function GeneralSettingsPage() {
         address: shop.address || "",
         email: shop.email || "",
         slug: shop.slug,
-        image: null
+        image: null,
+        auto_accept_orders: shop.auto_accept_orders ?? false
       };
 
       // Se for a primeira vez ou o estabelecimento mudou, inicializa tudo
@@ -232,6 +234,35 @@ export default function GeneralSettingsPage() {
                     />
                   </div>
                 </div>
+              </div>
+            </div>
+
+            <Separator className="my-6 bg-gray-200 dark:bg-gray-800" />
+
+            {/* Seção de Pedidos */}
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold text-foreground">
+                Pedidos
+              </h3>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <ShoppingBag className="w-5 h-5 text-muted-foreground" />
+                  <div>
+                    <Label htmlFor="auto_accept_orders" className="text-sm font-medium">
+                      Aceitar pedidos automaticamente
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Quando ativado, novos pedidos serão aceitos automaticamente sem necessidade de confirmação manual
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  id="auto_accept_orders"
+                  checked={formData.auto_accept_orders ?? false}
+                  onCheckedChange={(checked) =>
+                    setFormData(prev => ({ ...prev, auto_accept_orders: checked }))
+                  }
+                />
               </div>
             </div>
 

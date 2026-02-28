@@ -9,6 +9,7 @@ export interface ShopAttributes {
   email: string | null;
   image?: File | string | any;
   image_url?: string | any;
+  auto_accept_orders?: boolean;
 }
 
 export interface ShopResponse {
