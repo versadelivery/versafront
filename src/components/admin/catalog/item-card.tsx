@@ -1,13 +1,15 @@
 "use client";
 
-import { Edit2, Scale, Plus, ChefHat, ListChecks, ImageOff, Copy, Loader2 } from "lucide-react";
+import { Edit2, Scale, Plus, ChefHat, ListChecks, ImageOff, Copy, Loader2, Link } from "lucide-react";
 import { useCatalogGroup } from "@/hooks/useCatalogGroup";
+import { useShop } from "@/hooks/use-shop";
 import Image from "next/image";
 import React, { useState } from "react";
 import { ItemDetailsModal } from "./item-details-modal";
 import { EditItemModal } from "./edit-item-modal";
 import { fixImageUrl } from "@/utils/image-url";
 import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
 
 // =============================================================================
 // TIPOS
@@ -51,6 +53,18 @@ export function ItemCard({ item }: ItemCardProps) {
     duplicateCatalogItem(item.id.toString());
   };
   const { toggleCatalogItemActive } = useCatalogGroup();
+  const { shop } = useShop();
+
+  const handleCopyLink = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!shop?.slug) {
+      toast.error("Não foi possível gerar o link");
+      return;
+    }
+    const url = `${window.location.origin}/${shop.slug}?item=${item.id}`;
+    navigator.clipboard.writeText(url);
+    toast.success("Link copiado!");
+  };
 
   // =============================================================================
   // FUNÇÕES AUXILIARES
@@ -123,6 +137,15 @@ export function ItemCard({ item }: ItemCardProps) {
 
           {/* Botões de Ação */}
           <div className="absolute top-2 right-2 flex items-center gap-2">
+            {/* Copiar Link */}
+            <button
+              className="bg-white/95 cursor-pointer backdrop-blur-sm rounded-full p-2 flex items-center justify-center shadow-sm border border-gray-100 hover:bg-white transition-colors group"
+              onClick={handleCopyLink}
+              title="Copiar link do item"
+            >
+              <Link className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+            </button>
+
             {/* Duplicar */}
             <button
               className="bg-white/95 cursor-pointer backdrop-blur-sm rounded-full p-2 flex items-center justify-center shadow-sm border border-gray-100 hover:bg-white transition-colors group"

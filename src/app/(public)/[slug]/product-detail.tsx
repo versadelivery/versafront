@@ -114,14 +114,19 @@ function WeightPicker({ min, max, step, value, onChange }: {
 interface ProductModalProps {
   product: CatalogItem;
   trigger?: React.ReactNode;
+  externalOpen?: boolean;
+  onExternalOpenChange?: (open: boolean) => void;
 }
 
-export default function ProductModal({ product, trigger }: ProductModalProps) {
+export default function ProductModal({ product, trigger, externalOpen, onExternalOpenChange }: ProductModalProps) {
   const { addItem } = useCart();
 
   if (!product) return null;
 
-  const [open, setOpen] = useState(false);
+  const isControlled = externalOpen !== undefined;
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = isControlled ? externalOpen : internalOpen;
+  const setOpen = isControlled ? (v: boolean) => onExternalOpenChange?.(v) : setInternalOpen;
   const [quantity, setQuantity] = useState(1);
   const [weight, setWeight] = useState(product.attributes.min_weight || 1);
   const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
@@ -210,9 +215,11 @@ export default function ProductModal({ product, trigger }: ProductModalProps) {
 
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetTrigger asChild>
-        {trigger}
-      </SheetTrigger>
+      {trigger && (
+        <SheetTrigger asChild>
+          {trigger}
+        </SheetTrigger>
+      )}
 
       <SheetContent
         side="right"

@@ -1,16 +1,24 @@
 "use client"
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { ShopResponse } from "@/types/client-catalog";
 import SearchBar from './components/search-bar';
 import CategoryNavigation from './components/category-navigation';
 import ProductGrid from './components/product-grid';
+import ProductModal from './product-detail';
+import { normalizeItems } from './normalize-items';
+import type { CatalogItem } from './types';
 
 interface ClientStoreContentProps {
   shop: ShopResponse;
 }
 
 export default function ClientStoreContent({ shop }: ClientStoreContentProps) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
   const [activeCategory, setActiveCategory] = useState('all');
 
   // Valor bruto do input (atualiza imediatamente, sem delay)
@@ -58,6 +66,25 @@ export default function ClientStoreContent({ shop }: ClientStoreContentProps) {
       return pa - pb;
     });
 
+  // Deep link: ?item=<id> abre o modal do produto
+  const itemIdParam = searchParams.get('item');
+
+  const linkedItem: CatalogItem | null = useMemo(() => {
+    if (!itemIdParam) return null;
+    for (const group of groups) {
+      const items = normalizeItems(group.attributes?.items);
+      const found = items.find((item: CatalogItem) => item.id === itemIdParam);
+      if (found) return found;
+    }
+    return null;
+  }, [itemIdParam, groups]);
+
+  const handleLinkedItemClose = useCallback((open: boolean) => {
+    if (!open) {
+      router.replace(pathname, { scroll: false });
+    }
+  }, [router, pathname]);
+
   const handleClearSearch = () => {
     setSearchInput('');
     // searchQuery será limpo pelo useEffect após 350ms,
@@ -100,6 +127,14 @@ export default function ClientStoreContent({ shop }: ClientStoreContentProps) {
           onClearSearch={handleClearSearch}
         />
       </div>
+
+      {linkedItem && (
+        <ProductModal
+          product={linkedItem}
+          externalOpen={true}
+          onExternalOpenChange={handleLinkedItemClose}
+        />
+      )}
     </main>
   );
 }

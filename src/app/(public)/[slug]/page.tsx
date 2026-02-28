@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 import { fetchShopBySlugServer } from './server-service';
@@ -69,7 +70,9 @@ export default async function StoreCatalog({ params }: Props) {
   return (
     <div className="min-h-screen bg-background">
       <StoreHeader shop={result.data.data} />
-      <ClientStoreContent shop={result.data} />
+      <Suspense>
+        <ClientStoreContent shop={result.data} />
+      </Suspense>
     </div>
   );
 }
