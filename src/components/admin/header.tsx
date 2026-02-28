@@ -16,6 +16,7 @@ import { useEffect, useRef } from "react";
 import { useAdminActionCable, AdminOrderData } from "@/lib/admin-cable";
 import { useRestaurantSounds } from "@/hooks/use-restaurant-sounds";
 import { SoundSettings } from "@/components/admin/sound-settings";
+import { CommandMenu } from "@/components/admin/command-menu";
 import { fixImageUrl } from "@/utils/image-url";
 
 export function Header() {
@@ -78,6 +79,7 @@ export function Header() {
           </div>
 
           <div className="flex items-center gap-4">
+            <CommandMenu />
             <div className="hidden md:block">
               <SoundSettings onSettingsChange={updateSettings} />
             </div>
