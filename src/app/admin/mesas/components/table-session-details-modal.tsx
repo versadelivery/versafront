@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { X, UtensilsCrossed, Clock, Users, DollarSign, User } from "lucide-react";
+import { X, UtensilsCrossed, Clock, Users, DollarSign, User, ShoppingCart } from "lucide-react";
 import { TableSession } from "../services/table-service";
 
 interface TableSessionDetailsModalProps {
@@ -122,6 +122,58 @@ export default function TableSessionDetailsModal({
               </div>
               <span className="text-sm font-medium">{formatCurrency(attrs.total_amount)}</span>
             </div>
+
+            {/* Pedidos vinculados */}
+            {attrs.orders && attrs.orders.length > 0 && (
+              <div className="border-t pt-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <ShoppingCart className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">
+                    Pedidos ({attrs.orders_count})
+                  </span>
+                  <span className="text-xs text-muted-foreground ml-auto">
+                    Total: {formatCurrency(attrs.orders_total)}
+                  </span>
+                </div>
+                <div className="bg-muted/50 rounded-lg divide-y max-h-48 overflow-y-auto">
+                  {attrs.orders.map((order) => {
+                    const statusMap: Record<string, string> = {
+                      received: "Recebido",
+                      accepted: "Aceito",
+                      in_preparation: "Preparando",
+                      ready: "Pronto",
+                      delivered: "Entregue",
+                    };
+                    return (
+                      <div key={order.id} className="px-3 py-2 text-sm">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">#{order.id}</span>
+                            <Badge
+                              variant="secondary"
+                              className="text-[10px] h-5"
+                            >
+                              {statusMap[order.status] || order.status}
+                            </Badge>
+                          </div>
+                          <span className="font-medium">{formatCurrency(order.total_price)}</span>
+                        </div>
+                        {order.items && order.items.length > 0 && (
+                          <div className="mt-1 text-xs text-muted-foreground">
+                            {order.items.map((item, i) => (
+                              <span key={i}>
+                                {item.quantity}x {item.name}
+                                {i < order.items.length - 1 && ", "}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             <div className="border-t pt-4 space-y-3">
               <div className="flex items-center justify-between text-sm">

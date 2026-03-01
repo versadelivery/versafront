@@ -32,6 +32,7 @@ export interface CreateOrderRequest {
     customer_name?: string;
     customer_phone?: string;
     coupon_code?: string;
+    table_session_id?: number;
     address: {
       address: string;
       neighborhood: string;

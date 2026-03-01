@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { X, UtensilsCrossed, Loader2, Clock, Users } from "lucide-react";
+import { X, UtensilsCrossed, Loader2, Clock, Users, ShoppingCart, DollarSign } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Table, TableSession, CloseTableSessionPayload } from "../services/table-service";
 
 interface CloseTableModalProps {
@@ -34,6 +35,24 @@ export default function CloseTableModal({
   if (!isOpen || !table || !session) return null;
 
   const sessionAttrs = session.attributes;
+  const hasOrders = sessionAttrs.orders && sessionAttrs.orders.length > 0;
+
+  const formatCurrency = (value: string | number) => {
+    return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
+      Number(value)
+    );
+  };
+
+  const statusLabel = (status: string) => {
+    const map: Record<string, string> = {
+      received: "Recebido",
+      accepted: "Aceito",
+      in_preparation: "Preparando",
+      ready: "Pronto",
+      delivered: "Entregue",
+    };
+    return map[status] || status;
+  };
 
   const formatDuration = (minutes: number) => {
     const hours = Math.floor(minutes / 60);
@@ -44,7 +63,7 @@ export default function CloseTableModal({
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
-    if (!formData.total_amount || Number(formData.total_amount) < 0) {
+    if (!hasOrders && (!formData.total_amount || Number(formData.total_amount) < 0)) {
       newErrors.total_amount = "Informe o valor total";
     }
     setErrors(newErrors);
@@ -58,7 +77,7 @@ export default function CloseTableModal({
     setIsSubmitting(true);
     try {
       await onSubmit(session.id, {
-        total_amount: Number(formData.total_amount),
+        total_amount: hasOrders ? Number(sessionAttrs.orders_total) : Number(formData.total_amount),
         notes: formData.notes || undefined,
       });
       setFormData({ total_amount: "", notes: "" });
@@ -141,29 +160,76 @@ export default function CloseTableModal({
             )}
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="total_amount" className="text-sm font-medium text-foreground">
-                Valor total da comanda
-              </Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">
-                  R$
+          {/* Pedidos vinculados */}
+          {hasOrders && (
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-3">
+                <ShoppingCart className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm font-medium">
+                  Pedidos ({sessionAttrs.orders.length})
                 </span>
-                <Input
-                  id="total_amount"
-                  type="text"
-                  inputMode="decimal"
-                  placeholder="Ex: 150,00"
-                  value={formData.total_amount.replace(".", ",")}
-                  onChange={(e) => handleCurrencyInput(e.target.value)}
-                  className={`h-11 pl-10 ${errors.total_amount ? "border-red-500" : ""}`}
-                />
               </div>
-              {errors.total_amount && (
-                <p className="text-xs text-red-500">{errors.total_amount}</p>
-              )}
+              <div className="bg-muted/50 rounded-lg divide-y max-h-48 overflow-y-auto">
+                {sessionAttrs.orders.map((order) => (
+                  <div key={order.id} className="px-3 py-2 text-sm">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">#{order.id}</span>
+                        <Badge variant="secondary" className="text-[10px] h-5">
+                          {statusLabel(order.status)}
+                        </Badge>
+                      </div>
+                      <span className="font-medium">{formatCurrency(order.total_price)}</span>
+                    </div>
+                    {order.items && order.items.length > 0 && (
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        {order.items.map((item, i) => (
+                          <span key={i}>
+                            {item.quantity}x {item.name}
+                            {i < order.items.length - 1 && ", "}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-between items-center mt-3 px-1 py-2 border-t">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="w-4 h-4 text-foreground" />
+                  <span className="text-sm font-semibold">Total</span>
+                </div>
+                <span className="text-lg font-bold text-primary">{formatCurrency(sessionAttrs.orders_total)}</span>
+              </div>
             </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Campo de valor manual — só aparece quando não tem pedidos vinculados */}
+            {!hasOrders && (
+              <div className="space-y-2">
+                <Label htmlFor="total_amount" className="text-sm font-medium text-foreground">
+                  Valor total da comanda
+                </Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">
+                    R$
+                  </span>
+                  <Input
+                    id="total_amount"
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="Ex: 150,00"
+                    value={formData.total_amount.replace(".", ",")}
+                    onChange={(e) => handleCurrencyInput(e.target.value)}
+                    className={`h-11 pl-10 ${errors.total_amount ? "border-red-500" : ""}`}
+                  />
+                </div>
+                {errors.total_amount && (
+                  <p className="text-xs text-red-500">{errors.total_amount}</p>
+                )}
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="close_notes" className="text-sm font-medium text-foreground">

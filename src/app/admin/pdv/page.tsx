@@ -12,7 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import {
   ShoppingCart, Plus, Minus, Trash2, Search,
   CreditCard, MapPin, User, Package, Settings2,
-  Tag, X, CheckCircle2, Loader2,
+  Tag, X, CheckCircle2, Loader2, UtensilsCrossed,
 } from "lucide-react";
 import { useCatalogGroup } from "@/hooks/useCatalogGroup";
 import Image from "next/image";
@@ -25,6 +25,8 @@ import { useShop } from "@/hooks/use-shop";
 import { usePayment } from "@/app/admin/settings/payment/usePayment";
 import { ItemOptionsDialog } from "./item-options-dialog";
 import AdminHeader from "@/components/admin/catalog-header";
+import { tableService, Table, TableSession, CloseTableSessionPayload } from "@/app/admin/mesas/services/table-service";
+import CloseTableModal from "@/app/admin/mesas/components/close-table-modal";
 
 interface CartItem {
   id: string;
@@ -77,6 +79,9 @@ export default function PDVPage() {
   const [couponError, setCouponError] = useState("");
   const [couponLoading, setCouponLoading] = useState(false);
   const [couponDiscount, setCouponDiscount] = useState(0);
+  const [tables, setTables] = useState<Table[]>([]);
+  const [openSessions, setOpenSessions] = useState<TableSession[]>([]);
+  const [selectedTableSessionId, setSelectedTableSessionId] = useState<string | null>(null);
   const { shop } = useShop();
   const shopId = shop?.id;
   const { paymentMethodsData } = usePayment();
@@ -88,6 +93,22 @@ export default function PDVPage() {
     const unsubscribe = subscribeToAdminOrders(() => {});
     return () => { if (unsubscribe) unsubscribe(); };
   }, [subscribeToAdminOrders]);
+
+  useEffect(() => {
+    const fetchTablesAndSessions = async () => {
+      try {
+        const [tablesRes, sessionsRes] = await Promise.all([
+          tableService.getTables(),
+          tableService.getTableSessions({ status: "open" }),
+        ]);
+        setTables(tablesRes.data);
+        setOpenSessions(sessionsRes.data);
+      } catch {
+        // silently fail — tables are optional
+      }
+    };
+    fetchTablesAndSessions();
+  }, []);
 
   // Filtrar catálogo
   const filteredCatalog =
@@ -233,6 +254,54 @@ export default function PDVPage() {
     setCart((prev) => prev.filter((item) => item.id !== itemId));
   };
 
+  const [openingTableId, setOpeningTableId] = useState<string | null>(null);
+  const [showCloseModal, setShowCloseModal] = useState(false);
+
+  const handleSelectTableSession = (sessionId: string | null) => {
+    setSelectedTableSessionId(sessionId);
+    if (sessionId) {
+      const session = openSessions.find((s) => s.id === sessionId);
+      if (session?.attributes.customer_name) {
+        setCustomerInfo((prev) => ({ ...prev, name: session.attributes.customer_name || "" }));
+      }
+    } else {
+      setCustomerInfo((prev) => ({ ...prev, name: "" }));
+    }
+  };
+
+  const handleOpenSession = async (tableId: string) => {
+    setOpeningTableId(tableId);
+    try {
+      const result = await tableService.openTableSession({ table_id: tableId });
+      const newSession = result.data;
+      setOpenSessions((prev) => [...prev, newSession]);
+      setSelectedTableSessionId(newSession.id);
+      toast.success(`Comanda aberta para Mesa ${newSession.attributes.table_number}`);
+    } catch {
+      toast.error("Erro ao abrir comanda");
+    } finally {
+      setOpeningTableId(null);
+    }
+  };
+
+  const handleCloseSession = async (id: string, data: CloseTableSessionPayload) => {
+    await tableService.closeTableSession(id, data);
+    setSelectedTableSessionId(null);
+    toast.success("Comanda fechada com sucesso!");
+    const [t, s] = await Promise.all([
+      tableService.getTables(),
+      tableService.getTableSessions({ status: "open" }),
+    ]);
+    setTables(t.data);
+    setOpenSessions(s.data);
+  };
+
+  const isTableOrder = !!selectedTableSessionId;
+  const selectedSession = isTableOrder ? openSessions.find((s) => s.id === selectedTableSessionId) : null;
+  const selectedTable = selectedSession
+    ? tables.find((t) => t.attributes.number === selectedSession.attributes.table_number)
+    : null;
+
   const clearCart = () => {
     setCart([]);
     handleRemoveCoupon();
@@ -312,11 +381,13 @@ export default function PDVPage() {
   const processOrder = async () => {
     if (cart.length === 0) { toast.error("Adicione itens ao carrinho"); return; }
 
-    if (orderType === "delivery" && (!customerInfo.name || !customerInfo.phone || !customerInfo.address)) {
-      toast.error("Preencha as informações de entrega"); return;
-    }
-    if (orderType === "pickup" && (!customerInfo.name || !customerInfo.phone)) {
-      toast.error("Preencha o nome e telefone do cliente"); return;
+    if (!isTableOrder) {
+      if (orderType === "delivery" && (!customerInfo.name || !customerInfo.phone || !customerInfo.address)) {
+        toast.error("Preencha as informações de entrega"); return;
+      }
+      if (orderType === "pickup" && (!customerInfo.name || !customerInfo.phone)) {
+        toast.error("Preencha o nome e telefone do cliente"); return;
+      }
     }
 
     if (paymentMethod === "cash" && changeAmount) {
@@ -329,24 +400,28 @@ export default function PDVPage() {
 
     setIsProcessingOrder(true);
     try {
+      const selectedSession = openSessions.find((s) => s.id === selectedTableSessionId);
       const orderData = {
         order: {
           shop_id: Number(shopId) || 0,
-          withdrawal: orderType === "pickup",
+          withdrawal: isTableOrder ? true : orderType === "pickup",
           payment_method:
             paymentMethod === "cash"
               ? ("cash" as const)
               : paymentMethod === "card"
               ? ("credit" as const)
               : ("manual_pix" as const),
-          customer_name: customerInfo.name,
-          customer_phone: customerInfo.phone.replace(/\D/g, ""),
+          customer_name: isTableOrder
+            ? (selectedSession?.attributes.customer_name || `Mesa ${selectedSession?.attributes.table_number}`)
+            : customerInfo.name,
+          customer_phone: isTableOrder ? undefined : customerInfo.phone.replace(/\D/g, "") || undefined,
           ...(appliedCoupon && { coupon_code: appliedCoupon.code }),
+          ...(selectedTableSessionId && { table_session_id: Number(selectedTableSessionId) }),
           address: {
-            address: customerInfo.address,
-            neighborhood: customerInfo.neighborhood,
-            complement: customerInfo.complement,
-            reference: customerInfo.reference,
+            address: isTableOrder ? "" : customerInfo.address,
+            neighborhood: isTableOrder ? "" : customerInfo.neighborhood,
+            complement: isTableOrder ? "" : customerInfo.complement,
+            reference: isTableOrder ? "" : customerInfo.reference,
           },
           items: cart.map((item) => ({
             catalog_item_id: parseInt(item.id.split("-")[0]),
@@ -369,10 +444,18 @@ export default function PDVPage() {
       if (result) {
         toast.success("Pedido criado com sucesso!");
         clearCart();
-        setCustomerInfo({ name: "", phone: "", address: "", neighborhood: "", city: "", zipCode: "", complement: "", reference: "" });
         setNotes("");
         setChangeAmount("");
         handleRemoveCoupon();
+        if (!isTableOrder) {
+          setCustomerInfo({ name: "", phone: "", address: "", neighborhood: "", city: "", zipCode: "", complement: "", reference: "" });
+          setSelectedTableSessionId(null);
+        }
+        // Refresh tables and sessions after order creation
+        Promise.all([
+          tableService.getTables(),
+          tableService.getTableSessions({ status: "open" }),
+        ]).then(([t, s]) => { setTables(t.data); setOpenSessions(s.data); }).catch(() => {});
       }
     } catch (error: any) {
       const errorMessage = error.response?.data?.error || "Erro ao processar pedido";
@@ -897,32 +980,130 @@ export default function PDVPage() {
             </CardContent>
           </Card>
 
-          {/* Tipo de Pedido */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5" />
-                Tipo de Pedido
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Select
-                value={orderType}
-                onValueChange={(v: "delivery" | "pickup") => setOrderType(v)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="delivery">Entrega</SelectItem>
-                  <SelectItem value="pickup">Retirada</SelectItem>
-                </SelectContent>
-              </Select>
-            </CardContent>
-          </Card>
+          {/* Mesa (opcional) */}
+          {tables.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <UtensilsCrossed className="h-5 w-5" />
+                    Mesa
+                  </div>
+                  {isTableOrder && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleSelectTableSession(null)}
+                      className="h-7 px-2 text-xs text-muted-foreground"
+                    >
+                      Remover mesa
+                    </Button>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 gap-2">
+                  {tables
+                    .sort((a, b) => a.attributes.number - b.attributes.number)
+                    .map((table) => {
+                      const session = openSessions.find(
+                        (s) => s.attributes.table_number === table.attributes.number
+                      );
+                      const hasSession = !!session;
+                      const isSelected = hasSession && selectedTableSessionId === session.id;
+                      const isOpening = openingTableId === table.id;
 
-          {/* Dados do cliente */}
-          <Card>
+                      return (
+                        <button
+                          key={table.id}
+                          type="button"
+                          disabled={isOpening}
+                          onClick={() => {
+                            if (hasSession) {
+                              handleSelectTableSession(isSelected ? null : session.id);
+                            } else {
+                              handleOpenSession(table.id);
+                            }
+                          }}
+                          className={`relative flex flex-col items-center justify-center rounded-lg border-2 p-3 text-center transition-all ${
+                            isSelected
+                              ? "border-emerald-500 bg-emerald-50 ring-2 ring-emerald-200"
+                              : hasSession
+                              ? "border-amber-300 bg-amber-50 hover:border-amber-400"
+                              : "border-dashed border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100"
+                          }`}
+                        >
+                          <span className={`text-sm font-bold ${
+                            isSelected ? "text-emerald-700" : hasSession ? "text-amber-700" : "text-gray-500"
+                          }`}>
+                            {table.attributes.number}
+                          </span>
+                          <span className={`text-[10px] mt-0.5 ${
+                            isSelected ? "text-emerald-600" : hasSession ? "text-amber-600" : "text-gray-400"
+                          }`}>
+                            {isOpening
+                              ? "Abrindo..."
+                              : isSelected
+                              ? "Selecionada"
+                              : hasSession
+                              ? session.attributes.customer_name || "Ocupada"
+                              : "Abrir"}
+                          </span>
+                          {hasSession && (
+                            <span className={`absolute top-1 right-1 w-2 h-2 rounded-full ${
+                              isSelected ? "bg-emerald-500" : "bg-amber-400"
+                            }`} />
+                          )}
+                        </button>
+                      );
+                    })}
+                </div>
+                {isTableOrder && (() => {
+                  const session = openSessions.find((s) => s.id === selectedTableSessionId);
+                  return (
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2.5 mt-3 space-y-1">
+                      <p className="text-xs text-emerald-700 font-medium">
+                        Pedido para Mesa {session?.attributes.table_number}
+                        {session?.attributes.customer_name ? ` — ${session.attributes.customer_name}` : ""}
+                      </p>
+                      <p className="text-xs text-emerald-600">
+                        Dados de cliente e entrega não são necessarios
+                      </p>
+                    </div>
+                  );
+                })()}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Tipo de Pedido — esconde quando vinculado a mesa */}
+          {!isTableOrder && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MapPin className="h-5 w-5" />
+                  Tipo de Pedido
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Select
+                  value={orderType}
+                  onValueChange={(v: "delivery" | "pickup") => setOrderType(v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="delivery">Entrega</SelectItem>
+                    <SelectItem value="pickup">Retirada</SelectItem>
+                  </SelectContent>
+                </Select>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Dados do cliente — esconde quando vinculado a mesa */}
+          {!isTableOrder && <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <User className="h-5 w-5" />
@@ -1020,7 +1201,7 @@ export default function PDVPage() {
                 </>
               )}
             </CardContent>
-          </Card>
+          </Card>}
 
           {/* Pagamento */}
           <Card>
@@ -1093,17 +1274,42 @@ export default function PDVPage() {
           </Card>
 
           {/* Finalizar */}
-          <Button
-            onClick={processOrder}
-            disabled={cart.length === 0 || isProcessingOrder}
-            className="w-full h-12 text-base font-semibold gap-2"
-            size="lg"
-          >
-            <ShoppingCart className="h-5 w-5" />
-            {isProcessingOrder
-              ? "Processando..."
-              : `Finalizar Pedido — ${formatPrice(orderTotal)}`}
-          </Button>
+          {isTableOrder ? (
+            <div className="space-y-2">
+              <Button
+                onClick={processOrder}
+                disabled={cart.length === 0 || isProcessingOrder}
+                className="w-full h-12 text-base font-semibold gap-2"
+                size="lg"
+              >
+                <Plus className="h-5 w-5" />
+                {isProcessingOrder
+                  ? "Enviando..."
+                  : `Enviar Pedido — ${formatPrice(orderTotal)}`}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setShowCloseModal(true)}
+                disabled={isProcessingOrder}
+                className="w-full h-10 text-sm font-medium gap-2 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+              >
+                <UtensilsCrossed className="h-4 w-4" />
+                Fechar Comanda — Mesa {selectedSession?.attributes.table_number}
+              </Button>
+            </div>
+          ) : (
+            <Button
+              onClick={processOrder}
+              disabled={cart.length === 0 || isProcessingOrder}
+              className="w-full h-12 text-base font-semibold gap-2"
+              size="lg"
+            >
+              <ShoppingCart className="h-5 w-5" />
+              {isProcessingOrder
+                ? "Processando..."
+                : `Finalizar Pedido — ${formatPrice(orderTotal)}`}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -1113,6 +1319,15 @@ export default function PDVPage() {
         open={optionsItem !== null}
         onClose={() => setOptionsItem(null)}
         onAddToCart={handleOptionsAddToCart}
+      />
+
+      {/* Modal de fechar comanda */}
+      <CloseTableModal
+        isOpen={showCloseModal}
+        onClose={() => setShowCloseModal(false)}
+        onSubmit={handleCloseSession}
+        table={selectedTable || null}
+        session={selectedSession || null}
       />
     </div>
   );

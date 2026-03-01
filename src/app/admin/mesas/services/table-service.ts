@@ -21,6 +21,20 @@ export interface Table {
   attributes: TableAttributes;
 }
 
+export interface TableSessionOrderItem {
+  name: string;
+  quantity: number;
+}
+
+export interface TableSessionOrderSummary {
+  id: number;
+  status: string;
+  total_price: string;
+  items_count: number;
+  items: TableSessionOrderItem[];
+  created_at: string;
+}
+
 export interface TableSessionAttributes {
   opened_at: string;
   closed_at: string | null;
@@ -34,6 +48,9 @@ export interface TableSessionAttributes {
   table_label: string | null;
   opened_by_name: string;
   closed_by_name: string | null;
+  orders_total: string;
+  orders_count: number;
+  orders: TableSessionOrderSummary[];
   created_at: string;
   updated_at: string;
 }
