@@ -55,5 +55,9 @@ export const API_ENDPOINTS = {
     SALES_BY_WEEKDAY: "/reports/sales_by_weekday",
     SALES_BY_NEIGHBORHOOD: "/reports/sales_by_neighborhood",
     CUSTOMER_ACQUISITION: "/reports/customer_acquisition",
+    SALES_BY_CHANNEL: "/reports/sales_by_channel",
+    DISCOUNTED_ORDERS: "/reports/discounted_orders",
+    AVERAGE_PREP_TIME: "/reports/average_prep_time",
+    AVERAGE_DELIVERY_TIME: "/reports/average_delivery_time",
   },
 };

@@ -16,6 +16,10 @@ import SalesByHourTab from "./components/sales-by-hour-tab";
 import SalesByWeekdayTab from "./components/sales-by-weekday-tab";
 import SalesByNeighborhoodTab from "./components/sales-by-neighborhood-tab";
 import CustomerAcquisitionTab from "./components/customer-acquisition-tab";
+import SalesByChannelTab from "./components/sales-by-channel-tab";
+import DiscountedOrdersTab from "./components/discounted-orders-tab";
+import AveragePrepTimeTab from "./components/average-prep-time-tab";
+import AverageDeliveryTimeTab from "./components/average-delivery-time-tab";
 
 const CATEGORIES = [
   {
@@ -27,6 +31,7 @@ const CATEGORIES = [
       { key: "faturamento-mensal", label: "Mensal" },
       { key: "ticket-medio", label: "Ticket Médio" },
       { key: "formas-de-pagamento", label: "Pagamento" },
+      { key: "descontos", label: "Descontos" },
     ],
   },
   {
@@ -38,6 +43,9 @@ const CATEGORIES = [
       { key: "vendas-por-horario", label: "Por Horário" },
       { key: "vendas-por-dia-semana", label: "Por Dia" },
       { key: "vendas-por-bairro", label: "Por Bairro" },
+      { key: "vendas-por-canal", label: "Por Canal" },
+      { key: "tempo-preparo", label: "Tempo Preparo" },
+      { key: "tempo-entrega", label: "Tempo Entrega" },
     ],
   },
   {
@@ -61,7 +69,11 @@ const TAB_COMPONENTS: Record<string, React.ComponentType> = {
   "vendas-por-dia-semana": SalesByWeekdayTab,
   "vendas-por-bairro": SalesByNeighborhoodTab,
   "top-clientes": TopCustomersTab,
+  "vendas-por-canal": SalesByChannelTab,
   "aquisicao-clientes": CustomerAcquisitionTab,
+  "descontos": DiscountedOrdersTab,
+  "tempo-preparo": AveragePrepTimeTab,
+  "tempo-entrega": AverageDeliveryTimeTab,
 };
 
 function findCategory(tab: string) {

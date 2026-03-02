@@ -22,6 +22,7 @@ import {
   Clock,
   MapPin,
   UserPlus,
+  Timer,
   type LucideIcon,
 } from "lucide-react"
 
@@ -189,6 +190,16 @@ export const adminSections: AdminSection[] = [
     keywords: ["pagamento", "pix", "cartao", "dinheiro", "debito", "credito"],
     group: "Relatórios — Faturamento",
   },
+  {
+    id: "relatorios-descontos",
+    title: "Descontos",
+    description: "Relatório de pedidos com desconto e cupons",
+    href: "/admin/relatorios?cat=faturamento&tab=descontos",
+    icon: Ticket,
+    iconBgColor: "bg-purple-500",
+    keywords: ["desconto", "cupom", "promocao", "relatorio", "descontos"],
+    group: "Relatórios — Faturamento",
+  },
   // Relatórios > Vendas
   {
     id: "relatorios-vendas-por-item",
@@ -228,6 +239,36 @@ export const adminSections: AdminSection[] = [
     icon: MapPin,
     iconBgColor: "bg-purple-500",
     keywords: ["vendas", "bairro", "regiao", "entrega", "endereco", "relatorio"],
+    group: "Relatórios — Vendas",
+  },
+  {
+    id: "relatorios-vendas-canal",
+    title: "Vendas por Canal",
+    description: "Distribuição de vendas por Mesa, Balcão e Delivery",
+    href: "/admin/relatorios?cat=vendas&tab=vendas-por-canal",
+    icon: ShoppingCart,
+    iconBgColor: "bg-purple-500",
+    keywords: ["vendas", "canal", "mesa", "balcao", "delivery", "entrega", "relatorio"],
+    group: "Relatórios — Vendas",
+  },
+  {
+    id: "relatorios-tempo-preparo",
+    title: "Tempo de Preparo",
+    description: "Tempo médio de preparo dos pedidos",
+    href: "/admin/relatorios?cat=vendas&tab=tempo-preparo",
+    icon: Timer,
+    iconBgColor: "bg-purple-500",
+    keywords: ["tempo", "preparo", "preparacao", "media", "minutos", "relatorio"],
+    group: "Relatórios — Vendas",
+  },
+  {
+    id: "relatorios-tempo-entrega",
+    title: "Tempo de Entrega",
+    description: "Tempo médio de entrega dos pedidos",
+    href: "/admin/relatorios?cat=vendas&tab=tempo-entrega",
+    icon: Truck,
+    iconBgColor: "bg-purple-500",
+    keywords: ["tempo", "entrega", "delivery", "media", "minutos", "relatorio"],
     group: "Relatórios — Vendas",
   },
   // Relatórios > Clientes

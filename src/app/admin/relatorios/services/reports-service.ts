@@ -216,6 +216,92 @@ export interface CustomerAcquisitionResponse {
   summary: CustomerAcquisitionSummary;
 }
 
+// Sales by Channel
+export interface SalesByChannelEntry {
+  key: string;
+  label: string;
+  color: string;
+  orders: number;
+  revenue: number;
+  average_ticket: number;
+  order_percentage: number;
+  revenue_percentage: number;
+}
+
+export interface SalesByChannelSummary {
+  total_orders: number;
+  total_revenue: number;
+  top_channel: { label: string; orders: number; revenue: number } | null;
+}
+
+export interface SalesByChannelResponse {
+  data: SalesByChannelEntry[];
+  summary: SalesByChannelSummary;
+}
+
+// Discounted Orders
+export interface DiscountedOrderEntry {
+  id: number;
+  date_label: string;
+  total_items_price: number;
+  discount_amount: number;
+  total_price: number;
+  coupon_code: string | null;
+  payment_method_label: string;
+}
+
+export interface DiscountedOrdersSummary {
+  total_discounted_orders: number;
+  total_discount: number;
+  average_discount: number;
+  discount_percentage: number;
+}
+
+export interface DiscountedOrdersResponse {
+  orders: DiscountedOrderEntry[];
+  summary: DiscountedOrdersSummary;
+}
+
+// Average Prep Time
+export interface AveragePrepTimeEntry {
+  date: string;
+  label: string;
+  average_minutes: number;
+  order_count: number;
+}
+
+export interface AveragePrepTimeSummary {
+  total_orders: number;
+  overall_average_minutes: number;
+  best_day: { date: string; label: string; average_minutes: number } | null;
+  worst_day: { date: string; label: string; average_minutes: number } | null;
+}
+
+export interface AveragePrepTimeResponse {
+  data: AveragePrepTimeEntry[];
+  summary: AveragePrepTimeSummary;
+}
+
+// Average Delivery Time
+export interface AverageDeliveryTimeEntry {
+  date: string;
+  label: string;
+  average_minutes: number;
+  order_count: number;
+}
+
+export interface AverageDeliveryTimeSummary {
+  total_orders: number;
+  overall_average_minutes: number;
+  best_day: { date: string; label: string; average_minutes: number } | null;
+  worst_day: { date: string; label: string; average_minutes: number } | null;
+}
+
+export interface AverageDeliveryTimeResponse {
+  data: AverageDeliveryTimeEntry[];
+  summary: AverageDeliveryTimeSummary;
+}
+
 export const reportsService = {
   getMonthlyRevenue: async (
     months?: number
@@ -317,6 +403,49 @@ export const reportsService = {
   ): Promise<CustomerAcquisitionResponse> => {
     const response = await api.get(
       API_ENDPOINTS.REPORTS.CUSTOMER_ACQUISITION,
+      {
+        params: { start_date: startDate, end_date: endDate },
+      }
+    );
+    return response.data;
+  },
+
+  getSalesByChannel: async (
+    startDate: string,
+    endDate: string
+  ): Promise<SalesByChannelResponse> => {
+    const response = await api.get(API_ENDPOINTS.REPORTS.SALES_BY_CHANNEL, {
+      params: { start_date: startDate, end_date: endDate },
+    });
+    return response.data;
+  },
+
+  getDiscountedOrders: async (
+    startDate: string,
+    endDate: string
+  ): Promise<DiscountedOrdersResponse> => {
+    const response = await api.get(API_ENDPOINTS.REPORTS.DISCOUNTED_ORDERS, {
+      params: { start_date: startDate, end_date: endDate },
+    });
+    return response.data;
+  },
+
+  getAveragePrepTime: async (
+    startDate: string,
+    endDate: string
+  ): Promise<AveragePrepTimeResponse> => {
+    const response = await api.get(API_ENDPOINTS.REPORTS.AVERAGE_PREP_TIME, {
+      params: { start_date: startDate, end_date: endDate },
+    });
+    return response.data;
+  },
+
+  getAverageDeliveryTime: async (
+    startDate: string,
+    endDate: string
+  ): Promise<AverageDeliveryTimeResponse> => {
+    const response = await api.get(
+      API_ENDPOINTS.REPORTS.AVERAGE_DELIVERY_TIME,
       {
         params: { start_date: startDate, end_date: endDate },
       }
