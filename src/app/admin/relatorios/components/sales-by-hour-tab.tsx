@@ -13,6 +13,7 @@ import {
 import { useSalesByHour } from "../hooks/use-sales-by-hour";
 import DateRangePicker from "./date-range-picker";
 import SalesByHourChart from "./sales-by-hour-chart";
+import ReportExportButton from "@/components/admin/report-export-button";
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", {
@@ -37,11 +38,19 @@ export default function SalesByHourTab() {
 
   return (
     <div className="space-y-6">
-      <DateRangePicker
-        startDate={startDate}
-        endDate={endDate}
-        onChange={handleDateChange}
-      />
+      <div className="flex items-center justify-between gap-4">
+        <DateRangePicker
+          startDate={startDate}
+          endDate={endDate}
+          onChange={handleDateChange}
+        />
+        <ReportExportButton
+          filename="vendas-por-horario"
+          headers={["Horário", "Pedidos", "Receita", "% Pedidos", "% Receita"]}
+          rows={data?.map(d => [d.label, d.orders, d.revenue, d.order_percentage, d.revenue_percentage]) ?? []}
+          disabled={loading || !data}
+        />
+      </div>
 
       {loading && (
         <div className="flex items-center justify-center py-20">

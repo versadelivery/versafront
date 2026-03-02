@@ -12,6 +12,7 @@ import {
   Hash,
 } from "lucide-react";
 import { useDeliveryFees } from "../hooks/use-delivery-fees";
+import ReportExportButton from "@/components/admin/report-export-button";
 import DateRangePicker from "./date-range-picker";
 import DeliveryFeesTable from "./delivery-fees-table";
 
@@ -38,11 +39,19 @@ export default function DeliveryFeesTab() {
 
   return (
     <div className="space-y-6">
-      <DateRangePicker
-        startDate={startDate}
-        endDate={endDate}
-        onChange={handleDateChange}
-      />
+      <div className="flex items-center justify-between gap-4">
+        <DateRangePicker
+          startDate={startDate}
+          endDate={endDate}
+          onChange={handleDateChange}
+        />
+        <ReportExportButton
+          filename="taxas-entrega"
+          headers={["Entregador", "Entregas", "Total Taxas", "Taxa Média"]}
+          rows={data?.map(d => [d.delivery_person, d.order_count, d.total_fees, d.average_fee]) ?? []}
+          disabled={loading || !data}
+        />
+      </div>
 
       {loading && (
         <div className="flex items-center justify-center py-20">

@@ -15,6 +15,7 @@ import {
 import { useAverageTicket } from "../hooks/use-average-ticket";
 import DateRangePicker from "./date-range-picker";
 import AverageTicketChart from "./average-ticket-chart";
+import ReportExportButton from "@/components/admin/report-export-button";
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", {
@@ -50,24 +51,37 @@ export default function AverageTicketTab() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-4">
-        <DateRangePicker
-          startDate={startDate}
-          endDate={endDate}
-          onChange={handleDateChange}
-        />
-        <div className="flex gap-1">
-          {GRANULARITY_OPTIONS.map((opt) => (
-            <Button
-              key={opt.value}
-              variant={granularity === opt.value ? "default" : "outline"}
-              size="sm"
-              onClick={() => setGranularity(opt.value)}
-            >
-              {opt.label}
-            </Button>
-          ))}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-4">
+          <DateRangePicker
+            startDate={startDate}
+            endDate={endDate}
+            onChange={handleDateChange}
+          />
+          <div className="flex gap-1">
+            {GRANULARITY_OPTIONS.map((opt) => (
+              <Button
+                key={opt.value}
+                variant={granularity === opt.value ? "default" : "outline"}
+                size="sm"
+                onClick={() => setGranularity(opt.value)}
+              >
+                {opt.label}
+              </Button>
+            ))}
+          </div>
         </div>
+        <ReportExportButton
+          filename="ticket-medio"
+          headers={["Período", "Pedidos", "Receita", "Ticket Médio"]}
+          rows={breakdown?.map(d => [d.label, d.orders, d.revenue, d.average_ticket]) ?? []}
+          summaryData={summary ? {
+            "Total Pedidos": summary.total_orders,
+            "Receita Bruta": summary.gross_revenue,
+            "Ticket Médio": summary.average_ticket,
+          } : undefined}
+          disabled={loading || !breakdown}
+        />
       </div>
 
       {loading && (

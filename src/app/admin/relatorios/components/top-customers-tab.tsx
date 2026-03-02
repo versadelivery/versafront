@@ -11,6 +11,7 @@ import {
   UserCheck,
 } from "lucide-react";
 import { useTopCustomers } from "../hooks/use-top-customers";
+import ReportExportButton from "@/components/admin/report-export-button";
 import DateRangePicker from "./date-range-picker";
 import TopCustomersTable from "./top-customers-table";
 
@@ -40,11 +41,20 @@ export default function TopCustomersTab() {
 
   return (
     <div className="space-y-6">
-      <DateRangePicker
-        startDate={startDate}
-        endDate={endDate}
-        onChange={handleDateChange}
-      />
+      <div className="flex items-center justify-between gap-4">
+        <DateRangePicker
+          startDate={startDate}
+          endDate={endDate}
+          onChange={handleDateChange}
+        />
+        <ReportExportButton
+          filename="top-clientes"
+          headers={["Cliente", "Telefone", "Pedidos", "Total Gasto"]}
+          rows={customers?.map(d => [d.name, d.phone || "—", d.order_count, d.total_spent]) ?? []}
+          summaryData={summary ? { "Clientes Únicos": summary.total_unique_customers, "Receita Total": summary.total_revenue, "Média por Cliente": summary.average_per_customer } : undefined}
+          disabled={loading || !customers}
+        />
+      </div>
 
       {loading && (
         <div className="flex items-center justify-center py-20">

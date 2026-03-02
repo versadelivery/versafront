@@ -11,6 +11,7 @@ import {
   Percent,
 } from "lucide-react";
 import { useVisitors } from "../hooks/use-visitors";
+import ReportExportButton from "@/components/admin/report-export-button";
 import DateRangePicker from "./date-range-picker";
 import VisitorsChart from "./visitors-chart";
 
@@ -30,11 +31,20 @@ export default function VisitorsTab() {
 
   return (
     <div className="space-y-6">
-      <DateRangePicker
-        startDate={startDate}
-        endDate={endDate}
-        onChange={handleDateChange}
-      />
+      <div className="flex items-center justify-between gap-4">
+        <DateRangePicker
+          startDate={startDate}
+          endDate={endDate}
+          onChange={handleDateChange}
+        />
+        <ReportExportButton
+          filename="visitantes"
+          headers={["Data", "Visitantes Únicos"]}
+          rows={breakdown?.map(d => [d.label, d.unique_visitors]) ?? []}
+          summaryData={summary ? { "Total Visitantes": summary.total_unique_visitors, "Total Pedidos": summary.total_orders, "Taxa Conversão": summary.conversion_rate_percentage + "%" } : undefined}
+          disabled={loading || !breakdown}
+        />
+      </div>
 
       {loading && (
         <div className="flex items-center justify-center py-20">

@@ -14,6 +14,7 @@ import {
 import { useAverageDeliveryTime } from "../hooks/use-average-delivery-time";
 import DateRangePicker from "./date-range-picker";
 import AverageDeliveryTimeChart from "./average-delivery-time-chart";
+import ReportExportButton from "@/components/admin/report-export-button";
 
 export default function AverageDeliveryTimeTab() {
   const [startDate, setStartDate] = useState<Date>(startOfMonth(new Date()));
@@ -34,11 +35,19 @@ export default function AverageDeliveryTimeTab() {
 
   return (
     <div className="space-y-6">
-      <DateRangePicker
-        startDate={startDate}
-        endDate={endDate}
-        onChange={handleDateChange}
-      />
+      <div className="flex items-center justify-between gap-4">
+        <DateRangePicker
+          startDate={startDate}
+          endDate={endDate}
+          onChange={handleDateChange}
+        />
+        <ReportExportButton
+          filename="tempo-entrega"
+          headers={["Data", "Pedidos", "Tempo Médio (min)"]}
+          rows={data?.map(d => [d.label, d.order_count, d.average_minutes]) ?? []}
+          disabled={loading || !data}
+        />
+      </div>
 
       {loading && (
         <div className="flex items-center justify-center py-20">

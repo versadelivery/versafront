@@ -14,6 +14,7 @@ import {
 import { useAveragePrepTime } from "../hooks/use-average-prep-time";
 import DateRangePicker from "./date-range-picker";
 import AveragePrepTimeChart from "./average-prep-time-chart";
+import ReportExportButton from "@/components/admin/report-export-button";
 
 export default function AveragePrepTimeTab() {
   const [startDate, setStartDate] = useState<Date>(startOfMonth(new Date()));
@@ -34,11 +35,19 @@ export default function AveragePrepTimeTab() {
 
   return (
     <div className="space-y-6">
-      <DateRangePicker
-        startDate={startDate}
-        endDate={endDate}
-        onChange={handleDateChange}
-      />
+      <div className="flex items-center justify-between gap-4">
+        <DateRangePicker
+          startDate={startDate}
+          endDate={endDate}
+          onChange={handleDateChange}
+        />
+        <ReportExportButton
+          filename="tempo-preparo"
+          headers={["Data", "Pedidos", "Tempo Médio (min)"]}
+          rows={data?.map(d => [d.label, d.order_count, d.average_minutes]) ?? []}
+          disabled={loading || !data}
+        />
+      </div>
 
       {loading && (
         <div className="flex items-center justify-center py-20">

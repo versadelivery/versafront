@@ -20,6 +20,7 @@ import {
   Trophy,
 } from "lucide-react";
 import { useSalesByWeekday } from "../hooks/use-sales-by-weekday";
+import ReportExportButton from "@/components/admin/report-export-button";
 import DateRangePicker from "./date-range-picker";
 import SalesByWeekdayChart from "./sales-by-weekday-chart";
 
@@ -49,11 +50,19 @@ export default function SalesByWeekdayTab() {
 
   return (
     <div className="space-y-6">
-      <DateRangePicker
-        startDate={startDate}
-        endDate={endDate}
-        onChange={handleDateChange}
-      />
+      <div className="flex items-center justify-between gap-4">
+        <DateRangePicker
+          startDate={startDate}
+          endDate={endDate}
+          onChange={handleDateChange}
+        />
+        <ReportExportButton
+          filename="vendas-por-dia-semana"
+          headers={["Dia", "Pedidos", "Receita", "Ticket Médio", "% Pedidos"]}
+          rows={data?.map(d => [d.label, d.orders, d.revenue, d.average_ticket, d.order_percentage]) ?? []}
+          disabled={loading || !data}
+        />
+      </div>
 
       {loading && (
         <div className="flex items-center justify-center py-20">

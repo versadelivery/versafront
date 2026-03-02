@@ -14,6 +14,7 @@ import {
 import { useDiscountedOrders } from "../hooks/use-discounted-orders";
 import DateRangePicker from "./date-range-picker";
 import DiscountedOrdersTable from "./discounted-orders-table";
+import ReportExportButton from "@/components/admin/report-export-button";
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", {
@@ -41,11 +42,20 @@ export default function DiscountedOrdersTab() {
 
   return (
     <div className="space-y-6">
-      <DateRangePicker
-        startDate={startDate}
-        endDate={endDate}
-        onChange={handleDateChange}
-      />
+      <div className="flex items-center justify-between gap-4">
+        <DateRangePicker
+          startDate={startDate}
+          endDate={endDate}
+          onChange={handleDateChange}
+        />
+        <ReportExportButton
+          filename="descontos"
+          headers={["Pedido", "Data", "Subtotal", "Desconto", "Total", "Cupom", "Pagamento"]}
+          rows={orders?.map(d => [d.id, d.date_label, d.total_items_price, d.discount_amount, d.total_price, d.coupon_code || "—", d.payment_method_label]) ?? []}
+          summaryData={summary ? { "Pedidos com Desconto": summary.total_discounted_orders, "Total Descontos": summary.total_discount, "Desconto Médio": summary.average_discount } : undefined}
+          disabled={loading || !orders}
+        />
+      </div>
 
       {loading && (
         <div className="flex items-center justify-center py-20">

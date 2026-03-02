@@ -16,12 +16,13 @@ import {
   AlertTriangle,
   ShoppingCart,
   DollarSign,
-  Wallet,
+  Trophy,
+  Store,
 } from "lucide-react";
-import { usePaymentMethods } from "../hooks/use-payment-methods";
+import { useSalesByChannel } from "../hooks/use-sales-by-channel";
 import ReportExportButton from "@/components/admin/report-export-button";
 import DateRangePicker from "./date-range-picker";
-import PaymentMethodsChart from "./payment-methods-chart";
+import SalesByChannelChart from "./sales-by-channel-chart";
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", {
@@ -30,17 +31,14 @@ function formatCurrency(value: number) {
   }).format(value);
 }
 
-export default function PaymentMethodsTab() {
+export default function SalesByChannelTab() {
   const [startDate, setStartDate] = useState<Date>(startOfMonth(new Date()));
   const [endDate, setEndDate] = useState<Date>(new Date());
 
   const startStr = format(startDate, "yyyy-MM-dd");
   const endStr = format(endDate, "yyyy-MM-dd");
 
-  const { data, summary, loading, error } = usePaymentMethods(
-    startStr,
-    endStr
-  );
+  const { data, summary, loading, error } = useSalesByChannel(startStr, endStr);
 
   const handleDateChange = (newStart: Date, newEnd: Date) => {
     setStartDate(newStart);
@@ -56,9 +54,9 @@ export default function PaymentMethodsTab() {
           onChange={handleDateChange}
         />
         <ReportExportButton
-          filename="formas-de-pagamento"
-          headers={["Forma", "Pedidos", "% Pedidos", "Receita", "% Receita"]}
-          rows={data?.map(d => [d.label, d.order_count, d.order_percentage, d.revenue, d.revenue_percentage]) ?? []}
+          filename="vendas-por-canal"
+          headers={["Canal", "Pedidos", "Receita", "Ticket Médio", "% Pedidos", "% Receita"]}
+          rows={data?.map(d => [d.label, d.orders, d.revenue, d.average_ticket, d.order_percentage, d.revenue_percentage]) ?? []}
           disabled={loading || !data}
         />
       </div>
@@ -78,7 +76,7 @@ export default function PaymentMethodsTab() {
 
       {!loading && !error && summary && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card>
               <CardContent>
                 <div className="flex items-center gap-3">
@@ -114,65 +112,90 @@ export default function PaymentMethodsTab() {
                 </div>
               </CardContent>
             </Card>
+
+            <Card>
+              <CardContent>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-amber-100">
+                    <Trophy className="h-5 w-5 text-amber-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">
+                      Canal Principal
+                    </p>
+                    <p className="text-2xl font-bold">
+                      {summary.top_channel?.label || "—"}
+                    </p>
+                    {summary.top_channel && (
+                      <p className="text-xs text-muted-foreground">
+                        {formatCurrency(summary.top_channel.revenue)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           <Card>
             <CardHeader>
-              <CardTitle>Distribuição por Forma de Pagamento</CardTitle>
+              <CardTitle>Faturamento por Canal</CardTitle>
             </CardHeader>
             <CardContent>
-              {data.length > 0 ? (
-                <PaymentMethodsChart data={data} />
+              {data.some((d) => d.orders > 0) ? (
+                <SalesByChannelChart data={data} />
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                  <Wallet className="h-12 w-12 mb-4" />
+                  <Store className="h-12 w-12 mb-4" />
                   <p>Nenhum dado no período</p>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {data.length > 0 && (
+          {data.some((d) => d.orders > 0) && (
             <Card>
               <CardHeader>
-                <CardTitle>Detalhamento</CardTitle>
+                <CardTitle>Detalhamento por Canal</CardTitle>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Forma de Pagamento</TableHead>
+                      <TableHead>Canal</TableHead>
                       <TableHead className="text-right">Pedidos</TableHead>
-                      <TableHead className="text-right">% Pedidos</TableHead>
                       <TableHead className="text-right">Faturamento</TableHead>
-                      <TableHead className="text-right">
-                        % Faturamento
-                      </TableHead>
+                      <TableHead className="text-right">Ticket Médio</TableHead>
+                      <TableHead className="text-right">% Pedidos</TableHead>
+                      <TableHead className="text-right">% Faturamento</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {data.map((method) => (
-                      <TableRow key={method.key}>
-                        <TableCell>
+                    {data.map((channel) => (
+                      <TableRow key={channel.key}>
+                        <TableCell className="font-medium">
                           <div className="flex items-center gap-2">
                             <div
                               className="h-3 w-3 rounded-full"
-                              style={{ backgroundColor: method.color }}
+                              style={{ backgroundColor: channel.color }}
                             />
-                            <span className="font-medium">{method.label}</span>
+                            {channel.label}
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
-                          {method.order_count}
+                          {channel.orders}
                         </TableCell>
                         <TableCell className="text-right">
-                          {method.order_percentage}%
+                          {formatCurrency(channel.revenue)}
                         </TableCell>
                         <TableCell className="text-right">
-                          {formatCurrency(method.revenue)}
+                          {formatCurrency(channel.average_ticket)}
                         </TableCell>
                         <TableCell className="text-right">
-                          {method.revenue_percentage}%
+                          {channel.order_percentage}%
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {channel.revenue_percentage}%
                         </TableCell>
                       </TableRow>
                     ))}

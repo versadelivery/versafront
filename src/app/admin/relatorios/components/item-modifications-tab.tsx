@@ -12,6 +12,7 @@ import {
   ShoppingCart,
 } from "lucide-react";
 import { useItemModifications } from "../hooks/use-item-modifications";
+import ReportExportButton from "@/components/admin/report-export-button";
 import DateRangePicker from "./date-range-picker";
 import ItemModificationsTable from "./item-modifications-table";
 
@@ -34,11 +35,19 @@ export default function ItemModificationsTab() {
 
   return (
     <div className="space-y-6">
-      <DateRangePicker
-        startDate={startDate}
-        endDate={endDate}
-        onChange={handleDateChange}
-      />
+      <div className="flex items-center justify-between gap-4">
+        <DateRangePicker
+          startDate={startDate}
+          endDate={endDate}
+          onChange={handleDateChange}
+        />
+        <ReportExportButton
+          filename="itens-alterados"
+          headers={["Pedido", "Data", "Item", "Ação", "Alterações", "Usuário"]}
+          rows={modifications?.map(d => [d.order_id, d.date_label, d.item_name, d.action, d.changes, d.user_name]) ?? []}
+          disabled={loading || !modifications}
+        />
+      </div>
 
       {loading && (
         <div className="flex items-center justify-center py-20">

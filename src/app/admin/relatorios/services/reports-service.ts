@@ -1,6 +1,50 @@
 import api from "@/api/config";
 import { API_ENDPOINTS } from "@/api/routes";
 
+// Weekly Summary
+export interface WeeklySummaryBestDay {
+  date: string;
+  label: string;
+  revenue: number;
+  orders: number;
+}
+
+export interface WeeklySummaryTopProduct {
+  name: string;
+  quantity: number;
+  revenue: number;
+}
+
+export interface WeeklySummaryCurrentWeek {
+  start_date: string;
+  end_date: string;
+  total_revenue: number;
+  total_orders: number;
+  average_ticket: number;
+  best_day: WeeklySummaryBestDay | null;
+  top_product: WeeklySummaryTopProduct | null;
+}
+
+export interface WeeklySummaryPreviousWeek {
+  start_date: string;
+  end_date: string;
+  total_revenue: number;
+  total_orders: number;
+  average_ticket: number;
+}
+
+export interface WeeklySummaryComparison {
+  revenue_variation: number | null;
+  orders_variation: number | null;
+  ticket_variation: number | null;
+}
+
+export interface WeeklySummaryResponse {
+  current_week: WeeklySummaryCurrentWeek;
+  previous_week: WeeklySummaryPreviousWeek;
+  comparison: WeeklySummaryComparison;
+}
+
 export interface MonthlyRevenueItem {
   year: number;
   month: number;
@@ -470,6 +514,11 @@ export interface CouponUsageResponse {
 }
 
 export const reportsService = {
+  getWeeklySummary: async (): Promise<WeeklySummaryResponse> => {
+    const response = await api.get(API_ENDPOINTS.REPORTS.WEEKLY_SUMMARY);
+    return response.data;
+  },
+
   getMonthlyRevenue: async (
     months?: number
   ): Promise<MonthlyRevenueResponse> => {

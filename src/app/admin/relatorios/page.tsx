@@ -28,6 +28,7 @@ import CashRegisterStatementTab from "./components/cash-register-statement-tab";
 import VisitorsTab from "./components/visitors-tab";
 import DeliveryFeesTab from "./components/delivery-fees-tab";
 import CouponUsageTab from "./components/coupon-usage-tab";
+import WeeklySummaryTab from "./components/weekly-summary-tab";
 
 const CATEGORIES = [
   {
@@ -35,6 +36,7 @@ const CATEGORIES = [
     label: "Faturamento",
     icon: DollarSign,
     tabs: [
+      { key: "resumo-semanal", label: "Resumo" },
       { key: "vendas-por-periodo", label: "Período" },
       { key: "faturamento-mensal", label: "Mensal" },
       { key: "ticket-medio", label: "Ticket Médio" },
@@ -83,6 +85,7 @@ const CATEGORIES = [
 ] as const;
 
 const TAB_COMPONENTS: Record<string, React.ComponentType> = {
+  "resumo-semanal": WeeklySummaryTab,
   "vendas-por-periodo": SalesByPeriodTab,
   "faturamento-mensal": MonthlyRevenueTab,
   "ticket-medio": AverageTicketTab,
@@ -115,7 +118,7 @@ export default function RelatoriosPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const currentTab = searchParams.get("tab") || "vendas-por-periodo";
+  const currentTab = searchParams.get("tab") || "resumo-semanal";
   const activeCategory = findCategory(currentTab) || CATEGORIES[0];
 
   const updateParams = (cat: string, tab: string) => {

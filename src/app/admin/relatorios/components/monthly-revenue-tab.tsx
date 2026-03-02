@@ -12,6 +12,7 @@ import {
 import { useMonthlyRevenue } from "../hooks/use-monthly-revenue";
 import RevenueChart from "./revenue-chart";
 import RevenueTable from "./revenue-table";
+import ReportExportButton from "@/components/admin/report-export-button";
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", {
@@ -42,6 +43,19 @@ export default function MonthlyRevenueTab() {
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center justify-end">
+        <ReportExportButton
+          filename="faturamento-mensal"
+          headers={["Mês", "Receita", "Variação (%)"]}
+          rows={data.map(d => [d.label, d.revenue, d.variation_percentage ?? "—"])}
+          summaryData={summary ? {
+            "Receita Total": summary.total_revenue,
+            "Média Mensal": summary.average_monthly,
+          } : undefined}
+          disabled={loading || !data}
+        />
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent>

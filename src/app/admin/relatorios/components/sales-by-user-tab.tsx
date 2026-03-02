@@ -13,6 +13,7 @@ import {
 import { useSalesByUser } from "../hooks/use-sales-by-user";
 import DateRangePicker from "./date-range-picker";
 import SalesByUserTable from "./sales-by-user-table";
+import ReportExportButton from "@/components/admin/report-export-button";
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", {
@@ -37,11 +38,19 @@ export default function SalesByUserTab() {
 
   return (
     <div className="space-y-6">
-      <DateRangePicker
-        startDate={startDate}
-        endDate={endDate}
-        onChange={handleDateChange}
-      />
+      <div className="flex items-center justify-between gap-4">
+        <DateRangePicker
+          startDate={startDate}
+          endDate={endDate}
+          onChange={handleDateChange}
+        />
+        <ReportExportButton
+          filename="vendas-por-atendente"
+          headers={["Atendente", "Cargo", "Pedidos", "Receita", "Ticket Médio"]}
+          rows={data?.map(d => [d.user_name, d.user_role, d.order_count, d.revenue, d.average_ticket]) ?? []}
+          disabled={loading || !data}
+        />
+      </div>
 
       {loading && (
         <div className="flex items-center justify-center py-20">

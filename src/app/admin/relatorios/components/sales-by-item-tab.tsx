@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Loader2, AlertTriangle, Package } from "lucide-react";
 import { useSalesByItem } from "../hooks/use-sales-by-item";
 import DateRangePicker from "./date-range-picker";
+import SalesByItemChart from "./sales-by-item-chart";
 import SalesByItemTable from "./sales-by-item-table";
+import ReportExportButton from "@/components/admin/report-export-button";
 
 export default function SalesByItemTab() {
   const [startDate, setStartDate] = useState<Date>(startOfMonth(new Date()));
@@ -28,28 +30,36 @@ export default function SalesByItemTab() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-4">
-        <DateRangePicker
-          startDate={startDate}
-          endDate={endDate}
-          onChange={handleDateChange}
-        />
-        <div className="flex gap-1">
-          <Button
-            variant={view === "items" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setView("items")}
-          >
-            Itens
-          </Button>
-          <Button
-            variant={view === "groups" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setView("groups")}
-          >
-            Grupos
-          </Button>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-4">
+          <DateRangePicker
+            startDate={startDate}
+            endDate={endDate}
+            onChange={handleDateChange}
+          />
+          <div className="flex gap-1">
+            <Button
+              variant={view === "items" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setView("items")}
+            >
+              Itens
+            </Button>
+            <Button
+              variant={view === "groups" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setView("groups")}
+            >
+              Grupos
+            </Button>
+          </div>
         </div>
+        <ReportExportButton
+          filename="vendas-por-item"
+          headers={["Item", "Quantidade", "Receita", "% do Total"]}
+          rows={items?.map(d => [d.name, d.quantity, d.revenue, d.percentage]) ?? []}
+          disabled={loading || !items}
+        />
       </div>
 
       {loading && (
@@ -66,23 +76,36 @@ export default function SalesByItemTab() {
       )}
 
       {!loading && !error && (
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              {view === "items" ? "Ranking de Itens" : "Ranking de Grupos"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {currentData.length > 0 ? (
-              <SalesByItemTable data={currentData} />
-            ) : (
-              <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                <Package className="h-12 w-12 mb-4" />
-                <p>Nenhum dado de vendas no período</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <>
+          {currentData.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Top 10 {view === "items" ? "Itens" : "Grupos"}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <SalesByItemChart data={currentData} />
+              </CardContent>
+            </Card>
+          )}
+
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                {view === "items" ? "Ranking de Itens" : "Ranking de Grupos"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {currentData.length > 0 ? (
+                <SalesByItemTable data={currentData} />
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                  <Package className="h-12 w-12 mb-4" />
+                  <p>Nenhum dado de vendas no período</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </>
       )}
     </div>
   );

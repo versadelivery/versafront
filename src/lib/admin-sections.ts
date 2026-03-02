@@ -153,6 +153,16 @@ export const adminSections: AdminSection[] = [
   },
   // Relatórios > Faturamento
   {
+    id: "relatorios-resumo-semanal",
+    title: "Resumo Semanal",
+    description: "KPIs da semana: receita, pedidos, ticket médio e comparação",
+    href: "/admin/relatorios?cat=faturamento&tab=resumo-semanal",
+    icon: BarChart3,
+    iconBgColor: "bg-purple-500",
+    keywords: ["resumo", "semanal", "semana", "kpi", "dashboard", "relatorio"],
+    group: "Relatórios — Faturamento",
+  },
+  {
     id: "relatorios-vendas-periodo",
     title: "Vendas por Período",
     description: "Relatório de vendas com filtro por data",

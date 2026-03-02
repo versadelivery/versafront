@@ -14,6 +14,7 @@ import {
 import { useCouponUsage } from "../hooks/use-coupon-usage";
 import DateRangePicker from "./date-range-picker";
 import CouponUsageTable from "./coupon-usage-table";
+import ReportExportButton from "@/components/admin/report-export-button";
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", {
@@ -41,11 +42,20 @@ export default function CouponUsageTab() {
 
   return (
     <div className="space-y-6">
-      <DateRangePicker
-        startDate={startDate}
-        endDate={endDate}
-        onChange={handleDateChange}
-      />
+      <div className="flex items-center justify-between gap-4">
+        <DateRangePicker
+          startDate={startDate}
+          endDate={endDate}
+          onChange={handleDateChange}
+        />
+        <ReportExportButton
+          filename="cupons-utilizados"
+          headers={["Código", "Tipo Desconto", "Valor", "Usos no Período", "Total Desconto", "Receita Pedidos"]}
+          rows={coupons?.map(d => [d.code, d.discount_type_label, d.value, d.usage_count_period, d.total_discount_given, d.total_orders_revenue]) ?? []}
+          summaryData={summary ? { "Cupons Utilizados": summary.total_coupons_used, "Pedidos com Cupom": summary.total_orders_with_coupon, "Total Descontos": summary.total_discount_given } : undefined}
+          disabled={loading || !coupons}
+        />
+      </div>
 
       {loading && (
         <div className="flex items-center justify-center py-20">

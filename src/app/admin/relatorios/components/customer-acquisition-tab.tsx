@@ -12,6 +12,7 @@ import {
   Percent,
 } from "lucide-react";
 import { useCustomerAcquisition } from "../hooks/use-customer-acquisition";
+import ReportExportButton from "@/components/admin/report-export-button";
 import DateRangePicker from "./date-range-picker";
 import CustomerAcquisitionChart from "./customer-acquisition-chart";
 
@@ -41,11 +42,20 @@ export default function CustomerAcquisitionTab() {
 
   return (
     <div className="space-y-6">
-      <DateRangePicker
-        startDate={startDate}
-        endDate={endDate}
-        onChange={handleDateChange}
-      />
+      <div className="flex items-center justify-between gap-4">
+        <DateRangePicker
+          startDate={startDate}
+          endDate={endDate}
+          onChange={handleDateChange}
+        />
+        <ReportExportButton
+          filename="aquisicao-clientes"
+          headers={["Data", "Novos Clientes"]}
+          rows={breakdown?.map(d => [d.label, d.new_customers]) ?? []}
+          summaryData={summary ? { "Novos Clientes": summary.new_customers, "Clientes Recorrentes": summary.returning_customers, "% Novos": summary.new_customer_percentage } : undefined}
+          disabled={loading || !breakdown}
+        />
+      </div>
 
       {loading && (
         <div className="flex items-center justify-center py-20">

@@ -14,6 +14,7 @@ import {
 import { useItemProfitability } from "../hooks/use-item-profitability";
 import DateRangePicker from "./date-range-picker";
 import ItemProfitabilityTable from "./item-profitability-table";
+import ReportExportButton from "@/components/admin/report-export-button";
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", {
@@ -41,11 +42,20 @@ export default function ItemProfitabilityTab() {
 
   return (
     <div className="space-y-6">
-      <DateRangePicker
-        startDate={startDate}
-        endDate={endDate}
-        onChange={handleDateChange}
-      />
+      <div className="flex items-center justify-between gap-4">
+        <DateRangePicker
+          startDate={startDate}
+          endDate={endDate}
+          onChange={handleDateChange}
+        />
+        <ReportExportButton
+          filename="lucratividade"
+          headers={["Item", "Qtd Vendida", "Receita", "Custo", "Lucro", "Margem (%)"]}
+          rows={items?.map(d => [d.name, d.quantity_sold, d.revenue, d.total_cost, d.profit, d.margin_percentage ?? "—"]) ?? []}
+          summaryData={summary ? { "Receita Total": summary.total_revenue, "Custo Total": summary.total_cost, "Lucro Total": summary.total_profit, "Margem Geral": summary.overall_margin_percentage + "%" } : undefined}
+          disabled={loading || !items}
+        />
+      </div>
 
       {loading && (
         <div className="flex items-center justify-center py-20">

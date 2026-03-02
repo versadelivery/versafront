@@ -45,6 +45,7 @@ export const API_ENDPOINTS = {
 
   // Reports
   REPORTS: {
+    WEEKLY_SUMMARY: "/reports/weekly_summary",
     MONTHLY_REVENUE: "/reports/monthly_revenue",
     SALES_BY_PERIOD: "/reports/sales_by_period",
     AVERAGE_TICKET: "/reports/average_ticket",

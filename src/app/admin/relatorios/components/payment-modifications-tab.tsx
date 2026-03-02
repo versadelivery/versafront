@@ -10,6 +10,7 @@ import {
   ShoppingCart,
 } from "lucide-react";
 import { usePaymentModifications } from "../hooks/use-payment-modifications";
+import ReportExportButton from "@/components/admin/report-export-button";
 import DateRangePicker from "./date-range-picker";
 import PaymentModificationsTable from "./payment-modifications-table";
 
@@ -32,11 +33,19 @@ export default function PaymentModificationsTab() {
 
   return (
     <div className="space-y-6">
-      <DateRangePicker
-        startDate={startDate}
-        endDate={endDate}
-        onChange={handleDateChange}
-      />
+      <div className="flex items-center justify-between gap-4">
+        <DateRangePicker
+          startDate={startDate}
+          endDate={endDate}
+          onChange={handleDateChange}
+        />
+        <ReportExportButton
+          filename="pagamento-alterado"
+          headers={["Pedido", "Data", "Pagamento Anterior", "Novo Pagamento", "Usuário"]}
+          rows={modifications?.map(d => [d.order_id, d.date_label, d.old_payment_method, d.new_payment_method, d.user_name]) ?? []}
+          disabled={loading || !modifications}
+        />
+      </div>
 
       {loading && (
         <div className="flex items-center justify-center py-20">

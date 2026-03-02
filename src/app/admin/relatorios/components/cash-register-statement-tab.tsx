@@ -12,6 +12,7 @@ import {
   Receipt,
 } from "lucide-react";
 import { useCashRegisterStatement } from "../hooks/use-cash-register-statement";
+import ReportExportButton from "@/components/admin/report-export-button";
 import DateRangePicker from "./date-range-picker";
 import CashRegisterStatementTable from "./cash-register-statement-table";
 
@@ -39,11 +40,20 @@ export default function CashRegisterStatementTab() {
 
   return (
     <div className="space-y-6">
-      <DateRangePicker
-        startDate={startDate}
-        endDate={endDate}
-        onChange={handleDateChange}
-      />
+      <div className="flex items-center justify-between gap-4">
+        <DateRangePicker
+          startDate={startDate}
+          endDate={endDate}
+          onChange={handleDateChange}
+        />
+        <ReportExportButton
+          filename="extrato-caixa"
+          headers={["Data", "Tipo", "Descrição", "Valor"]}
+          rows={transactions?.map(d => [d.date_label, d.kind_label, d.description, d.amount]) ?? []}
+          summaryData={summary ? { "Total Entradas": summary.total_entries, "Total Saídas": summary.total_exits, "Saldo": summary.balance } : undefined}
+          disabled={loading || !transactions}
+        />
+      </div>
 
       {loading && (
         <div className="flex items-center justify-center py-20">

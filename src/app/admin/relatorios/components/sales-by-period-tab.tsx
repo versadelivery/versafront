@@ -9,6 +9,7 @@ import DateRangePicker from "./date-range-picker";
 import SalesSummaryCards from "./sales-summary-cards";
 import SalesPeriodChart from "./sales-period-chart";
 import SalesPeriodTable from "./sales-period-table";
+import ReportExportButton from "@/components/admin/report-export-button";
 
 export default function SalesByPeriodTab() {
   const [startDate, setStartDate] = useState<Date>(startOfMonth(new Date()));
@@ -26,11 +27,24 @@ export default function SalesByPeriodTab() {
 
   return (
     <div className="space-y-6">
-      <DateRangePicker
-        startDate={startDate}
-        endDate={endDate}
-        onChange={handleDateChange}
-      />
+      <div className="flex items-center justify-between gap-4">
+        <DateRangePicker
+          startDate={startDate}
+          endDate={endDate}
+          onChange={handleDateChange}
+        />
+        <ReportExportButton
+          filename="vendas-por-periodo"
+          headers={["Data", "Pedidos", "Receita"]}
+          rows={data?.current_period.daily_breakdown.map(d => [d.label, d.orders, d.revenue]) ?? []}
+          summaryData={data ? {
+            "Total Pedidos": data.current_period.total_orders,
+            "Receita Bruta": data.current_period.gross_revenue,
+            "Ticket Médio": data.current_period.average_ticket,
+          } : undefined}
+          disabled={loading || !data}
+        />
+      </div>
 
       {loading && (
         <div className="flex items-center justify-center py-20">
