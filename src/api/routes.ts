@@ -42,4 +42,18 @@ export const API_ENDPOINTS = {
   CASH_REGISTER_OPEN: "/cash_registers/open",
   CASH_REGISTER_CLOSE: "/cash_registers/close",
   CASH_REGISTER_MANUAL_ENTRY: "/cash_registers/manual_entry",
+
+  // Reports
+  REPORTS: {
+    MONTHLY_REVENUE: "/reports/monthly_revenue",
+    SALES_BY_PERIOD: "/reports/sales_by_period",
+    AVERAGE_TICKET: "/reports/average_ticket",
+    SALES_BY_ITEM: "/reports/sales_by_item",
+    TOP_CUSTOMERS: "/reports/top_customers",
+    PAYMENT_METHODS: "/reports/payment_methods",
+    SALES_BY_HOUR: "/reports/sales_by_hour",
+    SALES_BY_WEEKDAY: "/reports/sales_by_weekday",
+    SALES_BY_NEIGHBORHOOD: "/reports/sales_by_neighborhood",
+    CUSTOMER_ACQUISITION: "/reports/customer_acquisition",
+  },
 };
