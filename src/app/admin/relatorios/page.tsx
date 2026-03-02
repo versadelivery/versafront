@@ -24,6 +24,10 @@ import ItemProfitabilityTab from "./components/item-profitability-tab";
 import SalesByUserTab from "./components/sales-by-user-tab";
 import ItemModificationsTab from "./components/item-modifications-tab";
 import PaymentModificationsTab from "./components/payment-modifications-tab";
+import CashRegisterStatementTab from "./components/cash-register-statement-tab";
+import VisitorsTab from "./components/visitors-tab";
+import DeliveryFeesTab from "./components/delivery-fees-tab";
+import CouponUsageTab from "./components/coupon-usage-tab";
 
 const CATEGORIES = [
   {
@@ -37,6 +41,8 @@ const CATEGORIES = [
       { key: "formas-de-pagamento", label: "Pagamento" },
       { key: "descontos", label: "Descontos" },
       { key: "lucratividade", label: "Lucratividade" },
+      { key: "extrato-caixa", label: "Extrato Caixa" },
+      { key: "cupons-utilizados", label: "Cupons" },
     ],
   },
   {
@@ -52,6 +58,8 @@ const CATEGORIES = [
       { key: "tempo-preparo", label: "Tempo Preparo" },
       { key: "tempo-entrega", label: "Tempo Entrega" },
       { key: "por-atendente", label: "Por Atendente" },
+      { key: "visitantes", label: "Visitantes" },
+      { key: "taxas-entrega", label: "Taxas Entrega" },
     ],
   },
   {
@@ -93,6 +101,10 @@ const TAB_COMPONENTS: Record<string, React.ComponentType> = {
   "por-atendente": SalesByUserTab,
   "itens-alterados": ItemModificationsTab,
   "pagamento-alterado": PaymentModificationsTab,
+  "extrato-caixa": CashRegisterStatementTab,
+  "cupons-utilizados": CouponUsageTab,
+  "visitantes": VisitorsTab,
+  "taxas-entrega": DeliveryFeesTab,
 };
 
 function findCategory(tab: string) {

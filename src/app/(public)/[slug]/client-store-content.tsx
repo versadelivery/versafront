@@ -9,6 +9,7 @@ import ProductGrid from './components/product-grid';
 import ProductModal from './product-detail';
 import { normalizeItems } from './normalize-items';
 import type { CatalogItem } from './types';
+import ahoy from '@/lib/ahoy';
 
 interface ClientStoreContentProps {
   shop: ShopResponse;
@@ -37,6 +38,10 @@ export default function ClientStoreContent({ shop }: ClientStoreContentProps) {
     localStorage.removeItem("shop");
     localStorage.setItem("shop", JSON.stringify(shop));
   }, [shop]);
+
+  useEffect(() => {
+    ahoy.track("catalog_view", { shop_id: shop.data.id });
+  }, [shop.data.id]);
 
   const rawGroups: any = shop?.data.attributes.catalog_groups;
 

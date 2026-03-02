@@ -24,6 +24,7 @@ import {
   UserPlus,
   Timer,
   Shield,
+  Eye,
   type LucideIcon,
 } from "lucide-react"
 
@@ -304,6 +305,26 @@ export const adminSections: AdminSection[] = [
     keywords: ["lucratividade", "lucro", "margem", "custo", "profit", "relatorio"],
     group: "Relatórios — Faturamento",
   },
+  {
+    id: "relatorios-extrato-caixa",
+    title: "Extrato de Caixa",
+    description: "Extrato detalhado de movimentações do caixa",
+    href: "/admin/relatorios?cat=faturamento&tab=extrato-caixa",
+    icon: DollarSign,
+    iconBgColor: "bg-purple-500",
+    keywords: ["extrato", "caixa", "movimentacao", "entrada", "saida", "sangria", "relatorio"],
+    group: "Relatórios — Faturamento",
+  },
+  {
+    id: "relatorios-cupons-utilizados",
+    title: "Cupons Utilizados",
+    description: "Relatório de uso de cupons de desconto",
+    href: "/admin/relatorios?cat=faturamento&tab=cupons-utilizados",
+    icon: Ticket,
+    iconBgColor: "bg-purple-500",
+    keywords: ["cupom", "cupons", "desconto", "uso", "utilizados", "relatorio"],
+    group: "Relatórios — Faturamento",
+  },
   // Relatórios > Vendas (novos)
   {
     id: "relatorios-por-atendente",
@@ -313,6 +334,26 @@ export const adminSections: AdminSection[] = [
     icon: Users,
     iconBgColor: "bg-purple-500",
     keywords: ["atendente", "vendedor", "usuario", "funcionario", "relatorio"],
+    group: "Relatórios — Vendas",
+  },
+  {
+    id: "relatorios-visitantes",
+    title: "Visitantes",
+    description: "Número de visitantes e taxa de conversão",
+    href: "/admin/relatorios?cat=vendas&tab=visitantes",
+    icon: Eye,
+    iconBgColor: "bg-purple-500",
+    keywords: ["visitantes", "visitas", "conversao", "acessos", "relatorio"],
+    group: "Relatórios — Vendas",
+  },
+  {
+    id: "relatorios-taxas-entrega",
+    title: "Taxas de Entrega",
+    description: "Taxas de entrega por motoboy",
+    href: "/admin/relatorios?cat=vendas&tab=taxas-entrega",
+    icon: Truck,
+    iconBgColor: "bg-purple-500",
+    keywords: ["taxa", "entrega", "motoboy", "delivery", "frete", "relatorio"],
     group: "Relatórios — Vendas",
   },
   // Relatórios > Auditoria

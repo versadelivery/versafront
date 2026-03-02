@@ -386,6 +386,89 @@ export interface PaymentModificationsResponse {
   summary: PaymentModificationsSummary;
 }
 
+// Cash Register Statement
+export interface CashRegisterTransactionEntry {
+  id: number;
+  date_label: string;
+  kind: string;
+  kind_label: string;
+  type: "entry" | "exit";
+  description: string;
+  amount: number;
+}
+
+export interface CashRegisterStatementSummary {
+  total_entries: number;
+  total_exits: number;
+  balance: number;
+  transaction_count: number;
+}
+
+export interface CashRegisterStatementResponse {
+  transactions: CashRegisterTransactionEntry[];
+  summary: CashRegisterStatementSummary;
+}
+
+// Visitors
+export interface VisitorBreakdownItem {
+  date: string;
+  label: string;
+  unique_visitors: number;
+}
+
+export interface VisitorsSummary {
+  total_unique_visitors: number;
+  total_orders: number;
+  conversion_rate_percentage: number;
+}
+
+export interface VisitorsResponse {
+  breakdown: VisitorBreakdownItem[];
+  summary: VisitorsSummary;
+}
+
+// Delivery Fees
+export interface DeliveryFeeEntry {
+  delivery_person: string;
+  order_count: number;
+  total_fees: number;
+  average_fee: number;
+}
+
+export interface DeliveryFeesSummary {
+  total_deliveries: number;
+  total_fees: number;
+  average_fee: number;
+  total_drivers: number;
+}
+
+export interface DeliveryFeesResponse {
+  data: DeliveryFeeEntry[];
+  summary: DeliveryFeesSummary;
+}
+
+// Coupon Usage
+export interface CouponUsageEntry {
+  code: string;
+  discount_type_label: string;
+  value: number;
+  usage_count_period: number;
+  total_discount_given: number;
+  total_orders_revenue: number;
+}
+
+export interface CouponUsageSummary {
+  total_coupons_used: number;
+  total_orders_with_coupon: number;
+  total_discount_given: number;
+  average_discount_per_order: number;
+}
+
+export interface CouponUsageResponse {
+  coupons: CouponUsageEntry[];
+  summary: CouponUsageSummary;
+}
+
 export const reportsService = {
   getMonthlyRevenue: async (
     months?: number
@@ -583,6 +666,49 @@ export const reportsService = {
         params: { start_date: startDate, end_date: endDate },
       }
     );
+    return response.data;
+  },
+
+  getCashRegisterStatement: async (
+    startDate: string,
+    endDate: string
+  ): Promise<CashRegisterStatementResponse> => {
+    const response = await api.get(
+      API_ENDPOINTS.REPORTS.CASH_REGISTER_STATEMENT,
+      {
+        params: { start_date: startDate, end_date: endDate },
+      }
+    );
+    return response.data;
+  },
+
+  getVisitors: async (
+    startDate: string,
+    endDate: string
+  ): Promise<VisitorsResponse> => {
+    const response = await api.get(API_ENDPOINTS.REPORTS.VISITORS, {
+      params: { start_date: startDate, end_date: endDate },
+    });
+    return response.data;
+  },
+
+  getDeliveryFees: async (
+    startDate: string,
+    endDate: string
+  ): Promise<DeliveryFeesResponse> => {
+    const response = await api.get(API_ENDPOINTS.REPORTS.DELIVERY_FEES, {
+      params: { start_date: startDate, end_date: endDate },
+    });
+    return response.data;
+  },
+
+  getCouponUsage: async (
+    startDate: string,
+    endDate: string
+  ): Promise<CouponUsageResponse> => {
+    const response = await api.get(API_ENDPOINTS.REPORTS.COUPON_USAGE, {
+      params: { start_date: startDate, end_date: endDate },
+    });
     return response.data;
   },
 };

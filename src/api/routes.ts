@@ -63,5 +63,9 @@ export const API_ENDPOINTS = {
     SALES_BY_USER: "/reports/sales_by_user",
     ITEM_MODIFICATIONS: "/reports/item_modifications",
     PAYMENT_MODIFICATIONS: "/reports/payment_modifications",
+    CASH_REGISTER_STATEMENT: "/reports/cash_register_statement",
+    VISITORS: "/reports/visitors",
+    DELIVERY_FEES: "/reports/delivery_fees",
+    COUPON_USAGE: "/reports/coupon_usage",
   },
 };

@@ -77,6 +77,9 @@ importers:
       actioncable:
         specifier: 5.2.8-1
         version: 5.2.8-1
+      ahoy.js:
+        specifier: ^0.4.4
+        version: 0.4.4
       axios:
         specifier: ^1.8.4
         version: 1.11.0
@@ -1557,6 +1560,9 @@ packages:
 
   actioncable@5.2.8-1:
     resolution: {integrity: sha512-p/a9jeFs3KB3SWZ9w/T5HLyztooYSufOG++Uhau9YzprdBNyjFfsqrtN1roVVEzNDBGZJVr/2SSWwofvavPL1w==}
+
+  ahoy.js@0.4.4:
+    resolution: {integrity: sha512-LpEf/4Xe4YWAbCN3SUjf58hhWKQzqECRdXJDCRSUp9cgwTul+CnukXxKXavGvoyiYg1QkdVQuO6tx/HELgizlA==}
 
   ajv@6.12.6:
     resolution: {integrity: sha512-j3fVLgvTo527anyYyJOGTYJbG+vnnQYvE0m5mmkc1TK+nxAppkCLMIL0aZ4dblVCNoGShhm+kzE4ZUykBoMg4g==}
@@ -4401,6 +4407,8 @@ snapshots:
   acorn@8.15.0: {}
 
   actioncable@5.2.8-1: {}
+
+  ahoy.js@0.4.4: {}
 
   ajv@6.12.6:
     dependencies:
