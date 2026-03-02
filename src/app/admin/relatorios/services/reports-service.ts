@@ -302,6 +302,90 @@ export interface AverageDeliveryTimeResponse {
   summary: AverageDeliveryTimeSummary;
 }
 
+// Item Profitability
+export interface ItemProfitabilityEntry {
+  name: string;
+  quantity_sold: number;
+  revenue: number;
+  total_cost: number;
+  profit: number;
+  margin_percentage: number | null;
+}
+
+export interface ItemProfitabilitySummary {
+  total_revenue: number;
+  total_cost: number;
+  total_profit: number;
+  overall_margin_percentage: number;
+  items_without_cost: number;
+}
+
+export interface ItemProfitabilityResponse {
+  items: ItemProfitabilityEntry[];
+  summary: ItemProfitabilitySummary;
+}
+
+// Sales by User
+export interface SalesByUserEntry {
+  user_name: string;
+  user_role: string;
+  order_count: number;
+  revenue: number;
+  average_ticket: number;
+}
+
+export interface SalesByUserSummary {
+  total_users: number;
+  total_orders: number;
+  total_revenue: number;
+}
+
+export interface SalesByUserResponse {
+  data: SalesByUserEntry[];
+  summary: SalesByUserSummary;
+}
+
+// Item Modifications
+export interface ItemModificationEntry {
+  order_id: number;
+  date_label: string;
+  item_name: string;
+  action: string;
+  changes: string;
+  user_name: string;
+}
+
+export interface ItemModificationsSummary {
+  total_modifications: number;
+  total_updates: number;
+  total_removals: number;
+  total_orders_affected: number;
+}
+
+export interface ItemModificationsResponse {
+  modifications: ItemModificationEntry[];
+  summary: ItemModificationsSummary;
+}
+
+// Payment Modifications
+export interface PaymentModificationEntry {
+  order_id: number;
+  date_label: string;
+  old_payment_method: string;
+  new_payment_method: string;
+  user_name: string;
+}
+
+export interface PaymentModificationsSummary {
+  total_modifications: number;
+  total_orders_affected: number;
+}
+
+export interface PaymentModificationsResponse {
+  modifications: PaymentModificationEntry[];
+  summary: PaymentModificationsSummary;
+}
+
 export const reportsService = {
   getMonthlyRevenue: async (
     months?: number
@@ -446,6 +530,55 @@ export const reportsService = {
   ): Promise<AverageDeliveryTimeResponse> => {
     const response = await api.get(
       API_ENDPOINTS.REPORTS.AVERAGE_DELIVERY_TIME,
+      {
+        params: { start_date: startDate, end_date: endDate },
+      }
+    );
+    return response.data;
+  },
+
+  getItemProfitability: async (
+    startDate: string,
+    endDate: string
+  ): Promise<ItemProfitabilityResponse> => {
+    const response = await api.get(
+      API_ENDPOINTS.REPORTS.ITEM_PROFITABILITY,
+      {
+        params: { start_date: startDate, end_date: endDate },
+      }
+    );
+    return response.data;
+  },
+
+  getSalesByUser: async (
+    startDate: string,
+    endDate: string
+  ): Promise<SalesByUserResponse> => {
+    const response = await api.get(API_ENDPOINTS.REPORTS.SALES_BY_USER, {
+      params: { start_date: startDate, end_date: endDate },
+    });
+    return response.data;
+  },
+
+  getItemModifications: async (
+    startDate: string,
+    endDate: string
+  ): Promise<ItemModificationsResponse> => {
+    const response = await api.get(
+      API_ENDPOINTS.REPORTS.ITEM_MODIFICATIONS,
+      {
+        params: { start_date: startDate, end_date: endDate },
+      }
+    );
+    return response.data;
+  },
+
+  getPaymentModifications: async (
+    startDate: string,
+    endDate: string
+  ): Promise<PaymentModificationsResponse> => {
+    const response = await api.get(
+      API_ENDPOINTS.REPORTS.PAYMENT_MODIFICATIONS,
       {
         params: { start_date: startDate, end_date: endDate },
       }

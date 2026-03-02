@@ -23,6 +23,7 @@ import {
   MapPin,
   UserPlus,
   Timer,
+  Shield,
   type LucideIcon,
 } from "lucide-react"
 
@@ -291,6 +292,49 @@ export const adminSections: AdminSection[] = [
     iconBgColor: "bg-purple-500",
     keywords: ["aquisicao", "novos", "clientes", "primeiro", "pedido", "relatorio"],
     group: "Relatórios — Clientes",
+  },
+  // Relatórios > Faturamento (novos)
+  {
+    id: "relatorios-lucratividade",
+    title: "Lucratividade dos Itens",
+    description: "Margem de lucro por item vendido",
+    href: "/admin/relatorios?cat=faturamento&tab=lucratividade",
+    icon: TrendingUp,
+    iconBgColor: "bg-purple-500",
+    keywords: ["lucratividade", "lucro", "margem", "custo", "profit", "relatorio"],
+    group: "Relatórios — Faturamento",
+  },
+  // Relatórios > Vendas (novos)
+  {
+    id: "relatorios-por-atendente",
+    title: "Vendas por Atendente",
+    description: "Vendas agrupadas por atendente",
+    href: "/admin/relatorios?cat=vendas&tab=por-atendente",
+    icon: Users,
+    iconBgColor: "bg-purple-500",
+    keywords: ["atendente", "vendedor", "usuario", "funcionario", "relatorio"],
+    group: "Relatórios — Vendas",
+  },
+  // Relatórios > Auditoria
+  {
+    id: "relatorios-itens-alterados",
+    title: "Itens Alterados",
+    description: "Auditoria de alterações e remoções de itens em pedidos",
+    href: "/admin/relatorios?cat=auditoria&tab=itens-alterados",
+    icon: Shield,
+    iconBgColor: "bg-purple-500",
+    keywords: ["auditoria", "alteracao", "item", "remocao", "edicao", "relatorio"],
+    group: "Relatórios — Auditoria",
+  },
+  {
+    id: "relatorios-pagamento-alterado",
+    title: "Pagamento Alterado",
+    description: "Auditoria de alterações na forma de pagamento",
+    href: "/admin/relatorios?cat=auditoria&tab=pagamento-alterado",
+    icon: Shield,
+    iconBgColor: "bg-purple-500",
+    keywords: ["auditoria", "pagamento", "alteracao", "forma", "relatorio"],
+    group: "Relatórios — Auditoria",
   },
   {
     id: "suporte",

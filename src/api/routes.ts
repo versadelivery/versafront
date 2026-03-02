@@ -59,5 +59,9 @@ export const API_ENDPOINTS = {
     DISCOUNTED_ORDERS: "/reports/discounted_orders",
     AVERAGE_PREP_TIME: "/reports/average_prep_time",
     AVERAGE_DELIVERY_TIME: "/reports/average_delivery_time",
+    ITEM_PROFITABILITY: "/reports/item_profitability",
+    SALES_BY_USER: "/reports/sales_by_user",
+    ITEM_MODIFICATIONS: "/reports/item_modifications",
+    PAYMENT_MODIFICATIONS: "/reports/payment_modifications",
   },
 };

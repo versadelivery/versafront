@@ -4,7 +4,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import AdminHeader from "@/components/admin/catalog-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { DollarSign, ShoppingCart, Users } from "lucide-react";
+import { DollarSign, ShoppingCart, Users, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SalesByPeriodTab from "./components/sales-by-period-tab";
 import MonthlyRevenueTab from "./components/monthly-revenue-tab";
@@ -20,6 +20,10 @@ import SalesByChannelTab from "./components/sales-by-channel-tab";
 import DiscountedOrdersTab from "./components/discounted-orders-tab";
 import AveragePrepTimeTab from "./components/average-prep-time-tab";
 import AverageDeliveryTimeTab from "./components/average-delivery-time-tab";
+import ItemProfitabilityTab from "./components/item-profitability-tab";
+import SalesByUserTab from "./components/sales-by-user-tab";
+import ItemModificationsTab from "./components/item-modifications-tab";
+import PaymentModificationsTab from "./components/payment-modifications-tab";
 
 const CATEGORIES = [
   {
@@ -32,6 +36,7 @@ const CATEGORIES = [
       { key: "ticket-medio", label: "Ticket Médio" },
       { key: "formas-de-pagamento", label: "Pagamento" },
       { key: "descontos", label: "Descontos" },
+      { key: "lucratividade", label: "Lucratividade" },
     ],
   },
   {
@@ -46,6 +51,7 @@ const CATEGORIES = [
       { key: "vendas-por-canal", label: "Por Canal" },
       { key: "tempo-preparo", label: "Tempo Preparo" },
       { key: "tempo-entrega", label: "Tempo Entrega" },
+      { key: "por-atendente", label: "Por Atendente" },
     ],
   },
   {
@@ -55,6 +61,15 @@ const CATEGORIES = [
     tabs: [
       { key: "top-clientes", label: "Top Clientes" },
       { key: "aquisicao-clientes", label: "Aquisição" },
+    ],
+  },
+  {
+    key: "auditoria",
+    label: "Auditoria",
+    icon: Shield,
+    tabs: [
+      { key: "itens-alterados", label: "Itens Alterados" },
+      { key: "pagamento-alterado", label: "Pagamento Alterado" },
     ],
   },
 ] as const;
@@ -74,6 +89,10 @@ const TAB_COMPONENTS: Record<string, React.ComponentType> = {
   "descontos": DiscountedOrdersTab,
   "tempo-preparo": AveragePrepTimeTab,
   "tempo-entrega": AverageDeliveryTimeTab,
+  "lucratividade": ItemProfitabilityTab,
+  "por-atendente": SalesByUserTab,
+  "itens-alterados": ItemModificationsTab,
+  "pagamento-alterado": PaymentModificationsTab,
 };
 
 function findCategory(tab: string) {
