@@ -190,6 +190,7 @@ export default function OrderManagement() {
   const { subscribeToAdminOrders, updateOrder, updateOrderDetails, isConnected } = useAdminActionCable();
   const { orderAccepted, orderReady, newOrder } = useRestaurantSounds();
   const seenOrderIdsRef = useRef<Set<string>>(new Set());
+  const isInitialLoadRef = useRef(true);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -246,21 +247,27 @@ export default function OrderManagement() {
         // atualizar cache com dados vindos do servidor
         socketOrdersCache.current = new Map(convertedOrders.map(o => [o.id, o]));
         
-        // Verificar se há novos pedidos (pedidos que não existiam antes)
-        const newOrders = convertedOrders.filter(socketOrder => 
-          !prevOrders.some(prevOrder => prevOrder.id === socketOrder.id)
-        );
+        // No primeiro broadcast, apenas registrar os pedidos existentes sem tocar som
+        if (isInitialLoadRef.current) {
+          isInitialLoadRef.current = false;
+          convertedOrders.forEach(order => seenOrderIdsRef.current.add(order.id));
+        } else {
+          // Verificar se há novos pedidos (pedidos que não existiam antes)
+          const newOrders = convertedOrders.filter(socketOrder =>
+            !prevOrders.some(prevOrder => prevOrder.id === socketOrder.id)
+          );
 
-        // Tocar som de novo pedido para pedidos genuinamente novos
-        newOrders.forEach(order => {
-          if (!seenOrderIdsRef.current.has(order.id)) {
-            seenOrderIdsRef.current.add(order.id);
-            newOrder();
-          }
-        });
+          // Tocar som de novo pedido para pedidos genuinamente novos
+          newOrders.forEach(order => {
+            if (!seenOrderIdsRef.current.has(order.id)) {
+              seenOrderIdsRef.current.add(order.id);
+              newOrder();
+            }
+          });
 
-        // Registrar todos os pedidos atuais como vistos
-        convertedOrders.forEach(order => seenOrderIdsRef.current.add(order.id));
+          // Registrar todos os pedidos atuais como vistos
+          convertedOrders.forEach(order => seenOrderIdsRef.current.add(order.id));
+        }
 
         // Mesclar mantendo alterações locais recentes
         const now = Date.now();
