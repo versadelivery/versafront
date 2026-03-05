@@ -4,7 +4,7 @@ import { AuthLayout } from "@/components/auth/auth-layout";
 import { AuthFormInput } from "@/components/auth/auth-form-input";
 import cesta from "../../../public/img/breads.png";
 import { useState } from "react";
-import { registerSchema, RegisterFormData } from "@/schemas/auth-schemas";
+import { registerSchema, registerStep1Schema, RegisterFormData } from "@/schemas/auth-schemas";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
@@ -161,15 +161,48 @@ export default function Register() {
     return true;
   };
 
+  const validateStep1 = (): boolean => {
+    try {
+      registerStep1Schema.parse({
+        storeName: formData.shop.name,
+        storePhone: formData.shop.cellphone
+      });
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const fieldErrors: Partial<RegisterFormData> = {};
+        error.errors.forEach((err) => {
+          const field = err.path[0];
+          if (field === "storeName") {
+            fieldErrors.shop = { ...fieldErrors.shop, name: err.message } as any;
+          } else if (field === "storePhone") {
+            fieldErrors.shop = { ...fieldErrors.shop, cellphone: err.message } as any;
+          }
+        });
+        setErrors(fieldErrors);
+      }
+      return false;
+    }
+  };
+
+  const handleNextStep = () => {
+    setErrors({});
+    if (validateStep1()) {
+      setStep(2);
+    }
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     const [section, field] = name.split(".");
-    
+
+    const processedValue = field === "cellphone" ? formatPhone(value) : value;
+
     setFormData(prev => ({
       ...prev,
       [section]: {
         ...prev[section as keyof RegisterFormData],
-        [field]: value
+        [field]: processedValue
       }
     }));
 
@@ -247,7 +280,7 @@ export default function Register() {
               type="tel"
               name="shop.cellphone"
               placeholder="Telefone"
-              value={formatPhone(formData.shop.cellphone)}
+              value={formData.shop.cellphone}
               onChange={handleChange}
               disabled={isLoading}
               label="Telefone"
@@ -257,7 +290,7 @@ export default function Register() {
           <Button
             type="button"
             className="w-full mt-4 mb-4 text-lg font-bold py-8"
-            onClick={() => setStep(2)}
+            onClick={handleNextStep}
             disabled={isLoading}
           >
             Próximo
