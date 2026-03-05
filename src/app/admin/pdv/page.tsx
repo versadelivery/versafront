@@ -23,6 +23,7 @@ import { validateCoupon, ValidateCouponData } from "@/services/coupon-validate-s
 import { useAdminActionCable } from "@/lib/admin-cable";
 import { useShop } from "@/hooks/use-shop";
 import { usePayment } from "@/app/admin/settings/payment/usePayment";
+import { useDelivery } from "@/hooks/use-delivery";
 import { ItemOptionsDialog } from "./item-options-dialog";
 import AdminHeader from "@/components/admin/catalog-header";
 import { tableService, Table, TableSession, CloseTableSessionPayload } from "@/app/admin/mesas/services/table-service";
@@ -47,8 +48,6 @@ interface CustomerInfo {
   phone: string;
   address: string;
   neighborhood: string;
-  city: string;
-  zipCode: string;
   complement?: string;
   reference?: string;
 }
@@ -64,8 +63,6 @@ export default function PDVPage() {
     phone: "",
     address: "",
     neighborhood: "",
-    city: "",
-    zipCode: "",
     complement: "",
     reference: "",
   });
@@ -79,12 +76,15 @@ export default function PDVPage() {
   const [couponError, setCouponError] = useState("");
   const [couponLoading, setCouponLoading] = useState(false);
   const [couponDiscount, setCouponDiscount] = useState(0);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [tables, setTables] = useState<Table[]>([]);
   const [openSessions, setOpenSessions] = useState<TableSession[]>([]);
   const [selectedTableSessionId, setSelectedTableSessionId] = useState<string | null>(null);
+  const [selectedNeighborhoodId, setSelectedNeighborhoodId] = useState<string>("");
   const { shop } = useShop();
   const shopId = shop?.id;
   const { paymentMethodsData } = usePayment();
+  const { deliveryConfig } = useDelivery();
 
   const { catalog, isLoading } = useCatalogGroup();
   const { subscribeToAdminOrders } = useAdminActionCable();
@@ -110,22 +110,24 @@ export default function PDVPage() {
     fetchTablesAndSessions();
   }, []);
 
-  // Filtrar catálogo
+  // Filtrar catálogo — somente itens e grupos ativos
   const filteredCatalog =
     catalog?.data
-      ?.map((group: any) => ({
+      ?.filter((group: any) => group.attributes.active !== false)
+      .map((group: any) => ({
         ...group,
         attributes: {
           ...group.attributes,
           items:
             group.attributes.items?.filter(
               (item: any) =>
-                item.attributes?.name
+                item.attributes?.active !== false &&
+                (item.attributes?.name
                   ?.toLowerCase()
                   .includes(searchTerm.toLowerCase()) ||
                 item.attributes?.description
                   ?.toLowerCase()
-                  .includes(searchTerm.toLowerCase())
+                  .includes(searchTerm.toLowerCase()))
             ) ?? [],
         },
       }))
@@ -134,7 +136,11 @@ export default function PDVPage() {
         return group.attributes.items.length > 0;
       }) ?? [];
 
-  const allGroups = catalog?.data ?? [];
+  const allGroups = (catalog?.data ?? []).filter(
+    (group: any) =>
+      group.attributes.active !== false &&
+      group.attributes.items?.some((item: any) => item.attributes?.active !== false)
+  );
 
   const formatPhone = (value: string) => {
     const n = value.replace(/\D/g, "");
@@ -143,12 +149,30 @@ export default function PDVPage() {
     return n.replace(/(\d{2})(\d{5})(\d{0,4})/, "($1) $2-$3").replace(/-$/, "");
   };
 
-  const formatCEP = (value: string) => {
-    const n = value.replace(/\D/g, "");
-    return n.replace(/(\d{5})(\d{0,3})/, "$1-$2").replace(/-$/, "");
+  const cartTotal = cart.reduce((t, item) => t + item.totalPrice, 0);
+
+  const isPerNeighborhood = deliveryConfig?.delivery_fee_kind === "per_neighborhood";
+  const neighborhoods = deliveryConfig?.neighborhoods ?? [];
+
+  const calculateDeliveryFee = (): number => {
+    if (orderType !== "delivery" || !!selectedTableSessionId) return 0;
+    if (deliveryConfig?.delivery_fee_kind === "fixed") {
+      const minFree = deliveryConfig.min_value_free_delivery ?? 0;
+      if (minFree > 0 && cartTotal >= minFree) return 0;
+      return deliveryConfig.amount ?? 0;
+    }
+    if (isPerNeighborhood && selectedNeighborhoodId) {
+      const nb = neighborhoods.find((n) => n.id === selectedNeighborhoodId);
+      if (!nb) return 0;
+      const minFree = nb.min_value_free_delivery ?? 0;
+      if (minFree > 0 && cartTotal >= minFree) return 0;
+      return nb.amount ?? 0;
+    }
+    return 0;
   };
 
-  const cartTotal = cart.reduce((t, item) => t + item.totalPrice, 0);
+  const deliveryFee = calculateDeliveryFee();
+  const minimumOrderValue = deliveryConfig?.minimum_order_value ?? 0;
 
   const pdvPaymentMethodToApi = (m: "cash" | "card" | "pix") =>
     m === "cash" ? "cash" : m === "card" ? "credit" : "manual_pix";
@@ -297,6 +321,7 @@ export default function PDVPage() {
   };
 
   const isTableOrder = !!selectedTableSessionId;
+  const isBelowMinOrder = orderType === "delivery" && !isTableOrder && minimumOrderValue > 0 && cartTotal < minimumOrderValue;
   const selectedSession = isTableOrder ? openSessions.find((s) => s.id === selectedTableSessionId) : null;
   const selectedTable = selectedSession
     ? tables.find((t) => t.attributes.number === selectedSession.attributes.table_number)
@@ -314,20 +339,7 @@ export default function PDVPage() {
     try {
       const response = await validateCoupon(couponCode.trim(), Number(shopId));
       const couponData = response.data.attributes;
-      const minOrder = parseFloat(couponData.minimum_order_value) || 0;
-      if (minOrder > 0 && cartTotal < minOrder) {
-        setCouponError(`Valor mínimo do pedido: ${formatPrice(minOrder)}`);
-        setCouponLoading(false);
-        return;
-      }
-      let discount = 0;
-      if (couponData.discount_type === "fixed_value") {
-        discount = Math.min(parseFloat(couponData.value), cartTotal);
-      } else {
-        discount = cartTotal * (parseFloat(couponData.value) / 100);
-      }
       setAppliedCoupon(couponData);
-      setCouponDiscount(discount);
       toast.success("Cupom aplicado!");
     } catch (error: any) {
       const msg = error.response?.data?.error || "Cupom inválido";
@@ -344,7 +356,19 @@ export default function PDVPage() {
     setCouponError("");
   };
 
-  const orderTotal = Math.max(cartTotal - couponDiscount + paymentAdjustment, 0);
+  // Recalcular desconto do cupom quando o carrinho muda
+  useEffect(() => {
+    if (!appliedCoupon) { setCouponDiscount(0); return; }
+    let discount = 0;
+    if (appliedCoupon.discount_type === "fixed_value") {
+      discount = Math.min(parseFloat(appliedCoupon.value), cartTotal);
+    } else {
+      discount = cartTotal * (parseFloat(appliedCoupon.value) / 100);
+    }
+    setCouponDiscount(discount);
+  }, [cartTotal, appliedCoupon]);
+
+  const orderTotal = Math.max(cartTotal - couponDiscount + paymentAdjustment + deliveryFee, 0);
 
   // Métodos de pagamento disponíveis (dinâmico baseado na config da loja)
   const availablePaymentMethods = (() => {
@@ -378,15 +402,64 @@ export default function PDVPage() {
     return ` (${sign}R$ ${adjValue.toFixed(2).replace(".", ",")})`;
   };
 
+  const phoneValidationRegex = /^\(\d{2}\) \d{4,5}-\d{4}$/;
+
   const processOrder = async () => {
     if (cart.length === 0) { toast.error("Adicione itens ao carrinho"); return; }
 
+    if (availablePaymentMethods.length === 0) {
+      toast.error("Configure pelo menos um método de pagamento nas configurações");
+      return;
+    }
+
     if (!isTableOrder) {
-      if (orderType === "delivery" && (!customerInfo.name || !customerInfo.phone || !customerInfo.address)) {
-        toast.error("Preencha as informações de entrega"); return;
+      const errors: Record<string, string> = {};
+      const trimmedName = customerInfo.name.trim();
+
+      if (!trimmedName) {
+        errors.name = "Nome é obrigatório";
       }
-      if (orderType === "pickup" && (!customerInfo.name || !customerInfo.phone)) {
-        toast.error("Preencha o nome e telefone do cliente"); return;
+
+      if (!customerInfo.phone) {
+        errors.phone = "Telefone é obrigatório";
+      } else if (!phoneValidationRegex.test(customerInfo.phone)) {
+        errors.phone = "Telefone inválido. Use o formato (XX) XXXXX-XXXX";
+      }
+
+      if (orderType === "delivery") {
+        if (!customerInfo.address.trim()) {
+          errors.address = "Endereço é obrigatório";
+        }
+        if (isPerNeighborhood) {
+          if (!selectedNeighborhoodId) {
+            errors.neighborhood = "Selecione um bairro";
+          }
+        } else {
+          if (!customerInfo.neighborhood.trim()) {
+            errors.neighborhood = "Bairro é obrigatório";
+          }
+        }
+      }
+
+      if (Object.keys(errors).length > 0) {
+        setFormErrors(errors);
+        toast.error("Preencha os campos obrigatórios");
+        return;
+      }
+
+      setCustomerInfo((p) => ({ ...p, name: trimmedName }));
+    }
+
+    if (isBelowMinOrder) {
+      toast.error(`Valor mínimo para entrega: ${formatPrice(minimumOrderValue)}`);
+      return;
+    }
+
+    if (appliedCoupon) {
+      const minOrder = parseFloat(appliedCoupon.minimum_order_value) || 0;
+      if (minOrder > 0 && cartTotal < minOrder) {
+        toast.error(`Valor mínimo do pedido para o cupom: ${formatPrice(minOrder)}`);
+        return;
       }
     }
 
@@ -413,15 +486,20 @@ export default function PDVPage() {
               : ("manual_pix" as const),
           customer_name: isTableOrder
             ? (selectedSession?.attributes.customer_name || `Mesa ${selectedSession?.attributes.table_number}`)
-            : customerInfo.name,
+            : customerInfo.name.trim(),
           customer_phone: isTableOrder ? undefined : customerInfo.phone.replace(/\D/g, "") || undefined,
           ...(appliedCoupon && { coupon_code: appliedCoupon.code }),
           ...(selectedTableSessionId && { table_session_id: Number(selectedTableSessionId) }),
           address: {
             address: isTableOrder ? "" : customerInfo.address,
-            neighborhood: isTableOrder ? "" : customerInfo.neighborhood,
+            neighborhood: isTableOrder ? "" : (isPerNeighborhood
+              ? (neighborhoods.find((n) => n.id === selectedNeighborhoodId)?.name ?? "")
+              : customerInfo.neighborhood),
             complement: isTableOrder ? "" : customerInfo.complement,
             reference: isTableOrder ? "" : customerInfo.reference,
+            ...(isPerNeighborhood && selectedNeighborhoodId && !isTableOrder && {
+              shop_delivery_neighborhood_id: Number(selectedNeighborhoodId),
+            }),
           },
           items: cart.map((item) => ({
             catalog_item_id: parseInt(item.id.split("-")[0]),
@@ -447,8 +525,10 @@ export default function PDVPage() {
         setNotes("");
         setChangeAmount("");
         handleRemoveCoupon();
+        setFormErrors({});
         if (!isTableOrder) {
-          setCustomerInfo({ name: "", phone: "", address: "", neighborhood: "", city: "", zipCode: "", complement: "", reference: "" });
+          setCustomerInfo({ name: "", phone: "", address: "", neighborhood: "", complement: "", reference: "" });
+          setSelectedNeighborhoodId("");
           setSelectedTableSessionId(null);
         }
         // Refresh tables and sessions after order creation
@@ -466,7 +546,7 @@ export default function PDVPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 max-w-[1600px] mx-auto">
       <AdminHeader title="Ponto de Venda (PDV)" description="Gerencie seus pedidos e vendas" className="!px-2" />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -905,10 +985,28 @@ export default function PDVPage() {
                         <span>- {formatPrice(couponDiscount)}</span>
                       </div>
                     )}
+                    {deliveryFee > 0 && (
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground">Taxa de entrega:</span>
+                        <span className="font-medium">+ {formatPrice(deliveryFee)}</span>
+                      </div>
+                    )}
+                    {orderType === "delivery" && deliveryFee === 0 && selectedNeighborhoodId && isPerNeighborhood && (
+                      <div className="flex justify-between items-center text-sm text-green-600">
+                        <span>Taxa de entrega:</span>
+                        <span className="font-medium">Grátis</span>
+                      </div>
+                    )}
                     {paymentAdjustment !== 0 && (
                       <div className={`flex justify-between items-center text-sm ${paymentAdjustment < 0 ? "text-green-600" : "text-orange-600"}`}>
                         <span>{paymentAdjustment < 0 ? "Desc." : "Acresc."} {getPaymentMethodLabel(paymentMethod)}:</span>
                         <span>{paymentAdjustment < 0 ? "- " : "+ "}{formatPrice(Math.abs(paymentAdjustment))}</span>
+                      </div>
+                    )}
+                    {isBelowMinOrder && (
+                      <div className="flex justify-between items-center text-sm text-red-500">
+                        <span>Pedido mínimo:</span>
+                        <span className="font-medium">{formatPrice(minimumOrderValue)}</span>
                       </div>
                     )}
                     <div className="flex justify-between items-center">
@@ -1088,7 +1186,7 @@ export default function PDVPage() {
               <CardContent>
                 <Select
                   value={orderType}
-                  onValueChange={(v: "delivery" | "pickup") => setOrderType(v)}
+                  onValueChange={(v: "delivery" | "pickup") => { setOrderType(v); setFormErrors({}); }}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -1113,71 +1211,92 @@ export default function PDVPage() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="name" className="text-sm">Nome</Label>
+                  <Label htmlFor="name" className="text-sm">Nome <span className="text-red-500">*</span></Label>
                   <Input
                     id="name"
                     value={customerInfo.name}
-                    onChange={(e: any) => setCustomerInfo((p) => ({ ...p, name: e.target.value }))}
+                    onChange={(e: any) => {
+                      setCustomerInfo((p) => ({ ...p, name: e.target.value }));
+                      if (formErrors.name) setFormErrors((p) => ({ ...p, name: "" }));
+                    }}
                     placeholder="Nome do cliente"
+                    className={formErrors.name ? "border-red-500 focus-visible:ring-red-500" : ""}
                   />
+                  {formErrors.name && <p className="text-xs text-red-500">{formErrors.name}</p>}
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="phone" className="text-sm">Telefone</Label>
+                  <Label htmlFor="phone" className="text-sm">Telefone <span className="text-red-500">*</span></Label>
                   <Input
                     id="phone"
                     value={customerInfo.phone}
-                    onChange={(e: any) =>
-                      setCustomerInfo((p) => ({ ...p, phone: formatPhone(e.target.value) }))
-                    }
+                    onChange={(e: any) => {
+                      setCustomerInfo((p) => ({ ...p, phone: formatPhone(e.target.value) }));
+                      if (formErrors.phone) setFormErrors((p) => ({ ...p, phone: "" }));
+                    }}
                     placeholder="(11) 99999-9999"
                     maxLength={15}
+                    className={formErrors.phone ? "border-red-500 focus-visible:ring-red-500" : ""}
                   />
+                  {formErrors.phone && <p className="text-xs text-red-500">{formErrors.phone}</p>}
                 </div>
               </div>
 
               {orderType === "delivery" && (
                 <>
                   <div className="space-y-1.5">
-                    <Label htmlFor="address" className="text-sm">Endereço</Label>
+                    <Label htmlFor="address" className="text-sm">Endereço <span className="text-red-500">*</span></Label>
                     <Input
                       id="address"
                       value={customerInfo.address}
-                      onChange={(e: any) => setCustomerInfo((p) => ({ ...p, address: e.target.value }))}
+                      onChange={(e: any) => {
+                        setCustomerInfo((p) => ({ ...p, address: e.target.value }));
+                        if (formErrors.address) setFormErrors((p) => ({ ...p, address: "" }));
+                      }}
                       placeholder="Rua, número"
+                      className={formErrors.address ? "border-red-500 focus-visible:ring-red-500" : ""}
                     />
+                    {formErrors.address && <p className="text-xs text-red-500">{formErrors.address}</p>}
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
-                      <Label htmlFor="neighborhood" className="text-sm">Bairro</Label>
-                      <Input
-                        id="neighborhood"
-                        value={customerInfo.neighborhood}
-                        onChange={(e: any) => setCustomerInfo((p) => ({ ...p, neighborhood: e.target.value }))}
-                        placeholder="Bairro"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="city" className="text-sm">Cidade</Label>
-                      <Input
-                        id="city"
-                        value={customerInfo.city}
-                        onChange={(e: any) => setCustomerInfo((p) => ({ ...p, city: e.target.value }))}
-                        placeholder="Cidade"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="zipCode" className="text-sm">CEP</Label>
-                      <Input
-                        id="zipCode"
-                        value={customerInfo.zipCode}
-                        onChange={(e: any) =>
-                          setCustomerInfo((p) => ({ ...p, zipCode: formatCEP(e.target.value) }))
-                        }
-                        placeholder="00000-000"
-                        maxLength={9}
-                      />
+                      <Label htmlFor="neighborhood" className="text-sm">Bairro <span className="text-red-500">*</span></Label>
+                      {isPerNeighborhood ? (
+                        <>
+                          <Select
+                            value={selectedNeighborhoodId}
+                            onValueChange={(v) => {
+                              setSelectedNeighborhoodId(v);
+                              if (formErrors.neighborhood) setFormErrors((p) => ({ ...p, neighborhood: "" }));
+                            }}
+                          >
+                            <SelectTrigger className={formErrors.neighborhood ? "border-red-500 focus-visible:ring-red-500" : ""}>
+                              <SelectValue placeholder="Selecione o bairro" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {neighborhoods.map((nb) => (
+                                <SelectItem key={nb.id} value={nb.id}>
+                                  {nb.name} · {formatPrice(nb.amount)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {formErrors.neighborhood && <p className="text-xs text-red-500">{formErrors.neighborhood}</p>}
+                        </>
+                      ) : (
+                        <>
+                          <Input
+                            id="neighborhood"
+                            value={customerInfo.neighborhood}
+                            onChange={(e: any) => {
+                              setCustomerInfo((p) => ({ ...p, neighborhood: e.target.value }));
+                              if (formErrors.neighborhood) setFormErrors((p) => ({ ...p, neighborhood: "" }));
+                            }}
+                            placeholder="Bairro"
+                            className={formErrors.neighborhood ? "border-red-500 focus-visible:ring-red-500" : ""}
+                          />
+                          {formErrors.neighborhood && <p className="text-xs text-red-500">{formErrors.neighborhood}</p>}
+                        </>
+                      )}
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="complement" className="text-sm">Complemento</Label>
@@ -1212,6 +1331,12 @@ export default function PDVPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {availablePaymentMethods.length === 0 ? (
+                <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+                  <p className="text-sm text-red-600 font-medium">Nenhum método de pagamento configurado</p>
+                  <p className="text-xs text-red-500 mt-1">Configure os métodos de pagamento nas configurações da loja.</p>
+                </div>
+              ) : (
               <div className="space-y-1.5">
                 <Label className="text-sm">Método de Pagamento</Label>
                 <Select
@@ -1230,6 +1355,7 @@ export default function PDVPage() {
                   </SelectContent>
                 </Select>
               </div>
+              )}
 
               {paymentMethod === "cash" && (() => {
                 const changeValue = changeAmount ? parseFloat(changeAmount) : 0;
@@ -1300,7 +1426,7 @@ export default function PDVPage() {
           ) : (
             <Button
               onClick={processOrder}
-              disabled={cart.length === 0 || isProcessingOrder}
+              disabled={cart.length === 0 || isProcessingOrder || isBelowMinOrder}
               className="w-full h-12 text-base font-semibold gap-2"
               size="lg"
             >
