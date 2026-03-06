@@ -502,7 +502,8 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
     }
 
     createCatalogItem(formData);
-    handleClose();
+    resetForm();
+    onOpenChange(false);
   };
 
   const handleClose = () => {
