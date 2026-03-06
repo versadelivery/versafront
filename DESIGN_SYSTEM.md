@@ -1,6 +1,6 @@
 # Design System — Versa Frontend
 
-Guia de referência para manter consistência visual nas páginas públicas e de autenticação do Versa.
+Guia de referencia para manter consistencia visual em todo o Versa (paginas publicas, autenticacao e admin).
 
 ---
 
@@ -8,11 +8,13 @@ Guia de referência para manter consistência visual nas páginas públicas e de
 
 | Token | Valor | Uso |
 |---|---|---|
-| **Warm off-white** | `#FAF9F7` | Background principal de todas as páginas |
+| **Warm off-white** | `#FAF9F7` | Background principal de todas as paginas |
 | **Warm border** | `#E5E2DD` | Bordas de cards, inputs, separadores, dividers |
 | **Placeholder bg** | `#F0EFEB` | Background de imagens placeholder, empty states |
-| **Primary** | `--primary` (verde) | CTAs, botões principais, links ativos, ícones de seção |
+| **Primary** | `--primary` (verde) | CTAs, botoes principais, links ativos, icones de secao |
 | **White** | `#FFFFFF` | Background de cards, modais, header |
+| **Recebidos bg** | `#FFFBF5` | Background de cards de pedidos recebidos (tom quente) |
+| **Entregue bg** | `#F0FFF4` | Background de cards de pedidos entregues (tom verde) |
 
 ## Regras fundamentais
 
@@ -32,7 +34,13 @@ Guia de referência para manter consistência visual nas páginas públicas e de
 <div className="bg-white border border-red-400">...</div>
 ```
 
-A exceção é `bg-[#FAF9F7]` (warm off-white do design system), que é usado como background de página e seções alternadas.
+A excecao e `bg-[#FAF9F7]` (warm off-white do design system), que e usado como background de pagina e secoes alternadas.
+
+Excecoes adicionais para cards de status no admin:
+- `bg-[#FFFBF5]` — pedidos recebidos (tom quente sutil)
+- `bg-[#F0FFF4]` — pedidos entregues (tom verde sutil)
+- `bg-primary` — pedidos prontos (destaque total)
+- `opacity-50` — pedidos cancelados (card apagado)
 
 ### 2. Arredondamento padronizado
 
@@ -80,9 +88,45 @@ Para bordas contextuais (erro, sucesso, alerta), usar tons fortes:
 | Alerta | `border-amber-400` |
 | Selecionado/ativo | `border-primary` |
 
-### 5. Container e largura
+### 5. Sem emojis na UI
 
-- Max-width padrão: `max-w-[1400px]`
+Nunca usar emojis nos componentes/cards. Sempre substituir por icones Lucide.
+
+```tsx
+// ERRADO
+<span>💳 Pix</span>
+<span>📞 (11) 99999-0000</span>
+
+// CORRETO
+<CreditCard className="w-3.5 h-3.5 text-gray-500" />
+<span>Pix</span>
+
+<Phone className="w-3.5 h-3.5 text-gray-500" />
+<span>(11) 99999-0000</span>
+```
+
+Emojis sao permitidos apenas em textos copiados para WhatsApp/Telegram (funcoes de copia).
+
+### 6. Botoes — bordas e cursor
+
+Todos os botoes de acao devem ter `border border-gray-300 cursor-pointer`. Nao usar bordas pretas opacas nem deixar botoes sem borda visivel.
+
+```tsx
+// Botao padrao
+<Button className="rounded-md border border-gray-300 cursor-pointer">
+  Acao
+</Button>
+
+// Botao destrutivo tambem recebe borda
+<Button variant="destructive" className="rounded-md border border-gray-300 cursor-pointer">
+  Cancelar
+</Button>
+```
+
+### 7. Container e largura
+
+- Max-width padrao: `max-w-[1400px]`
+- Max-width admin (telas largas como pedidos): `max-w-[1920px]`
 - Padding horizontal: `px-4 sm:px-6 lg:px-8`
 - Sidebar (desktop): `w-[380px]`
 
@@ -92,7 +136,7 @@ Para bordas contextuais (erro, sucesso, alerta), usar tons fortes:
 </div>
 ```
 
-### 6. Tamanho de fontes
+### 8. Tamanho de fontes
 
 Textos devem ser legíveis. Evitar `text-xs` no conteúdo principal.
 
@@ -195,17 +239,133 @@ Sempre visível em todos os itens (inclusive itens por peso).
 </div>
 ```
 
-## Checklist de revisão
+### Loading (paginas publicas)
 
-Antes de entregar uma página pública, verificar:
+Logo pulsante centralizada em tela cheia. Usar o componente `PublicLoading`.
 
-- [ ] Background da página é `bg-[#FAF9F7]`
-- [ ] Nenhum `bg-{cor}-50` presente (exceto `bg-[#FAF9F7]`)
+```tsx
+import PublicLoading from "@/components/public-loading";
+
+// Dentro de Suspense ou loading.tsx
+<PublicLoading />
+```
+
+Renderiza a logo (favicon.svg) com `width={140} height={140}` e `animate-pulse` sobre `bg-[#FAF9F7]`.
+
+### Header admin (paginas internas)
+
+```tsx
+<div className="bg-white border-b border-[#E5E2DD]">
+  <div className="max-w-[1920px] mx-auto px-4 sm:px-6">
+    <div className="flex items-center justify-between h-16">
+      <div className="flex items-center gap-4">
+        <a href="/admin" className="flex items-center gap-1.5 text-muted-foreground hover:text-gray-900">
+          <ArrowLeft className="w-5 h-5" />
+          <span className="text-sm font-medium hidden sm:block">Voltar</span>
+        </a>
+        <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
+        <h1 className="text-base sm:text-lg font-bold text-gray-900">Titulo</h1>
+      </div>
+      {/* Acoes a direita */}
+    </div>
+  </div>
+</div>
+```
+
+### SectionCard (modais e paineis)
+
+Card com header icone + titulo e conteudo separado por borda.
+
+```tsx
+<div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+  <div className="px-4 py-3 border-b border-[#E5E2DD] flex items-center gap-2">
+    <Icon className="h-4 w-4 text-primary" />
+    <h3 className="text-sm font-semibold text-gray-900">Titulo</h3>
+  </div>
+  <div className="px-4 py-3">
+    {/* conteudo com divide-y divide-[#E5E2DD] */}
+  </div>
+</div>
+```
+
+### InfoRow (linhas de informacao)
+
+Label a esquerda, valor a direita. Usar dentro de SectionCard com dividers.
+
+```tsx
+<div className="flex items-start justify-between py-1.5">
+  <span className="text-sm text-muted-foreground">Label</span>
+  <span className="text-sm font-medium text-gray-900 text-right">Valor</span>
+</div>
+```
+
+### Select/Dropdown
+
+```tsx
+<select className="border border-[#E5E2DD] rounded-md px-3 py-2 text-sm bg-white max-w-[200px] truncate cursor-pointer">
+  <option value="">Selecione</option>
+</select>
+```
+
+### Truncate para textos longos
+
+Nomes de clientes, enderecos e nomes de itens devem usar `truncate` para evitar scroll horizontal. Containers pai precisam de `min-w-0` ou `overflow-hidden`.
+
+```tsx
+<div className="min-w-0">
+  <h3 className="font-bold text-sm truncate">Nome muito longo do cliente...</h3>
+</div>
+```
+
+### Modal padrao (Dialog)
+
+Estrutura: header fixo + body scrollavel com `bg-[#FAF9F7]`.
+
+```tsx
+<DialogContent className="max-w-7xl p-0 flex flex-col max-h-[90vh]">
+  {/* Header fixo */}
+  <div className="px-6 py-4 border-b border-[#E5E2DD] flex items-center justify-between flex-shrink-0">
+    ...
+  </div>
+  {/* Body scrollavel */}
+  <div className="flex-1 overflow-y-auto bg-[#FAF9F7] p-6">
+    ...
+  </div>
+</DialogContent>
+```
+
+## Checklist de revisao
+
+Antes de entregar qualquer pagina, verificar:
+
+**Cores e backgrounds**
+- [ ] Background da pagina e `bg-[#FAF9F7]`
+- [ ] Nenhum `bg-{cor}-50` presente (exceto `bg-[#FAF9F7]` e cores de status de cards)
+- [ ] Nenhum `bg-gray-100` — usar `bg-[#F0EFEB]` para placeholders
+- [ ] Nenhum `bg-gray-50` — usar `bg-[#FAF9F7]`
+
+**Bordas e sombras**
 - [ ] Nenhum `shadow-sm/md/lg` presente
 - [ ] Todas as bordas usam `border-[#E5E2DD]` (exceto bordas contextuais)
-- [ ] Todos os arredondamentos são `rounded-md` (exceto `rounded-full` permitidos)
-- [ ] Container usa `max-w-[1400px]`
-- [ ] Nenhum `text-xs` em conteúdo principal
-- [ ] Header segue o padrão sticky com `h-16` e back button com `mr-auto`
-- [ ] Nenhum `bg-gray-100` — usar `bg-[#F0EFEB]` para placeholders
 - [ ] Nenhum `border-gray-100` ou `border-gray-200` — usar `border-[#E5E2DD]`
+
+**Arredondamento**
+- [ ] Todos os arredondamentos sao `rounded-md` (exceto `rounded-full` permitidos)
+
+**Tipografia**
+- [ ] Nenhum `text-xs` em conteudo principal
+- [ ] Textos longos tem `truncate` para evitar overflow
+
+**Layout**
+- [ ] Container usa `max-w-[1400px]` (publico) ou `max-w-[1920px]` (admin)
+- [ ] Header segue o padrao sticky com `h-16` e back button
+
+**Interacao**
+- [ ] Todos os botoes tem `border border-gray-300 cursor-pointer`
+- [ ] Selects tem `cursor-pointer` e borda `border-[#E5E2DD]`
+- [ ] Nenhum emoji na UI — usar icones Lucide
+
+**Modais**
+- [ ] Header fixo com `border-b border-[#E5E2DD]`
+- [ ] Body scrollavel com `bg-[#FAF9F7]`
+- [ ] Secoes usam SectionCard com icone + titulo

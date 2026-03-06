@@ -6,16 +6,20 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { 
-  Truck, 
-  CheckCircle, 
-  XCircle, 
+import {
+  Truck,
+  CheckCircle,
+  XCircle,
   Copy,
   SquarePen,
   Bell,
   ArrowRight,
   MessageCircle,
-  Printer
+  Printer,
+  CreditCard,
+  Phone,
+  MapPin,
+  Tag
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatPrice } from '@/app/(public)/[slug]/format-price';
@@ -69,9 +73,11 @@ export default function OrderCard({
 }: OrderCardProps) {
   // Buscar entregadores reais
   const { users, loading: loadingUsers } = useUsers();
-  console.log(users)
   const deliveryPeople = users.filter((u: User) => u.attributes.role === 'delivery_man');
   const isPronto = order.status === 'prontos';
+  const isRecebido = order.status === 'recebidos';
+  const isEntregue = order.status === 'entregue';
+  const isCancelled = order.status === 'cancelled';
   
   // Estado para controlar o modal de cancelamento
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -251,53 +257,69 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
 
   return (
     <>
-    <Card className={cn("mb-4 rounded-xs shadow border-0", config.bgColor)}>
-      <CardContent className="p-4">
-        <div className="flex justify-between items-center mb-2">
-          <div className={cn("text-xs font-medium", isPronto && "text-white", order.paymentStatus === 'pending' ? 'text-red-500' : config.bgColor === 'bg-primary' ? 'text-white' : 'text-green-500')}>
-            {order.paymentStatus === 'pending' ? 'Aguardando pagamento' : 'Pago'}
-          </div>
-          <div className="flex items-center gap-2">
-            {order.deliveryType === 'delivery' && <Truck className={cn("w-4 h-4", isPronto && "text-white")} />}
+    <Card className={cn(
+      "mb-3 rounded-md border border-[#E5E2DD] shadow-none overflow-hidden",
+      isPronto ? "bg-primary border-primary"
+        : isRecebido ? "bg-[#FFFBF5]"
+        : isEntregue ? "bg-[#F0FFF4]"
+        : isCancelled ? "bg-white opacity-50"
+        : "bg-white"
+    )}>
+      <CardContent className="p-3">
+        <div className="flex justify-between items-center mb-1.5">
+          <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-md border",
+            isPronto
+              ? "bg-white/20 text-white border-white/30"
+              : order.paymentStatus === 'pending'
+                ? 'text-red-600 bg-white border-red-300'
+                : 'text-green-600 bg-white border-green-300'
+          )}>
+            {order.paymentStatus === 'pending' ? 'Aguardando pgto' : 'Pago'}
+          </span>
+          <div className="flex items-center gap-1.5">
+            {order.deliveryType === 'delivery' && <Truck className={cn("w-3.5 h-3.5", isPronto ? "text-white" : "text-muted-foreground")} />}
+            <span className={cn("text-xs", isPronto ? "text-white/80" : "text-muted-foreground")}>{order.time}</span>
           </div>
         </div>
 
-        <div className={cn("mb-2 flex items-center gap-2", isPronto && "text-white")}>
-          <h3 className={cn("font-bold text-lg leading-tight", isPronto ? "text-white" : "text-gray-800")}>
+        <div className="mb-1.5 flex items-center gap-2 min-w-0">
+          <h3 className={cn("font-bold text-sm leading-tight truncate", isPronto ? "text-white" : "text-gray-900")}>
             {order.customerName}
           </h3>
-          <Badge variant="secondary" className={cn("text-xs px-2 py-0.5", isPronto && "bg-white text-primary")}>
+          <span className={cn("text-xs px-1.5 py-0.5 rounded-md border flex-shrink-0",
+            isPronto ? "bg-white/20 text-white border-white/30" : "bg-[#FAF9F7] text-muted-foreground border-[#E5E2DD]"
+          )}>
             {order.socketData?.attributes?.items?.data?.length || 0} itens
-          </Badge>
+          </span>
         </div>
-        <div className={cn("flex items-center gap-2 mb-2", isPronto && "text-white")}>
-          <div className={cn("font-bold text-lg", isPronto ? "text-white" : "text-green-600")}>
-            {formatPrice(order.amount)}
-          </div>
-          <span className={cn("text-xs", isPronto ? "text-white" : "text-gray-500")}>{order.time}</span>
+        <div className={cn("font-bold text-base mb-1.5", isPronto ? "text-white" : "text-primary")}>
+          {formatPrice(order.amount)}
         </div>
 
         {/* Forma de pagamento */}
-        <div className={cn("text-xs mb-2", isPronto ? "text-white" : "text-gray-600")}>
+        <div className={cn("text-xs mb-1", isPronto ? "text-white/90" : "text-gray-600")}>
           <div className="flex items-center gap-2">
-            <span>💳 {getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}</span>
+            <CreditCard className={cn("w-3.5 h-3.5 flex-shrink-0", isPronto ? "text-white/90" : "text-gray-500")} />
+            <span>{getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}</span>
           </div>
         </div>
 
         {/* Taxa de entrega */}
         {order.deliveryType === 'delivery' && order.socketData?.attributes?.delivery_fee && parseFloat(order.socketData.attributes.delivery_fee) > 0 && (
-          <div className={cn("text-xs mb-2", isPronto ? "text-white" : "text-blue-600")}>
+          <div className={cn("text-xs mb-1", isPronto ? "text-white/90" : "text-blue-600")}>
             <div className="flex items-center gap-2">
-              <span>🚚 Taxa de entrega: {formatPrice(parseFloat(order.socketData.attributes.delivery_fee))}</span>
+              <Truck className={cn("w-3.5 h-3.5 flex-shrink-0", isPronto ? "text-white/90" : "text-blue-500")} />
+              <span>Taxa de entrega: {formatPrice(parseFloat(order.socketData.attributes.delivery_fee))}</span>
             </div>
           </div>
         )}
 
         {/* Cupom de desconto */}
         {order.socketData?.attributes?.coupon_code && (
-          <div className={cn("text-xs mb-2", isPronto ? "text-white" : "text-green-600")}>
+          <div className={cn("text-xs mb-1", isPronto ? "text-white/90" : "text-green-600")}>
             <div className="flex items-center gap-2">
-              <span>🏷️ Cupom: {order.socketData.attributes.coupon_code} (-{formatPrice(parseFloat(order.socketData.attributes.discount_amount || '0'))})</span>
+              <Tag className={cn("w-3.5 h-3.5 flex-shrink-0", isPronto ? "text-white/90" : "text-green-500")} />
+              <span>Cupom: {order.socketData.attributes.coupon_code} (-{formatPrice(parseFloat(order.socketData.attributes.discount_amount || '0'))})</span>
             </div>
           </div>
         )}
@@ -309,45 +331,50 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
           return (
             <div className={cn("text-xs mb-2", isPronto ? "text-white" : isDiscount ? "text-green-600" : "text-orange-600")}>
               <div className="flex items-center gap-2">
-                <span>{isDiscount ? "🟢" : "🟠"} {isDiscount ? "Desc." : "Acresc."} pagamento: {isDiscount ? "-" : "+"}{formatPrice(Math.abs(adj))}</span>
+                <span className={cn("w-2 h-2 rounded-full flex-shrink-0 inline-block", isDiscount ? "bg-green-500" : "bg-orange-500")} />
+                <span>{isDiscount ? "Desc." : "Acresc."} pagamento: {isDiscount ? "-" : "+"}{formatPrice(Math.abs(adj))}</span>
               </div>
             </div>
           );
         })()}
 
-        <div className={cn("text-xs", isPronto ? "text-white" : "text-gray-400", "mb-2")}>ID: {order.id}</div>
+        <div className={cn("text-xs", isPronto ? "text-white/60" : "text-gray-400", "mb-1")}>#{order.id}</div>
         
         {/* Informações do cliente */}
-        <div className={cn("text-xs mb-2", isPronto ? "text-white" : "text-gray-600")}>
+        <div className={cn("text-xs mb-1", isPronto ? "text-white/90" : "text-gray-600")}>
           <div className="flex items-center gap-2">
-            <span>📞 {order.socketData?.attributes?.customer?.data?.attributes?.cellphone || 'N/A'}</span>
+            <Phone className={cn("w-3.5 h-3.5 flex-shrink-0", isPronto ? "text-white/90" : "text-gray-500")} />
+            <span>{order.socketData?.attributes?.customer?.data?.attributes?.cellphone || 'N/A'}</span>
           </div>
         </div>
 
         {/* Endereço para delivery */}
         {order.deliveryType === 'delivery' && order.socketData?.attributes?.address?.data && (
-          <div className={cn("text-xs mb-2", isPronto ? "text-white" : "text-gray-600")}>
-            <div className="font-medium">📍 Entrega:</div>
-            <div className="ml-2">
-              <div>{order.socketData.attributes.address.data.attributes.address}</div>
+          <div className={cn("text-xs mb-1", isPronto ? "text-white/90" : "text-gray-600")}>
+            <div className="font-medium flex items-center gap-1">
+              <MapPin className={cn("w-3.5 h-3.5 flex-shrink-0", isPronto ? "text-white/90" : "text-gray-500")} />
+              Entrega:
+            </div>
+            <div className="ml-2 truncate">
+              <div className="truncate">{order.socketData.attributes.address.data.attributes.address}</div>
               {order.socketData.attributes.address.data.attributes.complement && (
-                <div className="text-gray-500">{order.socketData.attributes.address.data.attributes.complement}</div>
+                <div className="text-gray-500 truncate">{order.socketData.attributes.address.data.attributes.complement}</div>
               )}
-              <div className="text-gray-500">{order.socketData.attributes.address.data.attributes.neighborhood}</div>
+              <div className="text-gray-500 truncate">{order.socketData.attributes.address.data.attributes.neighborhood}</div>
             </div>
           </div>
         )}
         
         {/* Mostrar itens do pedido */}
         {order.socketData?.attributes?.items?.data?.length > 0 && (
-          <div className={cn("text-xs mb-2", isPronto ? "text-white" : "text-gray-600")}>
+          <div className={cn("text-xs mb-1", isPronto ? "text-white/90" : "text-gray-600")}>
             <div className="font-medium mb-1">Itens:</div>
             {order.socketData.attributes.items.data.slice(0, 2).map((item: any, index: number) => (
-              <div key={item.id} className="flex justify-between items-center">
-                <span className="truncate">
+              <div key={item.id} className="flex justify-between items-center gap-2">
+                <span className="truncate min-w-0">
                   {item.attributes.quantity}x {item.attributes.catalog_item?.data?.attributes?.name || item.attributes.name || 'Item não encontrado'}
                 </span>
-                <span className="ml-2">
+                <span className="flex-shrink-0">
                   {formatPrice(parseFloat(item.attributes.total_price || '0'))}
                 </span>
               </div>
@@ -362,7 +389,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
 
         {/* Mostrar observações se houver */}
         {order.socketData?.attributes?.items?.data?.some((item: any) => item.attributes.observation) && (
-          <div className={cn("text-xs mb-2", isPronto ? "text-white" : "text-orange-600")}>
+          <div className={cn("text-xs mb-1", isPronto ? "text-white/90" : "text-orange-600")}>
             <div className="font-medium">Observações:</div>
             {order.socketData.attributes.items.data
               .filter((item: any) => item.attributes.observation)
@@ -377,29 +404,31 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
 
         {/* Exibir horários de saída e entrega */}
         {order.leftTime && (
-          <div className={cn("text-xs mb-2", isPronto ? "text-white" : "text-blue-600")}>
+          <div className={cn("text-xs mb-1", isPronto ? "text-white/90" : "text-blue-600")}>
             <div className="flex items-center gap-2">
-              <span>🚚 Saiu para entrega: {order.leftTime}</span>
+              <Truck className={cn("w-3.5 h-3.5 flex-shrink-0", isPronto ? "text-white/90" : "text-blue-500")} />
+              <span>Saiu para entrega: {order.leftTime}</span>
             </div>
           </div>
         )}
         
         {order.deliveredTime && (
-          <div className={cn("text-xs mb-2", isPronto ? "text-white" : "text-green-600")}>
+          <div className={cn("text-xs mb-1", isPronto ? "text-white/90" : "text-green-600")}>
             <div className="flex items-center gap-2">
-              <span>✅ Entregue em: {order.deliveredTime}</span>
+              <CheckCircle className={cn("w-3.5 h-3.5 flex-shrink-0", isPronto ? "text-white/90" : "text-green-500")} />
+              <span>Entregue em: {order.deliveredTime}</span>
             </div>
           </div>
         )}
 
-        <div className={cn("text-xs", isPronto ? "text-white" : "text-gray-600", "mb-4")}> 
+        <div className={cn("text-xs", isPronto ? "text-white/90" : "text-gray-600", "mb-3")}>
           {order.status === 'recebidos' ? (
             <div className="flex items-center gap-2">
               <span>Entregador:</span>
               <select
                 value={order.deliveryPerson || ''}
                 onChange={handleDeliveryPersonChange}
-                className="border rounded-xs px-2 py-1 text-sm bg-white w-[150px]"
+                className="border border-[#E5E2DD] rounded-md px-3 py-2 text-sm bg-white max-w-[200px] truncate cursor-pointer"
                 disabled={loadingUsers}
               >
                 <option value="">Selecione um entregador</option>
@@ -422,7 +451,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
           {order.status === 'recebidos' && (
             <div className="space-y-2">
               <Button 
-                className="w-full bg-white text-black font-semibold hover:bg-primary/90 hover:text-white rounded-xs"
+                className="w-full bg-white text-black font-semibold hover:bg-primary/90 hover:text-white rounded-md border border-gray-300 cursor-pointer"
                 onClick={() => onUpdateOrderStatus(order.id, 'aceitos')}
               >
                 ACEITAR
@@ -430,7 +459,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
               </Button>
               <Button 
                 variant="destructive" 
-                className="w-full rounded-xs"
+                className="w-full rounded-md border border-gray-300 cursor-pointer"
                 onClick={handleCancelOrder}
               >
                 RECUSAR
@@ -445,7 +474,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="rounded-xs text-green-600 hover:text-green-700"
+                  className="rounded-md border border-gray-300 cursor-pointer text-green-600 hover:text-green-700"
                   onClick={handleWhatsAppNotification}
                   title="Notificar via WhatsApp"
                 >
@@ -455,7 +484,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="rounded-xs"
+                  className="rounded-md border border-gray-300 cursor-pointer"
                   onClick={handlePrintOrder}
                   title="Imprimir Pedido"
                 >
@@ -464,7 +493,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="rounded-xs"
+                  className="rounded-md border border-gray-300 cursor-pointer"
                   onClick={handleCopyPrintFormat}
                   title="Copiar Formato de Impressão"
                 >
@@ -474,14 +503,14 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
               <div className="grid grid-cols-2 gap-2">
                 <Button 
                   variant="outline"
-                  className="w-full rounded-xs"
+                  className="w-full rounded-md border border-gray-300 cursor-pointer"
                   onClick={() => onUpdateOrderStatus(order.id, 'em_analise')}
                 >
                   EM ANÁLISE
                 </Button>
                 <Button 
                   variant="outline"
-                  className="w-full rounded-xs"
+                  className="w-full rounded-md border border-gray-300 cursor-pointer"
                   onClick={() => onUpdateOrderStatus(order.id, 'em_preparo')}
                 >
                   EM PREPARO
@@ -490,14 +519,14 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
               <div className="grid grid-cols-2 gap-2">
                 <Button 
                   variant={order.paymentStatus === 'paid' ? 'default' : 'outline'}
-                  className={cn('w-full rounded-xs', order.paymentStatus === 'paid' ? 'bg-primary text-white hover:bg-primary/90' : '')}
+                  className={cn('w-full rounded-md border border-gray-300 cursor-pointer', order.paymentStatus === 'paid' ? 'bg-primary text-white hover:bg-primary/90' : '')}
                   onClick={() => onTogglePaymentStatus(order.id)}
                 >
                   PAGO {order.paymentStatus === 'paid' && <CheckCircle className="w-4 h-4 ml-1" />}
                 </Button>
                 <Button 
                   variant="outline"
-                  className="w-full rounded-xs"
+                  className="w-full rounded-md border border-gray-300 cursor-pointer"
                   onClick={() => onUpdateOrderStatus(order.id, 'prontos')}
                 >
                   PRONTO
@@ -506,7 +535,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
               
               <Button 
                 variant="destructive" 
-                className="w-full rounded-xs"
+                className="w-full rounded-md border border-gray-300 cursor-pointer"
                 onClick={handleCancelOrder}
               >
                 CANCELAR
@@ -521,7 +550,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="rounded-xs text-green-600 hover:text-green-700"
+                  className="rounded-md border border-gray-300 cursor-pointer text-green-600 hover:text-green-700"
                   onClick={handleWhatsAppNotification}
                   title="Notificar via WhatsApp"
                 >
@@ -531,7 +560,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="rounded-xs"
+                  className="rounded-md border border-gray-300 cursor-pointer"
                   onClick={handlePrintOrder}
                   title="Imprimir Pedido"
                 >
@@ -540,7 +569,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="rounded-xs"
+                  className="rounded-md border border-gray-300 cursor-pointer"
                   onClick={handleCopyPrintFormat}
                   title="Copiar Formato de Impressão"
                 >
@@ -549,7 +578,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
               </div>
               <Button 
                 variant="outline"
-                className="w-full rounded-xs"
+                className="w-full rounded-md border border-gray-300 cursor-pointer"
                 onClick={() => onUpdateOrderStatus(order.id, 'em_preparo')}
               >
                 EM PREPARO
@@ -557,14 +586,14 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
               <div className="grid grid-cols-2 gap-2">
                 <Button 
                   variant={order.paymentStatus === 'paid' ? 'default' : 'outline'}
-                  className={cn('w-full rounded-xs', order.paymentStatus === 'paid' ? 'bg-primary text-white hover:bg-primary/90' : '')}
+                  className={cn('w-full rounded-md border border-gray-300 cursor-pointer', order.paymentStatus === 'paid' ? 'bg-primary text-white hover:bg-primary/90' : '')}
                   onClick={() => onTogglePaymentStatus(order.id)}
                 >
                   PAGO {order.paymentStatus === 'paid' && <CheckCircle className="w-4 h-4 ml-1" />}
                 </Button>
                 <Button 
                   variant="outline"
-                  className="w-full rounded-xs"
+                  className="w-full rounded-md border border-gray-300 cursor-pointer"
                   onClick={() => onUpdateOrderStatus(order.id, 'prontos')}
                 >
                   PRONTO
@@ -572,7 +601,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
               </div>
               <Button 
                 variant="destructive" 
-                className="w-full rounded-xs"
+                className="w-full rounded-md border border-gray-300 cursor-pointer"
                 onClick={handleCancelOrder}
               >
                 CANCELAR
@@ -587,7 +616,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="rounded-xs text-green-600 hover:text-green-700"
+                  className="rounded-md border border-gray-300 cursor-pointer text-green-600 hover:text-green-700"
                   onClick={handleWhatsAppNotification}
                   title="Notificar via WhatsApp"
                 >
@@ -597,7 +626,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="rounded-xs"
+                  className="rounded-md border border-gray-300 cursor-pointer"
                   onClick={handlePrintOrder}
                   title="Imprimir Pedido"
                 >
@@ -606,7 +635,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="rounded-xs"
+                  className="rounded-md border border-gray-300 cursor-pointer"
                   onClick={handleCopyPrintFormat}
                   title="Copiar Formato de Impressão"
                 >
@@ -616,14 +645,14 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
               <div className="grid grid-cols-2 gap-2">
                 <Button 
                   variant={order.paymentStatus === 'paid' ? 'default' : 'outline'}
-                  className={cn('w-full rounded-xs', order.paymentStatus === 'paid' ? 'bg-primary text-white hover:bg-primary/90' : '')}
+                  className={cn('w-full rounded-md border border-gray-300 cursor-pointer', order.paymentStatus === 'paid' ? 'bg-primary text-white hover:bg-primary/90' : '')}
                   onClick={() => onTogglePaymentStatus(order.id)}
                 >
                   PAGO {order.paymentStatus === 'paid' && <CheckCircle className="w-4 h-4 ml-1" />}
                 </Button>
                 <Button 
                   variant="outline"
-                  className="w-full rounded-xs"
+                  className="w-full rounded-md border border-gray-300 cursor-pointer"
                   onClick={() => onUpdateOrderStatus(order.id, 'prontos')}
                 >
                   PRONTO
@@ -631,7 +660,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
               </div>
               <Button 
                 variant="destructive" 
-                className="w-full rounded-xs"
+                className="w-full rounded-md border border-gray-300 cursor-pointer"
                 onClick={handleCancelOrder}
               >
                 CANCELAR
@@ -646,7 +675,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
               <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="rounded-xs text-white"
+                  className="rounded-md border border-gray-300 cursor-pointer text-white"
                   onClick={handleWhatsAppNotification}
                   title="Notificar via WhatsApp"
                 >
@@ -656,7 +685,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="rounded-xs text-white"
+                  className="rounded-md border border-gray-300 cursor-pointer text-white"
                   onClick={handlePrintOrder}
                   title="Imprimir Pedido"
                 >
@@ -665,7 +694,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="rounded-xs text-white"
+                  className="rounded-md border border-gray-300 cursor-pointer text-white"
                   onClick={handleCopyPrintFormat}
                   title="Copiar Formato de Impressão"
                 >
@@ -675,7 +704,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
               <div className="grid grid-cols-2 gap-2">
                 <Button 
                   variant="outline" 
-                  className="w-full rounded-xs"
+                  className="w-full rounded-md border border-gray-300 cursor-pointer"
                   onClick={handleLeftForDelivery}
                 >
                   <Truck className="w-3 h-3" />
@@ -683,7 +712,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
                 </Button>
                 <Button 
                   variant="outline" 
-                  className="w-full rounded-xs"
+                  className="w-full rounded-md border border-gray-300 cursor-pointer"
                   onClick={handleDelivered}
                 >
                   <CheckCircle className="w-2 h-2" />
@@ -692,7 +721,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
               </div>
               <Button 
                 variant="destructive" 
-                className="w-full rounded-xs border-red-600"
+                className="w-full rounded-md border border-gray-300 cursor-pointer"
                 onClick={handleCancelOrder}
               >
                 CANCELAR
@@ -706,7 +735,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
               <div className="grid grid-cols-2 gap-2">
                 <Button 
                   variant="outline" 
-                  className="w-full rounded-xs"
+                  className="w-full rounded-md border border-gray-300 cursor-pointer"
                   onClick={handleDelivered}
                 >
                   <CheckCircle className="w-2 h-2" />
@@ -714,7 +743,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
                 </Button>
                 <Button 
                   variant="destructive" 
-                  className="w-full rounded-xs"
+                  className="w-full rounded-md border border-gray-300 cursor-pointer"
                   onClick={handleCancelOrder}
                 >
                   CANCELAR
@@ -724,15 +753,15 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
             </div>
           )}
 
-          <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              className="flex-1 rounded-xs"
-              onClick={handleOpenOrderDetails}
-            >
-              DETALHES DO PEDIDO ↗
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            className="w-full rounded-md text-xs border border-gray-300 cursor-pointer"
+            size="sm"
+            onClick={handleOpenOrderDetails}
+          >
+            DETALHES DO PEDIDO
+            <ArrowRight className="w-3 h-3 ml-1" />
+          </Button>
         </div>
       </CardContent>
     </Card>
