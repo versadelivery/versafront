@@ -1223,12 +1223,12 @@ function OrderSummary({
             </div>
           )}
 
-          {totalDiscount > 0 && (
+          {/* {totalDiscount > 0 && (
             <div className="flex justify-between text-green-600">
               <span>Desconto itens</span>
               <span>- R$ {totalDiscount.toFixed(2).replace('.', ',')}</span>
             </div>
-          )}
+          )} */}
 
           {couponDiscount > 0 && appliedCouponCode && (
             <div className="flex justify-between text-green-600">
