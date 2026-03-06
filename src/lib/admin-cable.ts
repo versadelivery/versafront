@@ -18,6 +18,9 @@ export interface AdminOrderData {
     payment_method: string
     created_at: string
     paid_at?: string | null
+    accepted_at?: string | null
+    ready_at?: string | null
+    left_for_delivery_at?: string | null
     delivery_person?: string | null
     items: {
       data: any[]

@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { ImageIcon, Upload, MapPin, Phone, Mail, ShoppingBag, Wallet, Settings, Clock, ArrowLeft } from "lucide-react";
+import { ImageIcon, Upload, MapPin, Phone, Mail, ShoppingBag, Wallet, Settings, Clock, ArrowLeft, Timer } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useShop } from "@/hooks/use-shop";
 import { ShopAttributes } from "@/services/shop";
@@ -34,7 +34,9 @@ export default function GeneralSettingsPage() {
         image: null,
         auto_accept_orders: shop.auto_accept_orders ?? false,
         auto_open_cash_register: shop.auto_open_cash_register ?? false,
-        auto_open_cash_register_time: shop.auto_open_cash_register_time ?? null
+        auto_open_cash_register_time: shop.auto_open_cash_register_time ?? null,
+        estimated_prep_time: shop.estimated_prep_time ?? 30,
+        estimated_delivery_time: shop.estimated_delivery_time ?? 40
       };
 
       if (!(initialData as any).slug || (initialData as any).slug !== shop.slug) {
@@ -349,6 +351,59 @@ export default function GeneralSettingsPage() {
                     setFormData(prev => ({ ...prev, auto_accept_orders: checked }))
                   }
                 />
+              </div>
+            </div>
+          </div>
+
+          {/* SectionCard: Tempo Estimado */}
+          <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+            <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
+              <Timer className="h-4 w-4 text-primary" />
+              <h2 className="text-base font-semibold text-gray-900">Tempo Estimado</h2>
+            </div>
+            <div className="px-5 py-5">
+              <p className="text-sm text-muted-foreground mb-4">
+                Defina o tempo medio de preparo e entrega. Esses valores sao usados no cronometro do painel de pedidos e exibidos ao cliente.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-1.5">
+                  <Label htmlFor="estimated_prep_time" className="text-sm font-medium">
+                    Tempo de preparo (minutos)
+                  </Label>
+                  <Input
+                    id="estimated_prep_time"
+                    name="estimated_prep_time"
+                    type="number"
+                    min={1}
+                    max={240}
+                    value={formData.estimated_prep_time ?? ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setFormData(prev => ({ ...prev, estimated_prep_time: val === '' ? undefined : parseInt(val) }));
+                    }}
+                    className="h-10 w-32 rounded-md border-[#E5E2DD]"
+                  />
+                  <p className="text-xs text-muted-foreground">Usado no cronometro do painel e KDS</p>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="estimated_delivery_time" className="text-sm font-medium">
+                    Tempo de entrega (minutos)
+                  </Label>
+                  <Input
+                    id="estimated_delivery_time"
+                    name="estimated_delivery_time"
+                    type="number"
+                    min={1}
+                    max={240}
+                    value={formData.estimated_delivery_time ?? ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setFormData(prev => ({ ...prev, estimated_delivery_time: val === '' ? undefined : parseInt(val) }));
+                    }}
+                    className="h-10 w-32 rounded-md border-[#E5E2DD]"
+                  />
+                  <p className="text-xs text-muted-foreground">Exibido ao cliente no checkout e acompanhamento</p>
+                </div>
               </div>
             </div>
           </div>

@@ -19,8 +19,10 @@ import {
   CreditCard,
   Phone,
   MapPin,
-  Tag
+  Tag,
+  Timer
 } from 'lucide-react';
+import { usePrepTimer } from '@/hooks/use-prep-timer';
 import { cn } from '@/lib/utils';
 import { formatPrice } from '@/app/(public)/[slug]/format-price';
 import { User } from '@/app/admin/settings/users/services/userService';
@@ -55,6 +57,8 @@ interface Order {
 interface OrderCardProps {
   order: Order;
   config: any;
+  estimatedPrepTime?: number | null;
+  estimatedDeliveryTime?: number | null;
   onUpdateOrderStatus: (orderId: string, newStatus: Order['status']) => void;
   onTogglePaymentStatus: (orderId: string) => void;
   onDeliveryPersonChange: (orderId: string, deliveryPerson: string) => void;
@@ -65,6 +69,8 @@ interface OrderCardProps {
 export default function OrderCard({
   order,
   config,
+  estimatedPrepTime,
+  estimatedDeliveryTime,
   onUpdateOrderStatus,
   onTogglePaymentStatus,
   onDeliveryPersonChange,
@@ -73,6 +79,20 @@ export default function OrderCard({
 }: OrderCardProps) {
   // Buscar entregadores reais
   const { users, loading: loadingUsers } = useUsers();
+
+  // Cronômetro de preparo — ativo para pedidos aceitos, em análise ou em preparo
+  const acceptedAt = order.socketData?.attributes?.accepted_at;
+  const isPrepping = ['aceitos', 'em_analise', 'em_preparo'].includes(order.status);
+  const prepTimer = usePrepTimer(isPrepping ? acceptedAt : null, estimatedPrepTime, 'Preparo');
+
+  // Cronômetro de entrega — ativo a partir de pronto (ready_at) até ser entregue
+  const readyAt = order.socketData?.attributes?.ready_at;
+  const isDelivering = ['prontos', 'saiu'].includes(order.status);
+  const deliveryTimer = usePrepTimer(isDelivering ? readyAt : null, estimatedDeliveryTime, 'Entrega');
+
+  // Timer ativo (preparo ou entrega)
+  const timer = prepTimer || deliveryTimer;
+  const hasActiveTimer = !!timer;
   const deliveryPeople = users.filter((u: User) => u.attributes.role === 'delivery_man');
   const isPronto = order.status === 'prontos';
   const isRecebido = order.status === 'recebidos';
@@ -258,7 +278,10 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
   return (
     <>
     <Card className={cn(
-      "mb-3 rounded-md border border-[#E5E2DD] shadow-none overflow-hidden",
+      "mb-3 rounded-md border shadow-none overflow-hidden",
+      timer?.isOverdue
+        ? "border-red-400"
+        : "border-[#E5E2DD]",
       isPronto ? "bg-primary border-primary"
         : isRecebido ? "bg-[#FFFBF5]"
         : isEntregue ? "bg-[#F0FFF4]"
@@ -337,6 +360,22 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
             </div>
           );
         })()}
+
+        {/* Timer de preparo/entrega */}
+        {hasActiveTimer && timer && (
+          <div className={cn(
+            "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border bg-white text-sm font-semibold mb-2",
+            timer.isOverdue
+              ? "border-red-400 text-red-700"
+              : "border-[#E5E2DD] text-gray-700"
+          )}>
+            <span className={cn("w-1.5 h-1.5 rounded-full", timer.isOverdue ? "bg-red-500" : "bg-primary")} />
+            <span>{timer.timerLabel}</span>
+            <span className={cn("tabular-nums font-bold", timer.isOverdue ? "text-red-700" : "text-gray-900")}>
+              {timer.label}
+            </span>
+          </div>
+        )}
 
         <div className={cn("text-xs", isPronto ? "text-white/60" : "text-gray-400", "mb-1")}>#{order.id}</div>
         

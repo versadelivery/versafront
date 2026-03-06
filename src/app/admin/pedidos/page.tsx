@@ -38,6 +38,7 @@ import { formatPrice } from '@/app/(public)/[slug]/format-price';
 import { useAdminActionCable, AdminOrderData } from '@/lib/admin-cable';
 import OrderCard from '@/components/admin/order-card';
 import { useRestaurantSounds } from '@/hooks/use-restaurant-sounds';
+import { useShop } from '@/hooks/use-shop';
 import AdminHeader from '@/components/admin/catalog-header';
 import { useRouter } from 'next/navigation';
 // Controle de som foi movido para o Header global da administração
@@ -204,8 +205,12 @@ export default function OrderManagement() {
   const socketOrdersCache = useRef<Map<string, Order>>(new Map());
 
   const { subscribeToAdminOrders, updateOrder, updateOrderDetails, isConnected } = useAdminActionCable();
-  const { orderAccepted, orderReady, newOrder } = useRestaurantSounds();
+  const { orderAccepted, orderReady, newOrder, orderOverdue } = useRestaurantSounds();
+  const { shop } = useShop();
+  const estimatedPrepTime = shop?.estimated_prep_time ?? null;
+  const estimatedDeliveryTime = shop?.estimated_delivery_time ?? null;
   const seenOrderIdsRef = useRef<Set<string>>(new Set());
+  const overdueAlertedRef = useRef<Set<string>>(new Set());
   const isInitialLoadRef = useRef(true);
 
   useEffect(() => {
@@ -317,6 +322,43 @@ export default function OrderManagement() {
       clearTimeout(timeout);
     };
   }, []); // Remover dependência subscribeToAdminOrders
+
+  // Alerta sonoro para pedidos atrasados (preparo e entrega)
+  useEffect(() => {
+    if (orders.length === 0) return;
+    if (!estimatedPrepTime && !estimatedDeliveryTime) return;
+
+    const interval = setInterval(() => {
+      const now = Date.now();
+      orders.forEach((order) => {
+        if (overdueAlertedRef.current.has(order.id)) return;
+
+        // Atraso no preparo
+        if (['aceitos', 'em_analise', 'em_preparo'].includes(order.status) && estimatedPrepTime) {
+          const acceptedAt = order.socketData?.attributes?.accepted_at;
+          if (!acceptedAt) return;
+          const t = new Date(acceptedAt).getTime();
+          if (!isNaN(t) && now > t + estimatedPrepTime * 60 * 1000) {
+            overdueAlertedRef.current.add(order.id);
+            orderOverdue();
+          }
+        }
+
+        // Atraso na entrega (conta a partir de pronto)
+        if (['prontos', 'saiu'].includes(order.status) && estimatedDeliveryTime) {
+          const readyAt = order.socketData?.attributes?.ready_at;
+          if (!readyAt) return;
+          const t = new Date(readyAt).getTime();
+          if (!isNaN(t) && now > t + estimatedDeliveryTime * 60 * 1000) {
+            overdueAlertedRef.current.add(order.id);
+            orderOverdue();
+          }
+        }
+      });
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [orders, estimatedPrepTime, estimatedDeliveryTime, orderOverdue]);
 
   const updateOrderStatus = useCallback(async (orderId: string, newStatus: Order['status']) => {
 
@@ -801,6 +843,8 @@ export default function OrderManagement() {
                               key={order.id}
                               order={order}
                               config={config}
+                              estimatedPrepTime={estimatedPrepTime}
+                              estimatedDeliveryTime={estimatedDeliveryTime}
                               onUpdateOrderStatus={updateOrderStatus}
                               onTogglePaymentStatus={togglePaymentStatus}
                               onDeliveryPersonChange={updateDeliveryPerson}
@@ -848,6 +892,8 @@ export default function OrderManagement() {
                               key={order.id}
                               order={order}
                               config={config}
+                              estimatedPrepTime={estimatedPrepTime}
+                              estimatedDeliveryTime={estimatedDeliveryTime}
                               onUpdateOrderStatus={updateOrderStatus}
                               onTogglePaymentStatus={togglePaymentStatus}
                               onDeliveryPersonChange={updateDeliveryPerson}
@@ -877,12 +923,16 @@ export default function OrderManagement() {
                   customerName: o.customerName,
                   status: o.status,
                   createdAtLabel: o.time,
+                  acceptedAt: o.socketData.attributes.accepted_at || null,
+                  readyAt: o.socketData.attributes.ready_at || null,
                   items: (o.socketData.attributes.items.data || []).map((it: any) => ({
                     name: it.attributes.catalog_item?.data?.attributes?.name || it.attributes.name || 'Item não encontrado',
                     qty: Number(it.attributes.quantity || 1),
                     note: it.attributes.observation || undefined,
                   })),
                 }))}
+                estimatedPrepTime={estimatedPrepTime}
+                estimatedDeliveryTime={estimatedDeliveryTime}
                 onMarkReady={(orderId) => updateOrderStatus(orderId, 'prontos')}
                 onOpenDetails={(orderId) => setSelectedOrderId(orderId)}
               />

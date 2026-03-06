@@ -20,6 +20,8 @@ export interface ShopAttributes {
   group_color?: string | null;
   catalog_layout?: string | null;
   accent_color?: string | null;
+  estimated_prep_time?: number | null;
+  estimated_delivery_time?: number | null;
 }
 
 export interface ShopResponse {
