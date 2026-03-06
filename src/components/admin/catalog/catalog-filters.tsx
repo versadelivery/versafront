@@ -1,16 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Filter, X } from "lucide-react";
+import { Filter, X, Percent } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import {
   CatalogFiltersState,
@@ -34,6 +26,19 @@ const TAG_OPTIONS: { key: TagKey; label: string }[] = [
   { key: "best_seller_tag", label: "+Vendido" },
   { key: "new_tag", label: "Novo" },
   { key: "highlight", label: "Destaque" },
+];
+
+const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
+  { value: "all", label: "Todos" },
+  { value: "active", label: "Ativos" },
+  { value: "inactive", label: "Inativos" },
+];
+
+const ITEM_TYPE_OPTIONS: { value: ItemTypeFilter; label: string }[] = [
+  { value: "all", label: "Todos os tipos" },
+  { value: "unit", label: "Unidade" },
+  { value: "weight_per_kg", label: "Por Kg" },
+  { value: "weight_per_g", label: "Por Grama" },
 ];
 
 function hasActiveFilters(filters: CatalogFiltersState): boolean {
@@ -73,78 +78,84 @@ export function CatalogFilters({
     onTagsChange(next);
   };
 
+  const pillClass = (active: boolean) =>
+    `px-3 py-1.5 text-sm font-medium rounded-md border transition-colors cursor-pointer select-none ${
+      active
+        ? "bg-white border-primary text-primary"
+        : "bg-white border-[#E5E2DD] text-muted-foreground hover:border-gray-400 hover:text-foreground"
+    }`;
+
   const filtersContent = (
-    <div className="flex flex-wrap items-center gap-3">
+    <div className="flex flex-wrap items-center gap-2">
       {/* Status */}
-      <Select value={filters.status} onValueChange={(v) => onStatusChange(v as StatusFilter)}>
-        <SelectTrigger size="sm" className="min-w-[140px]">
-          <SelectValue placeholder="Status" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">Todos</SelectItem>
-          <SelectItem value="active">Ativos</SelectItem>
-          <SelectItem value="inactive">Inativos</SelectItem>
-        </SelectContent>
-      </Select>
-
-      {/* Divider */}
-      <div className="hidden sm:block w-px h-6 bg-[#E5E2DD]" />
-
-      {/* Tags */}
-      <div className="flex items-center gap-2">
-        {TAG_OPTIONS.map(({ key, label }) => (
-          <label
-            key={key}
-            className="flex items-center gap-1.5 text-sm text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors"
+      <div className="flex items-center gap-1 bg-[#F0EFEB] p-1 rounded-md">
+        {STATUS_OPTIONS.map(({ value, label }) => (
+          <button
+            key={value}
+            onClick={() => onStatusChange(value)}
+            className={`px-3 py-1 text-sm font-medium rounded-md transition-colors cursor-pointer ${
+              filters.status === value
+                ? "bg-white text-gray-900 border border-[#E5E2DD]"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
           >
-            <Checkbox
-              checked={filters.tags.includes(key)}
-              onCheckedChange={() => toggleTag(key)}
-            />
             {label}
-          </label>
+          </button>
         ))}
       </div>
 
-      {/* Divider */}
+      <div className="hidden sm:block w-px h-6 bg-[#E5E2DD]" />
+
+      {/* Tags */}
+      {TAG_OPTIONS.map(({ key, label }) => (
+        <button
+          key={key}
+          onClick={() => toggleTag(key)}
+          className={pillClass(filters.tags.includes(key))}
+        >
+          {label}
+        </button>
+      ))}
+
       <div className="hidden sm:block w-px h-6 bg-[#E5E2DD]" />
 
       {/* Tipo de Item */}
-      <Select value={filters.itemType} onValueChange={(v) => onItemTypeChange(v as ItemTypeFilter)}>
-        <SelectTrigger size="sm" className="min-w-[160px]">
-          <SelectValue placeholder="Tipo" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">Todos os tipos</SelectItem>
-          <SelectItem value="unit">Unidade</SelectItem>
-          <SelectItem value="weight_per_kg">Por Kg</SelectItem>
-          <SelectItem value="weight_per_g">Por Grama</SelectItem>
-        </SelectContent>
-      </Select>
+      <div className="flex items-center gap-1 bg-[#F0EFEB] p-1 rounded-md">
+        {ITEM_TYPE_OPTIONS.map(({ value, label }) => (
+          <button
+            key={value}
+            onClick={() => onItemTypeChange(value)}
+            className={`px-3 py-1 text-sm font-medium rounded-md transition-colors cursor-pointer ${
+              filters.itemType === value
+                ? "bg-white text-gray-900 border border-[#E5E2DD]"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
 
-      {/* Divider */}
       <div className="hidden sm:block w-px h-6 bg-[#E5E2DD]" />
 
       {/* Com Desconto */}
-      <label className="flex items-center gap-1.5 text-sm text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors">
-        <Checkbox
-          checked={filters.discountOnly}
-          onCheckedChange={(checked) => onDiscountOnlyChange(checked === true)}
-        />
+      <button
+        onClick={() => onDiscountOnlyChange(!filters.discountOnly)}
+        className={`inline-flex items-center gap-1.5 ${pillClass(filters.discountOnly)}`}
+      >
+        <Percent className="h-3.5 w-3.5" />
         Com desconto
-      </label>
+      </button>
 
       {/* Limpar Filtros */}
       {isActive && (
-        <Button
-          variant="ghost"
-          size="sm"
+        <button
           onClick={onClearFilters}
-          className="text-xs text-muted-foreground hover:text-destructive gap-1 ml-auto"
+          className="ml-auto inline-flex items-center gap-1 px-2.5 py-1.5 text-sm text-muted-foreground hover:text-destructive transition-colors cursor-pointer rounded-md hover:bg-white"
         >
-          <X className="h-3 w-3" />
-          Limpar filtros
-        </Button>
+          <X className="h-3.5 w-3.5" />
+          Limpar
+        </button>
       )}
     </div>
   );
@@ -157,12 +168,12 @@ export function CatalogFilters({
           variant="outline"
           size="sm"
           onClick={() => setIsOpen(!isOpen)}
-          className="w-full justify-center gap-2 text-sm"
+          className="w-full justify-center gap-2 text-sm border border-gray-300 cursor-pointer"
         >
           <Filter className="h-4 w-4" />
           Filtros
           {activeCount > 0 && (
-            <Badge variant="default" className="ml-1 text-[10px] px-1.5 py-0 min-w-[18px] h-[18px]">
+            <Badge variant="default" className="ml-1 text-[10px] px-1.5 py-0 min-w-[18px] h-[18px] rounded-md">
               {activeCount}
             </Badge>
           )}
