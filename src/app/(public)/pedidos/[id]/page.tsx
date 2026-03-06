@@ -26,8 +26,9 @@ const statusConfig: Record<string, { label: string; dot: string; bg: string; tex
   accepted:       { label: "Aceito",      dot: "bg-blue-500",    bg: "bg-blue-50",    text: "text-blue-700",    description: "Seu pedido foi aceito e será preparado em breve." },
   in_analysis:    { label: "Em análise",  dot: "bg-orange-400",  bg: "bg-orange-50",  text: "text-orange-700",  description: "Estamos analisando seu pedido." },
   in_preparation: { label: "Preparando",  dot: "bg-orange-500",  bg: "bg-orange-50",  text: "text-orange-700",  description: "Seu pedido está sendo preparado com carinho." },
-  ready:          { label: "Pronto",      dot: "bg-emerald-500", bg: "bg-emerald-50", text: "text-emerald-700", description: "Seu pedido está pronto!" },
-  delivered:      { label: "Entregue",    dot: "bg-green-500",   bg: "bg-green-50",   text: "text-green-700",   description: "Pedido entregue. Bom apetite!" },
+  ready:              { label: "Pronto",          dot: "bg-emerald-500", bg: "bg-emerald-50", text: "text-emerald-700", description: "Seu pedido está pronto!" },
+  left_for_delivery:  { label: "Saiu p/ entrega", dot: "bg-purple-500",  bg: "bg-purple-50",  text: "text-purple-700",  description: "Seu pedido saiu para entrega!" },
+  delivered:          { label: "Entregue",        dot: "bg-green-500",   bg: "bg-green-50",   text: "text-green-700",   description: "Pedido entregue. Bom apetite!" },
   cancelled:      { label: "Cancelado",   dot: "bg-red-400",     bg: "bg-red-50",     text: "text-red-700",     description: "Este pedido foi cancelado." },
 };
 
@@ -171,7 +172,11 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
       id: item.id ?? '',
       name: item.attributes?.catalog_item?.data?.attributes?.name ?? 'Item',
       price: parseFloat(item.attributes?.price ?? '0'),
+      price_with_discount: item.attributes?.price_with_discount ? parseFloat(item.attributes.price_with_discount) : null,
       quantity: item.attributes?.quantity ?? 0,
+      weight: item.attributes?.weight ? parseFloat(item.attributes.weight) : null,
+      item_type: item.attributes?.item_type ?? 'unit',
+      total_price: item.attributes?.total_price ? parseFloat(item.attributes.total_price) : null,
       observation: item.attributes?.observation ?? '',
       image: item.attributes?.catalog_item?.data?.attributes?.image_url ?? '',
       complements: item.attributes?.complements ?? [],
@@ -200,7 +205,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
   const PaymentIcon = (paymentConfig[order.payment_method] ?? paymentConfig.cash).icon;
   const paymentLabel = (paymentConfig[order.payment_method] ?? paymentConfig.cash).label;
   const dateInfo = formatDate(order.date);
-  const subtotal = order.items.reduce((s: number, i: any) => s + i.price * i.quantity, 0);
+  const subtotal = order.items.reduce((s: number, i: any) => s + (i.total_price ?? i.price * i.quantity), 0);
   const deliveryFee = order.withdrawal ? 0 : order.delivery_fee;
   const discountAmount = order.discount_amount ?? 0;
   const paymentAdjustment = order.payment_adjustment_amount ?? 0;
@@ -280,11 +285,14 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                           <div className="flex items-start justify-between gap-2">
                             <p className="text-sm font-semibold text-foreground leading-snug">{item.name}</p>
                             <p className="text-sm font-bold text-foreground flex-shrink-0">
-                              {formatCurrency(item.price * item.quantity)}
+                              {formatCurrency(item.total_price ?? item.price * item.quantity)}
                             </p>
                           </div>
                           <p className="text-xs text-muted-foreground mt-0.5">
-                            {item.quantity}× {formatCurrency(item.price)}
+                            {item.weight && (item.item_type === 'weight_per_kg' || item.item_type === 'weight_per_g')
+                              ? `${item.weight} ${item.item_type === 'weight_per_g' ? 'g' : 'kg'} × ${formatCurrency(item.price_with_discount ?? item.price)}/${item.item_type === 'weight_per_g' ? 'g' : 'kg'}`
+                              : `${item.quantity}× ${formatCurrency(item.price_with_discount ?? item.price)}`
+                            }
                           </p>
                           {item.observation && (
                             <p className="text-xs text-muted-foreground italic mt-1">"{item.observation}"</p>

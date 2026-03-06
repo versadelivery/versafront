@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation'
 import { CatalogItem } from '../types'
 
 interface CartItem extends CatalogItem {
+  cartId: string
   quantity: number
   weight?: number
   selectedExtras?: string[]
@@ -54,11 +55,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const params = useParams()
   const slug = params.slug as string
 
+  const migrateCartIds = (cartItems: CartItem[]) =>
+    cartItems.map(item => item.cartId ? item : { ...item, cartId: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}` })
+
   const [items, setItems] = useState<CartItem[]>(() => {
     if (typeof window !== 'undefined') {
       const cartKey = `cart_${slug}`
       const savedCart = localStorage.getItem(cartKey)
-      return savedCart ? JSON.parse(savedCart) : []
+      return savedCart ? migrateCartIds(JSON.parse(savedCart)) : []
     }
     return []
   })
@@ -75,7 +79,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (slug && typeof window !== 'undefined') {
       const cartKey = `cart_${slug}`
       const savedCart = localStorage.getItem(cartKey)
-      const cartData = savedCart ? JSON.parse(savedCart) : []
+      const cartData = savedCart ? migrateCartIds(JSON.parse(savedCart)) : []
       setItems(cartData)
     }
   }, [slug])
@@ -89,13 +93,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [items]
   )
 
+  const generateCartId = () => typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+
   const addItem = useCallback((newItem: CartItem) => {
     setItems(prevItems => {
       const existingItemIndex = prevItems.findIndex(
         item => item.id === newItem.id &&
         arraysEqual(item.selectedExtras, newItem.selectedExtras) &&
         optionsEqual(item.selectedOptions, newItem.selectedOptions) &&
-        arraysEqual(item.selectedSharedComplements, newItem.selectedSharedComplements)
+        arraysEqual(item.selectedSharedComplements, newItem.selectedSharedComplements) &&
+        item.weight === newItem.weight
       )
       if (existingItemIndex >= 0) {
         const updatedItems = [...prevItems]
@@ -107,20 +114,25 @@ export function CartProvider({ children }: { children: ReactNode }) {
         return updatedItems
       }
 
-      return [...prevItems, newItem]
+      return [...prevItems, { ...newItem, cartId: newItem.cartId || generateCartId() }]
     })
   }, [])
 
-  const removeItem = useCallback((id: string) => {
-    setItems(prevItems => prevItems.filter(item => item.id !== id))
+  const removeItem = useCallback((cartId: string) => {
+    setItems(prevItems => {
+      // Tenta remover por cartId primeiro; fallback para id (compatibilidade com itens antigos)
+      const byCartId = prevItems.filter(item => item.cartId !== cartId)
+      if (byCartId.length < prevItems.length) return byCartId
+      return prevItems.filter(item => item.id !== cartId)
+    })
   }, [])
 
-  const updateItemQuantity = useCallback((id: string, quantity: number) => {
+  const updateItemQuantity = useCallback((cartId: string, quantity: number) => {
     if (quantity < 1) return
 
     setItems(prevItems =>
       prevItems.map(item =>
-        item.id === id
+        (item.cartId === cartId || item.id === cartId)
           ? {
               ...item,
               quantity,

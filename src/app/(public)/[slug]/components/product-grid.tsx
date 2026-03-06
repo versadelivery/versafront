@@ -118,7 +118,7 @@ export default function ProductGrid({ categories, activeCategory, searchQuery, o
                   transition={{ duration: 0.2, ease: 'easeInOut' }}
                   style={{ overflow: 'hidden' }}
                 >
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
                     {group.items.map((item: CatalogItem, index: number) => (
                       <ProductCard key={item.id} item={item} index={index} />
                     ))}

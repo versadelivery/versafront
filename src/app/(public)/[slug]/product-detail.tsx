@@ -21,10 +21,10 @@ const ITEM_H = 44;
 const VISIBLE = 5;
 const PAD = 2;
 
-function WeightPicker({ min, max, step, value, onChange }: {
-  min: number; max: number; step: number; value: number; onChange: (v: number) => void;
+function WeightPicker({ min, max, step, value, onChange, unit = 'kg' }: {
+  min: number; max: number; step: number; value: number; onChange: (v: number) => void; unit?: 'kg' | 'g';
 }) {
-  const precision = (step.toString().split('.')[1] ?? '').length;
+  const precision = Math.max((step.toString().split('.')[1] ?? '').length, (min.toString().split('.')[1] ?? '').length);
 
   const options: number[] = [];
   for (let i = 0; ; i++) {
@@ -32,10 +32,18 @@ function WeightPicker({ min, max, step, value, onChange }: {
     if (v > max) break;
     options.push(v);
   }
+  // Garantir que max sempre seja a última opção
+  if (options.length === 0 || options[options.length - 1] < max) {
+    options.push(max);
+  }
 
   const fmt = (v: number) => {
-    if (v < 1) return `${Math.round(v * 1000)}g`;
-    const str = v.toFixed(precision).replace(/\.?0+$/, '');
+    if (unit === 'g') return `${Math.round(v)} g`;
+    if (v < 1) return `${Math.round(v * 1000)} g`;
+    // Só remove zeros decimais desnecessários (nunca zeros significativos de inteiros)
+    const str = precision > 0
+      ? v.toFixed(precision).replace(/(\.\d*[1-9])0+$/, '$1').replace(/\.0+$/, '')
+      : String(Math.round(v));
     return `${str} kg`;
   };
 
@@ -128,7 +136,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
   const open = isControlled ? externalOpen : internalOpen;
   const setOpen = isControlled ? (v: boolean) => onExternalOpenChange?.(v) : setInternalOpen;
   const [quantity, setQuantity] = useState(1);
-  const [weight, setWeight] = useState(product.attributes.min_weight || 1);
+  const [weight, setWeight] = useState(product.attributes.min_weight || (product.attributes.item_type === 'weight_per_g' ? 100 : 1));
   const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
   const [selectedMethods, setSelectedMethods] = useState<string[]>([]);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(() => {
@@ -144,7 +152,8 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
 
 
   const { attributes } = product;
-  const isWeightBased = attributes.item_type === "weight_per_kg";
+  const isWeightBased = attributes.item_type === "weight_per_kg" || attributes.item_type === "weight_per_g";
+  const isGrams = attributes.item_type === "weight_per_g";
   const hasDiscount = !!attributes.price_with_discount &&
     Number(attributes.price_with_discount) < Number(attributes.price);
   const hasExtras = attributes.extra.data.length > 0;
@@ -162,14 +171,20 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
     // Extras
     selectedExtras.forEach(extraId => {
       const extra = attributes.extra.data.find(e => e.id === extraId);
-      if (extra) total += parseFloat(extra.attributes.price);
+      if (extra) {
+        const extraPrice = parseFloat(extra.attributes.price);
+        if (!isNaN(extraPrice)) total += extraPrice;
+      }
     });
 
     // Shared Complements
     selectedSharedComplements.forEach(optionId => {
-      attributes.shared_complements?.data.forEach(group => {
+      attributes.shared_complements?.data?.forEach(group => {
         const option = group.attributes.options.find(o => o.id.toString() === optionId.toString());
-        if (option) total += Number(option.price);
+        if (option) {
+          const price = Number(option.price);
+          if (!isNaN(price)) total += price;
+        }
       });
     });
 
@@ -178,7 +193,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
 
   const resetState = () => {
     setQuantity(1);
-    setWeight(product.attributes.min_weight || 1);
+    setWeight(product.attributes.min_weight || (product.attributes.item_type === 'weight_per_g' ? 100 : 1));
     setSelectedExtras([]);
     setSelectedMethods([]);
     setSelectedSharedComplements([]);
@@ -201,6 +216,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
   const handleAddToCart = () => {
     addItem({
       ...product,
+      cartId: crypto.randomUUID(),
       quantity,
       weight: isWeightBased ? weight : undefined,
       selectedExtras,
@@ -276,7 +292,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
               )}
               {isWeightBased && (
                 <Badge variant="secondary" className="text-xs">
-                  {formatPrice(attributes.price)}/kg
+                  {formatPrice(attributes.price)}/{isGrams ? 'g' : 'kg'}
                 </Badge>
               )}
             </div>
@@ -303,15 +319,23 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
                 <div className="space-y-3">
                   <p className="text-xs text-muted-foreground flex items-center gap-1.5">
                     <Info className="w-3.5 h-3.5 flex-shrink-0" />
-                    Produtos por kg podem variar na pesagem.
+                    {isGrams ? 'Produtos por grama podem variar na pesagem.' : 'Produtos por kg podem variar na pesagem.'}
                   </p>
                   <WeightPicker
-                    min={attributes.min_weight || 0.1}
-                    max={attributes.max_weight || 10}
-                    step={attributes.measure_interval || 0.1}
+                    min={attributes.min_weight || (isGrams ? 100 : 0.1)}
+                    max={attributes.max_weight || (isGrams ? 5000 : 10)}
+                    step={attributes.measure_interval || (isGrams ? 50 : 0.1)}
                     value={weight}
                     onChange={setWeight}
+                    unit={isGrams ? 'g' : 'kg'}
                   />
+                  <div className="text-center text-sm text-muted-foreground">
+                    {weight} {isGrams ? 'g' : 'kg'} × {formatPrice(hasDiscount ? attributes.price_with_discount! : attributes.price)}/{isGrams ? 'g' : 'kg'}
+                    {' = '}
+                    <span className="font-semibold text-primary">
+                      {formatPrice((hasDiscount ? attributes.price_with_discount! : attributes.price) * weight)}
+                    </span>
+                  </div>
                 </div>
               ) : (
                 <div className="inline-flex items-center rounded-full border border-gray-200 overflow-hidden bg-gray-50/50">

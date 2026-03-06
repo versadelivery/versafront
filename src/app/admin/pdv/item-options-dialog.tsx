@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import { Check, ShoppingCart } from "lucide-react";
+import { Check, ShoppingCart, Scale } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -20,6 +20,102 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Package } from "lucide-react";
 import { formatPrice } from "@/utils/format-price";
 
+const ITEM_H = 44;
+const VISIBLE = 5;
+const PAD = 2;
+
+function WeightPicker({ min, max, step, value, onChange, unit = 'kg' }: {
+  min: number; max: number; step: number; value: number; onChange: (v: number) => void; unit?: 'kg' | 'g';
+}) {
+  const precision = Math.max((step.toString().split('.')[1] ?? '').length, (min.toString().split('.')[1] ?? '').length);
+
+  const options: number[] = [];
+  for (let i = 0; ; i++) {
+    const v = parseFloat((min + i * step).toFixed(precision));
+    if (v > max) break;
+    options.push(v);
+  }
+  if (options.length === 0 || options[options.length - 1] < max) {
+    options.push(max);
+  }
+
+  const fmt = (v: number) => {
+    if (unit === 'g') return `${Math.round(v)} g`;
+    if (v < 1) return `${Math.round(v * 1000)} g`;
+    const str = precision > 0
+      ? v.toFixed(precision).replace(/(\.\d*[1-9])0+$/, '$1').replace(/\.0+$/, '')
+      : String(Math.round(v));
+    return `${str} kg`;
+  };
+
+  const listRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const idx = options.findIndex(o => Math.abs(o - value) < step * 0.01);
+    if (listRef.current && idx >= 0) {
+      listRef.current.scrollTop = idx * ITEM_H;
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleScroll = () => {
+    if (!listRef.current) return;
+    const idx = Math.round(listRef.current.scrollTop / ITEM_H);
+    const v = options[Math.max(0, Math.min(options.length - 1, idx))];
+    if (v !== undefined && Math.abs(v - value) > step * 0.001) onChange(v);
+  };
+
+  return (
+    <div
+      className="relative mx-auto overflow-hidden rounded-2xl border border-gray-100"
+      style={{ height: ITEM_H * VISIBLE, maxWidth: 240 }}
+    >
+      <div
+        className="absolute inset-x-0 top-0 z-10 pointer-events-none"
+        style={{ height: ITEM_H * PAD, background: 'linear-gradient(to bottom, white 40%, transparent)' }}
+      />
+      <div
+        className="absolute inset-x-0 bottom-0 z-10 pointer-events-none"
+        style={{ height: ITEM_H * PAD, background: 'linear-gradient(to top, white 40%, transparent)' }}
+      />
+      <div
+        className="absolute inset-x-0 z-0 pointer-events-none bg-gray-50"
+        style={{ top: ITEM_H * PAD, height: ITEM_H, borderTop: '1px solid #e5e7eb', borderBottom: '1px solid #e5e7eb' }}
+      />
+      <div
+        ref={listRef}
+        onScroll={handleScroll}
+        className="relative z-0 h-full overflow-y-scroll [&::-webkit-scrollbar]:hidden"
+        style={{ scrollSnapType: 'y mandatory', scrollbarWidth: 'none' }}
+      >
+        <div aria-hidden style={{ height: ITEM_H * PAD }} />
+        {options.map((v) => {
+          const selected = Math.abs(v - value) < step * 0.001;
+          return (
+            <div
+              key={v}
+              style={{ height: ITEM_H, scrollSnapAlign: 'center' }}
+              className={`flex items-center justify-center cursor-pointer transition-all duration-150 ${
+                selected
+                  ? 'text-base font-bold text-foreground'
+                  : 'text-sm font-normal text-muted-foreground'
+              }`}
+              onClick={() => {
+                const idx = options.indexOf(v);
+                listRef.current?.scrollTo({ top: idx * ITEM_H, behavior: 'smooth' });
+                onChange(v);
+              }}
+            >
+              {fmt(v)}
+            </div>
+          );
+        })}
+        <div aria-hidden style={{ height: ITEM_H * PAD }} />
+      </div>
+    </div>
+  );
+}
+
 interface ItemOptionsDialogProps {
   item: any | null;
   open: boolean;
@@ -32,6 +128,7 @@ interface ItemOptionsDialogProps {
     selectedMethods: { id: string; name: string }[];
     selectedOptions: Record<string, { optionId: string; optionName: string }>;
     selectedSharedComplements: { id: string; name: string; price: number }[];
+    weight?: number;
   }) => void;
 }
 
@@ -48,6 +145,7 @@ export function ItemOptionsDialog({
     Record<string, string>
   >({});
   const [observation, setObservation] = useState("");
+  const [weight, setWeight] = useState<number>(1);
 
   // Reset e pré-selecionar primeira opção de cada step ao abrir
   useEffect(() => {
@@ -63,6 +161,13 @@ export function ItemOptionsDialog({
       });
       setSelectedOptions(initOptions);
       setObservation("");
+      // Inicializar peso para itens por peso (mesma lógica do client-side)
+      const attrs = item.attributes;
+      if (attrs?.item_type === 'weight_per_g') {
+        setWeight(attrs.min_weight || 100);
+      } else if (attrs?.item_type === 'weight_per_kg') {
+        setWeight(attrs.min_weight || 0.1);
+      }
     }
   }, [open, item]);
 
@@ -82,6 +187,17 @@ export function ItemOptionsDialog({
     () => item?.attributes?.shared_complements?.data ?? [],
     [item]
   );
+
+  const isWeightBased = useMemo(() => {
+    if (!item) return false;
+    return item.attributes.item_type === 'weight_per_kg' || item.attributes.item_type === 'weight_per_g';
+  }, [item]);
+
+  const isGrams = useMemo(() => {
+    return item?.attributes?.item_type === 'weight_per_g';
+  }, [item]);
+
+  const weightUnit = isGrams ? 'g' : 'kg';
 
   const hasDiscount = useMemo(() => {
     if (!item) return false;
@@ -117,7 +233,9 @@ export function ItemOptionsDialog({
     }, 0);
   }, [selectedSharedComplementIds, sharedComplements]);
 
-  const totalPrice = basePrice + extrasTotal + complementsTotal;
+  const totalPrice = isWeightBased
+    ? basePrice * weight + extrasTotal + complementsTotal
+    : basePrice + extrasTotal + complementsTotal;
 
   const toggleExtra = (id: string) => {
     setSelectedExtraIds((prev) =>
@@ -189,6 +307,7 @@ export function ItemOptionsDialog({
       selectedMethods: selectedMethodsData,
       selectedOptions: selectedOptionsData,
       selectedSharedComplements: selectedSharedComplementsData,
+      ...(isWeightBased && { weight }),
     });
     onClose();
   };
@@ -237,10 +356,10 @@ export function ItemOptionsDialog({
                   {hasDiscount ? (
                     <>
                       <span className="text-sm text-muted-foreground line-through">
-                        {formatPrice(parseFloat(attrs.price))}
+                        {formatPrice(parseFloat(attrs.price))}{isWeightBased ? `/${weightUnit}` : ''}
                       </span>
                       <span className="text-lg font-bold text-green-600">
-                        {formatPrice(parseFloat(attrs.price_with_discount))}
+                        {formatPrice(parseFloat(attrs.price_with_discount))}{isWeightBased ? `/${weightUnit}` : ''}
                       </span>
                       <Badge variant="destructive" className="text-[10px] h-5">
                         PROMOÇÃO
@@ -248,15 +367,47 @@ export function ItemOptionsDialog({
                     </>
                   ) : (
                     <span className="text-lg font-bold text-primary">
-                      {formatPrice(basePrice)}
+                      {formatPrice(basePrice)}{isWeightBased ? `/${weightUnit}` : ''}
                     </span>
                   )}
                 </div>
               </div>
             </div>
 
+            {/* Peso (kg / g) */}
+            {isWeightBased && (
+              <section className="space-y-3">
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    <Scale className="h-3.5 w-3.5" />
+                    Quantidade ({weightUnit})
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Selecione a quantidade desejada
+                  </p>
+                </div>
+                <WeightPicker
+                  min={item.attributes.min_weight || (isGrams ? 100 : 0.1)}
+                  max={item.attributes.max_weight || (isGrams ? 5000 : 10)}
+                  step={item.attributes.measure_interval || (isGrams ? 50 : 0.1)}
+                  value={weight}
+                  onChange={setWeight}
+                  unit={weightUnit}
+                />
+                <div className="text-center text-sm text-muted-foreground">
+                  {weight} {weightUnit} × {formatPrice(basePrice)}/{weightUnit}
+                  {' = '}
+                  <span className="font-semibold text-primary">
+                    {formatPrice(basePrice * weight)}
+                  </span>
+                </div>
+              </section>
+            )}
+
             {/* Extras */}
             {extras.length > 0 && (
+              <>
+              {isWeightBased && <Separator />}
               <section className="space-y-3">
                 <div>
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -302,12 +453,13 @@ export function ItemOptionsDialog({
                   })}
                 </div>
               </section>
+              </>
             )}
 
             {/* Modo de preparo */}
             {methods.length > 0 && (
               <>
-                {extras.length > 0 && <Separator />}
+                {(extras.length > 0 || isWeightBased) && <Separator />}
                 <section className="space-y-3">
                   <div>
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">

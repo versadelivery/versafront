@@ -191,10 +191,11 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
       setActive(item.active ?? true);
 
 
-      // Desconto
+      // Desconto — discountValue é o valor do desconto (price - price_with_discount), não o preço final
       if (item.price_with_discount && item.price_with_discount < item.price) {
         setHasDiscount(true);
-        setDiscountValue(item.price_with_discount.toFixed(2).replace('.', ','));
+        const discountAmount = item.price - item.price_with_discount;
+        setDiscountValue(discountAmount.toFixed(2).replace('.', ','));
         setDiscountType('fixed');
       } else {
         setHasDiscount(false);

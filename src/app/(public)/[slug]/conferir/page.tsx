@@ -14,12 +14,13 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useCart } from '../cart/cart-context'
 import { useParams, useRouter } from 'next/navigation'
 import { useClient } from '../client-context'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CreateOrderRequest, Order } from '@/types/order'
 import { createOrder } from '@/services/order-service'
 import { validateCoupon, ValidateCouponData } from '@/services/coupon-validate-service'
 import { useShopBySlug } from '../use-slug'
+import { formatPrice } from '../format-price'
 import { useShopStatusContext } from '@/contexts/ShopStatusContext'
 import Image from 'next/image'
 import favicon from "@/public/logo/favicon.svg"
@@ -31,16 +32,18 @@ type PaymentMethod = 'credit' | 'debit' | 'manual_pix' | 'cash'
 
 interface CartItemWithExtras {
   id: string
+  cartId: string
   name: string
   price: number
   priceWithDiscount?: number
   quantity: number
   weight?: number
+  itemType?: string
   image?: string
   extras?: Array<{ id: string; name: string; price: number }>
   prepareMethods?: Array<{ id: string; name: string }>
   steps?: Array<{ id: string; name: string; selectedOption?: { id: string; name: string } }>
-  complements?: Array<{ id: string; name: string; price: number }>
+  complements?: Array<{ groupName: string; options: Array<{ id: string; name: string; price: number }> }>
   selectedExtras?: string[]
   selectedMethods?: string[]
   selectedOptions?: Record<string, string>
@@ -61,11 +64,9 @@ export default function CheckoutPage() {
   const params = useParams()
   const storeSlug = params.slug as string
   const { client } = useClient()
-  const { isOpen: isShopOpen, loading: shopStatusLoading } = useShopStatusContext()
+  const { isOpen: isShopOpen, loading: shopStatusLoading, checkStatus } = useShopStatusContext()
 
-  const { data: shopData, isLoading: isLoadingShop } = useShopBySlug(storeSlug, {
-    staleTime: 1000 * 60 * 5
-  })
+  const { data: shopData, isLoading: isLoadingShop } = useShopBySlug(storeSlug)
 
   const { items, totalPrice, removeItem, updateItemQuantity, clearCart } = useCart()
 
@@ -89,6 +90,9 @@ export default function CheckoutPage() {
   const [couponError, setCouponError] = useState('')
   const [couponLoading, setCouponLoading] = useState(false)
   const [couponDiscount, setCouponDiscount] = useState(0)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+
+  const phoneValidationRegex = /^\(\d{2}\) \d{4,5}-\d{4}$/
 
   const handlePhoneChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     let numericValue = event.target.value.replace(/\D/g, '');
@@ -114,14 +118,95 @@ export default function CheckoutPage() {
   const shopPaymentConfig = shopData?.data?.attributes?.shop_payment_config?.data?.attributes || null
   const shop = shopData
 
+  // Recalcular desconto do cupom quando totalPrice mudar
   useEffect(() => {
-    const mappedItems = items.map((item: any) => ({
+    if (!appliedCoupon) return
+    let discount = 0
+    if (appliedCoupon.discount_type === 'fixed_value') {
+      discount = Math.min(parseFloat(appliedCoupon.value), totalPrice)
+    } else {
+      discount = totalPrice * (parseFloat(appliedCoupon.value) / 100)
+    }
+    setCouponDiscount(discount)
+  }, [totalPrice, appliedCoupon])
+
+  // Verificar se há métodos de pagamento disponíveis
+  const availablePaymentMethods = shopPaymentConfig
+    ? (Object.entries(PAYMENT_LABELS) as [PaymentMethod, any][]).filter(([method]) =>
+        shopPaymentConfig[method === 'manual_pix' ? 'manual_pix' : method]
+      )
+    : []
+  const noPaymentMethods = shopPaymentConfig && availablePaymentMethods.length === 0
+
+  // Auto-selecionar o primeiro método de pagamento disponível
+  useEffect(() => {
+    if (availablePaymentMethods.length > 0) {
+      const currentAvailable = availablePaymentMethods.find(([m]) => m === paymentMethod)
+      if (!currentAvailable) {
+        setPaymentMethod(availablePaymentMethods[0][0])
+      }
+    }
+  }, [shopPaymentConfig])
+
+  // Set de IDs realmente disponíveis (ativo + grupo ativo + dia da semana)
+  const availableItemIds = useMemo(() => {
+    const ids = new Set<string>()
+    if (!shopData) return ids
+    const dayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const
+    const todayDayKey = `${dayKeys[new Date().getDay()]}_active`
+    const groups = shopData.data?.attributes?.catalog_groups
+    const groupList = Array.isArray(groups) ? groups : (groups?.data ?? [])
+    groupList.forEach((g: any) => {
+      if (g.attributes?.active === false) return
+      const gItems = Array.isArray(g.attributes?.items) ? g.attributes.items : (g.attributes?.items?.data ?? [])
+      gItems.forEach((i: any) => {
+        const item = i.data ?? i
+        if (!item?.id) return
+        const attrs = item.attributes ?? item
+        if (attrs.active === false) return
+        if (attrs[todayDayKey] === false) return
+        ids.add(String(item.id))
+      })
+    })
+    return ids
+  }, [shopData])
+
+  useEffect(() => {
+    // Filtrar itens sem attributes (excluídos) ou indisponíveis (desativado/dia da semana)
+    const validItems: any[] = []
+    const removedNames: string[] = []
+
+    items.forEach((item: any) => {
+      if (!item.attributes) {
+        removedNames.push(item.id)
+        removeItem(item.cartId || item.id)
+        return
+      }
+      if (availableItemIds.size > 0 && !availableItemIds.has(String(item.id))) {
+        removedNames.push(item.attributes.name)
+        removeItem(item.cartId || item.id)
+        return
+      }
+      validItems.push(item)
+    })
+
+    if (removedNames.length > 0) {
+      toast.error(
+        removedNames.length === 1
+          ? `O item "${removedNames[0]}" não está disponível no momento e foi removido do carrinho.`
+          : `${removedNames.length} itens não estão disponíveis no momento e foram removidos do carrinho.`
+      )
+    }
+
+    const mappedItems = validItems.map((item: any) => ({
       id: item.id,
+      cartId: item.cartId || item.id,
       name: item.attributes.name,
       price: item.attributes.price,
       priceWithDiscount: item.attributes.price_with_discount || undefined,
       quantity: item.quantity,
       weight: item.weight,
+      itemType: item.attributes.item_type,
       image: item.attributes.image_url || '',
       extras: item.selectedExtras?.map((extraId: string) => {
         const extra = item.attributes.extra.data.find((e: any) => e.id === extraId)
@@ -140,14 +225,20 @@ export default function CheckoutPage() {
           selectedOption: selectedOption ? { id: selectedOption.id, name: selectedOption.attributes.name } : undefined
         }
       }),
-      complements: item.selectedSharedComplements?.map((optionId: string) => {
-        let found: any = null
-        item.attributes.shared_complements?.data.forEach((group: any) => {
-          const opt = group.attributes.options.find((o: any) => o.id.toString() === optionId.toString())
-          if (opt) found = opt
+      complements: (() => {
+        const selectedIds = new Set((item.selectedSharedComplements || []).map(String))
+        if (selectedIds.size === 0) return []
+        const groups: Array<{ groupName: string; options: Array<{ id: string; name: string; price: number }> }> = []
+        item.attributes.shared_complements?.data?.forEach((group: any) => {
+          const matched = group.attributes.options
+            .filter((o: any) => selectedIds.has(String(o.id)))
+            .map((o: any) => ({ id: String(o.id), name: o.name, price: Number(o.price) }))
+          if (matched.length > 0) {
+            groups.push({ groupName: group.attributes.name, options: matched })
+          }
         })
-        return found ? { id: found.id, name: found.name, price: Number(found.price) } : null
-      }).filter(Boolean) || [],
+        return groups
+      })(),
       selectedExtras: item.selectedExtras || [],
       selectedMethods: item.selectedMethods || [],
       selectedOptions: item.selectedOptions || {},
@@ -157,7 +248,7 @@ export default function CheckoutPage() {
     }))
     setCartItems(mappedItems)
     setIsLoading(false)
-  }, [items])
+  }, [items, availableItemIds])
 
 
 
@@ -246,10 +337,23 @@ export default function CheckoutPage() {
     }
   }
 
-  const calculateTotal = () => totalPrice + calculateDeliveryFee() - couponDiscount + paymentAdjustment
+  const calculateTotal = () => {
+    const total = (totalPrice || 0) + (calculateDeliveryFee() || 0) - (couponDiscount || 0) + (paymentAdjustment || 0)
+    return isNaN(total) ? 0 : Math.max(total, 0)
+  }
 
   const handleSubmitOrder = async () => {
-    if (!isShopOpen || shopStatusLoading) return
+    // Re-validar status da loja
+    await checkStatus()
+    if (!isShopOpen || shopStatusLoading) {
+      toast.error('A loja está fechada no momento.')
+      return
+    }
+
+    if (noPaymentMethods) {
+      toast.error('Nenhum método de pagamento disponível.')
+      return
+    }
 
     const minOrderValue = Number(shopDeliveryConfig?.minimum_order_value) || 0
     if (deliveryOption === 'delivery' && totalPrice < minOrderValue) {
@@ -257,10 +361,45 @@ export default function CheckoutPage() {
       return
     }
 
-    if (!client && (!guestName.trim() || !guestPhone.trim())) {
-      toast.error('Preencha seu nome e telefone para continuar')
+    // Validação campo a campo para guests
+    const errors: Record<string, string> = {}
+    if (!client) {
+      const trimmedName = guestName.trim()
+      if (!trimmedName) {
+        errors.guestName = 'Nome é obrigatório'
+      } else if (trimmedName.length < 3) {
+        errors.guestName = 'Nome deve ter pelo menos 3 caracteres'
+      }
+      const phoneDigits = guestPhone.replace(/\D/g, '')
+      if (!phoneDigits) {
+        errors.guestPhone = 'Telefone é obrigatório'
+      } else if (phoneDigits.length < 10) {
+        errors.guestPhone = 'Telefone deve ter DDD + número (min 10 dígitos)'
+      } else if (phoneDigits.length > 11) {
+        errors.guestPhone = 'Telefone inválido'
+      }
+    }
+    if (deliveryOption === 'delivery') {
+      if (!address.trim()) errors.address = 'Endereço é obrigatório'
+      if (shopDeliveryConfig?.delivery_fee_kind === 'per_neighborhood' && !selectedNeighborhood) {
+        errors.neighborhood = 'Selecione um bairro'
+      } else if (!selectedNeighborhood.trim()) {
+        errors.neighborhood = 'Bairro é obrigatório'
+      }
+    }
+    if (paymentMethod === 'cash' && changeFor) {
+      const changeValue = parseFloat(changeFor)
+      if (changeValue < calculateTotal()) {
+        errors.changeFor = 'O troco deve ser maior ou igual ao total do pedido'
+      }
+    }
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors)
+      const firstError = Object.values(errors)[0]
+      toast.error(firstError)
       return
     }
+    setFieldErrors({})
 
     setIsSubmitting(true)
 
@@ -294,6 +433,7 @@ export default function CheckoutPage() {
         items: cartItems.map(item => ({
           catalog_item_id: Number(item.id),
           quantity: item.quantity,
+          ...(item.weight && { weight: item.weight }),
           observation: item.observation || '',
           extras_ids: item.selectedExtras || [],
           prepare_methods_ids: item.selectedMethods || [],
@@ -318,7 +458,53 @@ export default function CheckoutPage() {
       if (orderId) router.push(`/pedidos/${orderId}`)
     } catch (error: any) {
       console.error('Erro ao enviar pedido:', error)
-      const message = error.response?.data?.error || "Erro ao enviar pedido. Tente novamente."
+      const raw = error.response?.data?.error || ""
+      let message = "Erro ao enviar pedido. Tente novamente."
+
+      const isItemUnavailable =
+        raw.includes("Couldn't find CatalogItem") ||
+        raw.includes("Item não encontrado") ||
+        raw.includes("está desativado") ||
+        raw.includes("está desativada") ||
+        raw.includes("não está disponível hoje")
+
+      if (isItemUnavailable) {
+        // Construir set de IDs realmente disponíveis (ativo + grupo ativo + dia da semana)
+        const dayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const
+        const todayDayKey = `${dayKeys[new Date().getDay()]}_active`
+        const availableItemIds = new Set<string>()
+        const groups = shopData?.data?.attributes?.catalog_groups
+        const groupList = Array.isArray(groups) ? groups : (groups?.data ?? [])
+        groupList.forEach((g: any) => {
+          if (g.attributes?.active === false) return
+          const items = Array.isArray(g.attributes?.items) ? g.attributes.items : (g.attributes?.items?.data ?? [])
+          items.forEach((i: any) => {
+            const item = i.data ?? i
+            if (!item?.id) return
+            const attrs = item.attributes ?? item
+            if (attrs.active === false) return
+            if (attrs[todayDayKey] === false) return
+            availableItemIds.add(String(item.id))
+          })
+        })
+        const removedNames: string[] = []
+        cartItems.forEach(ci => {
+          if (!availableItemIds.has(String(ci.id))) {
+            removedNames.push(ci.name)
+            removeItem(ci.cartId)
+          }
+        })
+        setCartItems(prev => prev.filter(ci => availableItemIds.has(String(ci.id))))
+        if (removedNames.length > 0) {
+          message = removedNames.length === 1
+            ? `O item "${removedNames[0]}" não está disponível no momento e foi retirado do seu carrinho.`
+            : `Os itens "${removedNames.join('", "')}" não estão disponíveis no momento e foram retirados do seu carrinho.`
+        } else {
+          message = raw || "Um ou mais itens do carrinho não estão mais disponíveis. Verifique seu carrinho."
+        }
+      } else if (raw) {
+        message = raw
+      }
       toast.error(message)
       setIsSubmitting(false)
     }
@@ -367,9 +553,9 @@ export default function CheckoutPage() {
     )
   }
 
-  const canSubmit = !isSubmitting && isShopOpen && !shopStatusLoading && !isBelowMinOrder &&
+  const canSubmit = !isSubmitting && isShopOpen && !shopStatusLoading && !isBelowMinOrder && !noPaymentMethods &&
     (deliveryOption === 'pickup' || !!address.trim()) &&
-    (!!client || (!!guestName.trim() && !!guestPhone.trim()))
+    (!!client || (guestName.trim().length >= 3 && guestPhone.replace(/\D/g, '').length >= 10))
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -432,27 +618,29 @@ export default function CheckoutPage() {
                 </div>
                 <div className="px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <Label htmlFor="guestName" className="text-xs font-medium text-gray-700 mb-1.5 block">Nome</Label>
+                    <Label htmlFor="guestName" className="text-xs font-medium text-gray-700 mb-1.5 block">Nome <span className="text-red-500">*</span></Label>
                     <Input
                       id="guestName"
                       placeholder="Seu nome"
                       value={guestName}
-                      onChange={(e) => setGuestName(e.target.value)}
-                      className="border-gray-200 focus:border-primary/40 text-sm"
+                      onChange={(e) => { setGuestName(e.target.value); setFieldErrors(prev => ({ ...prev, guestName: '' })) }}
+                      className={`border-gray-200 focus:border-primary/40 text-sm ${fieldErrors.guestName ? 'border-red-400 focus:border-red-400' : ''}`}
                     />
+                    {fieldErrors.guestName && <p className="text-xs text-red-500 mt-1">{fieldErrors.guestName}</p>}
                   </div>
                   <div>
-                    <Label htmlFor="guestPhone" className="text-xs font-medium text-gray-700 mb-1.5 block">Telefone</Label>
+                    <Label htmlFor="guestPhone" className="text-xs font-medium text-gray-700 mb-1.5 block">Telefone <span className="text-red-500">*</span></Label>
                     <div className="relative">
                       <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                       <Input
                         id="guestPhone"
                         placeholder="(00) 00000-0000"
                         value={guestPhone}
-                        onChange={handlePhoneChange}
-                        className="pl-8 border-gray-200 focus:border-primary/40 text-sm"
+                        onChange={(e) => { handlePhoneChange(e); setFieldErrors(prev => ({ ...prev, guestPhone: '' })) }}
+                        className={`pl-8 border-gray-200 focus:border-primary/40 text-sm ${fieldErrors.guestPhone ? 'border-red-400 focus:border-red-400' : ''}`}
                       />
                     </div>
+                    {fieldErrors.guestPhone && <p className="text-xs text-red-500 mt-1">{fieldErrors.guestPhone}</p>}
                   </div>
                 </div>
               </div>
@@ -474,7 +662,9 @@ export default function CheckoutPage() {
                 {cartItems.map((item) => {
                   const hasDetails = (item.extras?.length ?? 0) > 0 ||
                     (item.prepareMethods?.length ?? 0) > 0 ||
-                    (item.steps?.length ?? 0) > 0
+                    (item.steps?.length ?? 0) > 0 ||
+                    (item.complements?.length ?? 0) > 0 ||
+                    !!item.weight
 
                   return (
                     <div key={item.id} className="px-5 py-4">
@@ -502,8 +692,8 @@ export default function CheckoutPage() {
                             <h3 className="text-sm font-semibold text-gray-900 leading-tight">{item.name}</h3>
                             <button
                               onClick={() => {
-                                removeItem(item.id)
-                                setCartItems(prev => prev.filter(i => i.id !== item.id))
+                                removeItem(item.cartId)
+                                setCartItems(prev => prev.filter(i => i.cartId !== item.cartId))
                               }}
                               className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
                             >
@@ -511,27 +701,58 @@ export default function CheckoutPage() {
                             </button>
                           </div>
 
-                          <p className="text-sm font-medium text-primary mt-0.5">
-                            {item.priceWithDiscount ? (
-                              <>
-                                R$ {(item.priceWithDiscount * item.quantity).toFixed(2).replace('.', ',')}
-                                <span className="text-xs text-muted-foreground line-through ml-2">
-                                  R$ {(item.price * item.quantity).toFixed(2).replace('.', ',')}
-                                </span>
-                              </>
-                            ) : (
-                              <>R$ {item.totalPrice.toFixed(2).replace('.', ',')}</>
-                            )}
-                          </p>
+                          {(() => {
+                            const isWeight = item.itemType === 'weight_per_kg' || item.itemType === 'weight_per_g'
+                            const weightUnit = item.itemType === 'weight_per_g' ? 'g' : 'kg'
+
+                            if (isWeight && item.weight) {
+                              return (
+                                <>
+                                  <p className="text-sm font-bold text-primary mt-0.5">
+                                    {formatPrice(item.totalPrice)}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground mt-0.5">
+                                    {item.weight} {weightUnit} × {item.priceWithDiscount ? (
+                                      <>
+                                        <span className="line-through">{formatPrice(item.price)}</span>
+                                        {' '}<span className="text-green-600 font-medium">{formatPrice(item.priceWithDiscount)}</span>
+                                      </>
+                                    ) : (
+                                      formatPrice(item.price)
+                                    )}
+                                    /{weightUnit}
+                                  </p>
+                                </>
+                              )
+                            }
+
+                            return (
+                              <p className="text-sm font-medium text-primary mt-0.5">
+                                {item.priceWithDiscount ? (
+                                  <>
+                                    {formatPrice(item.priceWithDiscount * item.quantity)}
+                                    <span className="text-xs text-muted-foreground line-through ml-2">
+                                      {formatPrice(item.price * item.quantity)}
+                                    </span>
+                                  </>
+                                ) : (
+                                  formatPrice(item.totalPrice)
+                                )}
+                              </p>
+                            )
+                          })()}
 
                           <div className="flex items-center justify-between mt-2">
-                            {/* Contador */}
+                            {/* Contador (oculto para itens por peso — peso é fixo) */}
+                            {item.itemType === 'weight_per_kg' || item.itemType === 'weight_per_g' ? (
+                              <div />
+                            ) : (
                             <div className="flex items-center gap-1 bg-gray-50 border border-gray-200 rounded-lg">
                               <button
                                 onClick={() => {
                                   if (item.quantity > 1) {
-                                    updateItemQuantity(item.id, item.quantity - 1)
-                                    setCartItems(prev => prev.map(i => i.id === item.id ? { ...i, quantity: i.quantity - 1 } : i))
+                                    updateItemQuantity(item.cartId, item.quantity - 1)
+                                    setCartItems(prev => prev.map(i => i.cartId === item.cartId ? { ...i, quantity: i.quantity - 1 } : i))
                                   }
                                 }}
                                 className="w-7 h-7 flex items-center justify-center text-gray-500 hover:text-primary transition-colors cursor-pointer"
@@ -541,14 +762,15 @@ export default function CheckoutPage() {
                               <span className="text-xs font-bold text-gray-900 min-w-[1.25rem] text-center">{item.quantity}</span>
                               <button
                                 onClick={() => {
-                                  updateItemQuantity(item.id, item.quantity + 1)
-                                  setCartItems(prev => prev.map(i => i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i))
+                                  updateItemQuantity(item.cartId, item.quantity + 1)
+                                  setCartItems(prev => prev.map(i => i.cartId === item.cartId ? { ...i, quantity: i.quantity + 1 } : i))
                                 }}
                                 className="w-7 h-7 flex items-center justify-center text-gray-500 hover:text-primary transition-colors cursor-pointer"
                               >
                                 <Plus className="h-3 w-3" />
                               </button>
                             </div>
+                            )}
 
                             {hasDetails && (
                               <button
@@ -591,25 +813,38 @@ export default function CheckoutPage() {
                               {item.weight && (
                                 <div>
                                   <span className="text-[10px] uppercase tracking-wider font-bold text-gray-400">Peso</span>
-                                  <p className="text-xs font-semibold text-gray-700 mt-0.5">{item.weight}kg</p>
+                                  <p className="text-xs font-semibold text-gray-700 mt-0.5">{item.weight}{item.itemType === 'weight_per_g' ? 'g' : ' kg'}</p>
                                 </div>
                               )}
                               {(item.extras?.length ?? 0) > 0 && (
                                 <div>
-                                  <span className="text-[10px] uppercase tracking-wider font-bold text-gray-400">Extras</span>
+                                  <span className="text-[10px] uppercase tracking-wider font-bold text-gray-400">Adicionais</span>
                                   <ul className="mt-1 space-y-1">
                                     {item.extras!.map(extra => (
                                       <li key={extra.id} className="flex justify-between text-xs text-gray-600">
                                         <span>{extra.name}</span>
-                                        <span className="font-semibold">+ R$ {extra.price.toFixed(2).replace('.', ',')}</span>
+                                        <span className="font-semibold">+ {formatPrice(extra.price)}</span>
                                       </li>
                                     ))}
                                   </ul>
                                 </div>
                               )}
+                              {item.complements?.map(group => (
+                                <div key={group.groupName}>
+                                  <span className="text-[10px] uppercase tracking-wider font-bold text-gray-400">{group.groupName}</span>
+                                  <ul className="mt-1 space-y-1">
+                                    {group.options.map(opt => (
+                                      <li key={opt.id} className="flex justify-between text-xs text-gray-600">
+                                        <span>{opt.name}</span>
+                                        {opt.price > 0 && <span className="font-semibold">+ {formatPrice(opt.price)}</span>}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              ))}
                               {(item.prepareMethods?.length ?? 0) > 0 && (
                                 <div>
-                                  <span className="text-[10px] uppercase tracking-wider font-bold text-gray-400">Preparo</span>
+                                  <span className="text-[10px] uppercase tracking-wider font-bold text-gray-400">Modo de preparo</span>
                                   <div className="flex flex-wrap gap-1 mt-1">
                                     {item.prepareMethods!.map(m => (
                                       <span key={m.id} className="text-[10px] bg-white border border-gray-200 rounded px-2 py-0.5 text-gray-600">{m.name}</span>
@@ -677,40 +912,47 @@ export default function CheckoutPage() {
                 {deliveryOption === 'delivery' && (
                   <div className="space-y-3">
                     <div>
-                      <Label htmlFor="address" className="text-xs font-medium text-gray-700 mb-1.5 block">Endereço</Label>
+                      <Label htmlFor="address" className="text-xs font-medium text-gray-700 mb-1.5 block">Endereço <span className="text-red-500">*</span></Label>
                       <Input
                         id="address"
                         placeholder="Rua, número"
                         value={address}
-                        onChange={(e) => setAddress(e.target.value)}
-                        className="border-gray-200 focus:border-primary/40 text-sm"
+                        onChange={(e) => { setAddress(e.target.value); setFieldErrors(prev => ({ ...prev, address: '' })) }}
+                        className={`border-gray-200 focus:border-primary/40 text-sm ${fieldErrors.address ? 'border-red-400 focus:border-red-400' : ''}`}
                       />
+                      {fieldErrors.address && <p className="text-xs text-red-500 mt-1">{fieldErrors.address}</p>}
                     </div>
 
                     <div>
-                      <Label htmlFor="neighborhood" className="text-xs font-medium text-gray-700 mb-1.5 block">Bairro</Label>
+                      <Label htmlFor="neighborhood" className="text-xs font-medium text-gray-700 mb-1.5 block">Bairro <span className="text-red-500">*</span></Label>
                       {shopDeliveryConfig?.delivery_fee_kind === 'per_neighborhood' ? (
-                        <select
-                          id="neighborhood"
-                          value={selectedNeighborhood}
-                          onChange={(e) => setSelectedNeighborhood(e.target.value)}
-                          className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:border-primary/40 focus:outline-none focus:ring-1 focus:ring-primary/20"
-                        >
-                          <option value="">Selecione o bairro</option>
-                          {shopDeliveryConfig?.shop_delivery_neighborhoods.data.map((nb: any) => (
-                            <option key={nb.id} value={nb.id}>
-                              {nb.attributes.name} · R$ {nb.attributes.amount.toFixed(2).replace('.', ',')}
-                            </option>
-                          ))}
-                        </select>
+                        <>
+                          <select
+                            id="neighborhood"
+                            value={selectedNeighborhood}
+                            onChange={(e) => { setSelectedNeighborhood(e.target.value); setFieldErrors(prev => ({ ...prev, neighborhood: '' })) }}
+                            className={`w-full rounded-md border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 ${fieldErrors.neighborhood ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : 'border-gray-200 focus:border-primary/40 focus:ring-primary/20'}`}
+                          >
+                            <option value="">Selecione o bairro</option>
+                            {shopDeliveryConfig?.shop_delivery_neighborhoods.data.map((nb: any) => (
+                              <option key={nb.id} value={nb.id}>
+                                {nb.attributes.name} · R$ {Number(nb.attributes.amount).toFixed(2).replace('.', ',')}
+                              </option>
+                            ))}
+                          </select>
+                          {fieldErrors.neighborhood && <p className="text-xs text-red-500 mt-1">{fieldErrors.neighborhood}</p>}
+                        </>
                       ) : (
-                        <Input
-                          id="neighborhood"
-                          placeholder="Bairro"
-                          value={selectedNeighborhood}
-                          onChange={(e) => setSelectedNeighborhood(e.target.value)}
-                          className="border-gray-200 focus:border-primary/40 text-sm"
-                        />
+                        <>
+                          <Input
+                            id="neighborhood"
+                            placeholder="Bairro"
+                            value={selectedNeighborhood}
+                            onChange={(e) => { setSelectedNeighborhood(e.target.value); setFieldErrors(prev => ({ ...prev, neighborhood: '' })) }}
+                            className={`text-sm ${fieldErrors.neighborhood ? 'border-red-400 focus:border-red-400' : 'border-gray-200 focus:border-primary/40'}`}
+                          />
+                          {fieldErrors.neighborhood && <p className="text-xs text-red-500 mt-1">{fieldErrors.neighborhood}</p>}
+                        </>
                       )}
                     </div>
 
@@ -758,6 +1000,14 @@ export default function CheckoutPage() {
               </div>
 
               <div className="px-5 py-4 space-y-3">
+                {noPaymentMethods && (
+                  <Alert className="border-red-200 bg-red-50 rounded-xl">
+                    <AlertTriangle className="h-4 w-4 text-red-500" />
+                    <AlertDescription className="text-red-700 text-sm">
+                      Nenhum método de pagamento disponível. Entre em contato com o estabelecimento.
+                    </AlertDescription>
+                  </Alert>
+                )}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {(Object.entries(PAYMENT_LABELS) as [PaymentMethod, { label: string; icon: React.ReactNode }][]).map(([method, cfg]) => {
                     const available = shopPaymentConfig?.[method === 'manual_pix' ? 'manual_pix' : method]
@@ -791,11 +1041,17 @@ export default function CheckoutPage() {
                     <Label htmlFor="changeFor" className="text-xs font-medium text-gray-700 mb-1.5 block">Troco para</Label>
                     <Input
                       id="changeFor"
+                      type="number"
                       placeholder="R$ 50,00"
                       value={changeFor}
                       onChange={(e) => setChangeFor(e.target.value)}
-                      className="border-gray-200 focus:border-primary/40 text-sm max-w-[180px]"
+                      className={`text-sm max-w-[180px] ${changeFor && parseFloat(changeFor) < calculateTotal() ? 'border-red-400 focus:border-red-400' : 'border-gray-200 focus:border-primary/40'}`}
+                      min={calculateTotal()}
+                      step="0.01"
                     />
+                    {changeFor && parseFloat(changeFor) < calculateTotal() && (
+                      <p className="text-xs text-red-500 mt-1">O valor deve ser maior ou igual a {formatPrice(calculateTotal())}</p>
+                    )}
                   </div>
                 )}
               </div>

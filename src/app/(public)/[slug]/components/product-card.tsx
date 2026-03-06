@@ -19,6 +19,8 @@ const ProductCard = memo(function ProductCard({ item, index }: ProductCardProps)
     Number(attributes.price_with_discount) < Number(attributes.price);
 
   const hasImage = !!attributes.image_url;
+  const hasComplements = attributes.shared_complements?.data?.length > 0;
+  const hasCustomization = hasComplements || attributes.extra?.data?.length > 0 || attributes.steps?.data?.length > 0;
 
   return (
     <ProductModal
@@ -108,9 +110,13 @@ const ProductCard = memo(function ProductCard({ item, index }: ProductCardProps)
             </h3>
 
             {attributes.description && (
-              <p className="text-muted-foreground text-[11px] line-clamp-1 mb-2">
+              <p className="text-muted-foreground text-[11px] line-clamp-1 mb-1">
                 {attributes.description}
               </p>
+            )}
+
+            {hasCustomization && (
+              <p className="text-[10px] text-primary font-medium mb-1">Personalizável</p>
             )}
 
             <div className="flex items-center justify-between mt-auto">

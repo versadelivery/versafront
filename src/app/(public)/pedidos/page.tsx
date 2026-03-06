@@ -42,8 +42,9 @@ const statusConfig: Record<string, { label: string; dot: string; bg: string; tex
   accepted:       { label: "Aceito",      dot: "bg-blue-500",    bg: "bg-blue-50",    text: "text-blue-700"   },
   in_analysis:    { label: "Em análise",  dot: "bg-orange-400",  bg: "bg-orange-50",  text: "text-orange-700" },
   in_preparation: { label: "Preparando",  dot: "bg-orange-500",  bg: "bg-orange-50",  text: "text-orange-700" },
-  ready:          { label: "Pronto",      dot: "bg-emerald-500", bg: "bg-emerald-50", text: "text-emerald-700"},
-  delivered:      { label: "Entregue",    dot: "bg-green-500",   bg: "bg-green-50",   text: "text-green-700"  },
+  ready:              { label: "Pronto",          dot: "bg-emerald-500", bg: "bg-emerald-50", text: "text-emerald-700"},
+  left_for_delivery:  { label: "Saiu p/ entrega", dot: "bg-purple-500",  bg: "bg-purple-50",  text: "text-purple-700" },
+  delivered:          { label: "Entregue",        dot: "bg-green-500",   bg: "bg-green-50",   text: "text-green-700"  },
   cancelled:      { label: "Cancelado",   dot: "bg-red-400",     bg: "bg-red-50",     text: "text-red-700"    },
 };
 

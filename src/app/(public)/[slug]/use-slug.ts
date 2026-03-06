@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { useClient } from "./client-context";
 import { useRouter } from "next/navigation";
 
-export function useShopBySlug(slug: string, options?: { staleTime?: number }) {
+export function useShopBySlug(slug: string) {
   const { setShop } = useClient();
   
   return useQuery({
@@ -16,7 +16,8 @@ export function useShopBySlug(slug: string, options?: { staleTime?: number }) {
       return data;
     },
     retry: false,
-    staleTime: options?.staleTime || 1000 * 60 * 60 * 24 // 24 horas por padrão
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   });
 }
 

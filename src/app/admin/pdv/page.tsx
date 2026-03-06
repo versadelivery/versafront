@@ -41,6 +41,8 @@ interface CartItem {
   selectedSharedComplements?: { id: string; name: string; price: number }[];
   totalPrice: number;
   observation?: string;
+  weight?: number;
+  itemType?: string;
 }
 
 interface CustomerInfo {
@@ -195,15 +197,16 @@ export default function PDVPage() {
   const getPaymentMethodLabel = (m: "cash" | "card" | "pix") =>
     m === "cash" ? "Dinheiro" : m === "card" ? "Cartão" : "PIX";
 
-  // Clique no item — abre modal se tiver opções, senão adiciona direto
+  // Clique no item — abre modal se tiver opções ou for peso, senão adiciona direto
   const handleItemClick = (item: any) => {
     const attrs = item.attributes;
     const hasExtras = (attrs.extra?.data?.length ?? 0) > 0;
     const hasMethods = (attrs.prepare_method?.data?.length ?? 0) > 0;
     const hasSteps = (attrs.steps?.data?.length ?? 0) > 0;
     const hasSharedComplements = (attrs.shared_complements?.data?.length ?? 0) > 0;
+    const isWeightBased = attrs.item_type === 'weight_per_kg' || attrs.item_type === 'weight_per_g';
 
-    if (hasExtras || hasMethods || hasSteps || hasSharedComplements) {
+    if (hasExtras || hasMethods || hasSteps || hasSharedComplements || isWeightBased) {
       setOptionsItem(item);
     } else {
       addToCart(item);
@@ -221,6 +224,7 @@ export default function PDVPage() {
       selectedMethods?: { id: string; name: string }[];
       selectedOptions?: Record<string, { optionId: string; optionName: string }>;
       selectedSharedComplements?: { id: string; name: string; price: number }[];
+      weight?: number;
     }
   ) => {
     const attrs = item.attributes;
@@ -229,7 +233,14 @@ export default function PDVPage() {
     const basePrice = hasDiscount
       ? parseFloat(attrs.price_with_discount)
       : parseFloat(attrs.price);
-    const unitPrice = basePrice + (options?.extrasPrice ?? 0) + (options?.complementsPrice ?? 0);
+    const extrasPrice = options?.extrasPrice ?? 0;
+    const complementsPrice = options?.complementsPrice ?? 0;
+    const isWeightBased = attrs.item_type === 'weight_per_kg' || attrs.item_type === 'weight_per_g';
+    const itemWeight = options?.weight;
+    const unitPrice = isWeightBased && itemWeight
+      ? basePrice * itemWeight + extrasPrice + complementsPrice
+      : basePrice + extrasPrice + complementsPrice;
+    const finalTotal = unitPrice;
 
     const cartItem: CartItem = {
       id: `${item.id}-${cartIdCounter}`,
@@ -237,12 +248,13 @@ export default function PDVPage() {
       price: unitPrice,
       quantity: 1,
       image_url: attrs.image_url,
-      totalPrice: unitPrice,
+      totalPrice: finalTotal,
       selectedExtras: options?.selectedExtras,
       selectedMethods: options?.selectedMethods,
       selectedStepOptions: options?.selectedOptions,
       selectedSharedComplements: options?.selectedSharedComplements,
       observation: options?.observation,
+      ...(isWeightBased && itemWeight && { weight: itemWeight, itemType: attrs.item_type }),
     };
 
     setCartIdCounter((prev) => prev + 1);
@@ -258,6 +270,7 @@ export default function PDVPage() {
     selectedMethods: { id: string; name: string }[];
     selectedOptions: Record<string, { optionId: string; optionName: string }>;
     selectedSharedComplements: { id: string; name: string; price: number }[];
+    weight?: number;
   }) => {
     if (optionsItem) addToCart(optionsItem, options);
     setOptionsItem(null);
@@ -504,6 +517,7 @@ export default function PDVPage() {
           items: cart.map((item) => ({
             catalog_item_id: parseInt(item.id.split("-")[0]),
             quantity: item.quantity,
+            ...(item.weight && { weight: item.weight }),
             observation: item.observation || notes || undefined,
             extras_ids: item.selectedExtras?.map((e) => e.id) || [],
             prepare_methods_ids: item.selectedMethods?.map((m) => m.id) || [],
@@ -930,43 +944,69 @@ export default function PDVPage() {
                             </p>
                           )}
 
+                          {/* Peso (itens por kg/g) */}
+                          {item.weight && item.itemType && (
+                            <p className="text-[11px] text-muted-foreground mt-1">
+                              {item.weight} {item.itemType === 'weight_per_g' ? 'g' : 'kg'} × {formatPrice(item.price)}/{item.itemType === 'weight_per_g' ? 'g' : 'kg'}
+                            </p>
+                          )}
+
                           <div className="flex items-center justify-between mt-2">
-                            <span className="text-xs text-muted-foreground">
-                              {formatPrice(item.price)} × {item.quantity}
-                            </span>
+                            {item.weight && item.itemType ? (
+                              <span className="text-xs text-muted-foreground">
+                                {item.weight} {item.itemType === 'weight_per_g' ? 'g' : 'kg'}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">
+                                {formatPrice(item.price)} × {item.quantity}
+                              </span>
+                            )}
                             <span className="font-semibold text-sm text-primary">
                               {formatPrice(item.totalPrice)}
                             </span>
                           </div>
                         </div>
                         <div className="flex items-center gap-1 flex-shrink-0">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                            className="h-7 w-7 p-0"
-                          >
-                            <Minus className="h-3 w-3" />
-                          </Button>
-                          <span className="text-sm font-medium w-5 text-center">
-                            {item.quantity}
-                          </span>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                            className="h-7 w-7 p-0"
-                          >
-                            <Plus className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => removeFromCart(item.id)}
-                            className="h-7 w-7 p-0 text-red-500 hover:text-red-700"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
+                          {item.weight && item.itemType ? (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => removeFromCart(item.id)}
+                              className="h-7 w-7 p-0 text-red-500 hover:text-red-700"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          ) : (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                className="h-7 w-7 p-0"
+                              >
+                                <Minus className="h-3 w-3" />
+                              </Button>
+                              <span className="text-sm font-medium w-5 text-center">
+                                {item.quantity}
+                              </span>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                className="h-7 w-7 p-0"
+                              >
+                                <Plus className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => removeFromCart(item.id)}
+                                className="h-7 w-7 p-0 text-red-500 hover:text-red-700"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </>
+                          )}
                         </div>
                       </div>
                     ))}

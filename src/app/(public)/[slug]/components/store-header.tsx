@@ -15,9 +15,11 @@ interface StoreHeaderProps {
   shop: any;
 }
 
-export default function StoreHeader({ shop }: StoreHeaderProps) {
-  const { client } = useClient();
-  const attributes = shop?.attributes || {};
+export default function StoreHeader({ shop: initialShop }: StoreHeaderProps) {
+  const { client, shop: contextShop } = useClient();
+  // Usa dados do contexto (atualizados via React Query) quando disponível, senão SSR
+  const shopData = contextShop?.data ?? null;
+  const attributes = shopData?.attributes || initialShop?.attributes || {};
 
   const deliveryFee = () => {
     const config = attributes.shop_delivery_config?.data?.attributes;

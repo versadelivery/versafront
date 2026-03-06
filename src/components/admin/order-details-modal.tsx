@@ -27,6 +27,7 @@ interface OrderItem {
   observation?: string;
   image?: string;
   weight?: string;
+  item_type?: string;
   extras?: Array<{
     name: string;
     price: number;
@@ -625,7 +626,7 @@ ${order.items.map(item =>
                         <span className="font-medium text-black text-lg">{item.name}</span>
                         {item.weight && (
                           <Badge variant="outline" className="text-xs">
-                            {item.weight}
+                            {item.weight} {item.item_type === 'weight_per_g' ? 'g' : item.item_type === 'weight_per_kg' ? 'kg' : ''}
                           </Badge>
                         )}
                       </div>
