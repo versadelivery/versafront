@@ -1,18 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import {
   ShoppingCart, Plus, Minus, Trash2, Search,
   CreditCard, MapPin, User, Package, Settings2,
-  Tag, X, CheckCircle2, Loader2, UtensilsCrossed,
+  Tag, X, CheckCircle2, Loader2, UtensilsCrossed, ArrowLeft,
 } from "lucide-react";
 import { useCatalogGroup } from "@/hooks/useCatalogGroup";
 import Image from "next/image";
@@ -25,7 +23,6 @@ import { useShop } from "@/hooks/use-shop";
 import { usePayment } from "@/app/admin/settings/payment/usePayment";
 import { useDelivery } from "@/hooks/use-delivery";
 import { ItemOptionsDialog } from "./item-options-dialog";
-import AdminHeader from "@/components/admin/catalog-header";
 import { tableService, Table, TableSession, CloseTableSessionPayload } from "@/app/admin/mesas/services/table-service";
 import CloseTableModal from "@/app/admin/mesas/components/close-table-modal";
 
@@ -557,19 +554,38 @@ export default function PDVPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 max-w-[1600px] mx-auto">
-      <AdminHeader title="Ponto de Venda (PDV)" description="Gerencie seus pedidos e vendas" className="!px-2" />
+    <div className="min-h-screen bg-[#FAF9F7]">
+      <div className="bg-white border-b border-[#E5E2DD]">
+        <div className="max-w-[1920px] mx-auto px-4 sm:px-6">
+          <div className="flex items-center h-16">
+            <div className="flex items-center gap-4">
+              <a
+                href="/admin"
+                className="flex items-center gap-1.5 text-muted-foreground hover:text-gray-900 transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                <span className="text-sm font-medium hidden sm:block">Voltar</span>
+              </a>
+              <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
+              <h1 className="text-base sm:text-lg font-bold text-gray-900">
+                Ponto de Venda (PDV)
+              </h1>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="max-w-[1920px] mx-auto px-4 sm:px-6 py-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
         {/* ── Catálogo ─────────────────────────────────── */}
         <div className="lg:col-span-2 space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Package className="h-5 w-5" />
+          <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+            <div className="px-5 py-4 border-b border-[#E5E2DD]">
+              <h2 className="flex items-center gap-2 text-base font-semibold text-gray-900 mb-3">
+                <Package className="h-5 w-5 text-primary" />
                 Catálogo de Produtos
-              </CardTitle>
+              </h2>
 
               {/* Busca e filtros */}
               <div className="space-y-3">
@@ -613,7 +629,7 @@ export default function PDVPage() {
                         variant={selectedGroupId === null ? "default" : "outline"}
                         size="sm"
                         onClick={() => setSelectedGroupId(null)}
-                        className="h-8"
+                        className="h-8 border border-gray-300 cursor-pointer"
                       >
                         Todas as categorias
                         <Badge variant="secondary" className="ml-2">
@@ -629,7 +645,7 @@ export default function PDVPage() {
                           variant={selectedGroupId === group.id ? "default" : "outline"}
                           size="sm"
                           onClick={() => setSelectedGroupId(group.id)}
-                          className="h-8"
+                          className="h-8 border border-gray-300 cursor-pointer"
                         >
                           {group.attributes.name}
                           <Badge variant="secondary" className="ml-2">
@@ -659,9 +675,9 @@ export default function PDVPage() {
                   </div>
                 )}
               </div>
-            </CardHeader>
+            </div>
 
-            <CardContent>
+            <div className="px-5 py-4">
               {isLoading ? (
                 <div className="text-center py-12">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
@@ -715,11 +731,11 @@ export default function PDVPage() {
                             (attrs.shared_complements?.data?.length ?? 0) > 0;
 
                           return (
-                            <Card
+                            <div
                               key={item.id}
-                              className="overflow-hidden hover:shadow-lg transition-all duration-200 group"
+                              className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden transition-all duration-200 group"
                             >
-                              <div className="aspect-video relative bg-gray-100">
+                              <div className="aspect-video relative bg-[#F0EFEB]">
                                 {attrs.image_url ? (
                                   <Image
                                     src={attrs.image_url}
@@ -737,22 +753,22 @@ export default function PDVPage() {
                                 {/* Tags */}
                                 <div className="absolute top-2 left-2 flex flex-col gap-0.5">
                                   {attrs.new_tag && (
-                                    <span className="bg-green-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm whitespace-nowrap">
+                                    <span className="bg-green-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap">
                                       NOVO!
                                     </span>
                                   )}
                                   {attrs.best_seller_tag && (
-                                    <span className="bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm whitespace-nowrap">
+                                    <span className="bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap">
                                       + VENDIDO
                                     </span>
                                   )}
                                   {attrs.highlight && (
-                                    <span className="bg-blue-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm whitespace-nowrap">
+                                    <span className="bg-blue-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap">
                                       DESTAQUE
                                     </span>
                                   )}
                                   {attrs.promotion_tag && !attrs.price_with_discount && (
-                                    <span className="bg-primary text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm whitespace-nowrap">
+                                    <span className="bg-primary text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap">
                                       PROMOÇÃO
                                     </span>
                                   )}
@@ -767,7 +783,7 @@ export default function PDVPage() {
                                 {/* Indicador de opções */}
                                 {hasOptions && (
                                   <div className="absolute bottom-2 right-2">
-                                    <span className="bg-black/60 text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-full flex items-center gap-1">
+                                    <span className="bg-black/60 text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-md flex items-center gap-1">
                                       <Settings2 className="h-2.5 w-2.5" />
                                       Personalizável
                                     </span>
@@ -805,7 +821,7 @@ export default function PDVPage() {
 
                                   <Button
                                     onClick={() => handleItemClick(item)}
-                                    className="h-9 px-3 gap-1.5 shrink-0"
+                                    className="h-9 px-3 gap-1.5 shrink-0 border border-gray-300 cursor-pointer"
                                     size="sm"
                                   >
                                     {hasOptions ? (
@@ -822,7 +838,7 @@ export default function PDVPage() {
                                   </Button>
                                 </div>
                               </div>
-                            </Card>
+                            </div>
                           );
                         })}
                       </div>
@@ -830,36 +846,34 @@ export default function PDVPage() {
                   ))}
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
 
         {/* ── Carrinho e Pedido ────────────────────────── */}
         <div className="space-y-6">
           {/* Carrinho */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <ShoppingCart className="h-5 w-5" />
-                  Carrinho
-                  {cart.length > 0 && (
-                    <Badge variant="secondary">{cart.reduce((t, i) => t + i.quantity, 0)}</Badge>
-                  )}
-                </div>
+          <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+            <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center justify-between">
+              <h2 className="flex items-center gap-2 text-base font-semibold text-gray-900">
+                <ShoppingCart className="h-5 w-5 text-primary" />
+                Carrinho
                 {cart.length > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={clearCart}
-                    className="h-8 px-2 text-red-500 hover:text-red-700 hover:bg-red-50"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <Badge variant="secondary">{cart.reduce((t, i) => t + i.quantity, 0)}</Badge>
                 )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+              </h2>
+              {cart.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearCart}
+                  className="h-8 px-2 text-red-500 hover:text-red-700 hover:bg-[#FAF9F7] cursor-pointer"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+            <div className="px-5 py-4">
               {cart.length === 0 ? (
                 <div className="text-center py-8">
                   <ShoppingCart className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
@@ -872,7 +886,7 @@ export default function PDVPage() {
                     {cart.map((item) => (
                       <div
                         key={item.id}
-                        className="flex items-start gap-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors"
+                        className="flex items-start gap-3 p-3 border border-[#E5E2DD] rounded-md hover:bg-[#FAF9F7] transition-colors"
                       >
                         {item.image_url && (
                           <div className="w-11 h-11 relative flex-shrink-0 rounded-md overflow-hidden">
@@ -1009,9 +1023,9 @@ export default function PDVPage() {
                     ))}
                   </div>
 
-                  <Separator />
+                  <hr className="border-[#E5E2DD]" />
 
-                  <div className="bg-gray-50 p-3 rounded-lg space-y-1.5">
+                  <div className="bg-[#FAF9F7] p-3 rounded-md space-y-1.5">
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-muted-foreground">Subtotal:</span>
                       <span className="font-medium">{formatPrice(cartTotal)}</span>
@@ -1053,20 +1067,20 @@ export default function PDVPage() {
                   </div>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Cupom de Desconto */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Tag className="h-5 w-5" />
+          <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+            <div className="px-5 py-4 border-b border-[#E5E2DD]">
+              <h2 className="flex items-center gap-2 text-base font-semibold text-gray-900">
+                <Tag className="h-5 w-5 text-primary" />
                 Cupom de Desconto
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+              </h2>
+            </div>
+            <div className="px-5 py-4">
               {appliedCoupon ? (
-                <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg px-4 py-3">
+                <div className="flex items-center justify-between bg-white border border-green-400 rounded-md px-4 py-3">
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-green-600" />
                     <div>
@@ -1102,7 +1116,7 @@ export default function PDVPage() {
                       disabled={couponLoading || !couponCode.trim()}
                       variant="outline"
                       size="sm"
-                      className="px-4 shrink-0"
+                      className="px-4 shrink-0 border border-gray-300 cursor-pointer"
                     >
                       {couponLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Aplicar"}
                     </Button>
@@ -1112,31 +1126,29 @@ export default function PDVPage() {
                   )}
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Mesa (opcional) */}
           {tables.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <UtensilsCrossed className="h-5 w-5" />
-                    Mesa
-                  </div>
-                  {isTableOrder && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleSelectTableSession(null)}
-                      className="h-7 px-2 text-xs text-muted-foreground"
-                    >
-                      Remover mesa
-                    </Button>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
+            <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+              <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center justify-between">
+                <h2 className="flex items-center gap-2 text-base font-semibold text-gray-900">
+                  <UtensilsCrossed className="h-5 w-5 text-primary" />
+                  Mesa
+                </h2>
+                {isTableOrder && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleSelectTableSession(null)}
+                    className="h-7 px-2 text-xs text-muted-foreground cursor-pointer"
+                  >
+                    Remover mesa
+                  </Button>
+                )}
+              </div>
+              <div className="px-5 py-4">
                 <div className="grid grid-cols-3 gap-2">
                   {tables
                     .sort((a, b) => a.attributes.number - b.attributes.number)
@@ -1160,12 +1172,12 @@ export default function PDVPage() {
                               handleOpenSession(table.id);
                             }
                           }}
-                          className={`relative flex flex-col items-center justify-center rounded-lg border-2 p-3 text-center transition-all ${
+                          className={`relative flex flex-col items-center justify-center rounded-md border-2 p-3 text-center transition-all cursor-pointer ${
                             isSelected
-                              ? "border-emerald-500 bg-emerald-50 ring-2 ring-emerald-200"
+                              ? "border-emerald-500 bg-white ring-2 ring-emerald-200"
                               : hasSession
-                              ? "border-amber-300 bg-amber-50 hover:border-amber-400"
-                              : "border-dashed border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100"
+                              ? "border-amber-400 bg-white hover:border-amber-500"
+                              : "border-dashed border-[#E5E2DD] bg-[#FAF9F7] hover:border-gray-400 hover:bg-[#F0EFEB]"
                           }`}
                         >
                           <span className={`text-sm font-bold ${
@@ -1196,7 +1208,7 @@ export default function PDVPage() {
                 {isTableOrder && (() => {
                   const session = openSessions.find((s) => s.id === selectedTableSessionId);
                   return (
-                    <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2.5 mt-3 space-y-1">
+                    <div className="bg-white border border-emerald-400 rounded-md px-3 py-2.5 mt-3 space-y-1">
                       <p className="text-xs text-emerald-700 font-medium">
                         Pedido para Mesa {session?.attributes.table_number}
                         {session?.attributes.customer_name ? ` — ${session.attributes.customer_name}` : ""}
@@ -1207,20 +1219,20 @@ export default function PDVPage() {
                     </div>
                   );
                 })()}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           )}
 
           {/* Tipo de Pedido — esconde quando vinculado a mesa */}
           {!isTableOrder && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5" />
+            <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+              <div className="px-5 py-4 border-b border-[#E5E2DD]">
+                <h2 className="flex items-center gap-2 text-base font-semibold text-gray-900">
+                  <MapPin className="h-5 w-5 text-primary" />
                   Tipo de Pedido
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
+                </h2>
+              </div>
+              <div className="px-5 py-4">
                 <Select
                   value={orderType}
                   onValueChange={(v: "delivery" | "pickup") => { setOrderType(v); setFormErrors({}); }}
@@ -1233,19 +1245,19 @@ export default function PDVPage() {
                     <SelectItem value="pickup">Retirada</SelectItem>
                   </SelectContent>
                 </Select>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           )}
 
           {/* Dados do cliente — esconde quando vinculado a mesa */}
-          {!isTableOrder && <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
+          {!isTableOrder && <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+            <div className="px-5 py-4 border-b border-[#E5E2DD]">
+              <h2 className="flex items-center gap-2 text-base font-semibold text-gray-900">
+                <User className="h-5 w-5 text-primary" />
                 {orderType === "delivery" ? "Dados de Entrega" : "Dados do Cliente"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+              </h2>
+            </div>
+            <div className="px-5 py-4 space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="name" className="text-sm">Nome <span className="text-red-500">*</span></Label>
@@ -1357,20 +1369,20 @@ export default function PDVPage() {
                   </div>
                 </>
               )}
-            </CardContent>
-          </Card>}
+            </div>
+          </div>}
 
           {/* Pagamento */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5" />
+          <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+            <div className="px-5 py-4 border-b border-[#E5E2DD]">
+              <h2 className="flex items-center gap-2 text-base font-semibold text-gray-900">
+                <CreditCard className="h-5 w-5 text-primary" />
                 Pagamento
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+              </h2>
+            </div>
+            <div className="px-5 py-4 space-y-4">
               {availablePaymentMethods.length === 0 ? (
-                <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+                <div className="bg-white border border-red-400 rounded-md px-4 py-3">
                   <p className="text-sm text-red-600 font-medium">Nenhum método de pagamento configurado</p>
                   <p className="text-xs text-red-500 mt-1">Configure os métodos de pagamento nas configurações da loja.</p>
                 </div>
@@ -1434,8 +1446,8 @@ export default function PDVPage() {
                   rows={3}
                 />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Finalizar */}
           {isTableOrder ? (
@@ -1443,7 +1455,7 @@ export default function PDVPage() {
               <Button
                 onClick={processOrder}
                 disabled={cart.length === 0 || isProcessingOrder}
-                className="w-full h-12 text-base font-semibold gap-2"
+                className="w-full h-12 text-base font-semibold gap-2 border border-gray-300 cursor-pointer"
                 size="lg"
               >
                 <Plus className="h-5 w-5" />
@@ -1455,7 +1467,7 @@ export default function PDVPage() {
                 variant="outline"
                 onClick={() => setShowCloseModal(true)}
                 disabled={isProcessingOrder}
-                className="w-full h-10 text-sm font-medium gap-2 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                className="w-full h-10 text-sm font-medium gap-2 border border-red-400 text-red-600 hover:bg-[#FAF9F7] hover:text-red-700 cursor-pointer"
               >
                 <UtensilsCrossed className="h-4 w-4" />
                 Fechar Comanda — Mesa {selectedSession?.attributes.table_number}
@@ -1465,7 +1477,7 @@ export default function PDVPage() {
             <Button
               onClick={processOrder}
               disabled={cart.length === 0 || isProcessingOrder || isBelowMinOrder}
-              className="w-full h-12 text-base font-semibold gap-2"
+              className="w-full h-12 text-base font-semibold gap-2 border border-gray-300 cursor-pointer"
               size="lg"
             >
               <ShoppingCart className="h-5 w-5" />
@@ -1474,6 +1486,7 @@ export default function PDVPage() {
                 : `Finalizar Pedido — ${formatPrice(orderTotal)}`}
             </Button>
           )}
+        </div>
         </div>
       </div>
 

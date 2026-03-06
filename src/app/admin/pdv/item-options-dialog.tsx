@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import { Check, ShoppingCart, Scale } from "lucide-react";
+import { ShoppingCart, Scale, Plus, ChefHat, ListChecks, MessageSquare } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -14,9 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Package } from "lucide-react";
 import { formatPrice } from "@/utils/format-price";
 
@@ -67,7 +65,7 @@ function WeightPicker({ min, max, step, value, onChange, unit = 'kg' }: {
 
   return (
     <div
-      className="relative mx-auto overflow-hidden rounded-2xl border border-gray-100"
+      className="relative mx-auto overflow-hidden rounded-md border border-[#E5E2DD]"
       style={{ height: ITEM_H * VISIBLE, maxWidth: 240 }}
     >
       <div
@@ -79,8 +77,8 @@ function WeightPicker({ min, max, step, value, onChange, unit = 'kg' }: {
         style={{ height: ITEM_H * PAD, background: 'linear-gradient(to top, white 40%, transparent)' }}
       />
       <div
-        className="absolute inset-x-0 z-0 pointer-events-none bg-gray-50"
-        style={{ top: ITEM_H * PAD, height: ITEM_H, borderTop: '1px solid #e5e7eb', borderBottom: '1px solid #e5e7eb' }}
+        className="absolute inset-x-0 z-0 pointer-events-none bg-[#FAF9F7]"
+        style={{ top: ITEM_H * PAD, height: ITEM_H, borderTop: '1px solid #E5E2DD', borderBottom: '1px solid #E5E2DD' }}
       />
       <div
         ref={listRef}
@@ -317,157 +315,148 @@ export function ItemOptionsDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-2xl p-0 bg-white max-h-[90vh] flex flex-col overflow-hidden">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b border-gray-100">
-          <DialogTitle className="text-lg font-bold text-gray-900">
-            Personalizar item
+      <DialogContent className="sm:max-w-[640px] p-0 bg-white max-h-[90vh] flex flex-col overflow-hidden">
+        {/* Header com nome do produto */}
+        <DialogHeader className="px-6 pt-6 pb-4 border-b border-[#E5E2DD] flex-shrink-0">
+          <DialogTitle className="text-lg font-bold text-gray-900 truncate">
+            {attrs.name}
           </DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 overflow-y-auto">
-          <div className="px-6 py-5 space-y-5">
-            {/* Produto */}
-            <div className="flex gap-4 p-4 rounded-xl border border-gray-100 bg-gray-50">
-              <div className="relative w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
-                {attrs.image_url ? (
-                  <Image
-                    src={attrs.image_url}
-                    alt={attrs.name}
-                    fill
-                    sizes="96px"
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Package className="h-8 w-8 text-gray-300" />
-                  </div>
-                )}
-              </div>
-              <div className="flex-1 min-w-0 space-y-1">
-                <h3 className="font-bold text-gray-900 text-base leading-tight">
-                  {attrs.name}
-                </h3>
-                {attrs.description && (
-                  <p className="text-sm text-muted-foreground line-clamp-2">
-                    {attrs.description}
-                  </p>
-                )}
-                <div className="flex items-center gap-2 pt-1">
-                  {hasDiscount ? (
-                    <>
-                      <span className="text-sm text-muted-foreground line-through">
-                        {formatPrice(parseFloat(attrs.price))}{isWeightBased ? `/${weightUnit}` : ''}
-                      </span>
-                      <span className="text-lg font-bold text-green-600">
-                        {formatPrice(parseFloat(attrs.price_with_discount))}{isWeightBased ? `/${weightUnit}` : ''}
-                      </span>
-                      <Badge variant="destructive" className="text-[10px] h-5">
-                        PROMOÇÃO
-                      </Badge>
-                    </>
-                  ) : (
-                    <span className="text-lg font-bold text-primary">
-                      {formatPrice(basePrice)}{isWeightBased ? `/${weightUnit}` : ''}
-                    </span>
-                  )}
+        {/* Body scrollável */}
+        <div className="flex-1 overflow-y-auto bg-[#FAF9F7]">
+          {/* Imagem do produto */}
+          {attrs.image_url ? (
+            <div className="relative w-full h-48 bg-[#F0EFEB]">
+              <Image
+                src={attrs.image_url}
+                alt={attrs.name}
+                fill
+                sizes="640px"
+                className="object-cover"
+              />
+              {hasDiscount && (
+                <div className="absolute top-3 right-3">
+                  <Badge variant="destructive" className="text-xs rounded-md">
+                    PROMOÇÃO
+                  </Badge>
                 </div>
+              )}
+            </div>
+          ) : (
+            <div className="w-full h-32 bg-[#F0EFEB] flex items-center justify-center">
+              <Package className="h-10 w-10 text-[#E5E2DD]" />
+            </div>
+          )}
+
+          <div className="px-6 py-5 space-y-5">
+            {/* Info do produto */}
+            <div className="space-y-2">
+              {attrs.description && (
+                <p className="text-sm text-muted-foreground">
+                  {attrs.description}
+                </p>
+              )}
+              <div className="flex items-center gap-2">
+                {hasDiscount ? (
+                  <>
+                    <span className="text-sm text-muted-foreground line-through">
+                      {formatPrice(parseFloat(attrs.price))}{isWeightBased ? `/${weightUnit}` : ''}
+                    </span>
+                    <span className="text-xl font-bold text-green-600">
+                      {formatPrice(parseFloat(attrs.price_with_discount))}{isWeightBased ? `/${weightUnit}` : ''}
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-xl font-bold text-primary">
+                    {formatPrice(basePrice)}{isWeightBased ? `/${weightUnit}` : ''}
+                  </span>
+                )}
               </div>
             </div>
 
             {/* Peso (kg / g) */}
             {isWeightBased && (
-              <section className="space-y-3">
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                    <Scale className="h-3.5 w-3.5" />
-                    Quantidade ({weightUnit})
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Selecione a quantidade desejada
-                  </p>
-                </div>
-                <WeightPicker
-                  min={item.attributes.min_weight || (isGrams ? 100 : 0.1)}
-                  max={item.attributes.max_weight || (isGrams ? 5000 : 10)}
-                  step={item.attributes.measure_interval || (isGrams ? 50 : 0.1)}
-                  value={weight}
-                  onChange={setWeight}
-                  unit={weightUnit}
-                />
-                <div className="text-center text-sm text-muted-foreground">
-                  {weight} {weightUnit} × {formatPrice(basePrice)}/{weightUnit}
-                  {' = '}
-                  <span className="font-semibold text-primary">
-                    {formatPrice(basePrice * weight)}
-                  </span>
-                </div>
-              </section>
+              <>
+                <hr className="border-[#E5E2DD]" />
+                <section className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Scale className="h-4 w-4 text-primary" />
+                    <h3 className="text-sm font-semibold text-gray-900">Quantidade ({weightUnit})</h3>
+                  </div>
+                  <WeightPicker
+                    min={item.attributes.min_weight || (isGrams ? 100 : 0.1)}
+                    max={item.attributes.max_weight || (isGrams ? 5000 : 10)}
+                    step={item.attributes.measure_interval || (isGrams ? 50 : 0.1)}
+                    value={weight}
+                    onChange={setWeight}
+                    unit={weightUnit}
+                  />
+                  <div className="text-center text-sm text-muted-foreground">
+                    {weight} {weightUnit} × {formatPrice(basePrice)}/{weightUnit}
+                    {' = '}
+                    <span className="font-semibold text-primary">
+                      {formatPrice(basePrice * weight)}
+                    </span>
+                  </div>
+                </section>
+              </>
             )}
 
             {/* Extras */}
             {extras.length > 0 && (
               <>
-              {isWeightBased && <Separator />}
-              <section className="space-y-3">
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Adicionais
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Selecione quantos quiser
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  {extras.map((extra: any) => {
-                    const isSelected = selectedExtraIds.includes(extra.id);
-                    const price = parseFloat(extra.attributes.price || "0");
-                    return (
-                      <label
-                        key={extra.id}
-                        htmlFor={`extra-${extra.id}`}
-                        className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                          isSelected
-                            ? "border-primary bg-primary/5"
-                            : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                        }`}
-                      >
-                        <Checkbox
-                          id={`extra-${extra.id}`}
-                          checked={isSelected}
-                          onCheckedChange={() => toggleExtra(extra.id)}
-                        />
-                        <span
-                          className={`flex-1 text-sm font-medium ${
-                            isSelected ? "text-primary" : "text-gray-700"
+                <hr className="border-[#E5E2DD]" />
+                <section className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Plus className="h-4 w-4 text-primary" />
+                    <h3 className="text-sm font-semibold text-gray-900">Adicionais</h3>
+                    <span className="text-xs text-muted-foreground">— selecione quantos quiser</span>
+                  </div>
+                  <div className="space-y-2">
+                    {extras.map((extra: any) => {
+                      const isSelected = selectedExtraIds.includes(extra.id);
+                      const price = parseFloat(extra.attributes.price || "0");
+                      return (
+                        <label
+                          key={extra.id}
+                          htmlFor={`extra-${extra.id}`}
+                          className={`flex items-center gap-3 p-3 rounded-md border cursor-pointer transition-colors ${
+                            isSelected
+                              ? "border-primary bg-white"
+                              : "border-[#E5E2DD] bg-white hover:border-primary/40"
                           }`}
                         >
-                          {extra.attributes.name}
-                        </span>
-                        {price > 0 && (
-                          <span className="text-sm font-semibold text-green-600">
-                            +{formatPrice(price)}
+                          <Checkbox
+                            id={`extra-${extra.id}`}
+                            checked={isSelected}
+                            onCheckedChange={() => toggleExtra(extra.id)}
+                          />
+                          <span className="flex-1 text-sm font-medium text-gray-900">
+                            {extra.attributes.name}
                           </span>
-                        )}
-                      </label>
-                    );
-                  })}
-                </div>
-              </section>
+                          {price > 0 && (
+                            <span className="text-sm font-semibold text-green-600">
+                              +{formatPrice(price)}
+                            </span>
+                          )}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </section>
               </>
             )}
 
             {/* Modo de preparo */}
             {methods.length > 0 && (
               <>
-                {(extras.length > 0 || isWeightBased) && <Separator />}
+                <hr className="border-[#E5E2DD]" />
                 <section className="space-y-3">
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      Modo de preparo
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      Selecione quantos quiser
-                    </p>
+                  <div className="flex items-center gap-2">
+                    <ChefHat className="h-4 w-4 text-primary" />
+                    <h3 className="text-sm font-semibold text-gray-900">Modo de preparo</h3>
+                    <span className="text-xs text-muted-foreground">— selecione quantos quiser</span>
                   </div>
                   <div className="space-y-2">
                     {methods.map((method: any) => {
@@ -476,10 +465,10 @@ export function ItemOptionsDialog({
                         <label
                           key={method.id}
                           htmlFor={`method-${method.id}`}
-                          className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                          className={`flex items-center gap-3 p-3 rounded-md border cursor-pointer transition-colors ${
                             isSelected
-                              ? "border-primary bg-primary/5"
-                              : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                              ? "border-primary bg-white"
+                              : "border-[#E5E2DD] bg-white hover:border-primary/40"
                           }`}
                         >
                           <Checkbox
@@ -487,11 +476,7 @@ export function ItemOptionsDialog({
                             checked={isSelected}
                             onCheckedChange={() => toggleMethod(method.id)}
                           />
-                          <span
-                            className={`flex-1 text-sm font-medium ${
-                              isSelected ? "text-primary" : "text-gray-700"
-                            }`}
-                          >
+                          <span className="flex-1 text-sm font-medium text-gray-900">
                             {method.attributes.name}
                           </span>
                         </label>
@@ -503,22 +488,17 @@ export function ItemOptionsDialog({
             )}
 
             {/* Etapas (steps) */}
-            {steps.map((step: any, idx: number) => {
+            {steps.map((step: any) => {
               const opts: any[] = step.attributes?.options?.data ?? [];
               if (opts.length === 0) return null;
-              const showSep =
-                idx > 0 || extras.length > 0 || methods.length > 0;
               return (
                 <div key={step.id}>
-                  {showSep && <Separator className="mb-5" />}
+                  <hr className="border-[#E5E2DD] mb-5" />
                   <section className="space-y-3">
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                        {step.attributes.name}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Escolha uma opção
-                      </p>
+                    <div className="flex items-center gap-2">
+                      <ListChecks className="h-4 w-4 text-primary" />
+                      <h3 className="text-sm font-semibold text-gray-900">{step.attributes.name}</h3>
+                      <span className="text-xs text-muted-foreground">— escolha uma opção</span>
                     </div>
                     <RadioGroup
                       value={selectedOptions[step.id] ?? ""}
@@ -537,21 +517,17 @@ export function ItemOptionsDialog({
                           <label
                             key={option.id}
                             htmlFor={`opt-${step.id}-${option.id}`}
-                            className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                            className={`flex items-center gap-3 p-3 rounded-md border cursor-pointer transition-colors ${
                               isSelected
-                                ? "border-primary bg-primary/5"
-                                : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                                ? "border-primary bg-white"
+                                : "border-[#E5E2DD] bg-white hover:border-primary/40"
                             }`}
                           >
                             <RadioGroupItem
                               value={option.id}
                               id={`opt-${step.id}-${option.id}`}
                             />
-                            <span
-                              className={`flex-1 text-sm font-medium ${
-                                isSelected ? "text-primary" : "text-gray-700"
-                              }`}
-                            >
+                            <span className="flex-1 text-sm font-medium text-gray-900">
                               {option.attributes.name}
                             </span>
                           </label>
@@ -566,22 +542,17 @@ export function ItemOptionsDialog({
             {/* Complementos Compartilhados */}
             {sharedComplements.length > 0 && (
               <>
-                {(extras.length > 0 || methods.length > 0 || steps.length > 0) && (
-                  <Separator />
-                )}
+                <hr className="border-[#E5E2DD]" />
                 <section className="space-y-4">
                   {sharedComplements.map((group: any) => {
                     const options: any[] = group.attributes?.options ?? [];
                     if (options.length === 0) return null;
                     return (
                       <div key={group.id} className="space-y-3">
-                        <div>
-                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                            {group.attributes.name}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            Selecione quantos quiser
-                          </p>
+                        <div className="flex items-center gap-2">
+                          <Plus className="h-4 w-4 text-primary" />
+                          <h3 className="text-sm font-semibold text-gray-900">{group.attributes.name}</h3>
+                          <span className="text-xs text-muted-foreground">— selecione quantos quiser</span>
                         </div>
                         <div className="space-y-2">
                           {options.map((option: any) => {
@@ -592,10 +563,10 @@ export function ItemOptionsDialog({
                               <label
                                 key={optId}
                                 htmlFor={`complement-${optId}`}
-                                className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                                className={`flex items-center gap-3 p-3 rounded-md border cursor-pointer transition-colors ${
                                   isSelected
-                                    ? "border-primary bg-primary/5"
-                                    : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                                    ? "border-primary bg-white"
+                                    : "border-[#E5E2DD] bg-white hover:border-primary/40"
                                 }`}
                               >
                                 <Checkbox
@@ -603,11 +574,7 @@ export function ItemOptionsDialog({
                                   checked={isSelected}
                                   onCheckedChange={() => toggleSharedComplement(optId)}
                                 />
-                                <span
-                                  className={`flex-1 text-sm font-medium ${
-                                    isSelected ? "text-primary" : "text-gray-700"
-                                  }`}
-                                >
+                                <span className="flex-1 text-sm font-medium text-gray-900">
                                   {option.name}
                                 </span>
                                 {price > 0 && (
@@ -627,44 +594,42 @@ export function ItemOptionsDialog({
             )}
 
             {/* Observação */}
-            {(extras.length > 0 ||
-              methods.length > 0 ||
-              steps.length > 0 ||
-              sharedComplements.length > 0) && <Separator />}
-            <section className="space-y-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Observação
-              </p>
+            <hr className="border-[#E5E2DD]" />
+            <section className="space-y-3">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-4 w-4 text-primary" />
+                <h3 className="text-sm font-semibold text-gray-900">Observação</h3>
+              </div>
               <Textarea
                 placeholder="Ex: sem cebola, bem passado..."
                 value={observation}
                 onChange={(e) => setObservation(e.target.value)}
                 rows={3}
-                className="resize-none text-sm"
+                className="resize-none text-sm bg-white"
               />
             </section>
           </div>
-        </ScrollArea>
+        </div>
 
-        {/* Footer fixo com total + botão */}
-        <div className="flex gap-3 px-6 py-4 border-t border-gray-100 bg-white">
-          <div className="flex items-center gap-1.5 mr-auto">
+        {/* Footer fixo */}
+        <div className="flex items-center gap-3 px-6 py-4 border-t border-[#E5E2DD] bg-white flex-shrink-0">
+          <div className="flex items-center gap-2 mr-auto">
             <span className="text-sm text-muted-foreground">Total:</span>
             <span className="text-xl font-bold text-primary">
               {formatPrice(totalPrice)}
             </span>
             {(extrasTotal > 0 || complementsTotal > 0) && (
               <span className="text-xs text-green-600">
-                (+{formatPrice(extrasTotal + complementsTotal)} adicionais)
+                (+{formatPrice(extrasTotal + complementsTotal)})
               </span>
             )}
           </div>
-          <Button variant="outline" onClick={onClose} className="shrink-0">
+          <Button variant="outline" onClick={onClose} className="shrink-0 border border-gray-300 cursor-pointer">
             Cancelar
           </Button>
-          <Button onClick={handleAddToCart} className="gap-2 shrink-0">
+          <Button onClick={handleAddToCart} className="gap-2 shrink-0 border border-gray-300 cursor-pointer">
             <ShoppingCart className="h-4 w-4" />
-            Adicionar ao Carrinho
+            Adicionar
           </Button>
         </div>
       </DialogContent>

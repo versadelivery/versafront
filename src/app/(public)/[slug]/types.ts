@@ -153,6 +153,7 @@ export interface CatalogItemStepOption {
   type: string;
   attributes: {
     name: string;
+    price?: string;
   };
 }
 
