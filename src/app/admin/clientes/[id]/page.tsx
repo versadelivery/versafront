@@ -2,9 +2,7 @@
 
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -13,8 +11,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Edit, User, Mail, Phone, Calendar, ShoppingCart, Ban, CheckCircle } from "lucide-react";
-import AdminHeader from "@/components/admin/catalog-header";
+import {
+  ArrowLeft,
+  Edit,
+  User,
+  Mail,
+  Phone,
+  Calendar,
+  ShoppingCart,
+  Ban,
+  CheckCircle,
+  ClipboardList,
+} from "lucide-react";
 import CustomerModal from "../components/customer-modal";
 import { useCustomerDetail } from "../hooks/useCustomerDetail";
 import { customerService } from "../services/customerService";
@@ -22,7 +30,7 @@ import { customerService } from "../services/customerService";
 const statusLabels: Record<string, string> = {
   received: "Recebido",
   accepted: "Aceito",
-  in_analysis: "Em análise",
+  in_analysis: "Em analise",
   in_preparation: "Em preparo",
   ready: "Pronto",
   left_for_delivery: "Saiu p/ entrega",
@@ -30,21 +38,32 @@ const statusLabels: Record<string, string> = {
   cancelled: "Cancelado",
 };
 
-const statusColors: Record<string, string> = {
-  received: "bg-yellow-100 text-yellow-700",
-  accepted: "bg-blue-100 text-blue-700",
-  in_analysis: "bg-orange-100 text-orange-700",
-  in_preparation: "bg-indigo-100 text-indigo-700",
-  ready: "bg-emerald-100 text-emerald-700",
-  left_for_delivery: "bg-purple-100 text-purple-700",
-  delivered: "bg-green-100 text-green-700",
-  cancelled: "bg-red-100 text-red-700",
+const statusBorderColors: Record<string, string> = {
+  received: "border-amber-400 text-amber-700",
+  accepted: "border-blue-400 text-blue-700",
+  in_analysis: "border-orange-400 text-orange-700",
+  in_preparation: "border-indigo-400 text-indigo-700",
+  ready: "border-emerald-400 text-emerald-700",
+  left_for_delivery: "border-purple-400 text-purple-700",
+  delivered: "border-green-400 text-green-700",
+  cancelled: "border-red-400 text-red-700",
+};
+
+const statusDotColors: Record<string, string> = {
+  received: "bg-amber-400",
+  accepted: "bg-blue-400",
+  in_analysis: "bg-orange-400",
+  in_preparation: "bg-indigo-400",
+  ready: "bg-emerald-400",
+  left_for_delivery: "bg-purple-400",
+  delivered: "bg-green-400",
+  cancelled: "bg-red-400",
 };
 
 const paymentLabels: Record<string, string> = {
   cash: "Dinheiro",
-  debit: "Débito",
-  credit: "Crédito",
+  debit: "Debito",
+  credit: "Credito",
   manual_pix: "PIX",
 };
 
@@ -86,9 +105,25 @@ export default function CustomerDetailPage() {
 
   if (loading) {
     return (
-      <div className="w-full px-0 sm:px-4 lg:px-6 min-h-screen pb-20">
-        <AdminHeader title="CLIENTE" description="Carregando..." className="mb-4" />
-        <div className="flex items-center justify-center py-20 text-muted-foreground">
+      <div className="min-h-screen bg-[#FAF9F7]">
+        <div className="bg-white border-b border-[#E5E2DD]">
+          <div className="max-w-[1920px] mx-auto px-4 sm:px-6">
+            <div className="flex items-center h-16">
+              <div className="flex items-center gap-4">
+                <a
+                  href="/admin/clientes"
+                  className="flex items-center gap-1.5 text-muted-foreground hover:text-gray-900 transition-colors"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                  <span className="text-sm font-medium hidden sm:block">Voltar</span>
+                </a>
+                <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
+                <h1 className="text-base sm:text-lg font-bold text-gray-900">Cliente</h1>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center justify-center py-20 text-muted-foreground text-sm">
           Carregando...
         </div>
       </div>
@@ -97,11 +132,31 @@ export default function CustomerDetailPage() {
 
   if (!customer) {
     return (
-      <div className="w-full px-0 sm:px-4 lg:px-6 min-h-screen pb-20">
-        <AdminHeader title="CLIENTE" description="Cliente não encontrado" className="mb-4" />
+      <div className="min-h-screen bg-[#FAF9F7]">
+        <div className="bg-white border-b border-[#E5E2DD]">
+          <div className="max-w-[1920px] mx-auto px-4 sm:px-6">
+            <div className="flex items-center h-16">
+              <div className="flex items-center gap-4">
+                <a
+                  href="/admin/clientes"
+                  className="flex items-center gap-1.5 text-muted-foreground hover:text-gray-900 transition-colors"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                  <span className="text-sm font-medium hidden sm:block">Voltar</span>
+                </a>
+                <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
+                <h1 className="text-base sm:text-lg font-bold text-gray-900">Cliente</h1>
+              </div>
+            </div>
+          </div>
+        </div>
         <div className="flex flex-col items-center justify-center py-20 gap-4">
-          <p className="text-muted-foreground">Cliente não encontrado</p>
-          <Button variant="outline" onClick={() => router.push("/admin/clientes")}>
+          <p className="text-sm text-muted-foreground">Cliente nao encontrado</p>
+          <Button
+            variant="outline"
+            className="rounded-md border border-gray-300 cursor-pointer"
+            onClick={() => router.push("/admin/clientes")}
+          >
             Voltar para clientes
           </Button>
         </div>
@@ -110,167 +165,185 @@ export default function CustomerDetailPage() {
   }
 
   return (
-    <div className="w-full px-0 sm:px-4 lg:px-6 min-h-screen pb-20">
-      <AdminHeader
-        title="CLIENTE"
-        description={customer.attributes.name}
-        className="mb-4"
-      />
-
-      <div className="w-full max-w-7xl mx-auto p-0 md:p-4 lg:p-6 space-y-6">
-        {/* Botão voltar */}
-        <Button
-          variant="ghost"
-          className="gap-2 text-muted-foreground hover:text-foreground"
-          onClick={() => router.push("/admin/clientes")}
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Voltar para clientes
-        </Button>
-
-        {/* Card de dados do cliente */}
-        <Card className="p-6 bg-white">
-          <div className="flex items-start justify-between mb-6">
+    <div className="min-h-screen bg-[#FAF9F7]">
+      {/* Header admin padrao */}
+      <div className="bg-white border-b border-[#E5E2DD]">
+        <div className="max-w-[1920px] mx-auto px-4 sm:px-6">
+          <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-violet-100 rounded-full flex items-center justify-center">
-                <User className="w-7 h-7 text-violet-600" />
-              </div>
-              <div>
-                <div className="flex items-center gap-3">
-                  <h2 className="text-2xl font-semibold">{customer.attributes.name}</h2>
-                  {customer.attributes.blocked ? (
-                    <Badge variant="destructive" className="border-0">
-                      Bloqueado
-                    </Badge>
-                  ) : (
-                    <Badge variant="secondary" className="bg-green-100 text-green-700 border-0">
-                      Ativo
-                    </Badge>
-                  )}
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Cliente #{customer.id}
-                </p>
-              </div>
+              <a
+                href="/admin/clientes"
+                className="flex items-center gap-1.5 text-muted-foreground hover:text-gray-900 transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                <span className="text-sm font-medium hidden sm:block">Voltar</span>
+              </a>
+              <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
+              <h1 className="text-base sm:text-lg font-bold text-gray-900 truncate max-w-[300px]">
+                {customer.attributes.name}
+              </h1>
+              {customer.attributes.blocked ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border bg-white text-sm font-semibold border-red-400 text-red-700">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                  Bloqueado
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border bg-white text-sm font-semibold border-green-400 text-green-700">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
+                  Ativo
+                </span>
+              )}
             </div>
+
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
-                className="gap-2"
+                className="gap-2 rounded-md border border-gray-300 cursor-pointer h-9 text-sm"
                 onClick={() => setIsModalOpen(true)}
               >
                 <Edit className="h-4 w-4" />
-                Editar
+                <span className="hidden sm:inline">Editar</span>
               </Button>
               <Button
                 variant="outline"
-                className={`gap-2 ${customer.attributes.blocked ? "hover:bg-green-600 hover:text-white" : "hover:bg-red-600 hover:text-white"}`}
+                className={`gap-2 rounded-md border border-gray-300 cursor-pointer h-9 text-sm ${
+                  customer.attributes.blocked
+                    ? "hover:bg-green-600 hover:text-white"
+                    : "hover:bg-red-600 hover:text-white"
+                }`}
                 onClick={handleToggleBlock}
               >
                 {customer.attributes.blocked ? (
                   <>
                     <CheckCircle className="h-4 w-4" />
-                    Desbloquear
+                    <span className="hidden sm:inline">Desbloquear</span>
                   </>
                 ) : (
                   <>
                     <Ban className="h-4 w-4" />
-                    Bloquear
+                    <span className="hidden sm:inline">Bloquear</span>
                   </>
                 )}
               </Button>
             </div>
           </div>
+        </div>
+      </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="flex items-center gap-3">
-              <Mail className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="text-xs text-muted-foreground">E-mail</p>
-                <p className="text-sm font-medium">{customer.attributes.email}</p>
+      <div className="max-w-[1920px] mx-auto px-4 sm:px-6 py-6 space-y-6">
+        {/* Card de dados do cliente */}
+        <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+          <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
+            <User className="h-4 w-4 text-primary" />
+            <h2 className="text-base font-semibold text-gray-900">Informacoes do cliente</h2>
+            <span className="text-sm text-muted-foreground ml-auto">#{customer.id}</span>
+          </div>
+          <div className="px-5 py-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-md bg-[#F0EFEB] flex items-center justify-center flex-shrink-0">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm text-muted-foreground">E-mail</p>
+                  <p className="text-sm font-medium text-gray-900 truncate">{customer.attributes.email}</p>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Phone className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="text-xs text-muted-foreground">Celular</p>
-                <p className="text-sm font-medium">{customer.attributes.cellphone}</p>
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-md bg-[#F0EFEB] flex items-center justify-center flex-shrink-0">
+                  <Phone className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm text-muted-foreground">Celular</p>
+                  <p className="text-sm font-medium text-gray-900">{customer.attributes.cellphone}</p>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Calendar className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="text-xs text-muted-foreground">Membro desde</p>
-                <p className="text-sm font-medium">
-                  {new Date(customer.attributes.created_at).toLocaleDateString("pt-BR")}
-                </p>
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-md bg-[#F0EFEB] flex items-center justify-center flex-shrink-0">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm text-muted-foreground">Membro desde</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {new Date(customer.attributes.created_at).toLocaleDateString("pt-BR")}
+                  </p>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <ShoppingCart className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="text-xs text-muted-foreground">Total de pedidos</p>
-                <p className="text-sm font-medium">{customer.attributes.orders_count}</p>
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-md bg-[#F0EFEB] flex items-center justify-center flex-shrink-0">
+                  <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm text-muted-foreground">Total de pedidos</p>
+                  <p className="text-sm font-medium text-gray-900">{customer.attributes.orders_count}</p>
+                </div>
               </div>
             </div>
           </div>
-        </Card>
+        </div>
 
-        {/* Histórico de pedidos */}
-        <Card className="p-6 bg-white">
-          <h3 className="text-lg font-semibold mb-4">Histórico de Pedidos</h3>
+        {/* Historico de pedidos */}
+        <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+          <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
+            <ClipboardList className="h-4 w-4 text-primary" />
+            <h2 className="text-base font-semibold text-gray-900">Historico de Pedidos</h2>
+          </div>
 
           {orders.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-              <ShoppingCart className="h-10 w-10 mb-3" />
-              <p className="font-medium">Nenhum pedido encontrado</p>
-              <p className="text-sm">Este cliente ainda não fez pedidos na sua loja.</p>
+              <ShoppingCart className="h-8 w-8 mb-3" />
+              <p className="text-sm font-medium">Nenhum pedido encontrado</p>
+              <p className="text-sm">Este cliente ainda nao fez pedidos na sua loja.</p>
             </div>
           ) : (
-            <div className="border rounded-lg overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/50">
-                    <TableHead className="font-semibold text-foreground py-4">#</TableHead>
-                    <TableHead className="font-semibold text-foreground py-4">Data</TableHead>
-                    <TableHead className="font-semibold text-foreground py-4">Status</TableHead>
-                    <TableHead className="font-semibold text-foreground py-4">Pagamento</TableHead>
-                    <TableHead className="font-semibold text-foreground py-4 text-right">Total</TableHead>
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-[#FAF9F7]">
+                  <TableHead className="font-semibold text-foreground py-3 text-sm">#</TableHead>
+                  <TableHead className="font-semibold text-foreground py-3 text-sm">Data</TableHead>
+                  <TableHead className="font-semibold text-foreground py-3 text-sm">Status</TableHead>
+                  <TableHead className="font-semibold text-foreground py-3 text-sm hidden sm:table-cell">Pagamento</TableHead>
+                  <TableHead className="font-semibold text-foreground py-3 text-sm text-right">Total</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {orders.map((order) => (
+                  <TableRow key={order.id} className="border-b border-[#E5E2DD] hover:bg-[#FAF9F7]">
+                    <TableCell className="py-3 text-sm font-medium">
+                      #{order.attributes.id}
+                    </TableCell>
+                    <TableCell className="py-3 text-sm">
+                      {formatDate(order.attributes.created_at)}
+                    </TableCell>
+                    <TableCell className="py-3">
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border bg-white text-sm font-semibold ${
+                          statusBorderColors[order.attributes.status] || "border-[#E5E2DD] text-gray-700"
+                        }`}
+                      >
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            statusDotColors[order.attributes.status] || "bg-gray-400"
+                          }`}
+                        />
+                        {statusLabels[order.attributes.status] || order.attributes.status}
+                      </span>
+                    </TableCell>
+                    <TableCell className="py-3 text-sm hidden sm:table-cell">
+                      {paymentLabels[order.attributes.payment_method] || order.attributes.payment_method}
+                    </TableCell>
+                    <TableCell className="py-3 text-sm text-right font-medium">
+                      {formatCurrency(order.attributes.total_price)}
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {orders.map((order) => (
-                    <TableRow key={order.id} className="hover:bg-muted/30">
-                      <TableCell className="font-medium py-4">
-                        #{order.attributes.id}
-                      </TableCell>
-                      <TableCell className="py-4">
-                        {formatDate(order.attributes.created_at)}
-                      </TableCell>
-                      <TableCell className="py-4">
-                        <Badge
-                          variant="secondary"
-                          className={`${statusColors[order.attributes.status] || "bg-gray-100 text-gray-700"} border-0`}
-                        >
-                          {statusLabels[order.attributes.status] || order.attributes.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="py-4">
-                        {paymentLabels[order.attributes.payment_method] || order.attributes.payment_method}
-                      </TableCell>
-                      <TableCell className="py-4 text-right font-medium">
-                        {formatCurrency(order.attributes.total_price)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                ))}
+              </TableBody>
+            </Table>
           )}
-        </Card>
+        </div>
       </div>
 
-      {/* Modal de edição */}
+      {/* Modal de edicao */}
       <CustomerModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

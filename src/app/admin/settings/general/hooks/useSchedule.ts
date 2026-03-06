@@ -23,24 +23,30 @@ export function useSchedule() {
   // Função para extrair apenas a hora de um timestamp
   const extractTime = (timeString: string | null): string => {
     if (!timeString) return "00:00";
-    try {
-      const date = new Date(timeString);
-      // Usa getHours() e getMinutes() em vez de getUTCHours() para respeitar o timezone local
-      const hours = date.getHours().toString().padStart(2, '0');
-      const minutes = date.getMinutes().toString().padStart(2, '0');
-      console.log(`Original: ${timeString} -> Extracted time: ${hours}:${minutes}`);
-      return `${hours}:${minutes}`;
-    } catch (error) {
-      console.error('Erro ao extrair hora:', error);
-      // Se não conseguir fazer parse, assume que já está no formato HH:MM
-      return timeString.includes(':') ? timeString : "00:00";
+
+    // Se já está no formato HH:MM, retorna diretamente
+    const directMatch = timeString.match(/^(\d{1,2}):(\d{2})$/);
+    if (directMatch) {
+      return `${directMatch[1].padStart(2, '0')}:${directMatch[2]}`;
     }
+
+    // ISO format: extrai a parte de tempo diretamente da string (sem usar new Date que aplica timezone)
+    const isoMatch = timeString.match(/T(\d{2}):(\d{2})/);
+    if (isoMatch) {
+      return `${isoMatch[1]}:${isoMatch[2]}`;
+    }
+
+    // Fallback: tenta extrair qualquer padrão HH:MM
+    const anyMatch = timeString.match(/(\d{1,2}):(\d{2})/);
+    if (anyMatch) {
+      return `${anyMatch[1].padStart(2, '0')}:${anyMatch[2]}`;
+    }
+
+    return "00:00";
   };
 
   // Função para converter os dados da API para o formato do componente
   const apiToSchedule = (data: ShopScheduleConfig): WeekSchedule => {
-    console.log('Convertendo dados da API:', data);
-    
     const schedule = {
       sunday: {
         active: data.attributes.sunday_active || false,
@@ -79,7 +85,6 @@ export function useSchedule() {
       }
     };
     
-    console.log('Schedule convertido:', schedule);
     return schedule;
   };
 
@@ -123,9 +128,7 @@ export function useSchedule() {
       setLoading(true);
       setError(null);
       const response = await scheduleService.getSchedule();
-      console.log('Raw API response:', response.data);
       const scheduleData = apiToSchedule(response.data);
-      console.log('Final schedule data:', scheduleData);
       setSchedule(scheduleData);
     } catch (err: any) {
       setError(err.message || 'Erro ao carregar horários');

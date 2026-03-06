@@ -1,19 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MessageCircle, Copy, CheckCircle } from "lucide-react";
+import { MessageCircle, Copy, CheckCircle, ArrowLeft, Bell, Code } from "lucide-react";
 import { toast } from "sonner";
 import { buildWhatsAppOrderMessage } from "@/utils/whatsapp-template";
 
-// =============================================================================
-// PREVIEW DO TEMPLATE
-// =============================================================================
-
 const PREVIEW_ORDER = {
   orderId: "1234",
-  customerName: "João Silva",
+  customerName: "Joao Silva",
   status: "em_preparo",
   items: [
     { name: "Pizza Margherita", quantity: 1, totalPrice: 45.9 },
@@ -23,10 +18,6 @@ const PREVIEW_ORDER = {
   deliveryType: "delivery" as const,
   total: 59.9,
 };
-
-// =============================================================================
-// COMPONENTE PRINCIPAL
-// =============================================================================
 
 export default function NotificationsPage() {
   const [copied, setCopied] = useState(false);
@@ -42,77 +33,91 @@ export default function NotificationsPage() {
   };
 
   return (
-    <div className="p-6 max-w-3xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Notificações WhatsApp</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Configure e visualize o template de mensagem enviado aos clientes via WhatsApp.
-        </p>
+    <div className="min-h-screen bg-[#FAF9F7]">
+      {/* Header admin padrao */}
+      <div className="bg-white border-b border-[#E5E2DD]">
+        <div className="max-w-[1920px] mx-auto px-4 sm:px-6">
+          <div className="flex items-center h-16">
+            <div className="flex items-center gap-4">
+              <a
+                href="/admin/settings"
+                className="flex items-center gap-1.5 text-muted-foreground hover:text-gray-900 transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                <span className="text-sm font-medium hidden sm:block">Voltar</span>
+              </a>
+              <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
+              <h1 className="text-base sm:text-lg font-bold text-gray-900">
+                Notificacoes WhatsApp
+              </h1>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Preview do template */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <MessageCircle className="h-5 w-5 text-green-600" />
-            Preview do Template
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-xs text-muted-foreground">
-            Esta é a mensagem que será enviada ao cliente quando o status do pedido for atualizado.
-          </p>
-
-          {/* Bolha de WhatsApp */}
-          <div className="bg-[#e9fbe5] border border-green-200 rounded-xl px-4 py-3 font-mono text-sm whitespace-pre-wrap text-gray-800 shadow-sm">
-            {previewMessage}
+      <div className="max-w-[1920px] mx-auto px-4 sm:px-6 py-6 space-y-6 max-w-3xl">
+        {/* Preview do template */}
+        <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+          <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
+            <MessageCircle className="h-4 w-4 text-primary" />
+            <h2 className="text-base font-semibold text-gray-900">Preview do Template</h2>
           </div>
+          <div className="px-5 py-5 space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Esta e a mensagem que sera enviada ao cliente quando o status do pedido for atualizado.
+            </p>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleCopy}
-            className="gap-2"
-          >
-            {copied ? (
-              <>
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                Copiado!
-              </>
-            ) : (
-              <>
-                <Copy className="h-4 w-4" />
-                Copiar template
-              </>
-            )}
-          </Button>
-        </CardContent>
-      </Card>
+            <div className="bg-[#e9fbe5] border border-green-400 rounded-md px-4 py-3 font-mono text-sm whitespace-pre-wrap text-gray-800">
+              {previewMessage}
+            </div>
 
-      {/* Variáveis disponíveis */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Variáveis do Template</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2 text-sm">
-            {[
-              { key: "orderId", desc: "Número do pedido" },
-              { key: "customerName", desc: "Nome do cliente" },
-              { key: "status", desc: "Status atual do pedido" },
-              { key: "items", desc: "Lista de itens do pedido" },
-              { key: "total", desc: "Valor total do pedido" },
-              { key: "paymentMethod", desc: "Forma de pagamento" },
-              { key: "deliveryType", desc: "Tipo de entrega (delivery/pickup)" },
-            ].map(({ key, desc }) => (
-              <div key={key} className="flex items-center gap-3">
-                <code className="bg-muted px-2 py-0.5 rounded text-xs font-mono">{key}</code>
-                <span className="text-muted-foreground">{desc}</span>
-              </div>
-            ))}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCopy}
+              className="gap-2 rounded-md border border-gray-300 cursor-pointer"
+            >
+              {copied ? (
+                <>
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  Copiado!
+                </>
+              ) : (
+                <>
+                  <Copy className="h-4 w-4" />
+                  Copiar template
+                </>
+              )}
+            </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+
+        {/* Variaveis disponiveis */}
+        <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+          <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
+            <Code className="h-4 w-4 text-primary" />
+            <h2 className="text-base font-semibold text-gray-900">Variaveis do Template</h2>
+          </div>
+          <div className="px-5 py-5">
+            <div className="space-y-2.5">
+              {[
+                { key: "orderId", desc: "Numero do pedido" },
+                { key: "customerName", desc: "Nome do cliente" },
+                { key: "status", desc: "Status atual do pedido" },
+                { key: "items", desc: "Lista de itens do pedido" },
+                { key: "total", desc: "Valor total do pedido" },
+                { key: "paymentMethod", desc: "Forma de pagamento" },
+                { key: "deliveryType", desc: "Tipo de entrega (delivery/pickup)" },
+              ].map(({ key, desc }) => (
+                <div key={key} className="flex items-center gap-3">
+                  <code className="bg-[#F0EFEB] px-2 py-0.5 rounded-md text-sm font-mono">{key}</code>
+                  <span className="text-sm text-muted-foreground">{desc}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

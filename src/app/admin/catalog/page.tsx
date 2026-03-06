@@ -1,7 +1,6 @@
 "use client";
 
 import ProtectedRoute from "@/components/protected-route";
-import AdminHeader from "@/components/admin/catalog-header";
 import { useCallback, useMemo, useState } from "react";
 import GroupModal from "@/components/admin/catalog/group-modal-create";
 import { NewItemModal } from "@/components/admin/catalog/item-modal";
@@ -10,7 +9,7 @@ import { useCatalogGroup } from "@/hooks/useCatalogGroup";
 import { useCatalogReorder } from "@/hooks/useCatalogReorder";
 import { ItemCard } from "@/components/admin/catalog/item-card";
 import { SortableItemCard } from "@/components/admin/catalog/sortable-item-card";
-import { Edit2, GripVertical, Loader2, Package, Plus } from "lucide-react";
+import { ArrowLeft, Edit2, GripVertical, Loader2, Package, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { DeleteConfirmation } from "@/components/ui/delete-confirmation";
@@ -277,35 +276,45 @@ function CatalogPage() {
 
   return (
     <ProtectedRoute>
-      <div className="flex flex-col min-h-screen">
-        <AdminHeader
-          title="CATÁLOGO"
-          description="Gerencie seu catálogo, estoque e disponibilidade dos itens"
-        />
-
-        <div className="flex-1 px-4 sm:px-6 lg:px-8 max-w-8xl mx-auto w-full">
-          <div className="flex items-center gap-1 bg-muted/30 p-1 rounded-lg w-fit mb-6">
-            <button
-              onClick={() => setTab("catalog")}
-              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
-                tab === "catalog"
-                  ? "bg-white shadow-sm text-primary border border-gray-100"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Catálogo
-            </button>
-            <button
-              onClick={() => setTab("complements")}
-              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
-                tab === "complements"
-                  ? "bg-white shadow-sm text-primary border border-gray-100"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Adicionais
-            </button>
+      <div className="min-h-screen bg-[#FAF9F7]">
+        <div className="bg-white border-b border-[#E5E2DD]">
+          <div className="max-w-[1920px] mx-auto px-4 sm:px-6">
+            <div className="flex items-center justify-between h-16">
+              <div className="flex items-center gap-4">
+                <a href="/admin" className="flex items-center gap-1.5 text-muted-foreground hover:text-gray-900 transition-colors">
+                  <ArrowLeft className="w-5 h-5" />
+                  <span className="text-sm font-medium hidden sm:block">Voltar</span>
+                </a>
+                <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
+                <h1 className="text-base sm:text-lg font-bold text-gray-900">Catálogo</h1>
+              </div>
+              <div className="flex items-center gap-1 bg-[#F0EFEB] p-1 rounded-md">
+                <button
+                  onClick={() => setTab("catalog")}
+                  className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all cursor-pointer ${
+                    tab === "catalog"
+                      ? "bg-white text-primary border border-[#E5E2DD]"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Catálogo
+                </button>
+                <button
+                  onClick={() => setTab("complements")}
+                  className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all cursor-pointer ${
+                    tab === "complements"
+                      ? "bg-white text-primary border border-[#E5E2DD]"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Adicionais
+                </button>
+              </div>
+            </div>
           </div>
+        </div>
+
+        <div className="max-w-[1920px] mx-auto px-4 sm:px-6 py-6">
 
           {tab === "catalog" ? (
             <>
@@ -346,7 +355,7 @@ function CatalogPage() {
                   <p className="text-sm text-muted-foreground text-center max-w-xs leading-relaxed">
                     Crie seu primeiro grupo para começar a organizar seus produtos
                   </p>
-                  <Button onClick={handleCreateGroup} className="gap-2">
+                  <Button onClick={handleCreateGroup} className="gap-2 border border-gray-300 cursor-pointer">
                     <Plus className="h-4 w-4" />
                     Criar Primeiro Grupo
                   </Button>
@@ -367,9 +376,9 @@ function CatalogPage() {
                         return (
                           <SortableGroupWrapper key={group.id} id={group.id} disabled={isFiltering}>
                             {({ dragHandleProps }) => (
-                              <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                              <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
                                 {/* Header do grupo */}
-                                <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                                <div className="flex items-center justify-between px-4 py-3 border-b border-[#E5E2DD]">
                                   <div className="flex items-center flex-1 min-w-0 mr-3 gap-2">
                                     {!isFiltering && (
                                       <div
@@ -384,7 +393,7 @@ function CatalogPage() {
                                         {group.attributes.name}
                                       </h2>
                                       {group.attributes.description && (
-                                        <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                                        <p className="text-sm text-muted-foreground line-clamp-1 mt-0.5">
                                           {group.attributes.description}
                                         </p>
                                       )}
@@ -398,7 +407,7 @@ function CatalogPage() {
 
                                   <div className="flex items-center gap-2">
                                     {/* Container Status/Editar do Grupo */}
-                                    <div className="bg-gray-50/80 rounded-full py-1 px-3 flex items-center border border-gray-200 gap-3">
+                                    <div className="bg-white rounded-md py-1 px-3 flex items-center border border-[#E5E2DD] gap-3">
                                       <div className="flex items-center gap-2">
                                         <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-tight">
                                           {group.attributes.active ? "Ativo" : "Pausado"}
@@ -412,7 +421,7 @@ function CatalogPage() {
                                         />
                                       </div>
 
-                                      <div className="w-[1px] h-3 bg-gray-300" />
+                                      <div className="w-[1px] h-3 bg-[#E5E2DD]" />
 
                                       <button
                                         className="cursor-pointer flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground hover:text-primary transition-colors uppercase tracking-tight"

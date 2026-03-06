@@ -56,7 +56,7 @@ const DialogContent = React.forwardRef<HTMLDivElement, DialogContentProps>(
   ({ className = '', children, ...props }, ref) => (
     <div
       ref={ref}
-      className={`bg-white rounded-xs shadow-2xl border-0 ${className}`}
+      className={`bg-white rounded-md border border-[#E5E2DD] ${className}`}
       {...props}
     >
       {children}

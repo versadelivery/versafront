@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import Image from "next/image";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Camera, Loader2, Plus, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -138,6 +139,8 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
   const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] = useState(false);
   const [showDisableWarning, setShowDisableWarning] = useState(false);
   const [disableWarningItems, setDisableWarningItems] = useState<string[]>([]);
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const formDirtyRef = useRef(false);
 
   // Refs para rastrear se havia dados salvos ao carregar
   const originalHasExtras = useRef(false);
@@ -188,10 +191,11 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
       setActive(item.active ?? true);
 
 
-      // Desconto
+      // Desconto — discountValue é o valor do desconto (price - price_with_discount), não o preço final
       if (item.price_with_discount && item.price_with_discount < item.price) {
         setHasDiscount(true);
-        setDiscountValue(item.price_with_discount.toFixed(2).replace('.', ','));
+        const discountAmount = item.price - item.price_with_discount;
+        setDiscountValue(discountAmount.toFixed(2).replace('.', ','));
         setDiscountType('fixed');
       } else {
         setHasDiscount(false);
@@ -268,6 +272,8 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
       originalHasExtras.current = item.extra?.data?.length > 0;
       originalHasPrepareMethods.current = item.prepare_method?.data?.length > 0;
       originalHasSteps.current = item.steps?.data?.length > 0;
+
+      formDirtyRef.current = false;
     }
   }, [catalogItem, isOpen]);
 
@@ -281,6 +287,8 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
     const floatValue = parseFloat(numValue) / 100;
     return floatValue.toFixed(2).replace('.', ',');
   };
+
+  const markDirty = () => { formDirtyRef.current = true; };
 
   const clearError = (field: string) => {
     if (errors[field]) {
@@ -317,6 +325,70 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
       newErrors.price = 'Preço deve ser maior que zero';
     }
 
+    // Validação de desconto
+    if (hasDiscount && discountValue) {
+      const discountNum = parseFloat(discountValue.replace(',', '.')) || 0;
+      if (discountType === 'fixed' && discountNum >= priceNumber && priceNumber > 0) {
+        newErrors.discount = 'Desconto deve ser menor que o preço original';
+      }
+      if (discountType === 'percentage' && discountNum >= 100) {
+        newErrors.discount = 'Desconto não pode ser 100% ou mais';
+      }
+    }
+
+    // Validação de campos de peso
+    if (itemType !== 'unit') {
+      const minW = parseFloat(minWeight) || 0;
+      const maxW = parseFloat(maxWeight) || 0;
+      const interval = parseFloat(measureInterval) || 0;
+
+      if (!minWeight || minW <= 0) {
+        newErrors.minWeight = 'Peso mínimo é obrigatório e deve ser maior que zero';
+      }
+      if (!maxWeight || maxW <= 0) {
+        newErrors.maxWeight = 'Peso máximo é obrigatório e deve ser maior que zero';
+      }
+      if (minW > 0 && maxW > 0 && maxW <= minW) {
+        newErrors.maxWeight = 'Peso máximo deve ser maior que o peso mínimo';
+      }
+      if (!measureInterval || interval <= 0) {
+        newErrors.measureInterval = 'Intervalo é obrigatório e deve ser maior que zero';
+      }
+      if (interval > 0 && maxW > minW && interval > (maxW - minW)) {
+        newErrors.measureInterval = 'Intervalo não pode ser maior que a diferença entre peso máximo e mínimo';
+      }
+    }
+
+    // Validação de nomes duplicados em extras
+    if (hasExtras) {
+      const filledExtras = extras.filter(e => e.name.trim() !== '');
+      const extraNames = filledExtras.map(e => e.name.trim().toLowerCase());
+      const duplicateExtras = extraNames.filter((n, i) => extraNames.indexOf(n) !== i);
+      if (duplicateExtras.length > 0) {
+        newErrors.extras = `Adicional duplicado: "${duplicateExtras[0]}"`;
+      }
+    }
+
+    // Validação de nomes duplicados em modos de preparo
+    if (hasPrepareMethods) {
+      const filledMethods = prepareMethods.filter(m => m.name.trim() !== '');
+      const methodNames = filledMethods.map(m => m.name.trim().toLowerCase());
+      const duplicateMethods = methodNames.filter((n, i) => methodNames.indexOf(n) !== i);
+      if (duplicateMethods.length > 0) {
+        newErrors.prepareMethods = `Modo de preparo duplicado: "${duplicateMethods[0]}"`;
+      }
+    }
+
+    // Validação de nomes duplicados em etapas
+    if (hasSteps) {
+      const filledSteps = steps.filter(s => s.name.trim() !== '');
+      const stepNames = filledSteps.map(s => s.name.trim().toLowerCase());
+      const duplicateSteps = stepNames.filter((n, i) => stepNames.indexOf(n) !== i);
+      if (duplicateSteps.length > 0) {
+        newErrors.steps = `Etapa duplicada: "${duplicateSteps[0]}"`;
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -349,11 +421,13 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
 
   const handleAddExtra = () => {
     setExtras([...extras, { name: '', price: '' }]);
+    markDirty();
   };
 
   const handleRemoveExtra = (index: number) => {
     if (extras.length > 1) {
       setExtras(extras.filter((_, i) => i !== index));
+      markDirty();
     }
   };
 
@@ -361,6 +435,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
     const newExtras = [...extras];
     newExtras[index] = { ...newExtras[index], [field]: value };
     setExtras(newExtras);
+    markDirty();
   };
 
   // =============================================================================
@@ -369,11 +444,13 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
 
   const handleAddPrepareMethod = () => {
     setPrepareMethods([...prepareMethods, { name: '' }]);
+    markDirty();
   };
 
   const handleRemovePrepareMethod = (index: number) => {
     if (prepareMethods.length > 1) {
       setPrepareMethods(prepareMethods.filter((_, i) => i !== index));
+      markDirty();
     }
   };
 
@@ -381,6 +458,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
     const newMethods = [...prepareMethods];
     newMethods[index] = { ...newMethods[index], name: value };
     setPrepareMethods(newMethods);
+    markDirty();
   };
 
   // =============================================================================
@@ -389,11 +467,13 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
 
   const handleAddStep = () => {
     setSteps([...steps, { name: '', options: [{ name: '' }] }]);
+    markDirty();
   };
 
   const handleRemoveStep = (index: number) => {
     if (steps.length > 1) {
       setSteps(steps.filter((_, i) => i !== index));
+      markDirty();
     }
   };
 
@@ -401,12 +481,14 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
     const newSteps = [...steps];
     newSteps[index] = { ...newSteps[index], name: value };
     setSteps(newSteps);
+    markDirty();
   };
 
   const handleAddStepOption = (stepIndex: number) => {
     const newSteps = [...steps];
     newSteps[stepIndex].options.push({ name: '' });
     setSteps(newSteps);
+    markDirty();
   };
 
   const handleRemoveStepOption = (stepIndex: number, optionIndex: number) => {
@@ -414,6 +496,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
     if (newSteps[stepIndex].options.length > 1) {
       newSteps[stepIndex].options = newSteps[stepIndex].options.filter((_, i) => i !== optionIndex);
       setSteps(newSteps);
+      markDirty();
     }
   };
 
@@ -421,6 +504,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
     const newSteps = [...steps];
     newSteps[stepIndex].options[optionIndex] = { ...newSteps[stepIndex].options[optionIndex], name: value };
     setSteps(newSteps);
+    markDirty();
   };
 
   // =============================================================================
@@ -542,6 +626,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
       queryClient.invalidateQueries({ queryKey: ['catalog'] });
       queryClient.invalidateQueries({ queryKey: ['catalog-item', id] });
       toast.success('Item atualizado com sucesso');
+      formDirtyRef.current = false;
       onOpenChange(false);
     } catch {
       toast.error('Erro ao atualizar item');
@@ -575,6 +660,16 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
 
   const handleClose = () => {
     if (isUpdating) return;
+    if (formDirtyRef.current) {
+      setShowCloseConfirm(true);
+      return;
+    }
+    onOpenChange(false);
+  };
+
+  const handleConfirmClose = () => {
+    setShowCloseConfirm(false);
+    formDirtyRef.current = false;
     onOpenChange(false);
   };
 
@@ -621,7 +716,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
               <span className="text-sm font-medium">Item Ativo</span>
               <span className="text-xs text-muted-foreground">O item aparecerá no cardápio se estiver ativo</span>
             </div>
-            <Switch checked={active} onCheckedChange={setActive} />
+            <Switch checked={active} onCheckedChange={(v) => { setActive(v); markDirty(); }} />
           </div>
 
 
@@ -630,7 +725,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
             <label className="text-sm font-medium">Nome *</label>
             <Input
               value={name}
-              onChange={(e) => { setName(e.target.value); clearError('name'); }}
+              onChange={(e) => { setName(e.target.value); clearError('name'); markDirty(); }}
               placeholder="Ex: Hambúrguer Artesanal"
               className={errors.name ? 'border-destructive' : ''}
             />
@@ -642,7 +737,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
             <label className="text-sm font-medium">Descrição *</label>
             <Textarea
               value={description}
-              onChange={(e) => { setDescription(e.target.value); clearError('description'); }}
+              onChange={(e) => { setDescription(e.target.value); clearError('description'); markDirty(); }}
               placeholder="Descreva o item..."
               rows={3}
               className={errors.description ? 'border-destructive' : ''}
@@ -688,17 +783,20 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
             <>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Peso Mínimo</label>
-                  <Input type="number" value={minWeight} onChange={(e) => setMinWeight(e.target.value)} placeholder="0" />
+                  <label className="text-sm font-medium">Peso Mínimo *</label>
+                  <Input type="number" value={minWeight} onChange={(e) => { setMinWeight(e.target.value); clearError('minWeight'); markDirty(); }} placeholder="0" className={errors.minWeight ? 'border-destructive' : ''} />
+                  {errors.minWeight && <p className="text-xs text-destructive">{errors.minWeight}</p>}
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Peso Máximo</label>
-                  <Input type="number" value={maxWeight} onChange={(e) => setMaxWeight(e.target.value)} placeholder="0" />
+                  <label className="text-sm font-medium">Peso Máximo *</label>
+                  <Input type="number" value={maxWeight} onChange={(e) => { setMaxWeight(e.target.value); clearError('maxWeight'); markDirty(); }} placeholder="0" className={errors.maxWeight ? 'border-destructive' : ''} />
+                  {errors.maxWeight && <p className="text-xs text-destructive">{errors.maxWeight}</p>}
                 </div>
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">Intervalo de Medida</label>
-                <Input type="number" value={measureInterval} onChange={(e) => setMeasureInterval(e.target.value)} placeholder="0" />
+                <label className="text-sm font-medium">Intervalo de Medida *</label>
+                <Input type="number" value={measureInterval} onChange={(e) => { setMeasureInterval(e.target.value); clearError('measureInterval'); markDirty(); }} placeholder="0" className={errors.measureInterval ? 'border-destructive' : ''} />
+                {errors.measureInterval && <p className="text-xs text-destructive">{errors.measureInterval}</p>}
               </div>
             </>
           )}
@@ -712,7 +810,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">R$</span>
               <Input
                 value={price}
-                onChange={(e) => { setPrice(formatPrice(e.target.value)); clearError('price'); }}
+                onChange={(e) => { setPrice(formatPrice(e.target.value)); clearError('price'); markDirty(); }}
                 placeholder="0,00"
                 className={`pl-10 ${errors.price ? 'border-destructive' : ''}`}
               />
@@ -723,7 +821,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
           {/* Desconto */}
           <div className="flex items-center justify-between rounded-lg p-3 bg-muted/40">
             <span className="text-sm font-medium">Produto com desconto?</span>
-            <Switch checked={hasDiscount} onCheckedChange={(v) => { setHasDiscount(v); if (!v) setDiscountValue(''); }} />
+            <Switch checked={hasDiscount} onCheckedChange={(v) => { setHasDiscount(v); if (!v) setDiscountValue(''); if (v) setPromotionTag(true); markDirty(); }} />
           </div>
 
           {hasDiscount && (
@@ -759,9 +857,13 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
                     } else {
                       setDiscountValue(formatPrice(e.target.value));
                     }
+                    clearError('discount');
+                    markDirty();
                   }}
                   placeholder={discountType === 'percentage' ? '0' : '0,00'}
+                  className={errors.discount ? 'border-destructive' : ''}
                 />
+                {errors.discount && <p className="text-xs text-destructive">{errors.discount}</p>}
               </div>
 
               {priceNumber > 0 && (
@@ -933,6 +1035,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
               <button type="button" onClick={handleAddExtra} className="w-full border border-dashed border-gray-300 rounded-lg py-2 flex items-center justify-center gap-1.5 text-sm text-primary hover:bg-muted/30 transition-colors">
                 <Plus className="h-4 w-4" /> Adicionar
               </button>
+              {errors.extras && <p className="text-xs text-destructive">{errors.extras}</p>}
             </div>
           )}
 
@@ -963,6 +1066,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
               <button type="button" onClick={handleAddPrepareMethod} className="w-full border border-dashed border-gray-300 rounded-lg py-2 flex items-center justify-center gap-1.5 text-sm text-primary hover:bg-muted/30 transition-colors">
                 <Plus className="h-4 w-4" /> Adicionar
               </button>
+              {errors.prepareMethods && <p className="text-xs text-destructive">{errors.prepareMethods}</p>}
             </div>
           )}
 
@@ -1016,6 +1120,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
               <button type="button" onClick={handleAddStep} className="w-full border border-dashed border-gray-300 rounded-lg py-2 flex items-center justify-center gap-1.5 text-sm text-primary hover:bg-muted/30 transition-colors">
                 <Plus className="h-4 w-4" /> Nova etapa
               </button>
+              {errors.steps && <p className="text-xs text-destructive">{errors.steps}</p>}
             </div>
           )}
         </div>
@@ -1063,6 +1168,21 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={showCloseConfirm} onOpenChange={setShowCloseConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Descartar alterações?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja fechar? As alterações não salvas serão perdidas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Continuar editando</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmClose}>Descartar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }

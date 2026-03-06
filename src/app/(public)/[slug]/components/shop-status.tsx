@@ -19,14 +19,14 @@ export default function ShopStatus({ shopStatusData, shopScheduleConfig }: ShopS
 
   if (loading) {
     return (
-      <span className="border-l-2 border-gray-300 pl-2 text-xs font-medium text-gray-400">
+      <span className="border-l-2 border-gray-300 pl-2.5 text-sm font-medium text-gray-400">
         Verificando...
       </span>
     );
   }
 
   return (
-    <span className={`border-l-2 pl-2 text-xs font-semibold ${
+    <span className={`border-l-2 pl-2.5 text-sm font-semibold ${
       shopStatus.isOpen
         ? 'border-green-500 text-green-600'
         : 'border-red-500 text-red-600'

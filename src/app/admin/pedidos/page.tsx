@@ -190,6 +190,7 @@ export default function OrderManagement() {
   const { subscribeToAdminOrders, updateOrder, updateOrderDetails, isConnected } = useAdminActionCable();
   const { orderAccepted, orderReady, newOrder } = useRestaurantSounds();
   const seenOrderIdsRef = useRef<Set<string>>(new Set());
+  const isInitialLoadRef = useRef(true);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -246,21 +247,27 @@ export default function OrderManagement() {
         // atualizar cache com dados vindos do servidor
         socketOrdersCache.current = new Map(convertedOrders.map(o => [o.id, o]));
         
-        // Verificar se há novos pedidos (pedidos que não existiam antes)
-        const newOrders = convertedOrders.filter(socketOrder => 
-          !prevOrders.some(prevOrder => prevOrder.id === socketOrder.id)
-        );
+        // No primeiro broadcast, apenas registrar os pedidos existentes sem tocar som
+        if (isInitialLoadRef.current) {
+          isInitialLoadRef.current = false;
+          convertedOrders.forEach(order => seenOrderIdsRef.current.add(order.id));
+        } else {
+          // Verificar se há novos pedidos (pedidos que não existiam antes)
+          const newOrders = convertedOrders.filter(socketOrder =>
+            !prevOrders.some(prevOrder => prevOrder.id === socketOrder.id)
+          );
 
-        // Tocar som de novo pedido para pedidos genuinamente novos
-        newOrders.forEach(order => {
-          if (!seenOrderIdsRef.current.has(order.id)) {
-            seenOrderIdsRef.current.add(order.id);
-            newOrder();
-          }
-        });
+          // Tocar som de novo pedido para pedidos genuinamente novos
+          newOrders.forEach(order => {
+            if (!seenOrderIdsRef.current.has(order.id)) {
+              seenOrderIdsRef.current.add(order.id);
+              newOrder();
+            }
+          });
 
-        // Registrar todos os pedidos atuais como vistos
-        convertedOrders.forEach(order => seenOrderIdsRef.current.add(order.id));
+          // Registrar todos os pedidos atuais como vistos
+          convertedOrders.forEach(order => seenOrderIdsRef.current.add(order.id));
+        }
 
         // Mesclar mantendo alterações locais recentes
         const now = Date.now();
@@ -514,49 +521,47 @@ export default function OrderManagement() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#FAF9F7] flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-slate-600">Carregando informações do pedido...</p>
+          <div className="animate-spin rounded-full h-10 w-10 border-2 border-primary border-t-transparent mx-auto mb-4"></div>
+          <p className="text-sm text-muted-foreground">Carregando pedidos...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-[1920px] mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          
-          {/* Left: Voltar + Título */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <a
-              href="/admin"
-              className="group flex items-center gap-2 text-muted-foreground hover:text-primary transition-all duration-300 px-3 py-2 rounded-lg hover:bg-primary/10"
-            >
-              <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform duration-300" />
-              <span className="text-sm font-medium whitespace-nowrap">Voltar</span>
-            </a>
+    <div className="min-h-screen bg-[#FAF9F7]">
+      <div className="bg-white border-b border-[#E5E2DD]">
+        <div className="max-w-[1920px] mx-auto px-4 sm:px-6">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-4">
+              <a
+                href="/admin"
+                className="flex items-center gap-1.5 text-muted-foreground hover:text-gray-900 transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                <span className="text-sm font-medium hidden sm:block">Voltar</span>
+              </a>
+              <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
+              <h1 className="text-base sm:text-lg font-bold text-gray-900">
+                Pedidos
+              </h1>
+            </div>
 
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">
-              Gerenciamento de Pedidos
-            </h1>
-          </div>
-
-          {/* Right: Botão PDV */}
-          <div className="flex-shrink-0">
             <Button
               onClick={() => window.location.href = '/admin/pdv'}
-              className="flex items-center gap-2 bg-primary hover:bg-primary/90 whitespace-nowrap"
+              className="flex items-center gap-2 bg-primary hover:bg-primary/90 rounded-md h-9 text-sm"
             >
               <SquarePen className="h-4 w-4" />
-              Novo Pedido (PDV)
+              <span className="hidden sm:inline">Novo Pedido</span>
+              <span className="sm:hidden">PDV</span>
             </Button>
           </div>
         </div>
       </div>
 
-      <div className="max-w-[1920px] mx-auto p-6">
+      <div className="max-w-[1920px] mx-auto px-4 sm:px-6 py-4">
         <Tabs defaultValue="painel" className="w-full">
           <TabsList>
             <TabsTrigger value="painel">Painel</TabsTrigger>
@@ -571,22 +576,23 @@ export default function OrderManagement() {
                   const isExpanded = expandedColumns[status];
                   
                   return (
-                    <div key={status} className="bg-white rounded-2xl shadow-sm">
+                    <div key={status} className="bg-white rounded-md border border-[#E5E2DD]">
                       <button
                         onClick={() => toggleColumn(status)}
-                        className="w-full p-4 flex items-center justify-between text-center border-b-0"
+                        className="w-full px-4 py-3 flex items-center justify-between"
                       >
-                        <div className="flex items-center gap-2 mx-auto">
-                          {config.icon}
-                          <span className="font-bold text-base text-gray-800">
-                            {config.title} ({statusOrders.length})
+                        <div className="flex items-center gap-2">
+                          <span className={`w-2 h-2 rounded-full ${config.color}`} />
+                          <span className="font-semibold text-sm text-gray-900">
+                            {config.title}
                           </span>
+                          <span className="text-sm text-muted-foreground">({statusOrders.length})</span>
                         </div>
-                        {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                        {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
                       </button>
-                      
+
                       {isExpanded && (
-                        <div className="px-4 pb-4">
+                        <div className="px-3 pb-3 border-t border-[#E5E2DD]">
                           {statusOrders.map(order => (
                             <OrderCard
                               key={order.id}
@@ -611,28 +617,29 @@ export default function OrderManagement() {
                 })}
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {Object.entries(statusConfig).map(([status, config]) => {
                   const statusOrders = getOrdersByStatus(status as Order['status']);
                   const isExpanded = expandedColumns[status];
-                  
+
                   return (
-                    <div key={status} className="bg-white rounded-2xl shadow-sm">
+                    <div key={status} className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
                       <button
                         onClick={() => toggleColumn(status)}
-                        className="w-full p-4 flex items-center justify-between text-center border-b-0"
+                        className="w-full px-4 py-3 flex items-center justify-between border-b border-[#E5E2DD]"
                       >
-                        <div className="flex items-center gap-2 mx-auto">
-                          {config.icon}
-                          <h2 className="font-bold text-base text-gray-800">
-                            {config.title} ({statusOrders.length})
+                        <div className="flex items-center gap-2">
+                          <span className={`w-2 h-2 rounded-full ${config.color}`} />
+                          <h2 className="font-semibold text-sm text-gray-900">
+                            {config.title}
                           </h2>
+                          <span className="text-sm text-muted-foreground">({statusOrders.length})</span>
                         </div>
-                        {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                        {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
                       </button>
-                      
+
                       {isExpanded && (
-                        <div className="p-4 max-h-[80vh] overflow-y-auto">
+                        <div className="p-3 max-h-[80vh] overflow-y-auto bg-[#FAF9F7]">
                           {statusOrders.map(order => (
                             <OrderCard
                               key={order.id}
@@ -660,7 +667,7 @@ export default function OrderManagement() {
           </TabsContent>
 
           <TabsContent value="kds">
-            <div className="bg-white rounded-xs border shadow-sm p-4">
+            <div className="bg-white rounded-md border border-[#E5E2DD] p-4">
               <KDSBoard
                 orders={orders.map((o) => ({
                   id: o.id,
@@ -693,6 +700,7 @@ export default function OrderManagement() {
             total: selectedOrder.amount,
             withdrawal: selectedOrder.deliveryType === 'pickup',
             payment_method: selectedOrder.socketData.attributes.payment_method,
+            delivery_fee: parseFloat(selectedOrder.socketData.attributes.delivery_fee || '0'),
             address: selectedOrder.socketData.attributes.address.data ? {
               address: selectedOrder.socketData.attributes.address.data.attributes.address,
               neighborhood: selectedOrder.socketData.attributes.address.data.attributes.neighborhood,

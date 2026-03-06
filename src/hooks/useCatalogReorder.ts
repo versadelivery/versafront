@@ -14,9 +14,16 @@ export const useCatalogReorder = () => {
 
       queryClient.setQueryData(["catalog"], (old: any) => {
         if (!old) return old;
-        const reordered = orderedIds
+        const sorted = orderedIds
           .map((id) => old.data.find((g: any) => g.id === id))
           .filter(Boolean);
+        const reordered = sorted.map((group: any, index: number) => ({
+          ...group,
+          attributes: {
+            ...group.attributes,
+            priority: sorted.length - index,
+          },
+        }));
         return { ...old, data: reordered };
       });
 

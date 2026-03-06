@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { X, UtensilsCrossed, Loader2, Clock, Users, ShoppingCart, DollarSign } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -103,11 +102,11 @@ export default function CloseTableModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md bg-white shadow-2xl">
+      <div className="w-full max-w-md bg-white rounded-md border border-[#E5E2DD]">
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-white border border-red-400 rounded-md flex items-center justify-center">
                 <UtensilsCrossed className="w-5 h-5 text-red-600" />
               </div>
               <div>
@@ -130,7 +129,7 @@ export default function CloseTableModal({
             </Button>
           </div>
 
-          <div className="bg-muted/50 rounded-lg p-4 mb-6 space-y-2">
+          <div className="bg-[#FAF9F7] rounded-md border border-[#E5E2DD] p-4 mb-6 space-y-2">
             {sessionAttrs.customer_name && (
               <div className="flex items-center gap-2 text-sm">
                 <Users className="w-4 h-4 text-muted-foreground" />
@@ -169,7 +168,7 @@ export default function CloseTableModal({
                   Pedidos ({sessionAttrs.orders.length})
                 </span>
               </div>
-              <div className="bg-muted/50 rounded-lg divide-y max-h-48 overflow-y-auto">
+              <div className="bg-[#FAF9F7] rounded-md border border-[#E5E2DD] divide-y divide-[#E5E2DD] max-h-48 overflow-y-auto">
                 {sessionAttrs.orders.map((order) => (
                   <div key={order.id} className="px-3 py-2 text-sm">
                     <div className="flex items-center justify-between">
@@ -194,7 +193,7 @@ export default function CloseTableModal({
                   </div>
                 ))}
               </div>
-              <div className="flex justify-between items-center mt-3 px-1 py-2 border-t">
+              <div className="flex justify-between items-center mt-3 px-1 py-2 border-t border-[#E5E2DD]">
                 <div className="flex items-center gap-2">
                   <DollarSign className="w-4 h-4 text-foreground" />
                   <span className="text-sm font-semibold">Total</span>
@@ -249,14 +248,14 @@ export default function CloseTableModal({
                 type="button"
                 variant="outline"
                 onClick={onClose}
-                className="flex-1 h-11"
+                className="flex-1 h-11 border border-gray-300 cursor-pointer"
                 disabled={isSubmitting}
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
-                className="flex-1 h-11 bg-red-600 hover:bg-red-700 text-white"
+                className="flex-1 h-11 bg-red-600 hover:bg-red-700 text-white border border-gray-300 cursor-pointer"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (
@@ -271,7 +270,7 @@ export default function CloseTableModal({
             </div>
           </form>
         </div>
-      </Card>
+      </div>
     </div>
   );
 }

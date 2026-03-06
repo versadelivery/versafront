@@ -122,24 +122,22 @@ export function SoundSettings({ onSettingsChange }: SoundSettingsProps) {
         variant="outline"
         size="sm"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2"
+        className="flex items-center gap-2 h-10 rounded-md border-[#E5E2DD] cursor-pointer"
       >
         {settings.enabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-        Som
+        <span className="text-sm">Som</span>
       </Button>
 
       {isOpen && (
-        <Card className="absolute top-full right-0 mt-2 w-80 z-50 shadow-lg">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              {settings.enabled ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
-              Configurações de Som
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <div className="absolute top-full right-0 mt-2 w-80 z-50 bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+          <div className="px-4 py-3 border-b border-[#E5E2DD] flex items-center gap-2">
+            {settings.enabled ? <Bell className="h-4 w-4 text-primary" /> : <BellOff className="h-4 w-4 text-muted-foreground" />}
+            <span className="text-sm font-semibold text-gray-900">Configuracoes de Som</span>
+          </div>
+          <div className="px-4 py-4 space-y-4">
             {/* Som Global */}
             <div className="flex items-center justify-between">
-              <Label htmlFor="global-sound" className="text-sm">
+              <Label htmlFor="global-sound" className="text-sm font-medium text-gray-700">
                 Ativar Sons
               </Label>
               <Switch
@@ -151,7 +149,7 @@ export function SoundSettings({ onSettingsChange }: SoundSettingsProps) {
 
             {/* Volume */}
             <div className="space-y-2">
-              <Label className="text-sm">Volume</Label>
+              <Label className="text-sm font-medium text-gray-700">Volume</Label>
               <Slider
                 value={[settings.volume]}
                 onValueChange={updateVolume}
@@ -161,18 +159,20 @@ export function SoundSettings({ onSettingsChange }: SoundSettingsProps) {
                 className="w-full"
                 disabled={!settings.enabled}
               />
-              <div className="text-xs text-gray-500 text-center">
+              <div className="text-sm text-muted-foreground text-center">
                 {Math.round(settings.volume * 100)}%
               </div>
             </div>
 
-            {/* Sons Específicos */}
+            <hr className="border-[#E5E2DD]" />
+
+            {/* Sons Especificos */}
             <div className="space-y-3">
-              <Label className="text-sm font-medium">Sons Disponíveis</Label>
-              
-              <div className="space-y-2">
+              <Label className="text-sm font-semibold text-gray-900">Sons Disponiveis</Label>
+
+              <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="order-accepted" className="text-sm">
+                  <Label htmlFor="order-accepted" className="text-sm text-gray-700">
                     Pedido Aceito
                   </Label>
                   <div className="flex items-center gap-2">
@@ -187,7 +187,7 @@ export function SoundSettings({ onSettingsChange }: SoundSettingsProps) {
                       size="sm"
                       onClick={() => testSound('orderAccepted')}
                       disabled={!settings.enabled || !settings.orderAccepted}
-                      className="h-6 px-2 text-xs"
+                      className="h-7 px-2.5 text-xs rounded-md border-[#E5E2DD] cursor-pointer"
                     >
                       Testar
                     </Button>
@@ -195,7 +195,7 @@ export function SoundSettings({ onSettingsChange }: SoundSettingsProps) {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="order-ready" className="text-sm">
+                  <Label htmlFor="order-ready" className="text-sm text-gray-700">
                     Pedido Pronto
                   </Label>
                   <div className="flex items-center gap-2">
@@ -210,7 +210,7 @@ export function SoundSettings({ onSettingsChange }: SoundSettingsProps) {
                       size="sm"
                       onClick={() => testSound('orderReady')}
                       disabled={!settings.enabled || !settings.orderReady}
-                      className="h-6 px-2 text-xs"
+                      className="h-7 px-2.5 text-xs rounded-md border-[#E5E2DD] cursor-pointer"
                     >
                       Testar
                     </Button>
@@ -218,7 +218,7 @@ export function SoundSettings({ onSettingsChange }: SoundSettingsProps) {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="new-order" className="text-sm">
+                  <Label htmlFor="new-order" className="text-sm text-gray-700">
                     Novo Pedido
                   </Label>
                   <div className="flex items-center gap-2">
@@ -233,7 +233,7 @@ export function SoundSettings({ onSettingsChange }: SoundSettingsProps) {
                       size="sm"
                       onClick={() => testSound('newOrder')}
                       disabled={!settings.enabled || !settings.newOrder}
-                      className="h-6 px-2 text-xs"
+                      className="h-7 px-2.5 text-xs rounded-md border-[#E5E2DD] cursor-pointer"
                     >
                       Testar
                     </Button>
@@ -241,8 +241,8 @@ export function SoundSettings({ onSettingsChange }: SoundSettingsProps) {
                 </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
     </div>
   );

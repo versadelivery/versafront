@@ -65,16 +65,18 @@ export const ShopStatusProvider: React.FC<ShopStatusProviderProps> = ({
     return () => clearInterval(interval);
   }, []);
 
-  // Escutar mudanças no localStorage para atualizar quando o shop for carregado
+  // Escutar mudanças no localStorage (cross-tab) e custom event (same-tab)
   useEffect(() => {
     const handleStorageChange = () => {
       checkStatus();
     };
 
     window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('shop-updated', handleStorageChange);
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('shop-updated', handleStorageChange);
     };
   }, []);
 

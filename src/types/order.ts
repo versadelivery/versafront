@@ -9,6 +9,7 @@ export interface OrderAddress {
 export interface OrderItem {
   catalog_item_id: number;
   quantity: number;
+  weight?: number;
   observation?: string;
   selected_extras?: string[];
   selected_methods?: string[];
