@@ -5,7 +5,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { KDSBoard } from '@/components/admin/kds-board';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import {
   Clock,
   Truck,
@@ -645,13 +644,14 @@ export default function OrderManagement() {
                   value={quickSearchId}
                   onChange={(e) => setQuickSearchId(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleQuickSearch()}
-                  className="pl-9 w-40 sm:w-48"
+                  className="pl-9 w-40 sm:w-48 rounded-md border-[#E5E2DD]"
                 />
               </div>
               <Button
                 onClick={handleQuickSearch}
                 variant="outline"
                 size="default"
+                className="rounded-md border border-gray-300 cursor-pointer"
               >
                 Ir
               </Button>
@@ -665,12 +665,12 @@ export default function OrderManagement() {
                 placeholder="Buscar por ID, nome do cliente ou telefone..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
+                className="pl-9 rounded-md border-[#E5E2DD]"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -681,28 +681,28 @@ export default function OrderManagement() {
             <Button
               variant={showFilters ? 'default' : 'outline'}
               onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-2 whitespace-nowrap"
+              className="flex items-center gap-2 whitespace-nowrap rounded-md border border-gray-300 cursor-pointer"
             >
               <Filter className="h-4 w-4" />
               Filtros
               {hasActiveFilters && (
-                <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs rounded-full">
+                <span className="ml-1 h-5 w-5 flex items-center justify-center text-xs rounded-md bg-primary text-white font-semibold">
                   !
-                </Badge>
+                </span>
               )}
             </Button>
           </div>
 
           {/* Painel de filtros avançados */}
           {showFilters && (
-            <div className="flex flex-col sm:flex-row gap-3 p-4 bg-white rounded-lg border border-[#E5E2DD] shadow-sm">
+            <div className="flex flex-col sm:flex-row gap-3 p-4 bg-white rounded-md border border-[#E5E2DD]">
               <div className="flex-1">
                 <label className="text-sm font-medium text-gray-700 mb-1 block">Tipo</label>
                 <Select value={filterDeliveryType} onValueChange={(v) => setFilterDeliveryType(v as any)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="rounded-md border-[#E5E2DD] cursor-pointer">
                     <SelectValue placeholder="Todos" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="rounded-md">
                     <SelectItem value="all">Todos</SelectItem>
                     <SelectItem value="delivery">Delivery</SelectItem>
                     <SelectItem value="pickup">Retirada</SelectItem>
@@ -713,10 +713,10 @@ export default function OrderManagement() {
               <div className="flex-1">
                 <label className="text-sm font-medium text-gray-700 mb-1 block">Pagamento</label>
                 <Select value={filterPaymentMethod} onValueChange={(v) => setFilterPaymentMethod(v as any)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="rounded-md border-[#E5E2DD] cursor-pointer">
                     <SelectValue placeholder="Todos" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="rounded-md">
                     <SelectItem value="all">Todos</SelectItem>
                     <SelectItem value="manual_pix">PIX</SelectItem>
                     <SelectItem value="credit">Cartão de Crédito</SelectItem>
@@ -729,10 +729,10 @@ export default function OrderManagement() {
               <div className="flex-1">
                 <label className="text-sm font-medium text-gray-700 mb-1 block">Status</label>
                 <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as any)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="rounded-md border-[#E5E2DD] cursor-pointer">
                     <SelectValue placeholder="Todos" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="rounded-md">
                     <SelectItem value="all">Todos</SelectItem>
                     <SelectItem value="recebidos">Recebidos</SelectItem>
                     <SelectItem value="aceitos">Aceitos</SelectItem>
@@ -748,7 +748,7 @@ export default function OrderManagement() {
 
               {hasActiveFilters && (
                 <div className="flex items-end">
-                  <Button variant="ghost" onClick={clearAllFilters} className="text-sm text-muted-foreground">
+                  <Button variant="ghost" onClick={clearAllFilters} className="text-sm text-muted-foreground rounded-md cursor-pointer">
                     <X className="h-4 w-4 mr-1" />
                     Limpar filtros
                   </Button>
