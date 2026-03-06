@@ -235,7 +235,7 @@ export function useAdminActionCable() {
           id: orderId,
           ...(status && { status }),
           ...(paid_at !== undefined && { paid_at }),
-          ...(deliveryPerson && { delivery_person: deliveryPerson })
+          ...(deliveryPerson !== undefined && { delivery_person: deliveryPerson })
         }
       };
 

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useUsers } from '@/app/admin/settings/users/hooks/useUsers';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,11 +22,19 @@ import {
   Tag,
   Timer
 } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { usePrepTimer } from '@/hooks/use-prep-timer';
 import { cn } from '@/lib/utils';
 import { formatPrice } from '@/app/(public)/[slug]/format-price';
 import { User } from '@/app/admin/settings/users/services/userService';
 import CancelOrderModal from './cancel-order-modal';
+import SelectDeliveryPersonModal from './select-delivery-person-modal';
 import { buildWhatsAppOrderMessage } from '@/utils/whatsapp-template';
 
 const getPaymentMethodLabel = (method: string) => {
@@ -59,6 +67,7 @@ interface OrderCardProps {
   config: any;
   estimatedPrepTime?: number | null;
   estimatedDeliveryTime?: number | null;
+  defaultDeliveryPersonName?: string | null;
   onUpdateOrderStatus: (orderId: string, newStatus: Order['status']) => void;
   onTogglePaymentStatus: (orderId: string) => void;
   onDeliveryPersonChange: (orderId: string, deliveryPerson: string) => void;
@@ -71,6 +80,7 @@ export default function OrderCard({
   config,
   estimatedPrepTime,
   estimatedDeliveryTime,
+  defaultDeliveryPersonName,
   onUpdateOrderStatus,
   onTogglePaymentStatus,
   onDeliveryPersonChange,
@@ -99,12 +109,29 @@ export default function OrderCard({
   const isEntregue = order.status === 'entregue';
   const isCancelled = order.status === 'cancelled';
   
-  // Estado para controlar o modal de cancelamento
+  // Estado para controlar os modais
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showDeliveryPersonModal, setShowDeliveryPersonModal] = useState(false);
+
+  // Statuses onde o dropdown de entregador fica disponível
+  const showDeliveryDropdown = ['recebidos', 'aceitos', 'em_analise', 'em_preparo', 'prontos'].includes(order.status);
+
+  // Pré-selecionar motoboy padrão quando pedido de delivery não tem entregador
+  const defaultAppliedRef = useRef(false);
+  useEffect(() => {
+    if (
+      !defaultAppliedRef.current &&
+      defaultDeliveryPersonName &&
+      !order.deliveryPerson &&
+      order.deliveryType === 'delivery'
+    ) {
+      defaultAppliedRef.current = true;
+      onDeliveryPersonChange(order.id, defaultDeliveryPersonName);
+    }
+  }, [defaultDeliveryPersonName, order.deliveryPerson, order.deliveryType, order.id]);
   
-  const handleDeliveryPersonChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newDeliveryPerson = e.target.value;
-    onDeliveryPersonChange(order.id, newDeliveryPerson);
+  const handleDeliveryPersonChange = (value: string) => {
+    onDeliveryPersonChange(order.id, value === "none" ? "" : value);
   };
 
   const handleOpenOrderDetails = () => {
@@ -124,6 +151,18 @@ export default function OrderCard({
 
   // Função para marcar como saiu para entrega
   const handleLeftForDelivery = async () => {
+    if (!order.deliveryPerson) {
+      setShowDeliveryPersonModal(true);
+      return;
+    }
+    if (onUpdateOrderStatus) {
+      await onUpdateOrderStatus(order.id, 'saiu');
+    }
+  };
+
+  // Confirmar saída com entregador selecionado no modal
+  const handleConfirmDeliveryAndDispatch = async (deliveryPersonName: string) => {
+    onDeliveryPersonChange(order.id, deliveryPersonName);
     if (onUpdateOrderStatus) {
       await onUpdateOrderStatus(order.id, 'saiu');
     }
@@ -461,28 +500,37 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
         )}
 
         <div className={cn("text-xs", isPronto ? "text-white/90" : "text-gray-600", "mb-3")}>
-          {order.status === 'recebidos' ? (
+          {showDeliveryDropdown ? (
             <div className="flex items-center gap-2">
               <span>Entregador:</span>
-              <select
-                value={order.deliveryPerson || ''}
-                onChange={handleDeliveryPersonChange}
-                className="border border-[#E5E2DD] rounded-md pl-3 pr-7 py-2 text-sm bg-white max-w-[200px] truncate cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%239ca3af%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-[length:16px] bg-[right_6px_center] bg-no-repeat"
+              <Select
+                value={order.deliveryPerson || "none"}
+                onValueChange={handleDeliveryPersonChange}
                 disabled={loadingUsers}
               >
-                <option value="">Selecione um entregador</option>
-                {deliveryPeople.map(deliveryPerson => (
-                  <option key={deliveryPerson.id} value={deliveryPerson.attributes.name}>
-                    {deliveryPerson.attributes.name}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className={cn(
+                  "h-8 text-sm max-w-[200px] rounded-md cursor-pointer",
+                  isPronto ? "border-white/30 bg-white/10 text-white" : "border-[#E5E2DD] bg-white"
+                )}>
+                  <SelectValue placeholder="Selecione um entregador" />
+                </SelectTrigger>
+                <SelectContent className="rounded-md border-[#E5E2DD]">
+                  <SelectItem value="none">Selecione um entregador</SelectItem>
+                  {deliveryPeople.map(deliveryPerson => (
+                    <SelectItem key={deliveryPerson.id} value={deliveryPerson.attributes.name}>
+                      {deliveryPerson.attributes.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               {loadingUsers && <span className="text-xs text-gray-400 ml-2">Carregando...</span>}
             </div>
           ) : (
-            <>
-              Entregador: <span className={cn("font-semibold", isPronto && "text-white")}>{order.deliveryPerson}</span>
-            </>
+            order.deliveryPerson ? (
+              <>
+                Entregador: <span className={cn("font-semibold", isPronto && "text-white")}>{order.deliveryPerson}</span>
+              </>
+            ) : null
           )}
         </div>
 
@@ -812,6 +860,15 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
       orderId={order.id}
       customerName={order.customerName}
       onCancelOrder={handleConfirmCancel}
+    />
+
+    {/* Modal de Seleção de Entregador */}
+    <SelectDeliveryPersonModal
+      open={showDeliveryPersonModal}
+      onOpenChange={setShowDeliveryPersonModal}
+      deliveryPeople={deliveryPeople}
+      onConfirm={handleConfirmDeliveryAndDispatch}
+      defaultValue={defaultDeliveryPersonName || ''}
     />
     </>
   );

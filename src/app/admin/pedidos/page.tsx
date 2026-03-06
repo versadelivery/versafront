@@ -97,7 +97,7 @@ const convertSocketDataToOrder = (socketOrder: AdminOrderData): Order => {
     customerName,
     amount: totalPrice,
     time,
-    deliveryPerson: undefined, // Será definido pelo admin
+    deliveryPerson: socketOrder.attributes.delivery_person ?? undefined,
     status: statusMap[socketOrder.attributes.status] || 'recebidos',
     paymentStatus,
     deliveryType: socketOrder.attributes.withdrawal ? 'pickup' : 'delivery',
@@ -201,7 +201,7 @@ export default function OrderManagement() {
   const [isMobile, setIsMobile] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const isUpdatingRef = useRef<Record<string, boolean>>({});
-  const lastLocalChangeRef = useRef<Record<string, { statusAt?: number; paymentAt?: number }>>({});
+  const lastLocalChangeRef = useRef<Record<string, { statusAt?: number; paymentAt?: number; deliveryAt?: number }>>({});
   const socketOrdersCache = useRef<Map<string, Order>>(new Map());
 
   const { subscribeToAdminOrders, updateOrder, updateOrderDetails, isConnected } = useAdminActionCable();
@@ -248,13 +248,14 @@ export default function OrderManagement() {
               const last = lastLocalChangeRef.current[incoming.id] || {};
               const keepLocalStatus = last.statusAt !== undefined && (now - (last.statusAt as number)) < 5000; // Aumentado para 5 segundos
               const keepLocalPayment = last.paymentAt !== undefined && (now - (last.paymentAt as number)) < 5000;
-              
-              
+              const keepLocalDelivery = last.deliveryAt !== undefined && (now - (last.deliveryAt as number)) < 5000;
+
               return {
                 ...current,
                 ...incoming,
                 status: keepLocalStatus ? current.status : incoming.status,
                 paymentStatus: keepLocalPayment ? current.paymentStatus : incoming.paymentStatus,
+                deliveryPerson: keepLocalDelivery ? current.deliveryPerson : incoming.deliveryPerson,
               };
             });
           });
@@ -299,16 +300,18 @@ export default function OrderManagement() {
           const last = lastLocalChangeRef.current[incoming.id] || {};
           const keepLocalStatus = last.statusAt !== undefined && (now - (last.statusAt as number)) < 5000; // Aumentado para 5 segundos
           const keepLocalPayment = last.paymentAt !== undefined && (now - (last.paymentAt as number)) < 5000;
-          
+          const keepLocalDelivery = last.deliveryAt !== undefined && (now - (last.deliveryAt as number)) < 5000;
+
           return {
             ...current,
             ...incoming,
             status: keepLocalStatus ? current.status : incoming.status,
             paymentStatus: keepLocalPayment ? current.paymentStatus : incoming.paymentStatus,
+            deliveryPerson: keepLocalDelivery ? current.deliveryPerson : incoming.deliveryPerson,
           };
         });
       });
-      
+
       setIsLoading(false);
     });
 
@@ -497,11 +500,17 @@ export default function OrderManagement() {
   }, [updateOrder]);
 
   const updateDeliveryPerson = (orderId: string, deliveryPerson: string) => {
-    setOrders(orders.map((order: Order) => 
-      order.id === orderId 
+    lastLocalChangeRef.current[orderId] = {
+      ...(lastLocalChangeRef.current[orderId] || {}),
+      deliveryAt: Date.now(),
+    };
+    setOrders(orders.map((order: Order) =>
+      order.id === orderId
         ? { ...order, deliveryPerson }
         : order
     ));
+    // Enviar para o backend via websocket
+    updateOrder(orderId, undefined, undefined, deliveryPerson);
   };
 
   const cancelOrder = useCallback(async (orderId: string, reason: string, reasonType?: string) => {
@@ -845,6 +854,7 @@ export default function OrderManagement() {
                               config={config}
                               estimatedPrepTime={estimatedPrepTime}
                               estimatedDeliveryTime={estimatedDeliveryTime}
+                              defaultDeliveryPersonName={shop?.default_delivery_person_name}
                               onUpdateOrderStatus={updateOrderStatus}
                               onTogglePaymentStatus={togglePaymentStatus}
                               onDeliveryPersonChange={updateDeliveryPerson}
@@ -894,6 +904,7 @@ export default function OrderManagement() {
                               config={config}
                               estimatedPrepTime={estimatedPrepTime}
                               estimatedDeliveryTime={estimatedDeliveryTime}
+                              defaultDeliveryPersonName={shop?.default_delivery_person_name}
                               onUpdateOrderStatus={updateOrderStatus}
                               onTogglePaymentStatus={togglePaymentStatus}
                               onDeliveryPersonChange={updateDeliveryPerson}

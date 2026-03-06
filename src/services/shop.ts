@@ -23,6 +23,8 @@ export interface ShopAttributes {
   estimated_prep_time?: number | null;
   estimated_delivery_time?: number | null;
   business_category?: string | null;
+  default_delivery_person_id?: number | string | null;
+  default_delivery_person_name?: string | null;
 }
 
 export interface ShopResponse {

@@ -6,6 +6,13 @@ import { formatCurrency, cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   X,
   Copy,
   Save,
@@ -155,7 +162,7 @@ export default function OrderDetailsModal({
   onCancelOrder,
 }: OrderDetailsModalProps) {
   const { users, loading: loadingUsers } = useUsers();
-  const deliveryPeople = users.filter((u: any) => u.role === 'delivery_man');
+  const deliveryPeople = users.filter((u: any) => u.attributes?.role === 'delivery_man');
   const statusInfo = getStatusInfo(order.status);
   const paymentLabel = getPaymentMethodLabel(order.payment_method);
   const deliveryFee = order.delivery_fee ?? 0;
@@ -275,13 +282,13 @@ export default function OrderDetailsModal({
     setEditingField(null);
   };
 
-  const handleDeliveryPersonChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value;
-    setSelectedDeliveryPerson(value);
+  const handleDeliveryPersonChange = async (value: string) => {
+    const resolvedValue = value === "none" ? "" : value;
+    setSelectedDeliveryPerson(resolvedValue);
     if (onUpdateOrder) {
       setIsSavingDelivery(true);
       try {
-        await onUpdateOrder(order.id, { deliveryPerson: value });
+        await onUpdateOrder(order.id, { deliveryPerson: resolvedValue });
       } catch (error) {
         console.error('Erro ao atualizar entregador:', error);
       } finally {
@@ -661,19 +668,23 @@ ${order.items.map((item) => `${item.quantity}x ${item.name} - ${formatCurrency(i
                   <div className="space-y-2">
                     <div className="flex items-center justify-between py-1.5">
                       <span className="text-sm text-muted-foreground">Entregador</span>
-                      <select
-                        value={selectedDeliveryPerson}
-                        onChange={handleDeliveryPersonChange}
+                      <Select
+                        value={selectedDeliveryPerson || "none"}
+                        onValueChange={handleDeliveryPersonChange}
                         disabled={isSavingDelivery || loadingUsers}
-                        className="border border-[#E5E2DD] rounded-md px-3 py-2 text-sm bg-white max-w-[180px] truncate cursor-pointer"
                       >
-                        <option value="">Selecione</option>
-                        {deliveryPeople.map((person: any) => (
-                          <option key={person.id} value={person.name}>
-                            {person.name}
-                          </option>
-                        ))}
-                      </select>
+                        <SelectTrigger className="h-9 text-sm border-[#E5E2DD] rounded-md bg-white max-w-[180px] cursor-pointer">
+                          <SelectValue placeholder="Selecione" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-md border-[#E5E2DD]">
+                          <SelectItem value="none">Selecione</SelectItem>
+                          {deliveryPeople.map((person: any) => (
+                            <SelectItem key={person.id} value={person.attributes?.name || person.name}>
+                              {person.attributes?.name || person.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     {isSavingDelivery && (
                       <p className="text-xs text-muted-foreground">Salvando...</p>

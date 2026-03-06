@@ -5,10 +5,18 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { ImageIcon, Upload, MapPin, Phone, Mail, ShoppingBag, Wallet, Settings, Clock, ArrowLeft, Timer, Tag } from "lucide-react";
+import { ImageIcon, Upload, MapPin, Phone, Mail, ShoppingBag, Wallet, Settings, Clock, ArrowLeft, Timer, Tag, Truck } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useShop } from "@/hooks/use-shop";
 import { ShopAttributes } from "@/services/shop";
+import { useUsers } from "@/app/admin/settings/users/hooks/useUsers";
 import ScheduleSettings from "./components/ScheduleSettings";
 import { usePhoneMask } from "@/hooks/use-phone-mask";
 import Link from "next/link";
@@ -21,6 +29,8 @@ export default function GeneralSettingsPage() {
   const [initialData, setInitialData] = useState<Partial<ShopAttributes>>({});
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const { formatPhone } = usePhoneMask();
+  const { users, loading: loadingUsers } = useUsers();
+  const deliveryPeople = users.filter((u: any) => u.attributes?.role === 'delivery_man');
 
   useEffect(() => {
     if (shop && !isLoading && !isUpdating) {
@@ -37,7 +47,8 @@ export default function GeneralSettingsPage() {
         auto_open_cash_register_time: shop.auto_open_cash_register_time ?? null,
         estimated_prep_time: shop.estimated_prep_time ?? 30,
         estimated_delivery_time: shop.estimated_delivery_time ?? 40,
-        business_category: shop.business_category || "other"
+        business_category: shop.business_category || "other",
+        default_delivery_person_id: shop.default_delivery_person_id || ""
       };
 
       if (!(initialData as any).slug || (initialData as any).slug !== shop.slug) {
@@ -118,7 +129,10 @@ export default function GeneralSettingsPage() {
     if (!hasChanges) return;
     if (!validateForm()) return;
 
-    updateShop(formData);
+    updateShop({
+      ...formData,
+      business_category: formData.business_category || "other",
+    });
   };
 
   const handleCancel = () => {
@@ -270,34 +284,36 @@ export default function GeneralSettingsPage() {
                       <Tag className="w-3.5 h-3.5 text-muted-foreground" />
                       Categoria do Negócio
                     </Label>
-                    <select
-                      id="business_category"
-                      name="business_category"
+                    <Select
                       value={formData.business_category || "other"}
-                      onChange={(e) => setFormData(prev => ({ ...prev, business_category: e.target.value }))}
-                      className="h-10 w-full rounded-md border border-[#E5E2DD] bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-0"
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, business_category: value }))}
                     >
-                      <option value="other">Outro</option>
-                      <option value="hamburgueria">Hamburgueria</option>
-                      <option value="pizzaria">Pizzaria</option>
-                      <option value="acaiteria">Açaiteria</option>
-                      <option value="padaria">Padaria</option>
-                      <option value="confeitaria">Confeitaria</option>
-                      <option value="restaurante">Restaurante</option>
-                      <option value="lanchonete">Lanchonete</option>
-                      <option value="sorveteria">Sorveteria</option>
-                      <option value="cafeteria">Cafeteria</option>
-                      <option value="bar">Bar</option>
-                      <option value="doceria">Doceria</option>
-                      <option value="sushi">Sushi / Japonesa</option>
-                      <option value="churrascaria">Churrascaria</option>
-                      <option value="pastelaria">Pastelaria</option>
-                      <option value="marmitaria">Marmitaria</option>
-                      <option value="petiscaria">Petiscaria</option>
-                      <option value="emporio">Empório</option>
-                      <option value="mercado">Mercado</option>
-                      <option value="conveniencia">Conveniência</option>
-                    </select>
+                      <SelectTrigger className="h-10 text-sm border-[#E5E2DD] rounded-md bg-white cursor-pointer">
+                        <SelectValue placeholder="Selecione a categoria" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-md border-[#E5E2DD]">
+                        <SelectItem value="other">Outro</SelectItem>
+                        <SelectItem value="hamburgueria">Hamburgueria</SelectItem>
+                        <SelectItem value="pizzaria">Pizzaria</SelectItem>
+                        <SelectItem value="acaiteria">Açaiteria</SelectItem>
+                        <SelectItem value="padaria">Padaria</SelectItem>
+                        <SelectItem value="confeitaria">Confeitaria</SelectItem>
+                        <SelectItem value="restaurante">Restaurante</SelectItem>
+                        <SelectItem value="lanchonete">Lanchonete</SelectItem>
+                        <SelectItem value="sorveteria">Sorveteria</SelectItem>
+                        <SelectItem value="cafeteria">Cafeteria</SelectItem>
+                        <SelectItem value="bar">Bar</SelectItem>
+                        <SelectItem value="doceria">Doceria</SelectItem>
+                        <SelectItem value="sushi">Sushi / Japonesa</SelectItem>
+                        <SelectItem value="churrascaria">Churrascaria</SelectItem>
+                        <SelectItem value="pastelaria">Pastelaria</SelectItem>
+                        <SelectItem value="marmitaria">Marmitaria</SelectItem>
+                        <SelectItem value="petiscaria">Petiscaria</SelectItem>
+                        <SelectItem value="emporio">Empório</SelectItem>
+                        <SelectItem value="mercado">Mercado</SelectItem>
+                        <SelectItem value="conveniencia">Conveniência</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <p className="text-xs text-muted-foreground">
                       Usado para categorização na listagem pública de lojas
                     </p>
@@ -360,6 +376,42 @@ export default function GeneralSettingsPage() {
                     className="h-10 rounded-md border-[#E5E2DD]"
                   />
                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* SectionCard: Entregador Padrão */}
+          <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+            <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
+              <Truck className="h-4 w-4 text-primary" />
+              <h2 className="text-base font-semibold text-gray-900">Entregador Padrão</h2>
+            </div>
+            <div className="px-5 py-5">
+              <p className="text-sm text-muted-foreground mb-4">
+                Selecione o entregador que será pré-selecionado automaticamente ao despachar pedidos. O admin pode trocar antes de confirmar.
+              </p>
+              <div className="max-w-md">
+                <Label htmlFor="default_delivery_person_id" className="text-sm font-medium">
+                  Entregador
+                </Label>
+                <Select
+                  value={formData.default_delivery_person_id ? String(formData.default_delivery_person_id) : "none"}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, default_delivery_person_id: value === "none" ? null : value }))}
+                  disabled={loadingUsers}
+                >
+                  <SelectTrigger className="mt-1.5 h-10 w-full text-sm border-[#E5E2DD] rounded-md bg-white cursor-pointer">
+                    <SelectValue placeholder="Nenhum (selecionar manualmente)" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-md border-[#E5E2DD]">
+                    <SelectItem value="none">Nenhum (selecionar manualmente)</SelectItem>
+                    {deliveryPeople.map((person: any) => (
+                      <SelectItem key={person.id} value={String(person.id)}>
+                        {person.attributes.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {loadingUsers && <p className="text-xs text-muted-foreground mt-1">Carregando entregadores...</p>}
               </div>
             </div>
           </div>
