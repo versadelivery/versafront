@@ -15,6 +15,7 @@ export interface ShopResponse {
       group_color?: string | null
       catalog_layout?: string | null
       accent_color?: string | null
+      business_category?: string | null
       shop_delivery_config: {
         data: {
           id: string

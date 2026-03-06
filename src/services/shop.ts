@@ -22,6 +22,7 @@ export interface ShopAttributes {
   accent_color?: string | null;
   estimated_prep_time?: number | null;
   estimated_delivery_time?: number | null;
+  business_category?: string | null;
 }
 
 export interface ShopResponse {

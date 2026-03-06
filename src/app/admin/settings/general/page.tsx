@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { ImageIcon, Upload, MapPin, Phone, Mail, ShoppingBag, Wallet, Settings, Clock, ArrowLeft, Timer } from "lucide-react";
+import { ImageIcon, Upload, MapPin, Phone, Mail, ShoppingBag, Wallet, Settings, Clock, ArrowLeft, Timer, Tag } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useShop } from "@/hooks/use-shop";
 import { ShopAttributes } from "@/services/shop";
@@ -36,7 +36,8 @@ export default function GeneralSettingsPage() {
         auto_open_cash_register: shop.auto_open_cash_register ?? false,
         auto_open_cash_register_time: shop.auto_open_cash_register_time ?? null,
         estimated_prep_time: shop.estimated_prep_time ?? 30,
-        estimated_delivery_time: shop.estimated_delivery_time ?? 40
+        estimated_delivery_time: shop.estimated_delivery_time ?? 40,
+        business_category: shop.business_category || "other"
       };
 
       if (!(initialData as any).slug || (initialData as any).slug !== shop.slug) {
@@ -262,6 +263,43 @@ export default function GeneralSettingsPage() {
                     />
                     <p className="text-xs text-muted-foreground">
                       Uma breve descrição que aparecerá para seus clientes
+                    </p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="business_category" className="flex items-center gap-2 text-sm font-medium">
+                      <Tag className="w-3.5 h-3.5 text-muted-foreground" />
+                      Categoria do Negócio
+                    </Label>
+                    <select
+                      id="business_category"
+                      name="business_category"
+                      value={formData.business_category || "other"}
+                      onChange={(e) => setFormData(prev => ({ ...prev, business_category: e.target.value }))}
+                      className="h-10 w-full rounded-md border border-[#E5E2DD] bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-0"
+                    >
+                      <option value="other">Outro</option>
+                      <option value="hamburgueria">Hamburgueria</option>
+                      <option value="pizzaria">Pizzaria</option>
+                      <option value="acaiteria">Açaiteria</option>
+                      <option value="padaria">Padaria</option>
+                      <option value="confeitaria">Confeitaria</option>
+                      <option value="restaurante">Restaurante</option>
+                      <option value="lanchonete">Lanchonete</option>
+                      <option value="sorveteria">Sorveteria</option>
+                      <option value="cafeteria">Cafeteria</option>
+                      <option value="bar">Bar</option>
+                      <option value="doceria">Doceria</option>
+                      <option value="sushi">Sushi / Japonesa</option>
+                      <option value="churrascaria">Churrascaria</option>
+                      <option value="pastelaria">Pastelaria</option>
+                      <option value="marmitaria">Marmitaria</option>
+                      <option value="petiscaria">Petiscaria</option>
+                      <option value="emporio">Empório</option>
+                      <option value="mercado">Mercado</option>
+                      <option value="conveniencia">Conveniência</option>
+                    </select>
+                    <p className="text-xs text-muted-foreground">
+                      Usado para categorização na listagem pública de lojas
                     </p>
                   </div>
                 </div>
