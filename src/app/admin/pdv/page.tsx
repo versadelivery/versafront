@@ -69,7 +69,7 @@ export default function PDVPage() {
     reference: "",
   });
   const [orderType, setOrderType] = useState<"delivery" | "pickup">("delivery");
-  const [paymentMethod, setPaymentMethod] = useState<"cash" | "card" | "pix">("card");
+  const [paymentMethod, setPaymentMethod] = useState<"cash" | "credit" | "debit" | "pix">("credit");
   const [changeAmount, setChangeAmount] = useState("");
   const [notes, setNotes] = useState("");
   const [isProcessingOrder, setIsProcessingOrder] = useState(false);
@@ -176,8 +176,8 @@ export default function PDVPage() {
   const deliveryFee = calculateDeliveryFee();
   const minimumOrderValue = deliveryConfig?.minimum_order_value ?? 0;
 
-  const pdvPaymentMethodToApi = (m: "cash" | "card" | "pix") =>
-    m === "cash" ? "cash" : m === "card" ? "credit" : "manual_pix";
+  const pdvPaymentMethodToApi = (m: "cash" | "credit" | "debit" | "pix") =>
+    m === "cash" ? "cash" : m === "pix" ? "manual_pix" : m;
 
   const calculatePdvPaymentAdjustment = (): number => {
     const attrs = paymentMethodsData?.data?.attributes;
@@ -194,8 +194,8 @@ export default function PDVPage() {
 
   const paymentAdjustment = calculatePdvPaymentAdjustment();
 
-  const getPaymentMethodLabel = (m: "cash" | "card" | "pix") =>
-    m === "cash" ? "Dinheiro" : m === "card" ? "Cartão" : "PIX";
+  const getPaymentMethodLabel = (m: "cash" | "credit" | "debit" | "pix") =>
+    m === "cash" ? "Dinheiro" : m === "credit" ? "Crédito" : m === "debit" ? "Débito" : "PIX";
 
   // Clique no item — abre modal se tiver opções ou for peso, senão adiciona direto
   const handleItemClick = (item: any) => {
@@ -386,9 +386,10 @@ export default function PDVPage() {
   // Métodos de pagamento disponíveis (dinâmico baseado na config da loja)
   const availablePaymentMethods = (() => {
     const attrs = paymentMethodsData?.data?.attributes;
-    const methods: { value: "cash" | "card" | "pix"; label: string }[] = [];
-    if (!attrs) return [{ value: "card" as const, label: "Cartão" }, { value: "cash" as const, label: "Dinheiro" }, { value: "pix" as const, label: "PIX" }];
-    if (attrs.credit || attrs.debit) methods.push({ value: "card", label: "Cartão" });
+    const methods: { value: "cash" | "credit" | "debit" | "pix"; label: string }[] = [];
+    if (!attrs) return [{ value: "credit" as const, label: "Crédito" }, { value: "debit" as const, label: "Débito" }, { value: "cash" as const, label: "Dinheiro" }, { value: "pix" as const, label: "PIX" }];
+    if (attrs.credit) methods.push({ value: "credit", label: "Crédito" });
+    if (attrs.debit) methods.push({ value: "debit", label: "Débito" });
     if (attrs.cash) methods.push({ value: "cash", label: "Dinheiro" });
     if (attrs.manual_pix) methods.push({ value: "pix", label: "PIX" });
     return methods;
@@ -401,7 +402,7 @@ export default function PDVPage() {
     }
   }, [paymentMethodsData]);
 
-  const getAdjustmentLabel = (m: "cash" | "card" | "pix"): string => {
+  const getAdjustmentLabel = (m: "cash" | "credit" | "debit" | "pix"): string => {
     const attrs = paymentMethodsData?.data?.attributes;
     if (!attrs) return "";
     const attrKey = pdvPaymentMethodToApi(m);
@@ -492,11 +493,7 @@ export default function PDVPage() {
           shop_id: Number(shopId) || 0,
           withdrawal: isTableOrder ? true : orderType === "pickup",
           payment_method:
-            paymentMethod === "cash"
-              ? ("cash" as const)
-              : paymentMethod === "card"
-              ? ("credit" as const)
-              : ("manual_pix" as const),
+            paymentMethod === "pix" ? ("manual_pix" as const) : (paymentMethod as "cash" | "credit" | "debit"),
           customer_name: isTableOrder
             ? (selectedSession?.attributes.customer_name || `Mesa ${selectedSession?.attributes.table_number}`)
             : customerInfo.name.trim(),
@@ -1381,7 +1378,7 @@ export default function PDVPage() {
                 <Label className="text-sm">Método de Pagamento</Label>
                 <Select
                   value={paymentMethod}
-                  onValueChange={(v: "cash" | "card" | "pix") => setPaymentMethod(v)}
+                  onValueChange={(v: "cash" | "credit" | "debit" | "pix") => setPaymentMethod(v)}
                 >
                   <SelectTrigger>
                     <SelectValue />
