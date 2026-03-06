@@ -109,7 +109,7 @@ export function ItemCard({ item }: ItemCardProps) {
   return (
     <>
       <div
-        className={`bg-white rounded-xl border border-gray-200 overflow-hidden cursor-pointer hover:shadow-md transition-shadow duration-200 flex flex-col h-full ${!item.active ? 'opacity-60' : ''}`}
+        className={`bg-white rounded-md border border-[#E5E2DD] overflow-hidden cursor-pointer hover:border-primary/40 transition-colors duration-200 flex flex-col h-full ${!item.active ? 'opacity-60' : ''}`}
         onClick={() => setIsDetailsOpen(true)}
       >
         {/* Imagem */}
@@ -123,7 +123,7 @@ export function ItemCard({ item }: ItemCardProps) {
               className="object-cover"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gray-50">
+            <div className="w-full h-full flex items-center justify-center bg-[#F0EFEB]">
               <ImageOff className="h-8 w-8 text-muted-foreground/20" />
             </div>
           )}
@@ -139,7 +139,7 @@ export function ItemCard({ item }: ItemCardProps) {
           <div className="absolute top-2 right-2 flex items-center gap-2">
             {/* Copiar Link */}
             <button
-              className="bg-white/95 cursor-pointer backdrop-blur-sm rounded-full p-2 flex items-center justify-center shadow-sm border border-gray-100 hover:bg-white transition-colors group"
+              className="bg-white/95 cursor-pointer backdrop-blur-sm rounded-full p-2 flex items-center justify-center  border border-[#E5E2DD] hover:bg-white transition-colors group"
               onClick={handleCopyLink}
               title="Copiar link do item"
             >
@@ -148,7 +148,7 @@ export function ItemCard({ item }: ItemCardProps) {
 
             {/* Duplicar */}
             <button
-              className="bg-white/95 cursor-pointer backdrop-blur-sm rounded-full p-2 flex items-center justify-center shadow-sm border border-gray-100 hover:bg-white transition-colors group"
+              className="bg-white/95 cursor-pointer backdrop-blur-sm rounded-full p-2 flex items-center justify-center  border border-[#E5E2DD] hover:bg-white transition-colors group"
               onClick={handleDuplicate}
               disabled={isDuplicatingItem}
               title="Duplicar item"
@@ -162,7 +162,7 @@ export function ItemCard({ item }: ItemCardProps) {
 
             {/* Container Ativo + Editar */}
             <div 
-              className="bg-white/95 backdrop-blur-sm rounded-full py-1 px-2.5 flex items-center shadow-sm border border-gray-100 gap-2"
+              className="bg-white/95 backdrop-blur-sm rounded-full py-1 px-2.5 flex items-center  border border-[#E5E2DD] gap-2"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center -ml-1">
@@ -174,7 +174,7 @@ export function ItemCard({ item }: ItemCardProps) {
                   className="scale-[0.55] origin-center"
                 />
               </div>
-              <div className="w-[1px] h-3 bg-gray-200" />
+              <div className="w-[1px] h-3 bg-[#E5E2DD]" />
               <button
                 className="cursor-pointer text-muted-foreground hover:text-primary transition-colors py-0.5"
                 onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}
@@ -230,35 +230,35 @@ export function ItemCard({ item }: ItemCardProps) {
           {(item.new_tag || item.best_seller_tag || item.highlight || item.promotion_tag) && (
             <div className="flex flex-wrap gap-1 mt-1">
               {item.new_tag && (
-                <span className="bg-green-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">NOVO!</span>
+                <span className="bg-green-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md">NOVO!</span>
               )}
               {item.best_seller_tag && (
-                <span className="bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">+VENDIDO</span>
+                <span className="bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md">+VENDIDO</span>
               )}
               {item.highlight && (
-                <span className="bg-blue-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">DESTAQUE</span>
+                <span className="bg-blue-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md">DESTAQUE</span>
               )}
               {item.promotion_tag && (
-                <span className="bg-primary text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">PROMOÇÃO</span>
+                <span className="bg-primary text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md">PROMOÇÃO</span>
               )}
             </div>
           )}
 
           {/* Indicadores */}
           {hasIndicators && (
-            <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-gray-100">
+            <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-[#E5E2DD]">
               {hasExtras && (
-                <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center">
+                <div className="w-5 h-5 rounded-full bg-white border border-primary/30 flex items-center justify-center">
                   <Plus className="h-2.5 w-2.5 text-primary" />
                 </div>
               )}
               {hasPrepareMethods && (
-                <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center">
+                <div className="w-5 h-5 rounded-full bg-white border border-primary/30 flex items-center justify-center">
                   <ChefHat className="h-2.5 w-2.5 text-primary" />
                 </div>
               )}
               {hasSteps && (
-                <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center">
+                <div className="w-5 h-5 rounded-full bg-white border border-primary/30 flex items-center justify-center">
                   <ListChecks className="h-2.5 w-2.5 text-primary" />
                 </div>
               )}

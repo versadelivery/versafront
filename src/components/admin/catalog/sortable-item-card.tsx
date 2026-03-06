@@ -30,7 +30,7 @@ export function SortableItemCard({ id, item }: SortableItemCardProps) {
   return (
     <div ref={setNodeRef} style={style} className="relative group/sortable">
       <div
-        className="absolute top-2 left-2 z-10 bg-white/95 backdrop-blur-sm rounded-full p-1.5 shadow-sm border border-gray-100 cursor-grab active:cursor-grabbing opacity-0 group-hover/sortable:opacity-100 transition-opacity"
+        className="absolute top-2 left-2 z-10 bg-white/95 backdrop-blur-sm rounded-full p-1.5 border border-[#E5E2DD] cursor-grab active:cursor-grabbing opacity-0 group-hover/sortable:opacity-100 transition-opacity"
         {...attributes}
         {...listeners}
       >

@@ -88,7 +88,7 @@ export function CatalogFilters({
       </Select>
 
       {/* Divider */}
-      <div className="hidden sm:block w-px h-6 bg-gray-200" />
+      <div className="hidden sm:block w-px h-6 bg-[#E5E2DD]" />
 
       {/* Tags */}
       <div className="flex items-center gap-2">
@@ -107,7 +107,7 @@ export function CatalogFilters({
       </div>
 
       {/* Divider */}
-      <div className="hidden sm:block w-px h-6 bg-gray-200" />
+      <div className="hidden sm:block w-px h-6 bg-[#E5E2DD]" />
 
       {/* Tipo de Item */}
       <Select value={filters.itemType} onValueChange={(v) => onItemTypeChange(v as ItemTypeFilter)}>
@@ -123,7 +123,7 @@ export function CatalogFilters({
       </Select>
 
       {/* Divider */}
-      <div className="hidden sm:block w-px h-6 bg-gray-200" />
+      <div className="hidden sm:block w-px h-6 bg-[#E5E2DD]" />
 
       {/* Com Desconto */}
       <label className="flex items-center gap-1.5 text-sm text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors">
