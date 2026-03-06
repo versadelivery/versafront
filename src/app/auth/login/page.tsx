@@ -56,15 +56,15 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <Button variant="link" type="button" onClick={handleGoBack} className="absolute top-8 left-8 text-primary hover:bg-primary hover:text-white transition-colors">
-        <ArrowLeft className="h-4 w-4" />
+    <div className="min-h-screen flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-[#FAF9F7]">
+      <Button variant="link" type="button" onClick={handleGoBack} className="absolute top-8 left-8 text-primary hover:bg-primary hover:text-white transition-colors rounded-md">
+        <ArrowLeft className="h-5 w-5" />
         Voltar
       </Button>
       <div className="mb-2 text-center flex flex-col items-center">
         <Image src={logoInline} width={260} alt="Versa Delivery" className="-mb-16" />
       </div>
-      <div className="w-full max-w-lg space-y-6 bg-white px-8 rounded-xs flex flex-col items-center">
+      <div className="w-full max-w-lg space-y-6 bg-white px-8 rounded-md flex flex-col items-center">
         <div className="text-center w-full">
           <h2 className="text-3xl font-bold tracking-tight text-gray-700">
             Bem-vindo de volta :)
@@ -83,7 +83,7 @@ function LoginForm() {
                 type="email"
                 {...registerForm("email")}
                 placeholder="johndoe@mail.com"
-                className="rounded-xs bg-transparent w-full p-8 border border-black/10 pr-10 placeholder:text-foreground/40"
+                className="rounded-md bg-transparent w-full p-8 border border-[#E5E2DD] pr-10 placeholder:text-foreground/40"
               />
               {errors.email && (
                 <p className="mt-1 text-sm text-red-600">
@@ -99,7 +99,7 @@ function LoginForm() {
                   type={showPassword ? "text" : "password"}
                   {...registerForm("password")}
                   placeholder="••••••••"
-                  className="rounded-xs bg-transparent w-full p-8 border border-black/10 pr-10 placeholder:text-foreground/40"
+                  className="rounded-md bg-transparent w-full p-8 border border-[#E5E2DD] pr-10 placeholder:text-foreground/40"
                 />
                 <Button
                   type="button"
@@ -126,7 +126,7 @@ function LoginForm() {
           <div>
             <Button
               type="submit"
-              className="w-full flex justify-center p-8 border pr-10 text-lg font-medium rounded-xs bg-primary hover:bg-primary/90 text-white transition-colors"
+              className="w-full flex justify-center p-8 border pr-10 text-lg font-medium rounded-md bg-primary hover:bg-primary/90 text-white transition-colors"
               disabled={isLoading}
             >
               {isLoading && (

@@ -121,17 +121,12 @@ export default function ClientStoreContent({ shop: initialShop }: ClientStoreCon
   };
 
   return (
-    <main className="min-h-screen pb-20 bg-gray-50/40">
+    <main className="min-h-screen pb-20 bg-[#FAF9F7]">
       {/* Sticky search + nav bar */}
-      <div className="sticky top-16 z-40 w-full bg-white border-b border-gray-100 shadow-sm">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-[1600px]">
-          {/*
-            Mobile/tablet: busca em cima, abas embaixo
-            Desktop (lg+): abas à esquerda, busca à direita — mesma linha
-          */}
-          <div className="flex flex-col lg:flex-row lg:items-center lg:gap-6 py-2.5 lg:py-2">
-            {/* Categorias — flex-1 no desktop (order-1), segunda linha no mobile (order-2) */}
-            <div className="order-2 lg:order-1 lg:flex-1 min-w-0 mt-2 lg:mt-0 overflow-hidden">
+      <div className="sticky top-16 z-40 w-full bg-white border-b border-[#E5E2DD]">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:gap-8 py-3 lg:py-2.5">
+            <div className="order-2 lg:order-1 lg:flex-1 min-w-0 mt-2.5 lg:mt-0 overflow-hidden">
               <CategoryNavigation
                 categories={groups}
                 activeCategory={activeCategory}
@@ -139,15 +134,14 @@ export default function ClientStoreContent({ shop: initialShop }: ClientStoreCon
               />
             </div>
 
-            {/* Busca — full width no mobile (order-1), largura fixa no desktop (order-2) */}
-            <div className="order-1 lg:order-2 w-full lg:w-64 xl:w-72 flex-shrink-0">
+            <div className="order-1 lg:order-2 w-full lg:w-72 xl:w-80 flex-shrink-0">
               <SearchBar value={searchInput} onChange={setSearchInput} />
             </div>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 max-w-[1600px]">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <ProductGrid
           categories={groups}
           activeCategory={activeCategory}

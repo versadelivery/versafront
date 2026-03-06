@@ -526,7 +526,7 @@ export default function CheckoutPage() {
 
   if (isLoadingShop || isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#FAF9F7] flex items-center justify-center">
         <div className="text-center space-y-3">
           <div className="animate-spin rounded-full h-10 w-10 border-2 border-primary border-t-transparent mx-auto" />
           <p className="text-sm text-muted-foreground">Carregando pedido...</p>
@@ -537,9 +537,9 @@ export default function CheckoutPage() {
 
   if (cartItems.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#FAF9F7] flex items-center justify-center">
         <div className="text-center space-y-4">
-          <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto">
+          <div className="w-16 h-16 rounded-md bg-gray-100 flex items-center justify-center mx-auto">
             <ShoppingCart className="h-7 w-7 text-gray-400" />
           </div>
           <div>
@@ -560,33 +560,30 @@ export default function CheckoutPage() {
     (!!client || (guestName.trim().length >= 3 && guestPhone.replace(/\D/g, '').length >= 10))
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#FAF9F7]">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full bg-white border-b border-gray-100">
-        <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => router.push(`/${storeSlug}`)}
-                className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 transition-colors text-gray-600 cursor-pointer"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-              <Link href={`/${storeSlug}`} className="md:hidden">
-                <Image src={favicon} alt="Versa" width={100} height={100} priority />
-              </Link>
-              <Link href={`/${storeSlug}`} className="hidden md:block">
-                <Image src={logoInlineBlack} alt="Versa" width={190} height={60} priority />
-              </Link>
-            </div>
-            <span className="text-sm font-medium text-muted-foreground">Finalizar pedido</span>
-            <div className="w-8" />
+      <header className="sticky top-0 z-50 w-full bg-white border-b border-[#E5E2DD]">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center h-16">
+            <button
+              onClick={() => router.back()}
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors mr-auto"
+            >
+              <ChevronLeft className="h-5 w-5" />
+              <span className="text-sm font-medium hidden sm:block">Voltar</span>
+            </button>
+            <Link href={`/${storeSlug}`} className="md:hidden">
+              <Image src={favicon} alt="Versa" width={90} height={90} priority />
+            </Link>
+            <Link href={`/${storeSlug}`} className="hidden md:block">
+              <Image src={logoInlineBlack} alt="Versa" width={180} height={56} priority />
+            </Link>
           </div>
         </div>
       </header>
 
       {/* Content */}
-      <div className="max-w-6xl mx-auto px-4 py-6 sm:py-8">
+      <div className="max-w-[1400px] mx-auto px-4 py-6 sm:py-8">
         <div className="flex flex-col lg:flex-row gap-6">
 
           {/* ── Left column ── */}
@@ -594,7 +591,7 @@ export default function CheckoutPage() {
 
             {/* Loja fechada */}
             {!isShopOpen && !shopStatusLoading && (
-              <Alert className="border-red-200 bg-red-50 rounded-xl">
+              <Alert className="border-red-400 bg-white rounded-md">
                 <AlertTriangle className="h-4 w-4 text-red-500" />
                 <AlertDescription className="text-red-700 text-sm">
                   Loja fechada no momento. Você não pode finalizar a compra agora.
@@ -604,11 +601,11 @@ export default function CheckoutPage() {
 
             {/* Identificação do guest */}
             {!client && (
-              <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-                <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
+              <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+                <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
                   <User className="h-4 w-4 text-primary" />
-                  <h2 className="font-semibold text-gray-900">Identificação</h2>
-                  <span className="ml-auto text-xs text-muted-foreground">
+                  <h2 className="text-base font-semibold text-gray-900">Identificação</h2>
+                  <span className="ml-auto text-sm text-muted-foreground">
                     Ou{' '}
                     <button
                       onClick={() => router.push(`/auth/login?redirect=${encodeURIComponent(window.location.pathname)}`)}
@@ -620,18 +617,18 @@ export default function CheckoutPage() {
                 </div>
                 <div className="px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <Label htmlFor="guestName" className="text-xs font-medium text-gray-700 mb-1.5 block">Nome <span className="text-red-500">*</span></Label>
+                    <Label htmlFor="guestName" className="text-sm font-medium text-gray-700 mb-1.5 block">Nome <span className="text-red-500">*</span></Label>
                     <Input
                       id="guestName"
                       placeholder="Seu nome"
                       value={guestName}
                       onChange={(e) => { setGuestName(e.target.value); setFieldErrors(prev => ({ ...prev, guestName: '' })) }}
-                      className={`border-gray-200 focus:border-primary/40 text-sm ${fieldErrors.guestName ? 'border-red-400 focus:border-red-400' : ''}`}
+                      className={`border-[#E5E2DD] focus:border-primary/40 text-sm ${fieldErrors.guestName ? 'border-red-400 focus:border-red-400' : ''}`}
                     />
-                    {fieldErrors.guestName && <p className="text-xs text-red-500 mt-1">{fieldErrors.guestName}</p>}
+                    {fieldErrors.guestName && <p className="text-sm text-red-500 mt-1">{fieldErrors.guestName}</p>}
                   </div>
                   <div>
-                    <Label htmlFor="guestPhone" className="text-xs font-medium text-gray-700 mb-1.5 block">Telefone <span className="text-red-500">*</span></Label>
+                    <Label htmlFor="guestPhone" className="text-sm font-medium text-gray-700 mb-1.5 block">Telefone <span className="text-red-500">*</span></Label>
                     <div className="relative">
                       <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                       <Input
@@ -639,28 +636,28 @@ export default function CheckoutPage() {
                         placeholder="(00) 00000-0000"
                         value={guestPhone}
                         onChange={(e) => { handlePhoneChange(e); setFieldErrors(prev => ({ ...prev, guestPhone: '' })) }}
-                        className={`pl-8 border-gray-200 focus:border-primary/40 text-sm ${fieldErrors.guestPhone ? 'border-red-400 focus:border-red-400' : ''}`}
+                        className={`pl-8 border-[#E5E2DD] focus:border-primary/40 text-sm ${fieldErrors.guestPhone ? 'border-red-400 focus:border-red-400' : ''}`}
                       />
                     </div>
-                    {fieldErrors.guestPhone && <p className="text-xs text-red-500 mt-1">{fieldErrors.guestPhone}</p>}
+                    {fieldErrors.guestPhone && <p className="text-sm text-red-500 mt-1">{fieldErrors.guestPhone}</p>}
                   </div>
                 </div>
               </div>
             )}
 
             {/* ── Itens ── */}
-            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-              <div className="px-5 py-4 flex items-center justify-between border-b border-gray-100">
+            <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+              <div className="px-5 py-4 flex items-center justify-between border-b border-[#E5E2DD]">
                 <div className="flex items-center gap-2">
                   <Package className="h-4 w-4 text-primary" />
-                  <h2 className="font-semibold text-gray-900">Itens do pedido</h2>
+                  <h2 className="text-base font-semibold text-gray-900">Itens do pedido</h2>
                 </div>
-                <span className="text-xs text-muted-foreground bg-gray-100 px-2 py-0.5 rounded-full">
+                <span className="text-sm text-muted-foreground border border-[#E5E2DD] px-2.5 py-0.5 rounded-md">
                   {cartItems.reduce((s, i) => s + i.quantity, 0)} {cartItems.reduce((s, i) => s + i.quantity, 0) === 1 ? 'item' : 'itens'}
                 </span>
               </div>
 
-              <div className="divide-y divide-gray-50">
+              <div className="divide-y divide-[#E5E2DD]">
                 {cartItems.map((item) => {
                   const hasDetails = (item.extras?.length ?? 0) > 0 ||
                     (item.prepareMethods?.length ?? 0) > 0 ||
@@ -677,10 +674,10 @@ export default function CheckoutPage() {
                             <img
                               src={item.image}
                               alt={item.name}
-                              className="h-16 w-16 rounded-lg object-cover bg-gray-100"
+                              className="h-16 w-16 rounded-md object-cover bg-[#F0EFEB]"
                             />
                           ) : (
-                            <div className="h-16 w-16 rounded-lg border border-primary/10 flex items-center justify-center">
+                            <div className="h-16 w-16 rounded-md border border-[#E5E2DD] flex items-center justify-center">
                               <span className="text-primary/40 text-lg font-bold">
                                 {item.name.charAt(0).toUpperCase()}
                               </span>
@@ -691,13 +688,13 @@ export default function CheckoutPage() {
                         {/* Info */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2">
-                            <h3 className="text-sm font-semibold text-gray-900 leading-tight">{item.name}</h3>
+                            <h3 className="text-base font-semibold text-gray-900 leading-tight">{item.name}</h3>
                             <button
                               onClick={() => {
                                 removeItem(item.cartId)
                                 setCartItems(prev => prev.filter(i => i.cartId !== item.cartId))
                               }}
-                              className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+                              className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-md hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
                             >
                               <X className="h-3.5 w-3.5" />
                             </button>
@@ -713,7 +710,7 @@ export default function CheckoutPage() {
                                   <p className="text-sm font-bold text-primary mt-0.5">
                                     {formatPrice(item.totalPrice)}
                                   </p>
-                                  <p className="text-xs text-muted-foreground mt-0.5">
+                                  <p className="text-sm text-muted-foreground mt-0.5">
                                     {item.weight} {weightUnit} × {item.priceWithDiscount ? (
                                       <>
                                         <span className="line-through">{formatPrice(item.price)}</span>
@@ -733,7 +730,7 @@ export default function CheckoutPage() {
                                 {item.priceWithDiscount ? (
                                   <>
                                     {formatPrice(item.priceWithDiscount * item.quantity)}
-                                    <span className="text-xs text-muted-foreground line-through ml-2">
+                                    <span className="text-sm text-muted-foreground line-through ml-2">
                                       {formatPrice(item.price * item.quantity)}
                                     </span>
                                   </>
@@ -745,11 +742,7 @@ export default function CheckoutPage() {
                           })()}
 
                           <div className="flex items-center justify-between mt-2">
-                            {/* Contador (oculto para itens por peso — peso é fixo) */}
-                            {item.itemType === 'weight_per_kg' || item.itemType === 'weight_per_g' ? (
-                              <div />
-                            ) : (
-                            <div className="flex items-center gap-1 bg-gray-50 border border-gray-200 rounded-lg">
+                            <div className="flex items-center gap-1.5 bg-[#FAF9F7] border border-[#E5E2DD] rounded-md px-1">
                               <button
                                 onClick={() => {
                                   if (item.quantity > 1) {
@@ -757,27 +750,27 @@ export default function CheckoutPage() {
                                     setCartItems(prev => prev.map(i => i.cartId === item.cartId ? { ...i, quantity: i.quantity - 1 } : i))
                                   }
                                 }}
-                                className="w-7 h-7 flex items-center justify-center text-gray-500 hover:text-primary transition-colors cursor-pointer"
+                                disabled={item.quantity <= 1}
+                                className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-primary transition-colors cursor-pointer disabled:opacity-30"
                               >
-                                <Minus className="h-3 w-3" />
+                                <Minus className="h-4 w-4" />
                               </button>
-                              <span className="text-xs font-bold text-gray-900 min-w-[1.25rem] text-center">{item.quantity}</span>
+                              <span className="text-sm font-bold text-gray-900 min-w-[1.5rem] text-center">{item.quantity}</span>
                               <button
                                 onClick={() => {
                                   updateItemQuantity(item.cartId, item.quantity + 1)
                                   setCartItems(prev => prev.map(i => i.cartId === item.cartId ? { ...i, quantity: i.quantity + 1 } : i))
                                 }}
-                                className="w-7 h-7 flex items-center justify-center text-gray-500 hover:text-primary transition-colors cursor-pointer"
+                                className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-primary transition-colors cursor-pointer"
                               >
-                                <Plus className="h-3 w-3" />
+                                <Plus className="h-4 w-4" />
                               </button>
                             </div>
-                            )}
 
                             {hasDetails && (
                               <button
                                 onClick={() => setIsExpanded(prev => ({ ...prev, [item.id]: !prev[item.id] }))}
-                                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                                className="flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer"
                               >
                                 {isExpanded[item.id] ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                                 {isExpanded[item.id] ? 'Menos' : 'Detalhes'}
@@ -797,7 +790,7 @@ export default function CheckoutPage() {
                             setItemObservations(prev => ({ ...prev, [item.id]: val }));
                             setCartItems(prev => prev.map(ci => ci.id === item.id ? { ...ci, observation: val } : ci));
                           }}
-                          className="h-8 text-xs bg-gray-50 border-gray-200 focus:border-primary/40 rounded-lg"
+                          className="h-8 text-sm bg-[#FAF9F7] border-[#E5E2DD] focus:border-primary/40 rounded-md"
                         />
                       </div>
 
@@ -811,11 +804,11 @@ export default function CheckoutPage() {
                             transition={{ duration: 0.18, ease: 'easeInOut' }}
                             className="overflow-hidden"
                           >
-                            <div className="mt-3 bg-gray-50 rounded-lg p-3 space-y-2.5">
+                            <div className="mt-3 bg-[#FAF9F7] rounded-md p-3 space-y-2.5">
                               {item.weight && (
                                 <div>
                                   <span className="text-[10px] uppercase tracking-wider font-bold text-gray-400">Peso</span>
-                                  <p className="text-xs font-semibold text-gray-700 mt-0.5">{item.weight}{item.itemType === 'weight_per_g' ? 'g' : ' kg'}</p>
+                                  <p className="text-sm font-semibold text-gray-700 mt-0.5">{item.weight}{item.itemType === 'weight_per_g' ? 'g' : ' kg'}</p>
                                 </div>
                               )}
                               {(item.extras?.length ?? 0) > 0 && (
@@ -823,7 +816,7 @@ export default function CheckoutPage() {
                                   <span className="text-[10px] uppercase tracking-wider font-bold text-gray-400">Adicionais</span>
                                   <ul className="mt-1 space-y-1">
                                     {item.extras!.map(extra => (
-                                      <li key={extra.id} className="flex justify-between text-xs text-gray-600">
+                                      <li key={extra.id} className="flex justify-between text-sm text-gray-600">
                                         <span>{extra.name}</span>
                                         <span className="font-semibold">+ {formatPrice(extra.price)}</span>
                                       </li>
@@ -836,7 +829,7 @@ export default function CheckoutPage() {
                                   <span className="text-[10px] uppercase tracking-wider font-bold text-gray-400">{group.groupName}</span>
                                   <ul className="mt-1 space-y-1">
                                     {group.options.map(opt => (
-                                      <li key={opt.id} className="flex justify-between text-xs text-gray-600">
+                                      <li key={opt.id} className="flex justify-between text-sm text-gray-600">
                                         <span>{opt.name}</span>
                                         {opt.price > 0 && <span className="font-semibold">+ {formatPrice(opt.price)}</span>}
                                       </li>
@@ -849,7 +842,7 @@ export default function CheckoutPage() {
                                   <span className="text-[10px] uppercase tracking-wider font-bold text-gray-400">Modo de preparo</span>
                                   <div className="flex flex-wrap gap-1 mt-1">
                                     {item.prepareMethods!.map(m => (
-                                      <span key={m.id} className="text-[10px] bg-white border border-gray-200 rounded px-2 py-0.5 text-gray-600">{m.name}</span>
+                                      <span key={m.id} className="text-[10px] bg-white border border-[#E5E2DD] rounded px-2 py-0.5 text-gray-600">{m.name}</span>
                                     ))}
                                   </div>
                                 </div>
@@ -859,7 +852,7 @@ export default function CheckoutPage() {
                                   <span className="text-[10px] uppercase tracking-wider font-bold text-gray-400">Opções</span>
                                   <div className="mt-1 space-y-1">
                                     {item.steps!.map(step => (
-                                      <div key={step.id} className="flex justify-between text-xs text-gray-600">
+                                      <div key={step.id} className="flex justify-between text-sm text-gray-600">
                                         <span>{step.name}</span>
                                         <span className="font-semibold">{step.selectedOption?.name}</span>
                                       </div>
@@ -878,20 +871,20 @@ export default function CheckoutPage() {
             </div>
 
             {/* ── Entrega ── */}
-            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-              <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
+            <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+              <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
                 <Truck className="h-4 w-4 text-primary" />
-                <h2 className="font-semibold text-gray-900">Entrega</h2>
+                <h2 className="text-base font-semibold text-gray-900">Entrega</h2>
               </div>
 
               <div className="px-5 py-4 space-y-4">
                 {/* Toggle delivery/pickup */}
-                <div className="flex bg-gray-100 rounded-lg p-1 gap-1">
+                <div className="flex bg-gray-100 rounded-md p-1 gap-1">
                   <button
                     onClick={() => setDeliveryOption('delivery')}
                     className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-all cursor-pointer ${
                       deliveryOption === 'delivery'
-                        ? 'bg-white text-gray-900 shadow-sm'
+                        ? 'bg-white text-gray-900 border border-[#E5E2DD]'
                         : 'text-muted-foreground hover:text-gray-700'
                     }`}
                   >
@@ -902,7 +895,7 @@ export default function CheckoutPage() {
                     onClick={() => setDeliveryOption('pickup')}
                     className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-all cursor-pointer ${
                       deliveryOption === 'pickup'
-                        ? 'bg-white text-gray-900 shadow-sm'
+                        ? 'bg-white text-gray-900 border border-[#E5E2DD]'
                         : 'text-muted-foreground hover:text-gray-700'
                     }`}
                   >
@@ -914,27 +907,27 @@ export default function CheckoutPage() {
                 {deliveryOption === 'delivery' && (
                   <div className="space-y-3">
                     <div>
-                      <Label htmlFor="address" className="text-xs font-medium text-gray-700 mb-1.5 block">Endereço <span className="text-red-500">*</span></Label>
+                      <Label htmlFor="address" className="text-sm font-medium text-gray-700 mb-1.5 block">Endereço <span className="text-red-500">*</span></Label>
                       <Input
                         id="address"
                         placeholder="Rua, número"
                         value={address}
                         onChange={(e) => { setAddress(e.target.value); setFieldErrors(prev => ({ ...prev, address: '' })) }}
                         maxLength={70}
-                        className={`border-gray-200 focus:border-primary/40 text-sm ${fieldErrors.address ? 'border-red-400 focus:border-red-400' : ''}`}
+                        className={`border-[#E5E2DD] focus:border-primary/40 text-sm ${fieldErrors.address ? 'border-red-400 focus:border-red-400' : ''}`}
                       />
-                      {fieldErrors.address && <p className="text-xs text-red-500 mt-1">{fieldErrors.address}</p>}
+                      {fieldErrors.address && <p className="text-sm text-red-500 mt-1">{fieldErrors.address}</p>}
                     </div>
 
                     <div>
-                      <Label htmlFor="neighborhood" className="text-xs font-medium text-gray-700 mb-1.5 block">Bairro <span className="text-red-500">*</span></Label>
+                      <Label htmlFor="neighborhood" className="text-sm font-medium text-gray-700 mb-1.5 block">Bairro <span className="text-red-500">*</span></Label>
                       {shopDeliveryConfig?.delivery_fee_kind === 'per_neighborhood' ? (
                         <>
                           <select
                             id="neighborhood"
                             value={selectedNeighborhood}
                             onChange={(e) => { setSelectedNeighborhood(e.target.value); setFieldErrors(prev => ({ ...prev, neighborhood: '' })) }}
-                            className={`w-full rounded-md border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 ${fieldErrors.neighborhood ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : 'border-gray-200 focus:border-primary/40 focus:ring-primary/20'}`}
+                            className={`w-full rounded-md border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 ${fieldErrors.neighborhood ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : 'border-[#E5E2DD] focus:border-primary/40 focus:ring-primary/20'}`}
                           >
                             <option value="">Selecione o bairro</option>
                             {shopDeliveryConfig?.shop_delivery_neighborhoods.data.map((nb: any) => (
@@ -943,7 +936,7 @@ export default function CheckoutPage() {
                               </option>
                             ))}
                           </select>
-                          {fieldErrors.neighborhood && <p className="text-xs text-red-500 mt-1">{fieldErrors.neighborhood}</p>}
+                          {fieldErrors.neighborhood && <p className="text-sm text-red-500 mt-1">{fieldErrors.neighborhood}</p>}
                         </>
                       ) : (
                         <>
@@ -952,32 +945,32 @@ export default function CheckoutPage() {
                             placeholder="Bairro"
                             value={selectedNeighborhood}
                             onChange={(e) => { setSelectedNeighborhood(e.target.value); setFieldErrors(prev => ({ ...prev, neighborhood: '' })) }}
-                            className={`text-sm ${fieldErrors.neighborhood ? 'border-red-400 focus:border-red-400' : 'border-gray-200 focus:border-primary/40'}`}
+                            className={`text-sm ${fieldErrors.neighborhood ? 'border-red-400 focus:border-red-400' : 'border-[#E5E2DD] focus:border-primary/40'}`}
                           />
-                          {fieldErrors.neighborhood && <p className="text-xs text-red-500 mt-1">{fieldErrors.neighborhood}</p>}
+                          {fieldErrors.neighborhood && <p className="text-sm text-red-500 mt-1">{fieldErrors.neighborhood}</p>}
                         </>
                       )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <Label htmlFor="complement" className="text-xs font-medium text-gray-700 mb-1.5 block">Complemento</Label>
+                        <Label htmlFor="complement" className="text-sm font-medium text-gray-700 mb-1.5 block">Complemento</Label>
                         <Input
                           id="complement"
                           placeholder="Apto, bloco..."
                           value={complement}
                           onChange={(e) => setComplement(e.target.value)}
-                          className="border-gray-200 focus:border-primary/40 text-sm"
+                          className="border-[#E5E2DD] focus:border-primary/40 text-sm"
                         />
                       </div>
                       <div>
-                        <Label htmlFor="reference" className="text-xs font-medium text-gray-700 mb-1.5 block">Referência</Label>
+                        <Label htmlFor="reference" className="text-sm font-medium text-gray-700 mb-1.5 block">Referência</Label>
                         <Input
                           id="reference"
                           placeholder="Perto do..."
                           value={reference}
                           onChange={(e) => setReference(e.target.value)}
-                          className="border-gray-200 focus:border-primary/40 text-sm"
+                          className="border-[#E5E2DD] focus:border-primary/40 text-sm"
                         />
                       </div>
                     </div>
@@ -985,7 +978,7 @@ export default function CheckoutPage() {
                 )}
 
                 {deliveryOption === 'pickup' && (
-                  <div className="flex items-start gap-2.5 border border-primary/10 rounded-lg px-4 py-3">
+                  <div className="flex items-start gap-2.5 border border-[#E5E2DD] rounded-md px-4 py-3">
                     <Store className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
                     <p className="text-sm text-gray-700">
                       Você retirará o pedido diretamente no estabelecimento. Sem taxa de entrega.
@@ -996,15 +989,15 @@ export default function CheckoutPage() {
             </div>
 
             {/* ── Pagamento ── */}
-            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-              <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
+            <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+              <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
                 <CreditCard className="h-4 w-4 text-primary" />
-                <h2 className="font-semibold text-gray-900">Pagamento</h2>
+                <h2 className="text-base font-semibold text-gray-900">Pagamento</h2>
               </div>
 
               <div className="px-5 py-4 space-y-3">
                 {noPaymentMethods && (
-                  <Alert className="border-red-200 bg-red-50 rounded-xl">
+                  <Alert className="border-red-400 bg-white rounded-md">
                     <AlertTriangle className="h-4 w-4 text-red-500" />
                     <AlertDescription className="text-red-700 text-sm">
                       Nenhum método de pagamento disponível. Entre em contato com o estabelecimento.
@@ -1021,10 +1014,10 @@ export default function CheckoutPage() {
                       <button
                         key={method}
                         onClick={() => setPaymentMethod(method)}
-                        className={`relative flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border-2 text-xs font-medium transition-all cursor-pointer ${
+                        className={`relative flex flex-col items-center gap-1.5 py-3 px-2 rounded-md border-2 text-sm font-medium transition-all cursor-pointer ${
                           isSelected
                             ? 'border-primary text-primary'
-                            : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                            : 'border-[#E5E2DD] text-gray-600 hover:border-gray-300 hover:bg-[#FAF9F7]'
                         }`}
                       >
                         {badge && (
@@ -1041,82 +1034,38 @@ export default function CheckoutPage() {
 
                 {paymentMethod === 'cash' && (
                   <div>
-                    <Label htmlFor="changeFor" className="text-xs font-medium text-gray-700 mb-1.5 block">Troco para</Label>
+                    <Label htmlFor="changeFor" className="text-sm font-medium text-gray-700 mb-1.5 block">Troco para</Label>
                     <Input
                       id="changeFor"
                       type="number"
                       placeholder="R$ 50,00"
                       value={changeFor}
                       onChange={(e) => setChangeFor(e.target.value)}
-                      className={`text-sm max-w-[180px] ${changeFor && parseFloat(changeFor) < calculateTotal() ? 'border-red-400 focus:border-red-400' : 'border-gray-200 focus:border-primary/40'}`}
+                      className={`text-sm max-w-[180px] ${changeFor && parseFloat(changeFor) < calculateTotal() ? 'border-red-400 focus:border-red-400' : 'border-[#E5E2DD] focus:border-primary/40'}`}
                       min={calculateTotal()}
                       step="0.01"
                     />
                     {changeFor && parseFloat(changeFor) < calculateTotal() && (
-                      <p className="text-xs text-red-500 mt-1">O valor deve ser maior ou igual a {formatPrice(calculateTotal())}</p>
+                      <p className="text-sm text-red-500 mt-1">O valor deve ser maior ou igual a {formatPrice(calculateTotal())}</p>
                     )}
                   </div>
-                )}
-              </div>
-            </div>
-
-            {/* ── Cupom ── */}
-            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-              <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
-                <Tag className="h-4 w-4 text-primary" />
-                <h2 className="font-semibold text-gray-900">Cupom de desconto</h2>
-              </div>
-              <div className="px-5 py-4 space-y-3">
-                {appliedCoupon ? (
-                  <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-green-600" />
-                      <div>
-                        <span className="text-sm font-semibold text-green-700">{appliedCoupon.code}</span>
-                        <p className="text-xs text-green-600">
-                          {appliedCoupon.discount_type === 'percentage'
-                            ? `${parseFloat(appliedCoupon.value)}% de desconto`
-                            : `R$ ${parseFloat(appliedCoupon.value).toFixed(2).replace('.', ',')} de desconto`}
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={handleRemoveCoupon}
-                      className="text-green-600 hover:text-red-500 transition-colors cursor-pointer"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="Digite o código do cupom"
-                        value={couponCode}
-                        onChange={(e) => { setCouponCode(e.target.value.toUpperCase()); setCouponError('') }}
-                        className="border-gray-200 focus:border-primary/40 text-sm uppercase"
-                        onKeyDown={(e) => { if (e.key === 'Enter') handleApplyCoupon() }}
-                      />
-                      <Button
-                        onClick={handleApplyCoupon}
-                        disabled={couponLoading || !couponCode.trim()}
-                        variant="outline"
-                        size="sm"
-                        className="px-4 shrink-0"
-                      >
-                        {couponLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Aplicar'}
-                      </Button>
-                    </div>
-                    {couponError && (
-                      <p className="text-xs text-red-500">{couponError}</p>
-                    )}
-                  </>
                 )}
               </div>
             </div>
 
             {/* CTA mobile */}
-            <div className="lg:hidden">
+            <div className="lg:hidden space-y-4">
+              {/* Cupom mobile */}
+              <CouponSection
+                appliedCoupon={appliedCoupon}
+                couponCode={couponCode}
+                setCouponCode={setCouponCode}
+                couponError={couponError}
+                setCouponError={setCouponError}
+                couponLoading={couponLoading}
+                handleApplyCoupon={handleApplyCoupon}
+                handleRemoveCoupon={handleRemoveCoupon}
+              />
               <OrderSummary
                 totalPrice={totalPrice}
                 deliveryOption={deliveryOption}
@@ -1140,8 +1089,19 @@ export default function CheckoutPage() {
           </div>
 
           {/* ── Right column (sticky summary) ── */}
-          <div className="hidden lg:block w-80 flex-shrink-0">
-            <div className="sticky top-[73px]">
+          <div className="hidden lg:block w-[380px] flex-shrink-0">
+            <div className="sticky top-[73px] space-y-4">
+              {/* Cupom desktop */}
+              <CouponSection
+                appliedCoupon={appliedCoupon}
+                couponCode={couponCode}
+                setCouponCode={setCouponCode}
+                couponError={couponError}
+                setCouponError={setCouponError}
+                couponLoading={couponLoading}
+                handleApplyCoupon={handleApplyCoupon}
+                handleRemoveCoupon={handleRemoveCoupon}
+              />
               <OrderSummary
                 totalPrice={totalPrice}
                 deliveryOption={deliveryOption}
@@ -1207,13 +1167,13 @@ function OrderSummary({
   const effectiveValue = (totalPrice || 0) - (couponDiscount || 0) + (paymentAdjustment || 0)
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-      <div className="px-5 py-4 border-b border-gray-100">
-        <h2 className="font-semibold text-gray-900">Resumo</h2>
+    <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+      <div className="px-5 py-4 border-b border-[#E5E2DD]">
+        <h2 className="text-base font-semibold text-gray-900">Resumo</h2>
       </div>
 
       <div className="px-5 py-4 space-y-3">
-        <div className="space-y-2 text-sm">
+        <div className="space-y-2 text-base">
           <div className="flex justify-between text-gray-600">
             <span>Subtotal</span>
             <span>R$ {totalPrice.toFixed(2).replace('.', ',')}</span>
@@ -1255,15 +1215,15 @@ function OrderSummary({
 
         <Separator />
 
-        <div className="flex justify-between font-semibold text-gray-900">
+        <div className="flex justify-between font-semibold text-gray-900 text-lg">
           <span>Total</span>
           <span className="text-primary">R$ {calculateTotal().toFixed(2).replace('.', ',')}</span>
         </div>
 
         {isBelowMinOrder && (
-          <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
+          <div className="flex items-start gap-2 bg-white border border-amber-400 rounded-md px-3 py-2.5">
             <AlertTriangle className="h-3.5 w-3.5 text-amber-500 flex-shrink-0 mt-0.5" />
-            <p className="text-xs text-amber-700">
+            <p className="text-sm text-amber-700">
               Mínimo R$ {minOrderValue.toFixed(2).replace('.', ',')}. Faltam R$ {(minOrderValue - effectiveValue).toFixed(2).replace('.', ',')}.
             </p>
           </div>
@@ -1272,7 +1232,7 @@ function OrderSummary({
         <button
           onClick={onSubmit}
           disabled={!canSubmit}
-          className={`w-full py-3 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
+          className={`w-full py-3.5 rounded-md text-base font-semibold transition-all flex items-center justify-center gap-2 ${
             canSubmit
               ? 'bg-primary text-white hover:bg-primary/90 active:scale-[0.98] cursor-pointer'
               : 'bg-gray-100 text-gray-400 cursor-not-allowed'
@@ -1296,9 +1256,82 @@ function OrderSummary({
           )}
         </button>
 
-        <p className="text-[11px] text-center text-muted-foreground leading-relaxed">
+        <p className="text-sm text-center text-muted-foreground leading-relaxed">
           Ao finalizar, você concorda com os Termos de Serviço.
         </p>
+      </div>
+    </div>
+  )
+}
+
+// ── Componente de cupom ──
+interface CouponSectionProps {
+  appliedCoupon: any
+  couponCode: string
+  setCouponCode: (v: string) => void
+  couponError: string
+  setCouponError: (v: string) => void
+  couponLoading: boolean
+  handleApplyCoupon: () => void
+  handleRemoveCoupon: () => void
+}
+
+function CouponSection({
+  appliedCoupon, couponCode, setCouponCode, couponError, setCouponError,
+  couponLoading, handleApplyCoupon, handleRemoveCoupon
+}: CouponSectionProps) {
+  return (
+    <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+      <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
+        <Tag className="h-4 w-4 text-primary" />
+        <h2 className="text-base font-semibold text-gray-900">Cupom de desconto</h2>
+      </div>
+      <div className="px-5 py-4 space-y-3">
+        {appliedCoupon ? (
+          <div className="flex items-center justify-between bg-white border border-green-400 rounded-md px-4 py-3">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-green-600" />
+              <div>
+                <span className="text-sm font-semibold text-green-700">{appliedCoupon.code}</span>
+                <p className="text-sm text-green-600">
+                  {appliedCoupon.discount_type === 'percentage'
+                    ? `${parseFloat(appliedCoupon.value)}% de desconto`
+                    : `R$ ${parseFloat(appliedCoupon.value).toFixed(2).replace('.', ',')} de desconto`}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleRemoveCoupon}
+              className="text-green-600 hover:text-red-500 transition-colors cursor-pointer"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="flex gap-2">
+              <Input
+                placeholder="Digite o código do cupom"
+                value={couponCode}
+                onChange={(e) => { setCouponCode(e.target.value.toUpperCase()); setCouponError('') }}
+                className="border-[#E5E2DD] focus:border-primary/40 text-sm uppercase"
+                onKeyDown={(e) => { if (e.key === 'Enter') handleApplyCoupon() }}
+              />
+              <Button
+                onClick={handleApplyCoupon}
+                disabled={couponLoading || !couponCode.trim()}
+                variant="outline"
+                size="sm"
+                className="px-4 shrink-0"
+              >
+                {couponLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Aplicar'}
+              </Button>
+            </div>
+            {couponError && (
+              <p className="text-sm text-red-500">{couponError}</p>
+            )}
+          </>
+        )}
       </div>
     </div>
   )

@@ -57,7 +57,7 @@ export default function AuthIndicator() {
             <LogIn className="w-4 h-4 mr-1.5" />
             Entrar
           </Button>
-          <Button
+          {/* <Button
             variant="outline"
             size="sm"
             onClick={handleRegister}
@@ -65,7 +65,7 @@ export default function AuthIndicator() {
           >
             <UserPlus className="w-4 h-4 mr-1.5" />
             Cadastrar
-          </Button>
+          </Button> */}
         </div>
 
         {/* Mobile */}

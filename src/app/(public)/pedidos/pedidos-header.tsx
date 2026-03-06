@@ -50,8 +50,8 @@ export default function PedidosHeader({
   const logoHref = shopSlug ? `/${shopSlug}` : "/";
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-white border-b border-gray-100">
-      <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-50 w-full bg-white border-b border-[#E5E2DD]">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
             <Link href={logoHref} className="md:hidden">

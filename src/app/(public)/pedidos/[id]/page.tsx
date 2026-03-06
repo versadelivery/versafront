@@ -21,15 +21,15 @@ import {
   User,
 } from "lucide-react";
 
-const statusConfig: Record<string, { label: string; dot: string; bg: string; text: string; description: string }> = {
-  received:       { label: "Recebido",    dot: "bg-amber-400",   bg: "bg-amber-50",   text: "text-amber-700",   description: "Seu pedido foi recebido e será processado em breve." },
-  accepted:       { label: "Aceito",      dot: "bg-blue-500",    bg: "bg-blue-50",    text: "text-blue-700",    description: "Seu pedido foi aceito e será preparado em breve." },
-  in_analysis:    { label: "Em análise",  dot: "bg-orange-400",  bg: "bg-orange-50",  text: "text-orange-700",  description: "Estamos analisando seu pedido." },
-  in_preparation: { label: "Preparando",  dot: "bg-orange-500",  bg: "bg-orange-50",  text: "text-orange-700",  description: "Seu pedido está sendo preparado com carinho." },
-  ready:              { label: "Pronto",          dot: "bg-emerald-500", bg: "bg-emerald-50", text: "text-emerald-700", description: "Seu pedido está pronto!" },
-  left_for_delivery:  { label: "Saiu p/ entrega", dot: "bg-purple-500",  bg: "bg-purple-50",  text: "text-purple-700",  description: "Seu pedido saiu para entrega!" },
-  delivered:          { label: "Entregue",        dot: "bg-green-500",   bg: "bg-green-50",   text: "text-green-700",   description: "Pedido entregue. Bom apetite!" },
-  cancelled:      { label: "Cancelado",   dot: "bg-red-400",     bg: "bg-red-50",     text: "text-red-700",     description: "Este pedido foi cancelado." },
+const statusConfig: Record<string, { label: string; dot: string; border: string; text: string; description: string }> = {
+  received:       { label: "Recebido",    dot: "bg-amber-400",   border: "border-amber-300",   text: "text-amber-700",   description: "Seu pedido foi recebido e será processado em breve." },
+  accepted:       { label: "Aceito",      dot: "bg-blue-500",    border: "border-blue-300",    text: "text-blue-700",    description: "Seu pedido foi aceito e será preparado em breve." },
+  in_analysis:    { label: "Em análise",  dot: "bg-orange-400",  border: "border-orange-300",  text: "text-orange-700",  description: "Estamos analisando seu pedido." },
+  in_preparation: { label: "Preparando",  dot: "bg-orange-500",  border: "border-orange-300",  text: "text-orange-700",  description: "Seu pedido está sendo preparado com carinho." },
+  ready:              { label: "Pronto",          dot: "bg-emerald-500", border: "border-emerald-300", text: "text-emerald-700", description: "Seu pedido está pronto!" },
+  left_for_delivery:  { label: "Saiu p/ entrega", dot: "bg-purple-500",  border: "border-purple-300",  text: "text-purple-700",  description: "Seu pedido saiu para entrega!" },
+  delivered:          { label: "Entregue",        dot: "bg-green-500",   border: "border-green-300",   text: "text-green-700",   description: "Pedido entregue. Bom apetite!" },
+  cancelled:      { label: "Cancelado",   dot: "bg-red-400",     border: "border-red-300",     text: "text-red-700",     description: "Este pedido foi cancelado." },
 };
 
 const paymentConfig: Record<string, { label: string; icon: React.ElementType }> = {
@@ -40,9 +40,9 @@ const paymentConfig: Record<string, { label: string; icon: React.ElementType }> 
 };
 
 function StatusBadge({ status }: { status: string }) {
-  const cfg = statusConfig[status] ?? { label: status, dot: "bg-gray-400", bg: "bg-gray-100", text: "text-gray-600" };
+  const cfg = statusConfig[status] ?? { label: status, dot: "bg-gray-400", border: "border-gray-300", text: "text-gray-600" };
   return (
-    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${cfg.bg} ${cfg.text}`}>
+    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md border bg-white text-sm font-semibold ${cfg.border} ${cfg.text}`}>
       <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${cfg.dot}`} />
       {cfg.label}
     </span>
@@ -51,9 +51,9 @@ function StatusBadge({ status }: { status: string }) {
 
 function InfoCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
-      <div className="px-5 py-3.5 border-b border-gray-100 bg-gray-50/60">
-        <p className="text-sm font-semibold text-foreground">{title}</p>
+    <div className="bg-white border border-[#E5E2DD] rounded-md overflow-hidden">
+      <div className="px-5 py-3.5 border-b border-[#E5E2DD] bg-[#FAF9F7]">
+        <p className="text-base font-semibold text-foreground">{title}</p>
       </div>
       <div className="p-5">{children}</div>
     </div>
@@ -132,7 +132,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
     return (
       <>
         {nav}
-        <div className="min-h-screen bg-gray-50/40 flex items-center justify-center">
+        <div className="min-h-screen bg-[#FAF9F7] flex items-center justify-center">
           <div className="flex flex-col items-center gap-3">
             <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
             <p className="text-sm text-muted-foreground">Carregando pedido...</p>
@@ -146,12 +146,12 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
     return (
       <>
         {nav}
-        <div className="min-h-screen bg-gray-50/40 flex items-center justify-center px-4">
+        <div className="min-h-screen bg-[#FAF9F7] flex items-center justify-center px-4">
           <div className="text-center max-w-sm">
             <p className="text-sm text-muted-foreground mb-4">
               {error ?? 'Pedido não encontrado.'}
             </p>
-            <Button onClick={() => router.push('/pedidos')} variant="outline" className="rounded-full">
+            <Button onClick={() => router.push('/pedidos')} variant="outline" className="rounded-md">
               Ver todos os pedidos
             </Button>
           </div>
@@ -220,26 +220,26 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
   return (
     <>
       {nav}
-      <div className="min-h-screen bg-gray-50/40">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl py-8">
+      <div className="min-h-screen bg-[#FAF9F7]">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-[1400px] py-8">
 
           {/* Order header */}
-          <div className="bg-white border border-gray-100 rounded-2xl p-5 sm:p-6 mb-4">
+          <div className="bg-white border border-[#E5E2DD] rounded-md p-5 sm:p-6 mb-4">
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2 flex-wrap mb-1">
-                  <h1 className="text-lg font-bold text-foreground">Pedido #{order.id}</h1>
+                  <h1 className="text-xl font-bold text-foreground">Pedido #{order.id}</h1>
                   <StatusBadge status={order.status} />
                 </div>
-                <p className="text-sm font-medium text-foreground">{order.shop.name}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{dateInfo.date} às {dateInfo.time}</p>
+                <p className="text-base font-medium text-foreground">{order.shop.name}</p>
+                <p className="text-sm text-muted-foreground mt-0.5">{dateInfo.date} às {dateInfo.time}</p>
                 {statusCfg.description && (
-                  <p className="text-xs text-muted-foreground mt-2 italic">{statusCfg.description}</p>
+                  <p className="text-sm text-muted-foreground mt-2 italic">{statusCfg.description}</p>
                 )}
               </div>
-              <div className="sm:text-right pt-3 sm:pt-0 border-t border-gray-100 sm:border-0">
+              <div className="sm:text-right pt-3 sm:pt-0 border-t border-[#E5E2DD] sm:border-0">
                 <p className="text-2xl font-bold text-foreground">{formatCurrency(total)}</p>
-                <p className="text-xs text-muted-foreground">Total do pedido</p>
+                <p className="text-sm text-muted-foreground">Total do pedido</p>
               </div>
             </div>
 
@@ -274,33 +274,33 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                           <img
                             src={item.image}
                             alt={item.name}
-                            className="w-14 h-14 rounded-xl object-cover flex-shrink-0 bg-gray-100"
+                            className="w-14 h-14 rounded-md object-cover flex-shrink-0 bg-[#F0EFEB]"
                           />
                         ) : (
-                          <div className="w-14 h-14 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
+                          <div className="w-14 h-14 rounded-md bg-[#F0EFEB] flex items-center justify-center flex-shrink-0">
                             <Package className="w-6 h-6 text-gray-300" />
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2">
-                            <p className="text-sm font-semibold text-foreground leading-snug">{item.name}</p>
-                            <p className="text-sm font-bold text-foreground flex-shrink-0">
+                            <p className="text-base font-semibold text-foreground leading-snug">{item.name}</p>
+                            <p className="text-base font-bold text-foreground flex-shrink-0">
                               {formatCurrency(item.total_price ?? item.price * item.quantity)}
                             </p>
                           </div>
-                          <p className="text-xs text-muted-foreground mt-0.5">
+                          <p className="text-sm text-muted-foreground mt-0.5">
                             {item.weight && (item.item_type === 'weight_per_kg' || item.item_type === 'weight_per_g')
                               ? `${item.weight} ${item.item_type === 'weight_per_g' ? 'g' : 'kg'} × ${formatCurrency(item.price_with_discount ?? item.price)}/${item.item_type === 'weight_per_g' ? 'g' : 'kg'}`
                               : `${item.quantity}× ${formatCurrency(item.price_with_discount ?? item.price)}`
                             }
                           </p>
                           {item.observation && (
-                            <p className="text-xs text-muted-foreground italic mt-1">"{item.observation}"</p>
+                            <p className="text-sm text-muted-foreground italic mt-1">"{item.observation}"</p>
                           )}
                           {item.complements && item.complements.length > 0 && (
                             <div className="flex flex-wrap gap-1 mt-2">
                               {item.complements.map((comp: any) => (
-                                <span key={comp.id} className="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+                                <span key={comp.id} className="text-sm bg-white border border-[#E5E2DD] text-gray-600 px-2 py-0.5 rounded-md">
                                   + {comp.name}
                                 </span>
                               ))}
@@ -314,32 +314,32 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                 </div>
 
                 {/* Totals */}
-                <div className="mt-5 pt-4 border-t border-gray-100 space-y-2">
-                  <div className="flex justify-between text-sm text-muted-foreground">
+                <div className="mt-5 pt-4 border-t border-[#E5E2DD] space-y-2">
+                  <div className="flex justify-between text-base text-muted-foreground">
                     <span>Subtotal</span>
                     <span>{formatCurrency(subtotal)}</span>
                   </div>
                   {!order.withdrawal && deliveryFee > 0 && (
-                    <div className="flex justify-between text-sm text-muted-foreground">
+                    <div className="flex justify-between text-base text-muted-foreground">
                       <span>Taxa de entrega</span>
                       <span>{formatCurrency(deliveryFee)}</span>
                     </div>
                   )}
                   {order.coupon_code && discountAmount > 0 && (
-                    <div className="flex justify-between text-sm text-green-600">
+                    <div className="flex justify-between text-base text-green-600">
                       <span>Cupom ({order.coupon_code})</span>
                       <span>-{formatCurrency(discountAmount)}</span>
                     </div>
                   )}
                   {paymentAdjustment !== 0 && (
-                    <div className={`flex justify-between text-sm ${paymentAdjustment < 0 ? 'text-green-600' : 'text-orange-600'}`}>
+                    <div className={`flex justify-between text-base ${paymentAdjustment < 0 ? 'text-green-600' : 'text-orange-600'}`}>
                       <span>{paymentAdjustment < 0 ? 'Desc.' : 'Acresc.'} {paymentLabel}</span>
                       <span>
                         {paymentAdjustment < 0 ? '-' : '+'}{formatCurrency(Math.abs(paymentAdjustment))}
                       </span>
                     </div>
                   )}
-                  <div className="flex justify-between text-base font-bold text-foreground pt-1 border-t border-gray-100">
+                  <div className="flex justify-between text-lg font-bold text-foreground pt-1 border-t border-[#E5E2DD]">
                     <span>Total</span>
                     <span>{formatCurrency(total)}</span>
                   </div>
@@ -355,8 +355,8 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                   <div className="flex items-start gap-2">
                     <Store className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-foreground">{order.shop.name}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">Retire no estabelecimento quando estiver pronto.</p>
+                      <p className="text-base font-medium text-foreground">{order.shop.name}</p>
+                      <p className="text-sm text-muted-foreground mt-0.5">Retire no estabelecimento quando estiver pronto.</p>
                     </div>
                   </div>
                 </InfoCard>
@@ -364,7 +364,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                 <InfoCard title="Endereço de entrega">
                   <div className="flex items-start gap-2">
                     <MapPin className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                    <div className="text-sm space-y-0.5">
+                    <div className="text-base space-y-0.5">
                       <p className="font-medium text-foreground">{order.address.address}</p>
                       {order.address.neighborhood && (
                         <p className="text-muted-foreground">{order.address.neighborhood}</p>
@@ -373,7 +373,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                         <p className="text-muted-foreground">{order.address.complement}</p>
                       )}
                       {order.address.reference && (
-                        <p className="text-xs text-muted-foreground mt-1">Ref: {order.address.reference}</p>
+                        <p className="text-sm text-muted-foreground mt-1">Ref: {order.address.reference}</p>
                       )}
                     </div>
                   </div>
@@ -383,14 +383,14 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
               {/* PIX */}
               {order.payment_method === 'manual_pix' && (
                 <InfoCard title="Pagamento PIX">
-                  <p className="text-xs text-muted-foreground mb-3">
+                  <p className="text-sm text-muted-foreground mb-3">
                     Envie o comprovante de pagamento ao estabelecimento.
                   </p>
                   {order.shop.phone && (
                     <Button
                       onClick={handleWhatsApp}
                       size="sm"
-                      className="w-full rounded-xl bg-green-600 hover:bg-green-700 text-white gap-2"
+                      className="w-full rounded-md bg-green-600 hover:bg-green-700 text-white gap-2"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
                       Enviar comprovante (WhatsApp)
@@ -401,9 +401,9 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
 
               {/* Contacts */}
               <InfoCard title="Contato">
-                <div className="space-y-3 text-sm">
+                <div className="space-y-3 text-base">
                   <div>
-                    <p className="text-xs font-semibold text-muted-foreground mb-1.5">Estabelecimento</p>
+                    <p className="text-sm font-semibold text-muted-foreground mb-1.5">Estabelecimento</p>
                     <p className="font-medium text-foreground">{order.shop.name}</p>
                     {order.shop.phone && (
                       <p className="text-muted-foreground flex items-center gap-1.5 mt-0.5">
@@ -416,7 +416,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                     <>
                       <Separator />
                       <div>
-                        <p className="text-xs font-semibold text-muted-foreground mb-1.5">Cliente</p>
+                        <p className="text-sm font-semibold text-muted-foreground mb-1.5">Cliente</p>
                         <p className="font-medium text-foreground flex items-center gap-1.5">
                           <User className="w-3.5 h-3.5 text-muted-foreground" />
                           {order.customer.name}

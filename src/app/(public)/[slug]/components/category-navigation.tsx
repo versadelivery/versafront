@@ -21,7 +21,7 @@ const CategoryNavigation = memo(function CategoryNavigation({ categories, active
     onChange(categoryName);
     const element = document.getElementById(categoryName.toLowerCase().replace(/\s+/g, '-'));
     if (element) {
-      const offset = 130; // header (64px) + sticky bar (~66px)
+      const offset = 140;
       const bodyRect = document.body.getBoundingClientRect().top;
       const elementRect = element.getBoundingClientRect().top;
       const elementPosition = elementRect - bodyRect;
@@ -40,10 +40,10 @@ const CategoryNavigation = memo(function CategoryNavigation({ categories, active
         <button
           onClick={() => scrollToCategory('all')}
           className={`
-            whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 flex-shrink-0
+            whitespace-nowrap px-5 py-2 text-sm font-semibold transition-all duration-150 flex-shrink-0 border rounded-md
             ${activeCategory === 'all'
-              ? 'bg-primary text-white shadow-sm'
-              : 'bg-gray-100 text-muted-foreground hover:bg-gray-200 hover:text-foreground'}
+              ? 'bg-primary text-white border-primary'
+              : 'bg-white text-gray-600 border-[#E5E2DD] hover:border-gray-400 hover:text-gray-900'}
           `}
         >
           Tudo
@@ -54,10 +54,10 @@ const CategoryNavigation = memo(function CategoryNavigation({ categories, active
             key={category.id}
             onClick={() => scrollToCategory(category.attributes.name)}
             className={`
-              whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 flex-shrink-0
+              whitespace-nowrap px-5 py-2 text-sm font-semibold transition-all duration-150 flex-shrink-0 border rounded-md
               ${activeCategory === category.attributes.name
-                ? 'bg-primary text-white shadow-sm'
-                : 'bg-gray-100 text-muted-foreground hover:bg-gray-200 hover:text-foreground'}
+                ? 'bg-primary text-white border-primary'
+                : 'bg-white text-gray-600 border-[#E5E2DD] hover:border-gray-400 hover:text-gray-900'}
             `}
           >
             {category.attributes.name}

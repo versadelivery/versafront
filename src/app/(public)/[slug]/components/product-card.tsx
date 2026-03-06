@@ -1,7 +1,7 @@
 "use client"
 
 import { memo } from 'react';
-import { Utensils, Plus } from 'lucide-react';
+import { Utensils } from 'lucide-react';
 import { formatPrice } from '../format-price';
 import { CatalogItem } from '../types';
 import ProductModal from '../product-detail';
@@ -26,9 +26,9 @@ const ProductCard = memo(function ProductCard({ item, index }: ProductCardProps)
     <ProductModal
       product={item}
       trigger={
-        <div className="group relative bg-white hover:bg-gray-50/80 rounded-2xl border border-gray-100 hover:border-gray-200 hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col h-full overflow-hidden">
+        <div className="group relative bg-white border border-[#E5E2DD] rounded-md hover:border-gray-400 hover:shadow-sm transition-all duration-200 cursor-pointer flex flex-col h-full overflow-hidden">
           {/* Image */}
-          <div className="relative aspect-square w-full flex-shrink-0 overflow-hidden bg-gray-100">
+          <div className="relative aspect-[4/3] w-full flex-shrink-0 overflow-hidden bg-[#F0EFEB]">
             {hasImage ? (
               <img
                 src={attributes.image_url!}
@@ -39,107 +39,71 @@ const ProductCard = memo(function ProductCard({ item, index }: ProductCardProps)
                 }}
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gray-50">
-                <Utensils className="w-8 h-8 text-gray-200" />
+              <div className="w-full h-full flex items-center justify-center">
+                <Utensils className="w-8 h-8 text-gray-300" />
               </div>
             )}
 
-            {/* Tags no canto superior esquerdo (sobre a imagem) */}
-            {hasImage && (
-              <div className="absolute top-2 left-2 flex flex-col gap-1 z-10">
-                {attributes.new_tag && (
-                  <div className="bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md whitespace-nowrap">
-                    NOVO!
-                  </div>
-                )}
-                {attributes.best_seller_tag && (
-                  <div className="bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md whitespace-nowrap">
-                    MAIS VENDIDO
-                  </div>
-                )}
-                {attributes.highlight && (
-                  <div className="bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md whitespace-nowrap">
-                    DESTAQUE
-                  </div>
-                )}
-              </div>
-            )}
+            {/* Tags top-left */}
+            <div className="absolute top-0 left-0 flex flex-col z-10">
+              {attributes.new_tag && (
+                <div className="bg-[#2D4A3E] text-white text-[10px] font-bold px-2.5 py-1 uppercase tracking-wide">
+                  Novo
+                </div>
+              )}
+              {attributes.best_seller_tag && (
+                <div className="bg-amber-600 text-white text-[10px] font-bold px-2.5 py-1 uppercase tracking-wide">
+                  Mais vendido
+                </div>
+              )}
+              {attributes.highlight && (
+                <div className="bg-blue-600 text-white text-[10px] font-bold px-2.5 py-1 uppercase tracking-wide">
+                  Destaque
+                </div>
+              )}
+            </div>
 
-            {/* Badge de desconto/promoção no canto superior direito */}
-            {hasImage && (hasDiscount || attributes.promotion_tag) && (
-              <div className="absolute top-2 right-2 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md z-10 whitespace-nowrap">
+            {/* Discount badge top-right */}
+            {(hasDiscount || attributes.promotion_tag) && (
+              <div className="absolute top-0 right-0 bg-primary text-white text-[10px] font-bold px-2.5 py-1 z-10 uppercase tracking-wide">
                 {hasDiscount
                   ? `${Math.round(((Number(attributes.price) - Number(attributes.price_with_discount)) / Number(attributes.price)) * 100)}% OFF`
-                  : 'PROMOÇÃO'}
+                  : 'Promo'}
               </div>
             )}
           </div>
 
           {/* Content */}
-          <div className="p-3 flex flex-col flex-1 min-w-0">
-            {/* Tags sem imagem */}
-            {!hasImage && (
-              <div className="flex flex-wrap gap-1 mb-1.5">
-                {attributes.new_tag && (
-                  <div className="bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap">
-                    NOVO!
-                  </div>
-                )}
-                {attributes.best_seller_tag && (
-                  <div className="bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap">
-                    MAIS VENDIDO
-                  </div>
-                )}
-                {attributes.highlight && (
-                  <div className="bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap">
-                    DESTAQUE
-                  </div>
-                )}
-                {(hasDiscount || attributes.promotion_tag) && (
-                  <div className="bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap">
-                    {hasDiscount
-                      ? `${Math.round(((Number(attributes.price) - Number(attributes.price_with_discount)) / Number(attributes.price)) * 100)}% OFF`
-                      : 'PROMOÇÃO'}
-                  </div>
-                )}
-              </div>
-            )}
-
-            <h3 className="font-semibold text-foreground text-xs sm:text-sm line-clamp-2 leading-snug mb-1 group-hover:text-primary transition-colors">
+          <div className="p-2.5 sm:p-3 flex flex-col flex-1 min-w-0">
+            <h3 className="font-medium text-gray-900 text-xs sm:text-sm leading-snug line-clamp-2 mb-1">
               {attributes.name}
             </h3>
 
             {attributes.description && (
-              <p className="text-muted-foreground text-[11px] line-clamp-1 mb-1">
+              <p className="text-gray-500 text-[11px] sm:text-xs line-clamp-1 mb-1.5">
                 {attributes.description}
               </p>
             )}
 
             {hasCustomization && (
-              <p className="text-[10px] text-primary font-medium mb-1">Personalizável</p>
+              <p className="text-[10px] sm:text-[11px] text-primary font-medium mb-1.5">Personalizavel</p>
             )}
 
-            <div className="flex items-center justify-between mt-auto">
-              <div className="flex flex-col">
-                {hasDiscount ? (
-                  <>
-                    <span className="text-primary font-bold text-sm">
-                      {formatPrice(Number(attributes.price_with_discount))}
-                    </span>
-                    <span className="text-muted-foreground text-[10px] line-through leading-none">
-                      {formatPrice(Number(attributes.price))}
-                    </span>
-                  </>
-                ) : (
-                  <span className="text-foreground font-bold text-sm">
+            <div className="mt-auto">
+              {hasDiscount ? (
+                <div className="flex items-baseline gap-1.5">
+                  <span className="font-bold text-gray-900 text-sm">
+                    {formatPrice(Number(attributes.price_with_discount))}
+                  </span>
+                  <span className="text-gray-400 text-[10px] sm:text-xs line-through">
                     {formatPrice(Number(attributes.price))}
                   </span>
-                )}
-              </div>
-
-              <div className="w-7 h-7 rounded-full bg-primary/10 group-hover:bg-primary flex items-center justify-center transition-colors flex-shrink-0">
-                <Plus className="w-3.5 h-3.5 text-primary group-hover:text-white transition-colors" />
-              </div>
+                </div>
+              ) : (
+                <span className="font-bold text-gray-900 text-sm">
+                  {formatPrice(Number(attributes.price))}
+                </span>
+              )}
             </div>
           </div>
         </div>

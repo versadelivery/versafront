@@ -59,7 +59,7 @@ function WeightPicker({ min, max, step, value, onChange, unit = 'kg' }: {
 
   return (
     <div
-      className="relative mx-auto overflow-hidden rounded-2xl border border-gray-200"
+      className="relative mx-auto overflow-hidden rounded-md border border-[#E5E2DD]"
       style={{ height: ITEM_H * VISIBLE, maxWidth: 240 }}
     >
       <div
@@ -330,13 +330,13 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
 
             {/* Weight picker */}
             {isWeightBased && (
-              <div className="border-t-[6px] border-gray-100">
+              <div className="border-t-[6px] border-[#E5E2DD]">
                 <div className="px-5 py-4">
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-base font-bold text-gray-900">
                       Quanto você gostaria?
                     </h3>
-                    <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">
+                    <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-md">
                       Obrigatório
                     </span>
                   </div>
@@ -365,11 +365,11 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
 
             {/* Extras */}
             {hasExtras && (
-              <div className="border-t-[6px] border-gray-100">
+              <div className="border-t-[6px] border-[#E5E2DD]">
                 <div className="px-5 py-4">
                   <div className="flex items-center justify-between mb-1">
                     <h3 className="text-base font-bold text-gray-900">Adicionais</h3>
-                    <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">
+                    <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-md">
                       Opcional
                     </span>
                   </div>
@@ -386,7 +386,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
                           )
                         }
                         className={`flex items-center justify-between py-3.5 cursor-pointer ${
-                          idx < attributes.extra.data.length - 1 ? 'border-b border-gray-100' : ''
+                          idx < attributes.extra.data.length - 1 ? 'border-b border-[#E5E2DD]' : ''
                         }`}
                       >
                         <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -406,11 +406,11 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
             {/* Shared Complements */}
             {attributes.shared_complements?.data?.length > 0 &&
               attributes.shared_complements.data.map(group => (
-                <div key={group.id} className="border-t-[6px] border-gray-100">
+                <div key={group.id} className="border-t-[6px] border-[#E5E2DD]">
                   <div className="px-5 py-4">
                     <div className="flex items-center justify-between mb-1">
                       <h3 className="text-base font-bold text-gray-900">{group.attributes.name}</h3>
-                      <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">
+                      <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-md">
                         Opcional
                       </span>
                     </div>
@@ -427,7 +427,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
                             )
                           }
                           className={`flex items-center justify-between py-3.5 cursor-pointer ${
-                            idx < group.attributes.options.length - 1 ? 'border-b border-gray-100' : ''
+                            idx < group.attributes.options.length - 1 ? 'border-b border-[#E5E2DD]' : ''
                           }`}
                         >
                           <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -449,11 +449,11 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
 
             {/* Prepare Methods */}
             {hasMethods && (
-              <div className="border-t-[6px] border-gray-100">
+              <div className="border-t-[6px] border-[#E5E2DD]">
                 <div className="px-5 py-4">
                   <div className="flex items-center justify-between mb-1">
                     <h3 className="text-base font-bold text-gray-900">Modo de Preparo</h3>
-                    <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">
+                    <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-md">
                       Opcional
                     </span>
                   </div>
@@ -470,7 +470,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
                           )
                         }
                         className={`flex items-center gap-3 py-3.5 cursor-pointer ${
-                          idx < attributes.prepare_method.data.length - 1 ? 'border-b border-gray-100' : ''
+                          idx < attributes.prepare_method.data.length - 1 ? 'border-b border-[#E5E2DD]' : ''
                         }`}
                       >
                         <DDCheckbox checked={selectedMethods.includes(method.id)} />
@@ -485,7 +485,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
             {/* Steps / Options (radio) */}
             {hasSteps &&
               attributes.steps.data.map(step => (
-                <div key={step.id} className="border-t-[6px] border-gray-100">
+                <div key={step.id} className="border-t-[6px] border-[#E5E2DD]">
                   <div className="px-5 py-4">
                     <div className="mb-1">
                       <h3 className="text-base font-bold text-gray-900">{step.attributes.name}</h3>
@@ -497,7 +497,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
                           key={option.id}
                           onClick={() => setSelectedOptions(prev => ({ ...prev, [step.id]: option.id }))}
                           className={`flex items-center gap-3 py-3.5 cursor-pointer ${
-                            idx < step.attributes.options.data.length - 1 ? 'border-b border-gray-100' : ''
+                            idx < step.attributes.options.data.length - 1 ? 'border-b border-[#E5E2DD]' : ''
                           }`}
                         >
                           <DDRadio checked={selectedOptions[step.id] === option.id} />
@@ -514,7 +514,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
         </div>
 
         {/* ── Footer: quantity + add to cart ── */}
-        <div className="flex-shrink-0 border-t border-gray-200 bg-white px-5 py-4">
+        <div className="flex-shrink-0 border-t border-[#E5E2DD] bg-white px-5 py-4">
           <div className="flex items-center gap-4">
             {/* Quantity selector */}
             {!isWeightBased && (
