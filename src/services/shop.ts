@@ -45,12 +45,11 @@ export const shopService = {
     const formData = new FormData();
     
     Object.entries(data.shop).forEach(([key, value]) => {
-      if (value !== null && value !== undefined) {
-        if (key === 'image' && value instanceof File) {
-          formData.append('shop[image]', value);
-        } else {
-          formData.append(`shop[${key}]`, value);
-        }
+      if (value === undefined) return;
+      if (key === 'image' && value instanceof File) {
+        formData.append('shop[image]', value);
+      } else {
+        formData.append(`shop[${key}]`, value === null ? '' : value);
       }
     });
     const response = await api.put<ShopResponse>("/shops", formData, {

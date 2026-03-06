@@ -48,7 +48,7 @@ export default function GeneralSettingsPage() {
         estimated_prep_time: shop.estimated_prep_time ?? 30,
         estimated_delivery_time: shop.estimated_delivery_time ?? 40,
         business_category: shop.business_category || "other",
-        default_delivery_person_id: shop.default_delivery_person_id || ""
+        default_delivery_person_id: shop.default_delivery_person_id ?? null
       };
 
       if (!(initialData as any).slug || (initialData as any).slug !== shop.slug) {
@@ -395,7 +395,12 @@ export default function GeneralSettingsPage() {
                   Entregador
                 </Label>
                 <Select
-                  value={formData.default_delivery_person_id ? String(formData.default_delivery_person_id) : "none"}
+                  value={(() => {
+                    const v = formData.default_delivery_person_id !== undefined
+                      ? formData.default_delivery_person_id
+                      : shop?.default_delivery_person_id;
+                    return v ? String(v) : "none";
+                  })()}
                   onValueChange={(value) => setFormData(prev => ({ ...prev, default_delivery_person_id: value === "none" ? null : value }))}
                   disabled={loadingUsers}
                 >
