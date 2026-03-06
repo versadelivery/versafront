@@ -14,7 +14,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useRouter } from 'next/navigation';
 
-export default function AuthIndicator() {
+export default function AuthIndicator({ isDarkHeader = false }: { isDarkHeader?: boolean }) {
   const { client, logout } = useClient();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
@@ -52,27 +52,24 @@ export default function AuthIndicator() {
             variant="ghost"
             size="sm"
             onClick={handleLogin}
-            className="text-sm font-medium text-muted-foreground hover:text-foreground"
+            className="text-sm font-medium"
+            style={isDarkHeader ? { color: 'rgba(255,255,255,0.85)' } : undefined}
           >
             <LogIn className="w-4 h-4 mr-1.5" />
             Entrar
           </Button>
-          {/* <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRegister}
-            className="text-sm font-medium border-gray-200 hover:border-gray-300"
-          >
-            <UserPlus className="w-4 h-4 mr-1.5" />
-            Cadastrar
-          </Button> */}
         </div>
 
         {/* Mobile */}
         <div className="sm:hidden">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9"
+                style={isDarkHeader ? { color: 'rgba(255,255,255,0.85)' } : undefined}
+              >
                 <User className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -97,7 +94,8 @@ export default function AuthIndicator() {
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors p-2 h-auto"
+          className="flex items-center gap-2 transition-colors p-2 h-auto"
+          style={isDarkHeader ? { color: 'rgba(255,255,255,0.85)' } : undefined}
         >
           <Avatar className="w-8 h-8">
             <AvatarImage src={client.avatar_url} />

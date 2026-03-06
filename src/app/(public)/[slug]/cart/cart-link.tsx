@@ -5,17 +5,25 @@ import { useCart } from './cart-context'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 
-export function CartLink() {
+export function CartLink({ isDarkHeader = false }: { isDarkHeader?: boolean }) {
   const { totalItems } = useCart()
   const params = useParams()
   const slug = params.slug as string
+
+  const borderStyle = isDarkHeader ? 'rgba(255,255,255,0.25)' : '#E5E2DD'
+  const textStyle = isDarkHeader ? 'rgba(255,255,255,0.85)' : undefined
 
   return (
     <>
       {/* Desktop */}
       <Link
         href={`/${slug}/carrinho`}
-        className="hidden md:flex items-center gap-2 border border-[#E5E2DD] rounded-md text-gray-700 hover:border-gray-400 hover:text-gray-900 transition-all duration-150 relative h-10 px-4 text-sm font-medium"
+        className="hidden md:flex items-center gap-2 rounded-md transition-all duration-150 relative h-10 px-4 text-sm font-medium"
+        style={{
+          borderWidth: '1px',
+          borderColor: borderStyle,
+          color: textStyle || '#374151',
+        }}
       >
         <ShoppingCart className="h-5 w-5" />
         <span>Carrinho</span>
@@ -29,7 +37,12 @@ export function CartLink() {
       {/* Mobile */}
       <Link
         href={`/${slug}/carrinho`}
-        className="md:hidden flex items-center justify-center h-10 w-10 border border-[#E5E2DD] rounded-md text-gray-500 hover:text-gray-900 hover:border-gray-400 relative transition-all duration-150"
+        className="md:hidden flex items-center justify-center h-10 w-10 rounded-md relative transition-all duration-150"
+        style={{
+          borderWidth: '1px',
+          borderColor: borderStyle,
+          color: textStyle || '#6B7280',
+        }}
       >
         <ShoppingCart className="h-5 w-5" />
         {totalItems > 0 && (

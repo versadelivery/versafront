@@ -67,8 +67,11 @@ export default async function StoreCatalog({ params }: Props) {
     notFound();
   }
 
+  const shopAttrs = result.data.data.attributes;
+  const bgColor = shopAttrs.background_color || undefined;
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen" style={bgColor ? { backgroundColor: bgColor } : { backgroundColor: 'var(--background)' }}>
       <StoreHeader shop={result.data.data} />
       <Suspense>
         <ClientStoreContent shop={result.data} />

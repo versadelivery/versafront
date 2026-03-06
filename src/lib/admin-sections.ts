@@ -25,6 +25,7 @@ import {
   Timer,
   Shield,
   Eye,
+  Palette,
   type LucideIcon,
 } from "lucide-react"
 
@@ -417,6 +418,16 @@ export const adminSections: AdminSection[] = [
     icon: Store,
     iconBgColor: "bg-gray-600",
     keywords: ["loja", "nome", "logo", "endereco", "horario", "geral"],
+    group: "Configurações",
+  },
+  {
+    id: "settings-appearance",
+    title: "Aparência do Cardápio",
+    description: "Cores, layout, mensagem de boas-vindas e banner",
+    href: "/admin/settings/appearance",
+    icon: Palette,
+    iconBgColor: "bg-pink-500",
+    keywords: ["aparencia", "cores", "layout", "design", "cardapio", "banner", "tema", "visual", "personalizar"],
     group: "Configurações",
   },
   {

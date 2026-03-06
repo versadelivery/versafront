@@ -7,6 +7,14 @@ export interface ShopResponse {
       name: string
       slug: string
       image_url?: string | null
+      welcome_message?: string | null
+      banner_text?: string | null
+      banner_active?: boolean
+      header_color?: string | null
+      background_color?: string | null
+      group_color?: string | null
+      catalog_layout?: string | null
+      accent_color?: string | null
       shop_delivery_config: {
         data: {
           id: string

@@ -1,4 +1,4 @@
-import { Settings, Users, Truck, CreditCard, Bell } from "lucide-react";
+import { Settings, Users, Truck, CreditCard, Bell, Palette } from "lucide-react";
 
 export const settingsCards = [
   {
@@ -7,6 +7,13 @@ export const settingsCards = [
     title: "Informações Gerais",
     description: "Configure as configurações básicas do sistema",
     iconBgColor: "bg-blue-500"
+  },
+  {
+    href: "/admin/settings/appearance",
+    icon: Palette,
+    title: "Aparência do Cardápio",
+    description: "Cores, layout, mensagem de boas-vindas e banner",
+    iconBgColor: "bg-pink-500"
   },
   {
     href: "/admin/settings/users",

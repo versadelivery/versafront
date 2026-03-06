@@ -12,6 +12,14 @@ export interface ShopAttributes {
   auto_accept_orders?: boolean;
   auto_open_cash_register?: boolean;
   auto_open_cash_register_time?: string | null;
+  welcome_message?: string | null;
+  banner_text?: string | null;
+  banner_active?: boolean;
+  header_color?: string | null;
+  background_color?: string | null;
+  group_color?: string | null;
+  catalog_layout?: string | null;
+  accent_color?: string | null;
 }
 
 export interface ShopResponse {

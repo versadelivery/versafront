@@ -1,6 +1,7 @@
 "use client"
 
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
+import { isDarkColor } from '../theme-utils';
 
 interface Category {
   id: string;
@@ -14,9 +15,15 @@ interface CategoryNavigationProps {
   categories: Category[];
   activeCategory: string;
   onChange: (category: string) => void;
+  accentColor?: string | null;
 }
 
-const CategoryNavigation = memo(function CategoryNavigation({ categories, activeCategory, onChange }: CategoryNavigationProps) {
+const CategoryNavigation = memo(function CategoryNavigation({ categories, activeCategory, onChange, accentColor }: CategoryNavigationProps) {
+  const accentText = useMemo(() => {
+    if (!accentColor) return '#FFFFFF';
+    return isDarkColor(accentColor) ? '#FFFFFF' : '#111827';
+  }, [accentColor]);
+
   const scrollToCategory = (categoryName: string) => {
     onChange(categoryName);
     const element = document.getElementById(categoryName.toLowerCase().replace(/\s+/g, '-'));
@@ -34,6 +41,10 @@ const CategoryNavigation = memo(function CategoryNavigation({ categories, active
     }
   };
 
+  const activeStyle = accentColor
+    ? { backgroundColor: accentColor, color: accentText, borderColor: accentColor }
+    : undefined;
+
   return (
     <div className="w-full overflow-hidden">
       <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
@@ -42,9 +53,10 @@ const CategoryNavigation = memo(function CategoryNavigation({ categories, active
           className={`
             whitespace-nowrap px-5 py-2 text-sm font-semibold transition-all duration-150 flex-shrink-0 border rounded-md
             ${activeCategory === 'all'
-              ? 'bg-primary text-white border-primary'
+              ? (accentColor ? '' : 'bg-primary text-white border-primary')
               : 'bg-white text-gray-600 border-[#E5E2DD] hover:border-gray-400 hover:text-gray-900'}
           `}
+          style={activeCategory === 'all' ? activeStyle : undefined}
         >
           Tudo
         </button>
@@ -56,9 +68,10 @@ const CategoryNavigation = memo(function CategoryNavigation({ categories, active
             className={`
               whitespace-nowrap px-5 py-2 text-sm font-semibold transition-all duration-150 flex-shrink-0 border rounded-md
               ${activeCategory === category.attributes.name
-                ? 'bg-primary text-white border-primary'
+                ? (accentColor ? '' : 'bg-primary text-white border-primary')
                 : 'bg-white text-gray-600 border-[#E5E2DD] hover:border-gray-400 hover:text-gray-900'}
             `}
+            style={activeCategory === category.attributes.name ? activeStyle : undefined}
           >
             {category.attributes.name}
           </button>

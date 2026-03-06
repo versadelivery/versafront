@@ -13,6 +13,7 @@ import { fetchShopBySlug } from './slug-service';
 import type { CatalogItem } from './types';
 import { useClient } from './client-context';
 import ahoy from '@/lib/ahoy';
+import { getTextColors } from './theme-utils';
 
 interface ClientStoreContentProps {
   shop: ShopResponse;
@@ -120,10 +121,24 @@ export default function ClientStoreContent({ shop: initialShop }: ClientStoreCon
     setSearchQuery('');
   };
 
+  const shopAttrs = shop?.data?.attributes || {};
+  const bgColor = shopAttrs.background_color || '#FAF9F7';
+  const groupColor = shopAttrs.group_color || null;
+  const accentColor = shopAttrs.accent_color || null;
+  const catalogLayout = shopAttrs.catalog_layout || 'list';
+  const welcomeMessage = shopAttrs.welcome_message || '';
+  const hasBanner = shopAttrs.banner_active && shopAttrs.banner_text;
+
+  const bgTheme = useMemo(() => getTextColors(bgColor), [bgColor]);
+  const groupTheme = useMemo(() => getTextColors(groupColor), [groupColor]);
+
   return (
-    <main className="min-h-screen pb-20 bg-[#FAF9F7]">
+    <main className="min-h-screen pb-20" style={{ backgroundColor: bgColor }}>
       {/* Sticky search + nav bar */}
-      <div className="sticky top-16 z-40 w-full bg-white border-b border-[#E5E2DD]">
+      <div
+        className="sticky z-40 w-full bg-white border-b border-[#E5E2DD]"
+        style={{ top: hasBanner ? '101px' : '64px' }}
+      >
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:gap-8 py-3 lg:py-2.5">
             <div className="order-2 lg:order-1 lg:flex-1 min-w-0 mt-2.5 lg:mt-0 overflow-hidden">
@@ -131,6 +146,7 @@ export default function ClientStoreContent({ shop: initialShop }: ClientStoreCon
                 categories={groups}
                 activeCategory={activeCategory}
                 onChange={setActiveCategory}
+                accentColor={accentColor}
               />
             </div>
 
@@ -142,11 +158,28 @@ export default function ClientStoreContent({ shop: initialShop }: ClientStoreCon
       </div>
 
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Welcome message */}
+        {welcomeMessage && (
+          <div
+            className="rounded-md px-4 py-3 mb-6 text-sm"
+            style={{
+              backgroundColor: groupColor || '#FFFFFF',
+              border: `1px solid ${groupTheme.border}`,
+              color: groupTheme.text,
+            }}
+          >
+            <p className="whitespace-pre-line">{welcomeMessage}</p>
+          </div>
+        )}
+
         <ProductGrid
           categories={groups}
           activeCategory={activeCategory}
           searchQuery={searchQuery}
           onClearSearch={handleClearSearch}
+          catalogLayout={catalogLayout}
+          groupColor={groupColor}
+          backgroundColor={bgColor}
         />
       </div>
 
