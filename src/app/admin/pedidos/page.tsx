@@ -6,13 +6,13 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { KDSBoard } from '@/components/admin/kds-board';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Clock, 
-  Truck, 
-  CheckCircle, 
-  XCircle, 
-  Eye, 
-  ChefHat, 
+import {
+  Clock,
+  Truck,
+  CheckCircle,
+  XCircle,
+  Eye,
+  ChefHat,
   Bell,
   Copy,
   SquarePen,
@@ -20,8 +20,19 @@ import {
   ChevronUp,
   ArrowRight,
   Router,
-  ArrowLeft
+  ArrowLeft,
+  Search,
+  Filter,
+  X
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import OrderDetailsModal from '@/components/admin/order-details-modal';
 import { formatPrice } from '@/app/(public)/[slug]/format-price';
@@ -171,6 +182,12 @@ const mapOrderStatus = (status: Order['status']) => {
 export default function OrderManagement() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [quickSearchId, setQuickSearchId] = useState('');
+  const [filterDeliveryType, setFilterDeliveryType] = useState<'all' | 'delivery' | 'pickup'>('all');
+  const [filterPaymentMethod, setFilterPaymentMethod] = useState<'all' | 'cash' | 'debit' | 'credit' | 'manual_pix'>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | Order['status']>('all');
+  const [showFilters, setShowFilters] = useState(false);
   const [expandedColumns, setExpandedColumns] = useState<Record<string, boolean>>({
     recebidos: true,
     aceitos: true,
@@ -513,8 +530,60 @@ export default function OrderManagement() {
     }));
   };
 
+  const filteredOrders = React.useMemo(() => {
+    return orders.filter((order: Order) => {
+      // Filtro por busca textual (ID, nome do cliente, telefone)
+      if (searchQuery.trim()) {
+        const q = searchQuery.trim().toLowerCase();
+        const matchId = order.id.toString().includes(q);
+        const matchName = order.customerName?.toLowerCase().includes(q);
+        const customerPhone = order.socketData?.attributes?.customer?.data?.attributes?.cellphone ||
+                              (order.socketData?.attributes?.customer as any)?.cellphone || '';
+        const matchPhone = customerPhone.toLowerCase().includes(q);
+        if (!matchId && !matchName && !matchPhone) return false;
+      }
+
+      // Filtro por tipo de entrega
+      if (filterDeliveryType !== 'all') {
+        if (filterDeliveryType === 'pickup' && order.deliveryType !== 'pickup') return false;
+        if (filterDeliveryType === 'delivery' && order.deliveryType !== 'delivery') return false;
+      }
+
+      // Filtro por forma de pagamento
+      if (filterPaymentMethod !== 'all') {
+        if (order.socketData?.attributes?.payment_method !== filterPaymentMethod) return false;
+      }
+
+      // Filtro por status
+      if (filterStatus !== 'all') {
+        if (order.status !== filterStatus) return false;
+      }
+
+      return true;
+    });
+  }, [orders, searchQuery, filterDeliveryType, filterPaymentMethod, filterStatus]);
+
+  const handleQuickSearch = useCallback(() => {
+    const id = quickSearchId.trim();
+    if (!id) return;
+    const found = orders.find((o) => o.id.toString() === id);
+    if (found) {
+      setSelectedOrderId(found.id);
+      setQuickSearchId('');
+    }
+  }, [quickSearchId, orders]);
+
+  const hasActiveFilters = searchQuery.trim() !== '' || filterDeliveryType !== 'all' || filterPaymentMethod !== 'all' || filterStatus !== 'all';
+
+  const clearAllFilters = () => {
+    setSearchQuery('');
+    setFilterDeliveryType('all');
+    setFilterPaymentMethod('all');
+    setFilterStatus('all');
+  };
+
   const getOrdersByStatus = (status: Order['status']) => {
-    return orders.filter((order: Order) => order.status === status);
+    return filteredOrders.filter((order: Order) => order.status === status);
   };
 
   const selectedOrder = orders.find((order: Order) => order.id === selectedOrderId);
@@ -562,6 +631,140 @@ export default function OrderManagement() {
       </div>
 
       <div className="max-w-[1920px] mx-auto px-4 sm:px-6 py-4">
+        {/* Busca rápida por ID + Busca geral + Filtros */}
+        <div className="mb-4 space-y-3">
+          {/* Linha principal: Busca rápida por ID e busca geral */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Busca rápida por ID */}
+            <div className="flex gap-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="N° do pedido..."
+                  value={quickSearchId}
+                  onChange={(e) => setQuickSearchId(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleQuickSearch()}
+                  className="pl-9 w-40 sm:w-48"
+                />
+              </div>
+              <Button
+                onClick={handleQuickSearch}
+                variant="outline"
+                size="default"
+              >
+                Ir
+              </Button>
+            </div>
+
+            {/* Busca geral por nome/telefone/ID */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Buscar por ID, nome do cliente ou telefone..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Botão de filtros */}
+            <Button
+              variant={showFilters ? 'default' : 'outline'}
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center gap-2 whitespace-nowrap"
+            >
+              <Filter className="h-4 w-4" />
+              Filtros
+              {hasActiveFilters && (
+                <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs rounded-full">
+                  !
+                </Badge>
+              )}
+            </Button>
+          </div>
+
+          {/* Painel de filtros avançados */}
+          {showFilters && (
+            <div className="flex flex-col sm:flex-row gap-3 p-4 bg-white rounded-lg border border-[#E5E2DD] shadow-sm">
+              <div className="flex-1">
+                <label className="text-sm font-medium text-gray-700 mb-1 block">Tipo</label>
+                <Select value={filterDeliveryType} onValueChange={(v) => setFilterDeliveryType(v as any)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todos" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="delivery">Delivery</SelectItem>
+                    <SelectItem value="pickup">Retirada</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex-1">
+                <label className="text-sm font-medium text-gray-700 mb-1 block">Pagamento</label>
+                <Select value={filterPaymentMethod} onValueChange={(v) => setFilterPaymentMethod(v as any)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todos" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="manual_pix">PIX</SelectItem>
+                    <SelectItem value="credit">Cartão de Crédito</SelectItem>
+                    <SelectItem value="debit">Cartão de Débito</SelectItem>
+                    <SelectItem value="cash">Dinheiro</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex-1">
+                <label className="text-sm font-medium text-gray-700 mb-1 block">Status</label>
+                <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as any)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todos" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="recebidos">Recebidos</SelectItem>
+                    <SelectItem value="aceitos">Aceitos</SelectItem>
+                    <SelectItem value="em_analise">Em Análise</SelectItem>
+                    <SelectItem value="em_preparo">Em Preparo</SelectItem>
+                    <SelectItem value="prontos">Entrega</SelectItem>
+                    <SelectItem value="saiu">Saiu para Entrega</SelectItem>
+                    <SelectItem value="entregue">Entregue</SelectItem>
+                    <SelectItem value="cancelled">Cancelados</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {hasActiveFilters && (
+                <div className="flex items-end">
+                  <Button variant="ghost" onClick={clearAllFilters} className="text-sm text-muted-foreground">
+                    <X className="h-4 w-4 mr-1" />
+                    Limpar filtros
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Indicador de filtros ativos */}
+          {hasActiveFilters && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span>Mostrando {filteredOrders.length} de {orders.length} pedidos</span>
+            </div>
+          )}
+        </div>
+
         <Tabs defaultValue="painel" className="w-full">
           <TabsList>
             <TabsTrigger value="painel">Painel</TabsTrigger>
@@ -669,7 +872,7 @@ export default function OrderManagement() {
           <TabsContent value="kds">
             <div className="bg-white rounded-md border border-[#E5E2DD] p-4">
               <KDSBoard
-                orders={orders.map((o) => ({
+                orders={filteredOrders.map((o) => ({
                   id: o.id,
                   customerName: o.customerName,
                   status: o.status,
