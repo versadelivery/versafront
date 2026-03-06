@@ -119,7 +119,7 @@ export default function StoreHeader({ shop: initialShop }: StoreHeaderProps) {
                 {attributes.address && (
                   <span className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground">
                     <MapPin className="w-3 h-3 flex-shrink-0" />
-                    {attributes.address}
+                    <span className="truncate max-w-[250px]">{attributes.address}</span>
                   </span>
                 )}
               </div>

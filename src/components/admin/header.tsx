@@ -92,7 +92,7 @@ export function Header() {
               </Avatar>
               <div className="hidden md:block">
                 <p className="font-outfit text-sm font-medium text-foreground">{shop?.name}</p>
-                <p className="font-outfit text-xs text-muted-foreground">{shop?.address}</p>
+                <p className="font-outfit text-xs text-muted-foreground truncate max-w-[200px]">{shop?.address}</p>
               </div>
             </div>
             <Button

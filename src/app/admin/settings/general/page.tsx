@@ -13,6 +13,7 @@ import { useShop } from "@/hooks/use-shop";
 import { ShopAttributes } from "@/services/shop";
 import AdminHeader from "@/components/admin/catalog-header";
 import ScheduleSettings from "./components/ScheduleSettings";
+import { usePhoneMask } from "@/hooks/use-phone-mask";
 
 export default function GeneralSettingsPage() {
   const { shop, isLoading, updateShop, isUpdating } = useShop();
@@ -20,6 +21,8 @@ export default function GeneralSettingsPage() {
   const [formData, setFormData] = useState<Partial<ShopAttributes>>({});
   const [hasChanges, setHasChanges] = useState(false);
   const [initialData, setInitialData] = useState<Partial<ShopAttributes>>({});
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const { formatPhone } = usePhoneMask();
 
   useEffect(() => {
     if (shop && !isLoading && !isUpdating) {
@@ -36,16 +39,13 @@ export default function GeneralSettingsPage() {
         auto_open_cash_register_time: shop.auto_open_cash_register_time ?? null
       };
 
-      // Se for a primeira vez ou o estabelecimento mudou, inicializa tudo
       if (!(initialData as any).slug || (initialData as any).slug !== shop.slug) {
         setInitialData(initial);
         setFormData(initial);
       } else {
-        // Se for o mesmo estabelecimento (ex: após um save), apenas sincroniza o initialData
-        // Isso permite resetar o status de 'hasChanges' sem perder edições não salvas (se houver)
         setInitialData(initial);
       }
-      
+
       setLogoPreview(shop.image_url || null);
     }
   }, [shop, isLoading, isUpdating]);
@@ -77,12 +77,46 @@ export default function GeneralSettingsPage() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({ ...prev, [name]: "" }));
+    }
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatPhone(e.target.value);
+    setFormData(prev => ({ ...prev, cellphone: formatted }));
+    if (fieldErrors.cellphone) {
+      setFieldErrors(prev => ({ ...prev, cellphone: "" }));
+    }
+  };
+
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    if (!formData.name?.trim()) {
+      errors.name = "Nome do estabelecimento é obrigatório";
+    }
+
+    if (formData.cellphone) {
+      const digits = formData.cellphone.replace(/\D/g, '');
+      if (digits.length > 0 && (digits.length < 10 || digits.length > 11)) {
+        errors.cellphone = "Telefone deve ter formato (XX) XXXX-XXXX ou (XX) XXXXX-XXXX";
+      }
+    }
+
+    if (formData.auto_open_cash_register && !formData.auto_open_cash_register_time) {
+      errors.auto_open_cash_register_time = "Horário é obrigatório quando a abertura automática está ativa";
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!hasChanges) return;
-    
+    if (!validateForm()) return;
+
     updateShop(formData);
   };
 
@@ -90,6 +124,7 @@ export default function GeneralSettingsPage() {
     setFormData(initialData);
     setLogoPreview(shop?.image_url || null);
     setHasChanges(false);
+    setFieldErrors({});
   };
 
   if (isLoading) {
@@ -98,12 +133,12 @@ export default function GeneralSettingsPage() {
 
   return (
     <div className="w-full px-0 sm:px-4 lg:px-6">
-      <AdminHeader 
+      <AdminHeader
         title="CONFIGURAÇÕES GERAIS"
         description="Configure as informações básicas do seu estabelecimento"
         className="mb-4"
       />
-      
+
       <div className="w-full max-w-7xl mx-auto p-0 md:p-4 lg:p-6 bg-white">
         <Card className="p-4 md:p-6 shadow-none border-none rounded-xs bg-white">
           <form onSubmit={handleSubmit} className="space-y-6 md:space-y-8">
@@ -117,9 +152,9 @@ export default function GeneralSettingsPage() {
                     <div className="w-40 h-40 rounded-xs bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 border-none overflow-hidden flex items-center justify-center transition-all duration-300 group-hover:border-primary relative">
                       {logoPreview ? (
                         <>
-                          <img 
-                            src={logoPreview} 
-                            alt="Logo preview" 
+                          <img
+                            src={logoPreview}
+                            alt="Logo preview"
                             className="w-full h-full object-cover"
                           />
                           <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center">
@@ -155,23 +190,24 @@ export default function GeneralSettingsPage() {
                 <div className="flex-1 space-y-6">
                   <div className="space-y-1">
                     <Label htmlFor="name" className="text-muted-foreground">
-                      Nome do Estabelecimento
+                      Nome do Estabelecimento <span className="text-red-500">*</span>
                     </Label>
-                    <Input 
-                      id="name" 
+                    <Input
+                      id="name"
                       name="name"
                       value={formData.name || ""}
                       onChange={handleInputChange}
-                      placeholder="Grata Pizza" 
-                      className="h-12 text-base border-gray-300 dark:border-gray-700 focus-visible:ring-primary"
+                      placeholder="Grata Pizza"
+                      className={`h-12 text-base border-gray-300 dark:border-gray-700 focus-visible:ring-primary ${fieldErrors.name ? "border-red-500 focus-visible:ring-red-500" : ""}`}
                     />
+                    {fieldErrors.name && <p className="text-xs text-red-500">{fieldErrors.name}</p>}
                   </div>
                   <div className="space-y-1">
                     <Label htmlFor="description" className="text-muted-foreground placeholder:text-foreground/40">
                       Descrição
                     </Label>
-                    <Textarea 
-                      id="description" 
+                    <Textarea
+                      id="description"
                       name="description"
                       value={formData.description || ""}
                       onChange={handleInputChange}
@@ -197,26 +233,28 @@ export default function GeneralSettingsPage() {
                       <Phone className="w-4 h-4" />
                       Telefone
                     </Label>
-                    <Input 
-                      id="phone" 
+                    <Input
+                      id="phone"
                       name="cellphone"
                       value={formData.cellphone || ""}
-                      onChange={handleInputChange}
-                      placeholder="(11) 99999-9999" 
-                      className="h-12 pl-10"
+                      onChange={handlePhoneChange}
+                      placeholder="(11) 99999-9999"
+                      className={`h-12 pl-10 ${fieldErrors.cellphone ? "border-red-500 focus-visible:ring-red-500" : ""}`}
                     />
+                    {fieldErrors.cellphone && <p className="text-xs text-red-500">{fieldErrors.cellphone}</p>}
                   </div>
                   <div className="space-y-1">
                     <Label htmlFor="address" className="flex items-center gap-2 text-muted-foreground">
                       <MapPin className="w-4 h-4" />
                       Endereço
                     </Label>
-                    <Input 
-                      id="address" 
+                    <Input
+                      id="address"
                       name="address"
                       value={formData.address || ""}
                       onChange={handleInputChange}
-                      placeholder="Major Barreto, 1602" 
+                      maxLength={70}
+                      placeholder="Major Barreto, 1602"
                       className="h-12 pl-10"
                     />
                   </div>
@@ -225,13 +263,13 @@ export default function GeneralSettingsPage() {
                       <Mail className="w-4 h-4" />
                       E-mail de Contato
                     </Label>
-                    <Input 
-                      id="email" 
+                    <Input
+                      id="email"
                       name="email"
                       type="email"
                       value={formData.email || ""}
                       onChange={handleInputChange}
-                      placeholder="contato@sualoja.com" 
+                      placeholder="contato@sualoja.com"
                       className="h-12 pl-10"
                     />
                   </div>
@@ -291,19 +329,22 @@ export default function GeneralSettingsPage() {
                   <Switch
                     id="auto_open_cash_register"
                     checked={formData.auto_open_cash_register ?? false}
-                    onCheckedChange={(checked) =>
+                    onCheckedChange={(checked) => {
                       setFormData(prev => ({
                         ...prev,
                         auto_open_cash_register: checked,
                         ...(!checked && { auto_open_cash_register_time: null })
-                      }))
-                    }
+                      }));
+                      if (!checked && fieldErrors.auto_open_cash_register_time) {
+                        setFieldErrors(prev => ({ ...prev, auto_open_cash_register_time: "" }));
+                      }
+                    }}
                   />
                 </div>
                 {formData.auto_open_cash_register && (
                   <div className="ml-8 space-y-1">
                     <Label htmlFor="auto_open_cash_register_time" className="text-sm text-muted-foreground">
-                      Horário de abertura
+                      Horário de abertura <span className="text-red-500">*</span>
                     </Label>
                     <Input
                       id="auto_open_cash_register_time"
@@ -311,8 +352,11 @@ export default function GeneralSettingsPage() {
                       type="time"
                       value={formData.auto_open_cash_register_time || ""}
                       onChange={handleInputChange}
-                      className="h-12 w-40"
+                      className={`h-12 w-40 ${fieldErrors.auto_open_cash_register_time ? "border-red-500 focus-visible:ring-red-500" : ""}`}
                     />
+                    {fieldErrors.auto_open_cash_register_time && (
+                      <p className="text-xs text-red-500">{fieldErrors.auto_open_cash_register_time}</p>
+                    )}
                   </div>
                 )}
               </div>
@@ -331,16 +375,16 @@ export default function GeneralSettingsPage() {
             <Separator className="my-6 bg-gray-200 dark:bg-gray-800" />
 
             <div className="flex flex-col sm:flex-row justify-end gap-3 mt-6">
-              <Button 
-                variant="outline" 
-                type="button" 
+              <Button
+                variant="outline"
+                type="button"
                 onClick={handleCancel}
                 className="w-full sm:w-auto px-6 h-11 border-none"
               >
                 Cancelar
               </Button>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={!hasChanges || isUpdating}
                 className={`w-full sm:w-auto px-6 h-11 bg-primary hover:bg-primary/90 ${
                   !hasChanges ? "opacity-50 cursor-not-allowed" : ""

@@ -356,7 +356,8 @@ export default function CheckoutPage() {
     }
 
     const minOrderValue = Number(shopDeliveryConfig?.minimum_order_value) || 0
-    if (deliveryOption === 'delivery' && totalPrice < minOrderValue) {
+    const effectiveOrderValue = (totalPrice || 0) - (couponDiscount || 0) + (paymentAdjustment || 0)
+    if (deliveryOption === 'delivery' && effectiveOrderValue < minOrderValue) {
       toast.error(`Valor mínimo para entrega: R$ ${minOrderValue.toFixed(2).replace('.', ',')}`)
       return
     }
@@ -520,7 +521,8 @@ export default function CheckoutPage() {
   }
 
   const minOrderValue = Number(shopDeliveryConfig?.minimum_order_value) || 0
-  const isBelowMinOrder = deliveryOption === 'delivery' && minOrderValue > 0 && totalPrice < minOrderValue
+  const effectiveValue = (totalPrice || 0) - (couponDiscount || 0) + (paymentAdjustment || 0)
+  const isBelowMinOrder = deliveryOption === 'delivery' && minOrderValue > 0 && effectiveValue < minOrderValue
 
   if (isLoadingShop || isLoading) {
     return (
@@ -918,6 +920,7 @@ export default function CheckoutPage() {
                         placeholder="Rua, número"
                         value={address}
                         onChange={(e) => { setAddress(e.target.value); setFieldErrors(prev => ({ ...prev, address: '' })) }}
+                        maxLength={70}
                         className={`border-gray-200 focus:border-primary/40 text-sm ${fieldErrors.address ? 'border-red-400 focus:border-red-400' : ''}`}
                       />
                       {fieldErrors.address && <p className="text-xs text-red-500 mt-1">{fieldErrors.address}</p>}
@@ -1201,6 +1204,8 @@ function OrderSummary({
     return sum
   }, 0)
 
+  const effectiveValue = (totalPrice || 0) - (couponDiscount || 0) + (paymentAdjustment || 0)
+
   return (
     <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
       <div className="px-5 py-4 border-b border-gray-100">
@@ -1259,7 +1264,7 @@ function OrderSummary({
           <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
             <AlertTriangle className="h-3.5 w-3.5 text-amber-500 flex-shrink-0 mt-0.5" />
             <p className="text-xs text-amber-700">
-              Mínimo R$ {minOrderValue.toFixed(2).replace('.', ',')}. Faltam R$ {(minOrderValue - totalPrice).toFixed(2).replace('.', ',')}.
+              Mínimo R$ {minOrderValue.toFixed(2).replace('.', ',')}. Faltam R$ {(minOrderValue - effectiveValue).toFixed(2).replace('.', ',')}.
             </p>
           </div>
         )}

@@ -35,7 +35,7 @@ export default function UsersManagementPage() {
   
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
 
   const filteredUsers = users.filter((user: any) => 
@@ -85,6 +85,12 @@ export default function UsersManagementPage() {
 
   const handleDeleteUser = async (userId: string) => {
     await deleteUser(userId);
+  };
+
+  const handleConfirmDeleteUser = (user: any) => {
+    setSelectedUser(user);
+    setIsEditing(true);
+    setIsModalOpen(true);
   };
 
   return (
@@ -176,11 +182,11 @@ export default function UsersManagementPage() {
                             <Edit className="h-3 w-3 mr-1" />
                             Editar
                           </Button>
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             size="sm"
                             className="h-8 px-3 text-xs border-red-200 text-red-600 hover:bg-red-50"
-                            onClick={() => handleDeleteUser(user.id)}
+                            onClick={() => handleConfirmDeleteUser(user)}
                           >
                             <Trash2 className="h-3 w-3 mr-1" />
                             Excluir
@@ -215,6 +221,7 @@ export default function UsersManagementPage() {
         onSave={handleSaveUser}
         onDelete={handleDeleteUser}
         user={selectedUser}
+        users={users}
         isEdit={isEditing}
         loading={loading}
       />

@@ -28,6 +28,9 @@ import { DeleteConfirmation } from "@/components/ui/delete-confirmation";
 import { Switch } from "@/components/ui/switch";
 import { useDelivery } from "@/hooks/use-delivery";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { deliveryService } from "@/services/delivery-service";
+import { useQueryClient } from "@tanstack/react-query";
 
 type Neighborhood = {
   id: string;
@@ -37,17 +40,24 @@ type Neighborhood = {
   freeDeliveryThreshold: number;
 };
 
+const blockInvalidChars = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  if (['-', '+', '=', '*', '&', '/', 'e', 'E'].includes(e.key)) {
+    e.preventDefault();
+  }
+};
+
 export default function DeliverySettingsPage() {
-  const { 
-    deliveryConfig, 
-    neighborhoods, 
-    isLoading, 
-    updateDeliveryConfig, 
-    createNeighborhood, 
-    updateNeighborhood, 
+  const {
+    deliveryConfig,
+    neighborhoods,
+    isLoading,
+    updateDeliveryConfig,
+    createNeighborhood,
+    updateNeighborhood,
     deleteNeighborhood,
-    isUpdating 
+    isUpdating
   } = useDelivery();
+  const queryClient = useQueryClient();
 
   const [deliveryType, setDeliveryType] = useState<string>("to_be_agreed");
   const [fixedFee, setFixedFee] = useState<string>("");
@@ -59,16 +69,22 @@ export default function DeliverySettingsPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [currentNeighborhood, setCurrentNeighborhood] = useState<Neighborhood | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [isBulkUpdating, setIsBulkUpdating] = useState(false);
   const [errors, setErrors] = useState<{
     fixedFee?: string;
     freeDeliveryThreshold?: string;
+    minOrderValue?: string;
+    neighborhoodName?: string;
     neighborhoodValue?: string;
     neighborhoodFreeDeliveryThreshold?: string;
   }>({});
+  const [savedDeliveryType, setSavedDeliveryType] = useState<string>("to_be_agreed");
 
   useEffect(() => {
     if (deliveryConfig) {
-      setDeliveryType(deliveryConfig.delivery_fee_kind);
+      const kind = deliveryConfig.delivery_fee_kind;
+      setDeliveryType(kind);
+      setSavedDeliveryType(kind);
       setFixedFee(deliveryConfig.amount?.toString() || "");
       setHasFreeDelivery(deliveryConfig.min_value_free_delivery !== null);
       setFreeDeliveryThreshold(deliveryConfig.min_value_free_delivery?.toString() || "");
@@ -76,30 +92,49 @@ export default function DeliverySettingsPage() {
     }
   }, [deliveryConfig]);
 
-  const handleBulkAdjust = (type: "increase" | "decrease") => {
+  const handleBulkAdjust = async (type: "increase" | "decrease") => {
     const adjustValue = parseFloat(bulkAdjustValue) || 0;
-    const adjusted = neighborhoods?.map((n) => ({
-      ...n,
-      amount: type === "increase" ? n.amount + adjustValue : n.amount - adjustValue,
-    })) || [];
-    
-    adjusted.forEach(neighborhood => {
-      updateNeighborhood({ 
-        id: neighborhood.id, 
-        data: { amount: neighborhood.amount } 
-      });
-    });
-    
-    setBulkAdjustValue("");
+    if (adjustValue <= 0 || !neighborhoods?.length) return;
+
+    setIsBulkUpdating(true);
+    try {
+      const updates = neighborhoods.map((n) => ({
+        id: n.id,
+        amount: Math.max(0, type === "increase" ? n.amount + adjustValue : n.amount - adjustValue),
+      }));
+
+      await Promise.all(
+        updates.map(u => deliveryService.updateNeighborhood(u.id, { amount: u.amount }))
+      );
+      queryClient.invalidateQueries({ queryKey: ["delivery-config"] });
+      toast.success(`Valores ${type === "increase" ? "aumentados" : "diminuídos"} com sucesso!`);
+    } catch {
+      toast.error("Erro ao atualizar valores dos bairros");
+    } finally {
+      setIsBulkUpdating(false);
+      setBulkAdjustValue("");
+    }
   };
 
   const handleAddNeighborhood = () => {
     if (!currentNeighborhood) return;
 
     const newErrors: typeof errors = {};
-    
-    if (currentNeighborhood.hasFreeDelivery && currentNeighborhood.freeDeliveryThreshold <= currentNeighborhood.value) {
-      newErrors.neighborhoodFreeDeliveryThreshold = "O valor mínimo para frete grátis deve ser maior que o valor da taxa";
+
+    if (!currentNeighborhood.name.trim()) {
+      newErrors.neighborhoodName = "Nome do bairro é obrigatório";
+    }
+
+    if (currentNeighborhood.hasFreeDelivery) {
+      if (!currentNeighborhood.freeDeliveryThreshold || currentNeighborhood.freeDeliveryThreshold <= 0) {
+        newErrors.neighborhoodFreeDeliveryThreshold = "Valor mínimo para taxa gratuita é obrigatório";
+      }
+    } else {
+      if (!currentNeighborhood.value) {
+        newErrors.neighborhoodValue = "Valor da entrega é obrigatório";
+      } else if (currentNeighborhood.value < 0) {
+        newErrors.neighborhoodValue = "Valor não pode ser negativo";
+      }
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -107,28 +142,48 @@ export default function DeliverySettingsPage() {
       return;
     }
 
+    const onSuccess = () => {
+      resetForm();
+    };
+
+    const onError = (error: any) => {
+      const msg = error?.message || '';
+      if (msg.toLowerCase().includes('name') || msg.toLowerCase().includes('nome') || msg.toLowerCase().includes('already') || msg.toLowerCase().includes('já')) {
+        setErrors({ neighborhoodName: "Já existe um bairro com este nome" });
+      } else {
+        toast.error(isEditing ? "Erro ao atualizar bairro" : "Erro ao criar bairro");
+      }
+    };
+
+    const amount = currentNeighborhood.hasFreeDelivery ? 0 : currentNeighborhood.value;
+
     if (isEditing && currentNeighborhood.id) {
       updateNeighborhood({
         id: currentNeighborhood.id,
         data: {
           name: currentNeighborhood.name,
-          amount: currentNeighborhood.value,
+          amount,
           min_value_free_delivery: currentNeighborhood.hasFreeDelivery ? currentNeighborhood.freeDeliveryThreshold : null
         }
-      });
+      }, { onSuccess, onError });
     } else {
       createNeighborhood({
         name: currentNeighborhood.name,
-        amount: currentNeighborhood.value,
+        amount,
         min_value_free_delivery: currentNeighborhood.hasFreeDelivery ? currentNeighborhood.freeDeliveryThreshold : null
-      });
+      }, { onSuccess, onError });
     }
-    resetForm();
   };
 
   const handleEditNeighborhood = (neighborhood: Neighborhood) => {
-    setCurrentNeighborhood(neighborhood);
+    const autoFree = neighborhood.value === 0 && !neighborhood.hasFreeDelivery;
+    setCurrentNeighborhood({
+      ...neighborhood,
+      hasFreeDelivery: autoFree || neighborhood.hasFreeDelivery,
+      freeDeliveryThreshold: autoFree ? (neighborhood.freeDeliveryThreshold || 50) : neighborhood.freeDeliveryThreshold,
+    });
     setIsEditing(true);
+    setErrors({});
     setIsDialogOpen(true);
   };
 
@@ -142,11 +197,37 @@ export default function DeliverySettingsPage() {
     setCurrentNeighborhood(null);
     setIsEditing(false);
     setIsDialogOpen(false);
+    setErrors({});
+  };
+
+  const handleOpenNewNeighborhood = () => {
+    setCurrentNeighborhood({
+      id: "",
+      name: "",
+      value: 0,
+      hasFreeDelivery: false,
+      freeDeliveryThreshold: 0
+    });
+    setErrors({});
+    setIsEditing(false);
+    setIsDialogOpen(true);
   };
 
   const handleSaveDeliveryConfig = () => {
     const newErrors: typeof errors = {};
-    
+
+    const minVal = parseFloat(minOrderValue);
+    if (minOrderValue && minVal < 0) {
+      newErrors.minOrderValue = "Valor mínimo não pode ser negativo";
+    }
+
+    if (deliveryType === "fixed") {
+      const feeVal = parseFloat(fixedFee);
+      if (fixedFee && feeVal < 0) {
+        newErrors.fixedFee = "Taxa não pode ser negativa";
+      }
+    }
+
     if (hasFreeDelivery && parseFloat(freeDeliveryThreshold) <= parseFloat(fixedFee)) {
       newErrors.freeDeliveryThreshold = "O valor mínimo para frete grátis deve ser maior que o valor da taxa";
     }
@@ -162,6 +243,17 @@ export default function DeliverySettingsPage() {
       min_value_free_delivery: hasFreeDelivery ? parseFloat(freeDeliveryThreshold) : null,
       minimum_order_value: parseFloat(minOrderValue) || 0
     });
+  };
+
+  const handleCancelConfig = () => {
+    if (deliveryConfig) {
+      setDeliveryType(savedDeliveryType);
+      setFixedFee(deliveryConfig.amount?.toString() || "");
+      setHasFreeDelivery(deliveryConfig.min_value_free_delivery !== null);
+      setFreeDeliveryThreshold(deliveryConfig.min_value_free_delivery?.toString() || "");
+      setMinOrderValue(deliveryConfig.minimum_order_value?.toString() || "");
+    }
+    setErrors({});
   };
 
   if (isLoading) {
@@ -202,12 +294,25 @@ export default function DeliverySettingsPage() {
                     </span>
                     <Input
                       id="minOrderValue"
+                      type="number"
+                      step="0.01"
+                      min="0"
                       value={minOrderValue}
-                      onChange={(e) => setMinOrderValue(e.target.value)}
+                      onChange={(e) => {
+                        setMinOrderValue(e.target.value);
+                        if (errors.minOrderValue) setErrors(prev => ({ ...prev, minOrderValue: "" }));
+                      }}
+                      onKeyDown={blockInvalidChars}
                       placeholder="0,00"
-                      className="h-12 text-base border-gray-300 focus:ring-primary pl-10 font-bold"
+                      className={`h-12 text-base border-gray-300 focus:ring-primary pl-10 font-bold ${errors.minOrderValue ? "border-red-500" : ""}`}
                     />
                   </div>
+                  {errors.minOrderValue && (
+                    <p className="text-sm text-red-500 mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-4 h-4" />
+                      {errors.minOrderValue}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -231,16 +336,7 @@ export default function DeliverySettingsPage() {
 
               {deliveryType === "per_neighborhood" && (
                 <Button
-                  onClick={() => {
-                    setCurrentNeighborhood({
-                      id: "",
-                      name: "",
-                      value: 0,
-                      hasFreeDelivery: false,
-                      freeDeliveryThreshold: 0
-                    });
-                    setIsDialogOpen(true);
-                  }}
+                  onClick={handleOpenNewNeighborhood}
                   className="h-11 p-6 bg-primary hover:bg-primary/90 border-none shadow-xs rounded-xs"
                 >
                   <Plus className="w-4 h-4 mr-2" />
@@ -270,12 +366,25 @@ export default function DeliverySettingsPage() {
                     </span>
                     <Input
                       id="fixedFee"
+                      type="number"
+                      step="0.01"
+                      min="0"
                       value={fixedFee}
-                      onChange={(e) => setFixedFee(e.target.value)}
+                      onChange={(e) => {
+                        setFixedFee(e.target.value);
+                        if (errors.fixedFee) setErrors(prev => ({ ...prev, fixedFee: "" }));
+                      }}
+                      onKeyDown={blockInvalidChars}
                       placeholder=" 0,00"
-                      className="h-12 text-base border-gray-300 dark:border-gray-700 focus-visible:ring-primary pl-12"
+                      className={`h-12 text-base border-gray-300 dark:border-gray-700 focus-visible:ring-primary pl-12 ${errors.fixedFee ? "border-red-500" : ""}`}
                     />
                   </div>
+                  {errors.fixedFee && (
+                    <p className="text-sm text-red-500 flex items-center gap-1">
+                      <AlertCircle className="w-4 h-4" />
+                      {errors.fixedFee}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-4">
@@ -295,7 +404,7 @@ export default function DeliverySettingsPage() {
                       onCheckedChange={setHasFreeDelivery}
                     />
                   </div>
-                  
+
                   {hasFreeDelivery && (
                     <div className="space-y-2 pl-1">
                       <Label htmlFor="freeDeliveryThreshold" className="text-sm font-medium flex items-center gap-2">
@@ -310,8 +419,14 @@ export default function DeliverySettingsPage() {
                           <Input
                             id="freeDeliveryThreshold"
                             type="number"
+                            step="0.01"
+                            min="0"
                             value={freeDeliveryThreshold}
-                            onChange={(e) => setFreeDeliveryThreshold(e.target.value)}
+                            onChange={(e) => {
+                              setFreeDeliveryThreshold(e.target.value);
+                              if (errors.freeDeliveryThreshold) setErrors(prev => ({ ...prev, freeDeliveryThreshold: "" }));
+                            }}
+                            onKeyDown={blockInvalidChars}
                             placeholder=" Ex: 50,00"
                             className="h-11 pl-12"
                           />
@@ -355,8 +470,12 @@ export default function DeliverySettingsPage() {
                     </Label>
                     <div className="relative mt-1">
                       <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
                         value={bulkAdjustValue}
                         onChange={(e) => setBulkAdjustValue(e.target.value)}
+                        onKeyDown={blockInvalidChars}
                         placeholder="0,00"
                         className="h-12 text-base border-gray-300 dark:border-gray-700 focus-visible:ring-primary"
                       />
@@ -366,17 +485,19 @@ export default function DeliverySettingsPage() {
                     <Button
                       variant="outline"
                       onClick={() => handleBulkAdjust("increase")}
+                      disabled={isBulkUpdating}
                       className="h-12 gap-2 p-6 border-none shadow-xs rounded-xs hover:bg-gray-100"
                     >
-                      <ArrowUp className="w-4 h-4" />
+                      {isBulkUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowUp className="w-4 h-4" />}
                       Aumentar
                     </Button>
                     <Button
                       variant="outline"
                       onClick={() => handleBulkAdjust("decrease")}
+                      disabled={isBulkUpdating}
                       className="h-12 gap-2 p-6 border-none shadow-xs rounded-xs hover:bg-gray-100"
                     >
-                      <ArrowDown className="w-4 h-4" />
+                      {isBulkUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowDown className="w-4 h-4" />}
                       Diminuir
                     </Button>
                   </div>
@@ -409,17 +530,17 @@ export default function DeliverySettingsPage() {
                     </TableHeader>
                     <TableBody>
                       {neighborhoods?.map((neighborhood) => (
-                        <TableRow 
+                        <TableRow
                           key={neighborhood.id}
                           className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                         >
                           <TableCell className="font-medium">{neighborhood.name}</TableCell>
-                          <TableCell className="font-medium">R$ {neighborhood.amount.toFixed(2)}</TableCell>
+                          <TableCell className="font-medium">R$ {neighborhood.amount.toFixed(2).replace('.', ',')}</TableCell>
                           <TableCell>
-                            {neighborhood.min_value_free_delivery !== null 
+                            {neighborhood.min_value_free_delivery !== null
                               ? <span className="inline-flex items-center gap-1 text-green-600">
                                   <CheckCircle2 className="w-4 h-4" />
-                                  A partir de R$ {neighborhood.min_value_free_delivery.toFixed(2)}
+                                  A partir de R$ {neighborhood.min_value_free_delivery.toFixed(2).replace('.', ',')}
                                 </span>
                               : <span className="text-muted-foreground inline-flex items-center gap-1">
                                   <Clock className="w-4 h-4" />
@@ -429,8 +550,8 @@ export default function DeliverySettingsPage() {
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
-                              <Button 
-                                variant="ghost" 
+                              <Button
+                                variant="ghost"
                                 size="icon"
                                 onClick={() => handleEditNeighborhood({
                                   id: neighborhood.id,
@@ -476,6 +597,7 @@ export default function DeliverySettingsPage() {
               <Button
                 variant="outline"
                 type="button"
+                onClick={handleCancelConfig}
                 className="w-full sm:w-auto p-6 h-11 border-none shadow-xs rounded-xs hover:bg-gray-100"
               >
                 Cancelar
@@ -497,7 +619,7 @@ export default function DeliverySettingsPage() {
         </Card>
       </div>
 
-      <Dialog open={isDialogOpen} onOpenChange={resetForm}>
+      <Dialog open={isDialogOpen} onOpenChange={(open) => { if (!open) resetForm(); }}>
         <DialogContent className="sm:max-w-md bg-white">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold flex items-center gap-2">
@@ -514,15 +636,22 @@ export default function DeliverySettingsPage() {
               <Input
                 id="neighborhoodName"
                 value={currentNeighborhood?.name || ""}
-                onChange={(e) =>
+                onChange={(e) => {
                   setCurrentNeighborhood({
                     ...currentNeighborhood!,
                     name: e.target.value,
-                  })
-                }
+                  });
+                  if (errors.neighborhoodName) setErrors(prev => ({ ...prev, neighborhoodName: "" }));
+                }}
                 placeholder="Ex: Centro"
-                className="h-11"
+                className={`h-11 ${errors.neighborhoodName ? "border-red-500" : ""}`}
               />
+              {errors.neighborhoodName && (
+                <p className="text-sm text-red-500 flex items-center gap-1">
+                  <AlertCircle className="w-4 h-4" />
+                  {errors.neighborhoodName}
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="neighborhoodValue" className="text-sm font-medium flex items-center gap-2">
@@ -536,19 +665,30 @@ export default function DeliverySettingsPage() {
                 <Input
                   id="neighborhoodValue"
                   type="number"
-                  value={currentNeighborhood?.value || ""}
-                  onChange={(e) =>
+                  step="0.01"
+                  min="0"
+                  value={currentNeighborhood?.hasFreeDelivery ? "0" : (currentNeighborhood?.value || "")}
+                  onChange={(e) => {
                     setCurrentNeighborhood({
                       ...currentNeighborhood!,
                       value: parseFloat(e.target.value) || 0,
-                    })
-                  }
+                    });
+                    if (errors.neighborhoodValue) setErrors(prev => ({ ...prev, neighborhoodValue: "" }));
+                  }}
+                  onKeyDown={blockInvalidChars}
+                  disabled={currentNeighborhood?.hasFreeDelivery}
                   placeholder=" Ex: 10,00"
-                  className="h-11 pl-12"
+                  className={`h-11 pl-12 ${errors.neighborhoodValue ? "border-red-500" : ""} ${currentNeighborhood?.hasFreeDelivery ? "opacity-50 cursor-not-allowed" : ""}`}
                 />
               </div>
+              {errors.neighborhoodValue && (
+                <p className="text-sm text-red-500 flex items-center gap-1">
+                  <AlertCircle className="w-4 h-4" />
+                  {errors.neighborhoodValue}
+                </p>
+              )}
             </div>
-            
+
             <div className="space-y-4 pt-2">
               <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-3">
@@ -567,12 +707,16 @@ export default function DeliverySettingsPage() {
                     setCurrentNeighborhood({
                       ...currentNeighborhood!,
                       hasFreeDelivery: checked,
+                      value: checked ? 0 : currentNeighborhood!.value,
                       freeDeliveryThreshold: checked ? (currentNeighborhood?.freeDeliveryThreshold || 50) : 0
                     });
+                    if (checked && errors.neighborhoodValue) {
+                      setErrors(prev => ({ ...prev, neighborhoodValue: "" }));
+                    }
                   }}
                 />
               </div>
-              
+
               {currentNeighborhood?.hasFreeDelivery && (
                 <div className="space-y-2 pl-1">
                   <Label htmlFor="freeDeliveryThreshold" className="text-sm font-medium flex items-center gap-2">
@@ -587,13 +731,17 @@ export default function DeliverySettingsPage() {
                       <Input
                         id="freeDeliveryThreshold"
                         type="number"
+                        step="0.01"
+                        min="0"
                         value={currentNeighborhood?.freeDeliveryThreshold || ""}
-                        onChange={(e) =>
+                        onChange={(e) => {
                           setCurrentNeighborhood({
                             ...currentNeighborhood!,
                             freeDeliveryThreshold: parseFloat(e.target.value) || 0,
-                          })
-                        }
+                          });
+                          if (errors.neighborhoodFreeDeliveryThreshold) setErrors(prev => ({ ...prev, neighborhoodFreeDeliveryThreshold: "" }));
+                        }}
+                        onKeyDown={blockInvalidChars}
                         placeholder=" Ex: 50,00"
                         className="h-11 pl-12"
                       />

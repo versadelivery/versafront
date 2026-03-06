@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { CatalogItem } from './types';
-import { Utensils, PlusCircle, ChevronRight, Scale } from 'lucide-react';
+import { Utensils, PlusCircle, ChevronRight, Scale, Layers } from 'lucide-react';
 import { formatPrice } from './format-price';
 import ProductModal from './product-detail';
 
@@ -147,6 +147,12 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onClick, className }) => {
                       <Scale className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-primary" />
                       {getMeasureType()}
                     </span>
+                    {attributes.shared_complements?.data?.length > 0 && (
+                      <span className="text-[10px] sm:text-xs text-purple-600 bg-purple-50 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full flex items-center gap-0.5 sm:gap-1">
+                        <Layers className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                        Personalizável
+                      </span>
+                    )}
                   </div>
 
                   <button className="text-primary hover:text-primary-dark transition-colors">

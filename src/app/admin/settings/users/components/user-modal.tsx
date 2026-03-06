@@ -5,15 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from "@/components/ui/select";
 import { X, User, Mail, Shield, Loader2 } from "lucide-react";
 import { User as UserType } from "../services/userService";
+import { toast } from "sonner";
 
 interface UserModalProps {
   isOpen: boolean;
@@ -21,41 +22,43 @@ interface UserModalProps {
   onSave: (userData: any) => Promise<void>;
   onDelete?: (userId: string) => Promise<void>;
   user?: UserType | null;
+  users?: UserType[];
   isEdit?: boolean;
   loading?: boolean;
 }
 
 const userRoles = [
-  { 
-    value: "owner", 
-    label: "Proprietário", 
-    description: "Acesso total ao sistema" 
+  {
+    value: "owner",
+    label: "Proprietário",
+    description: "Acesso total ao sistema"
   },
-  { 
-    value: "manager", 
-    label: "Gerente", 
-    description: "Gerenciamento de pedidos e configurações" 
+  {
+    value: "manager",
+    label: "Gerente",
+    description: "Gerenciamento de pedidos e configurações"
   },
-  { 
-    value: "employee", 
-    label: "Funcionário", 
-    description: "Acesso limitado para operações básicas" 
+  {
+    value: "employee",
+    label: "Funcionário",
+    description: "Acesso limitado para operações básicas"
   },
-  { 
-    value: "delivery_man", 
-    label: "Entregador", 
-    description: "Gestão de entregas e pedidos" 
+  {
+    value: "delivery_man",
+    label: "Entregador",
+    description: "Gestão de entregas e pedidos"
   }
 ];
 
-export default function UserModal({ 
-  isOpen, 
-  onClose, 
-  onSave, 
+export default function UserModal({
+  isOpen,
+  onClose,
+  onSave,
   onDelete,
-  user, 
+  user,
+  users = [],
   isEdit = false,
-  loading = false 
+  loading = false
 }: UserModalProps) {
   const [formData, setFormData] = useState({
     name: "",
@@ -68,6 +71,9 @@ export default function UserModal({
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const isLastOwner = isEdit && user?.attributes.role === 'owner' &&
+    users.filter(u => u.attributes.role === 'owner').length <= 1;
 
   // Preencher formulário quando editando
   useEffect(() => {
@@ -111,6 +117,10 @@ export default function UserModal({
       newErrors.role = "Função é obrigatória";
     }
 
+    if (isEdit && isLastOwner && formData.role !== 'owner') {
+      newErrors.role = "Não é possível alterar a função do último proprietário";
+    }
+
     if (!isEdit) {
       if (!formData.password) {
         newErrors.password = "Senha é obrigatória";
@@ -142,8 +152,13 @@ export default function UserModal({
 
       await onSave(userData);
       onClose();
-    } catch (error) {
-      console.error('Erro ao salvar usuário:', error);
+    } catch (error: any) {
+      const message = error.message || '';
+      if (message.toLowerCase().includes('email') || message.toLowerCase().includes('e-mail') || message.toLowerCase().includes('already') || message.toLowerCase().includes('já')) {
+        setErrors(prev => ({ ...prev, email: "Este e-mail já está cadastrado" }));
+      } else {
+        toast.error(message || 'Erro ao salvar usuário');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -151,13 +166,19 @@ export default function UserModal({
 
   const handleDelete = async () => {
     if (!user || !onDelete) return;
-    
+
+    if (isLastOwner) {
+      toast.error("Não é possível excluir o último proprietário da loja");
+      setShowDeleteConfirm(false);
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await onDelete(user.id);
       onClose();
-    } catch (error) {
-      console.error('Erro ao deletar usuário:', error);
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao deletar usuário');
     } finally {
       setIsSubmitting(false);
     }
@@ -173,7 +194,7 @@ export default function UserModal({
   const getRoleColor = (role: string) => {
     const colors = {
       owner: "text-red-600",
-      manager: "text-emerald-600", 
+      manager: "text-emerald-600",
       employee: "text-blue-600",
       delivery_man: "text-purple-600"
     };
@@ -199,8 +220,8 @@ export default function UserModal({
                 </p>
               </div>
             </div>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
               onClick={onClose}
               className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
@@ -226,16 +247,16 @@ export default function UserModal({
               </div>
 
               <div className="flex gap-3">
-                <Button 
-                  type="button" 
-                  variant="outline" 
+                <Button
+                  type="button"
+                  variant="outline"
                   onClick={() => setShowDeleteConfirm(false)}
                   className="flex-1 h-11"
                   disabled={isSubmitting}
                 >
                   Cancelar
                 </Button>
-                <Button 
+                <Button
                   onClick={handleDelete}
                   className="flex-1 h-11 bg-red-600 hover:bg-red-700 text-white"
                   disabled={isSubmitting}
@@ -267,6 +288,7 @@ export default function UserModal({
                   placeholder="Ex: João Silva"
                   value={formData.name}
                   onChange={(e) => handleChange("name", e.target.value)}
+                  maxLength={30}
                   className={`pl-10 h-11 ${errors.name ? "border-red-500 focus:border-red-500" : ""}`}
                 />
               </div>
@@ -297,8 +319,8 @@ export default function UserModal({
               <Label className="text-sm font-medium text-foreground">
                 Função
               </Label>
-              <Select 
-                value={formData.role} 
+              <Select
+                value={formData.role}
                 onValueChange={(value) => handleChange("role", value)}
                 disabled={isSubmitting}
               >
@@ -363,8 +385,8 @@ export default function UserModal({
 
             {/* Buttons */}
             <div className="flex gap-3 pt-4">
-              {isEdit && onDelete && (
-                <Button 
+              {isEdit && onDelete && !isLastOwner && (
+                <Button
                   type="button"
                   variant="outline"
                   onClick={() => setShowDeleteConfirm(true)}
@@ -374,16 +396,16 @@ export default function UserModal({
                   Excluir
                 </Button>
               )}
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={onClose}
                 className="flex-1 h-11"
                 disabled={isSubmitting}
               >
                 Cancelar
               </Button>
-              <Button 
+              <Button
                 type="submit"
                 className="flex-1 h-11 bg-emerald-600 hover:bg-emerald-700 text-white"
                 disabled={isSubmitting}

@@ -93,6 +93,7 @@ function RegisterForm() {
                 type="text"
                 {...registerForm("name")}
                 placeholder="John Doe"
+                maxLength={30}
                 className="rounded-xs bg-transparent w-full p-8 border border-black/10 pr-10 placeholder:text-foreground/40"
               />
               {errors.name && (

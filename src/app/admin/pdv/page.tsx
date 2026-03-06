@@ -1290,6 +1290,7 @@ export default function PDVPage() {
                         if (formErrors.address) setFormErrors((p) => ({ ...p, address: "" }));
                       }}
                       placeholder="Rua, número"
+                      maxLength={70}
                       className={formErrors.address ? "border-red-500 focus-visible:ring-red-500" : ""}
                     />
                     {formErrors.address && <p className="text-xs text-red-500">{formErrors.address}</p>}

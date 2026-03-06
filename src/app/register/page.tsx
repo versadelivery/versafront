@@ -141,7 +141,7 @@ export default function Register() {
       confirmPassword: ""
     }
   });
-  const [errors, setErrors] = useState<Partial<RegisterFormData>>({});
+  const [errors, setErrors] = useState<RegisterStateErrors>({});
 
   const applyBackendErrors = (fieldErrors: RegisterStateErrors) => {
     if (!fieldErrors.shop && !fieldErrors.shop_user) {
