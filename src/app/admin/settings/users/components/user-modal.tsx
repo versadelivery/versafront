@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -25,6 +24,7 @@ interface UserModalProps {
   users?: UserType[];
   isEdit?: boolean;
   loading?: boolean;
+  initialDeleteConfirm?: boolean;
 }
 
 const userRoles = [
@@ -58,7 +58,8 @@ export default function UserModal({
   user,
   users = [],
   isEdit = false,
-  loading = false
+  loading = false,
+  initialDeleteConfirm = false
 }: UserModalProps) {
   const [formData, setFormData] = useState({
     name: "",
@@ -95,8 +96,8 @@ export default function UserModal({
       });
     }
     setErrors({});
-    setShowDeleteConfirm(false);
-  }, [isEdit, user, isOpen]);
+    setShowDeleteConfirm(initialDeleteConfirm);
+  }, [isEdit, user, isOpen, initialDeleteConfirm]);
 
   if (!isOpen) return null;
 
@@ -192,56 +193,48 @@ export default function UserModal({
   };
 
   const getRoleColor = (role: string) => {
-    const colors = {
+    const colors: Record<string, string> = {
       owner: "text-red-600",
-      manager: "text-emerald-600",
+      manager: "text-green-600",
       employee: "text-blue-600",
       delivery_man: "text-purple-600"
     };
-    return colors[role as keyof typeof colors] || "text-gray-600";
+    return colors[role] || "text-gray-600";
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md bg-white shadow-2xl">
-        <div className="p-6">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
-                <User className="w-5 h-5 text-emerald-600" />
-              </div>
-              <div>
-                <h2 className="text-xl font-semibold text-foreground">
-                  {isEdit ? "Editar Usuário" : "Criar Novo Usuário"}
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  {isEdit ? "Atualize as informações do usuário" : "Preencha os dados para criar um novo usuário"}
-                </p>
-              </div>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
-            >
-              <X className="w-4 h-4" />
-            </Button>
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-white rounded-md border border-[#E5E2DD] overflow-hidden flex flex-col max-h-[90vh]">
+        {/* Header fixo */}
+        <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center justify-between flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <User className="h-4 w-4 text-primary" />
+            <h2 className="text-base font-semibold text-gray-900">
+              {isEdit ? "Editar Usuário" : "Criar Novo Usuário"}
+            </h2>
           </div>
+          <button
+            onClick={onClose}
+            className="w-7 h-7 rounded-full flex items-center justify-center text-muted-foreground hover:text-gray-900 transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
 
+        {/* Body scrollavel */}
+        <div className="flex-1 overflow-y-auto bg-[#FAF9F7] px-5 py-5">
           {showDeleteConfirm ? (
-            /* Confirmação de exclusão */
+            /* Confirmacao de exclusao */
             <div className="space-y-4">
               <div className="text-center">
-                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-12 h-12 bg-white border border-red-400 rounded-full flex items-center justify-center mx-auto mb-4">
                   <User className="w-6 h-6 text-red-600" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                <h3 className="text-base font-semibold text-gray-900 mb-2">
                   Confirmar Exclusão
                 </h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  Tem certeza que deseja excluir o usuário <strong>{user?.attributes.name}</strong>?
+                <p className="text-sm text-muted-foreground mb-4">
+                  Tem certeza que deseja excluir o usuário <strong className="text-gray-900">{user?.attributes.name}</strong>?
                   Esta ação não pode ser desfeita.
                 </p>
               </div>
@@ -251,14 +244,14 @@ export default function UserModal({
                   type="button"
                   variant="outline"
                   onClick={() => setShowDeleteConfirm(false)}
-                  className="flex-1 h-11"
+                  className="flex-1 h-10 rounded-md border border-gray-300 cursor-pointer"
                   disabled={isSubmitting}
                 >
                   Cancelar
                 </Button>
                 <Button
                   onClick={handleDelete}
-                  className="flex-1 h-11 bg-red-600 hover:bg-red-700 text-white"
+                  className="flex-1 h-10 rounded-md border border-gray-300 cursor-pointer bg-red-600 hover:bg-red-700 text-white"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? (
@@ -273,157 +266,158 @@ export default function UserModal({
               </div>
             </div>
           ) : (
-            /* Formulário */
-            <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Nome */}
-            <div className="space-y-2">
-              <Label htmlFor="name" className="text-sm font-medium text-foreground">
-                Nome completo
-              </Label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input
-                  id="name"
-                  type="text"
-                  placeholder="Ex: João Silva"
-                  value={formData.name}
-                  onChange={(e) => handleChange("name", e.target.value)}
-                  maxLength={30}
-                  className={`pl-10 h-11 ${errors.name ? "border-red-500 focus:border-red-500" : ""}`}
-                />
+            /* Formulario */
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Nome */}
+              <div className="space-y-1.5">
+                <Label htmlFor="name" className="text-sm font-medium">
+                  Nome completo
+                </Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Input
+                    id="name"
+                    type="text"
+                    placeholder="Ex: João Silva"
+                    value={formData.name}
+                    onChange={(e) => handleChange("name", e.target.value)}
+                    maxLength={30}
+                    className={`pl-10 h-10 rounded-md border-[#E5E2DD] ${errors.name ? "border-red-400 focus:border-red-400" : ""}`}
+                  />
+                </div>
+                {errors.name && <p className="text-xs text-red-500">{errors.name}</p>}
               </div>
-              {errors.name && <p className="text-xs text-red-500">{errors.name}</p>}
-            </div>
 
-            {/* Email */}
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium text-foreground">
-                E-mail
-              </Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="joao@exemplo.com"
-                  value={formData.email}
-                  onChange={(e) => handleChange("email", e.target.value)}
-                  className={`pl-10 h-11 ${errors.email ? "border-red-500 focus:border-red-500" : ""}`}
-                />
+              {/* Email */}
+              <div className="space-y-1.5">
+                <Label htmlFor="email" className="text-sm font-medium">
+                  E-mail
+                </Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="joao@exemplo.com"
+                    value={formData.email}
+                    onChange={(e) => handleChange("email", e.target.value)}
+                    className={`pl-10 h-10 rounded-md border-[#E5E2DD] ${errors.email ? "border-red-400 focus:border-red-400" : ""}`}
+                  />
+                </div>
+                {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
               </div>
-              {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
-            </div>
 
-            {/* Função */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-foreground">
-                Função
-              </Label>
-              <Select
-                value={formData.role}
-                onValueChange={(value) => handleChange("role", value)}
-                disabled={isSubmitting}
-              >
-                <SelectTrigger className={`h-11 ${errors.role ? "border-red-500" : ""}`}>
-                  <div className="flex items-center gap-2">
-                    <Shield className="h-4 w-4 text-muted-foreground" />
-                    <SelectValue placeholder="Selecione a função" />
+              {/* Funcao */}
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">
+                  Função
+                </Label>
+                <Select
+                  value={formData.role}
+                  onValueChange={(value) => handleChange("role", value)}
+                  disabled={isSubmitting}
+                >
+                  <SelectTrigger className={`h-10 rounded-md border-[#E5E2DD] cursor-pointer ${errors.role ? "border-red-400" : ""}`}>
+                    <div className="flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-muted-foreground" />
+                      <SelectValue placeholder="Selecione a função" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent className="rounded-md border border-[#E5E2DD]">
+                    {userRoles.map((role) => (
+                      <SelectItem key={role.value} value={role.value}>
+                        <div className="flex flex-col items-start">
+                          <span className={`font-medium ${getRoleColor(role.value)}`}>
+                            {role.label}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {role.description}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.role && <p className="text-xs text-red-500">{errors.role}</p>}
+              </div>
+
+              {/* Senhas (apenas para criacao) */}
+              {!isEdit && (
+                <>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="password" className="text-sm font-medium">
+                      Senha
+                    </Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="Mínimo 6 caracteres"
+                      value={formData.password}
+                      onChange={(e) => handleChange("password", e.target.value)}
+                      className={`h-10 rounded-md border-[#E5E2DD] ${errors.password ? "border-red-400 focus:border-red-400" : ""}`}
+                    />
+                    {errors.password && <p className="text-xs text-red-500">{errors.password}</p>}
                   </div>
-                </SelectTrigger>
-                <SelectContent>
-                  {userRoles.map((role) => (
-                    <SelectItem key={role.value} value={role.value}>
-                      <div className="flex flex-col items-start">
-                        <span className={`font-medium ${getRoleColor(role.value)}`}>
-                          {role.label}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {role.description}
-                        </span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.role && <p className="text-xs text-red-500">{errors.role}</p>}
-            </div>
 
-            {/* Senhas (apenas para criação) */}
-            {!isEdit && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-sm font-medium text-foreground">
-                    Senha
-                  </Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="Mínimo 6 caracteres"
-                    value={formData.password}
-                    onChange={(e) => handleChange("password", e.target.value)}
-                    className={`h-11 ${errors.password ? "border-red-500 focus:border-red-500" : ""}`}
-                  />
-                  {errors.password && <p className="text-xs text-red-500">{errors.password}</p>}
-                </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="confirmPassword" className="text-sm font-medium">
+                      Confirmar senha
+                    </Label>
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      placeholder="Digite a senha novamente"
+                      value={formData.confirmPassword}
+                      onChange={(e) => handleChange("confirmPassword", e.target.value)}
+                      className={`h-10 rounded-md border-[#E5E2DD] ${errors.confirmPassword ? "border-red-400 focus:border-red-400" : ""}`}
+                    />
+                    {errors.confirmPassword && <p className="text-xs text-red-500">{errors.confirmPassword}</p>}
+                  </div>
+                </>
+              )}
 
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword" className="text-sm font-medium text-foreground">
-                    Confirmar senha
-                  </Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    placeholder="Digite a senha novamente"
-                    value={formData.confirmPassword}
-                    onChange={(e) => handleChange("confirmPassword", e.target.value)}
-                    className={`h-11 ${errors.confirmPassword ? "border-red-500 focus:border-red-500" : ""}`}
-                  />
-                  {errors.confirmPassword && <p className="text-xs text-red-500">{errors.confirmPassword}</p>}
-                </div>
-              </>
-            )}
-
-            {/* Buttons */}
-            <div className="flex gap-3 pt-4">
-              {isEdit && onDelete && !isLastOwner && (
+              {/* Botoes */}
+              <div className="flex items-center gap-3 pt-3">
+                {isEdit && onDelete && !isLastOwner && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="h-10 px-4 rounded-md border border-red-400 text-red-600 cursor-pointer hover:bg-red-600 hover:text-white text-sm"
+                    disabled={isSubmitting}
+                  >
+                    Excluir
+                  </Button>
+                )}
+                <div className="flex-1" />
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setShowDeleteConfirm(true)}
-                  className="border-red-500 text-red-500 hover:bg-red-50"
+                  onClick={onClose}
+                  className="h-10 px-5 rounded-md border border-gray-300 cursor-pointer text-sm"
                   disabled={isSubmitting}
                 >
-                  Excluir
+                  Cancelar
                 </Button>
-              )}
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onClose}
-                className="flex-1 h-11"
-                disabled={isSubmitting}
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                className="flex-1 h-11 bg-emerald-600 hover:bg-emerald-700 text-white"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {isEdit ? "Salvando..." : "Criando..."}
-                  </>
-                ) : (
-                  isEdit ? "Salvar alterações" : "Criar usuário"
-                )}
-              </Button>
-            </div>
+                <Button
+                  type="submit"
+                  className="h-10 px-5 rounded-md border border-gray-300 cursor-pointer bg-primary text-white hover:bg-primary/90 text-sm"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      {isEdit ? "Salvando..." : "Criando..."}
+                    </>
+                  ) : (
+                    isEdit ? "Salvar alterações" : "Criar usuário"
+                  )}
+                </Button>
+              </div>
             </form>
           )}
         </div>
-      </Card>
+      </div>
     </div>
   );
 }

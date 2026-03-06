@@ -4,8 +4,13 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
-import { X, User, Mail, Phone, Loader2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { User, Mail, Phone, Loader2 } from "lucide-react";
 import { Customer } from "../services/customerService";
 
 interface CustomerModalProps {
@@ -45,25 +50,23 @@ export default function CustomerModal({
     setErrors({});
   }, [isEdit, customer, isOpen]);
 
-  if (!isOpen) return null;
-
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = "Nome é obrigatório";
+      newErrors.name = "Nome e obrigatorio";
     }
 
     if (!formData.email.trim()) {
-      newErrors.email = "E-mail é obrigatório";
+      newErrors.email = "E-mail e obrigatorio";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "E-mail inválido";
+      newErrors.email = "E-mail invalido";
     }
 
     if (!formData.cellphone.trim()) {
-      newErrors.cellphone = "Celular é obrigatório";
+      newErrors.cellphone = "Celular e obrigatorio";
     } else if (formData.cellphone.replace(/\D/g, "").length < 10) {
-      newErrors.cellphone = "Celular deve ter pelo menos 10 dígitos";
+      newErrors.cellphone = "Celular deve ter pelo menos 10 digitos";
     }
 
     setErrors(newErrors);
@@ -97,41 +100,31 @@ export default function CustomerModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md bg-white shadow-2xl">
-        <div className="p-6">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-violet-100 rounded-lg flex items-center justify-center">
-                <User className="w-5 h-5 text-violet-600" />
-              </div>
-              <div>
-                <h2 className="text-xl font-semibold text-foreground">
-                  {isEdit ? "Editar Cliente" : "Novo Cliente"}
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  {isEdit
-                    ? "Atualize as informações do cliente"
-                    : "Preencha os dados para cadastrar um novo cliente"}
-                </p>
-              </div>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
-            >
-              <X className="w-4 h-4" />
-            </Button>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="sm:max-w-md p-0 rounded-md border-[#E5E2DD] gap-0">
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-[#E5E2DD] flex items-center gap-3">
+          <div className="w-9 h-9 rounded-md bg-[#F0EFEB] flex items-center justify-center flex-shrink-0">
+            <User className="w-4 h-4 text-primary" />
           </div>
+          <div>
+            <DialogTitle className="text-base font-semibold text-gray-900">
+              {isEdit ? "Editar Cliente" : "Novo Cliente"}
+            </DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground">
+              {isEdit
+                ? "Atualize as informacoes do cliente"
+                : "Preencha os dados para cadastrar um novo cliente"}
+            </DialogDescription>
+          </div>
+        </div>
 
-          {/* Formulário */}
-          <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Body */}
+        <form onSubmit={handleSubmit}>
+          <div className="px-6 py-5 bg-[#FAF9F7] space-y-4">
             {/* Nome */}
-            <div className="space-y-2">
-              <Label htmlFor="name" className="text-sm font-medium text-foreground">
+            <div className="space-y-1.5">
+              <Label htmlFor="name" className="text-sm font-medium">
                 Nome completo
               </Label>
               <div className="relative">
@@ -139,18 +132,20 @@ export default function CustomerModal({
                 <Input
                   id="name"
                   type="text"
-                  placeholder="Ex: João Silva"
+                  placeholder="Ex: Joao Silva"
                   value={formData.name}
                   onChange={(e) => handleChange("name", e.target.value)}
-                  className={`pl-10 h-11 ${errors.name ? "border-red-500 focus:border-red-500" : ""}`}
+                  className={`pl-10 h-10 rounded-md border-[#E5E2DD] bg-white ${
+                    errors.name ? "border-red-400 focus:border-red-400" : ""
+                  }`}
                 />
               </div>
-              {errors.name && <p className="text-xs text-red-500">{errors.name}</p>}
+              {errors.name && <p className="text-sm text-red-600">{errors.name}</p>}
             </div>
 
             {/* Email */}
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium text-foreground">
+            <div className="space-y-1.5">
+              <Label htmlFor="email" className="text-sm font-medium">
                 E-mail
               </Label>
               <div className="relative">
@@ -161,15 +156,17 @@ export default function CustomerModal({
                   placeholder="joao@exemplo.com"
                   value={formData.email}
                   onChange={(e) => handleChange("email", e.target.value)}
-                  className={`pl-10 h-11 ${errors.email ? "border-red-500 focus:border-red-500" : ""}`}
+                  className={`pl-10 h-10 rounded-md border-[#E5E2DD] bg-white ${
+                    errors.email ? "border-red-400 focus:border-red-400" : ""
+                  }`}
                 />
               </div>
-              {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
+              {errors.email && <p className="text-sm text-red-600">{errors.email}</p>}
             </div>
 
             {/* Celular */}
-            <div className="space-y-2">
-              <Label htmlFor="cellphone" className="text-sm font-medium text-foreground">
+            <div className="space-y-1.5">
+              <Label htmlFor="cellphone" className="text-sm font-medium">
                 Celular
               </Label>
               <div className="relative">
@@ -180,49 +177,51 @@ export default function CustomerModal({
                   placeholder="(11) 99999-9999"
                   value={formData.cellphone}
                   onChange={(e) => handleChange("cellphone", e.target.value)}
-                  className={`pl-10 h-11 ${errors.cellphone ? "border-red-500 focus:border-red-500" : ""}`}
+                  className={`pl-10 h-10 rounded-md border-[#E5E2DD] bg-white ${
+                    errors.cellphone ? "border-red-400 focus:border-red-400" : ""
+                  }`}
                 />
               </div>
-              {errors.cellphone && <p className="text-xs text-red-500">{errors.cellphone}</p>}
+              {errors.cellphone && <p className="text-sm text-red-600">{errors.cellphone}</p>}
             </div>
 
             {!isEdit && (
-              <p className="text-xs text-muted-foreground">
-                Uma senha temporária será gerada automaticamente para o cliente.
+              <p className="text-sm text-muted-foreground">
+                Uma senha temporaria sera gerada automaticamente para o cliente.
               </p>
             )}
+          </div>
 
-            {/* Buttons */}
-            <div className="flex gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onClose}
-                className="flex-1 h-11"
-                disabled={isSubmitting}
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                className="flex-1 h-11 bg-violet-600 hover:bg-violet-700 text-white"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {isEdit ? "Salvando..." : "Criando..."}
-                  </>
-                ) : isEdit ? (
-                  "Salvar alterações"
-                ) : (
-                  "Criar cliente"
-                )}
-              </Button>
-            </div>
-          </form>
-        </div>
-      </Card>
-    </div>
+          {/* Footer */}
+          <div className="flex gap-3 px-6 py-4 border-t border-[#E5E2DD]">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              className="flex-1 h-10 rounded-md border border-gray-300 cursor-pointer"
+              disabled={isSubmitting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              className="flex-1 h-10 rounded-md bg-primary hover:bg-primary/90 text-white border border-gray-300 cursor-pointer text-base font-semibold"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  {isEdit ? "Salvando..." : "Criando..."}
+                </>
+              ) : isEdit ? (
+                "Salvar alteracoes"
+              ) : (
+                "Criar cliente"
+              )}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

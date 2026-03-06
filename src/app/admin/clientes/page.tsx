@@ -2,10 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -14,8 +12,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { UserPlus, Search, Edit, Eye, Contact, Ban, CheckCircle } from "lucide-react";
-import AdminHeader from "@/components/admin/catalog-header";
+import {
+  UserPlus,
+  Search,
+  Edit,
+  Eye,
+  Users,
+  Ban,
+  CheckCircle,
+  ArrowLeft,
+} from "lucide-react";
 import CustomerModal from "./components/customer-modal";
 import { useCustomers } from "./hooks/useCustomers";
 
@@ -63,152 +69,177 @@ export default function CustomersPage() {
   };
 
   return (
-    <div className="w-full px-0 sm:px-4 lg:px-6 min-h-screen pb-20">
-      <AdminHeader
-        title="CLIENTES"
-        description="Gerencie os clientes da sua loja"
-        className="mb-4"
-      />
-
-      <div className="w-full max-w-7xl mx-auto p-0 md:p-4 lg:p-6 bg-white">
-        <Card className="p-4 md:p-6 shadow-none border-none rounded-xs bg-white">
-          {/* Header da tabela com busca e botão de criar */}
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mb-6">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder="Buscar por nome ou celular..."
-                value={searchTerm}
-                onChange={(e) => handleSearch(e.target.value)}
-                className="pl-10 h-12 border-muted"
-              />
+    <div className="min-h-screen bg-[#FAF9F7]">
+      {/* Header admin padrao */}
+      <div className="bg-white border-b border-[#E5E2DD]">
+        <div className="max-w-[1920px] mx-auto px-4 sm:px-6">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-4">
+              <a
+                href="/admin"
+                className="flex items-center gap-1.5 text-muted-foreground hover:text-gray-900 transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                <span className="text-sm font-medium hidden sm:block">Voltar</span>
+              </a>
+              <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
+              <h1 className="text-base sm:text-lg font-bold text-gray-900">
+                Clientes
+              </h1>
             </div>
 
             <Button
-              className="bg-violet-600 hover:bg-violet-700 text-white px-6 py-3 h-12 gap-2"
+              className="flex items-center gap-2 bg-primary hover:bg-primary/90 rounded-md h-9 text-sm border border-gray-300 cursor-pointer"
               onClick={handleCreateCustomer}
             >
               <UserPlus className="h-4 w-4" />
-              + Novo cliente
+              <span className="hidden sm:inline">Novo Cliente</span>
+              <span className="sm:hidden">Novo</span>
             </Button>
           </div>
+        </div>
+      </div>
 
-          {/* Tabela de clientes */}
-          <div className="border rounded-lg overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead className="font-semibold text-foreground py-4">Nome</TableHead>
-                  <TableHead className="font-semibold text-foreground py-4">Celular</TableHead>
-                  <TableHead className="font-semibold text-foreground py-4">E-mail</TableHead>
-                  <TableHead className="font-semibold text-foreground py-4 text-center">Status</TableHead>
-                  <TableHead className="font-semibold text-foreground py-4 text-center">Pedidos</TableHead>
-                  <TableHead className="font-semibold text-foreground py-4 text-center">Ações</TableHead>
+      <div className="max-w-[1920px] mx-auto px-4 sm:px-6 py-6">
+        {/* Busca */}
+        <div className="mb-4">
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder="Buscar por nome ou celular..."
+              value={searchTerm}
+              onChange={(e) => handleSearch(e.target.value)}
+              className="pl-10 h-10 border-[#E5E2DD] rounded-md bg-white"
+            />
+          </div>
+        </div>
+
+        {/* Tabela */}
+        <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-[#FAF9F7]">
+                <TableHead className="font-semibold text-foreground py-3 text-sm">Nome</TableHead>
+                <TableHead className="font-semibold text-foreground py-3 text-sm">Celular</TableHead>
+                <TableHead className="font-semibold text-foreground py-3 text-sm hidden md:table-cell">E-mail</TableHead>
+                <TableHead className="font-semibold text-foreground py-3 text-sm text-center">Status</TableHead>
+                <TableHead className="font-semibold text-foreground py-3 text-sm text-center">Pedidos</TableHead>
+                <TableHead className="font-semibold text-foreground py-3 text-sm text-center">Acoes</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
+                    Carregando...
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                      Carregando...
+              ) : customers.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
+                    <div className="flex flex-col items-center gap-2">
+                      <Users className="h-8 w-8 text-muted-foreground" />
+                      <p className="text-sm font-medium">Nenhum cliente encontrado</p>
+                      {searchTerm && (
+                        <p className="text-sm">Tente buscar por outros termos</p>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                customers.map((customer) => (
+                  <TableRow
+                    key={customer.id}
+                    className={`border-b border-[#E5E2DD] hover:bg-[#FAF9F7] ${customer.attributes.blocked ? "opacity-50" : ""}`}
+                  >
+                    <TableCell className="py-3">
+                      <span className="block max-w-[200px] truncate text-sm font-medium text-gray-900">
+                        {customer.attributes.name}
+                      </span>
                     </TableCell>
-                  </TableRow>
-                ) : customers.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                      <div className="flex flex-col items-center gap-2">
-                        <Contact className="h-8 w-8 text-muted-foreground" />
-                        <p>Nenhum cliente encontrado</p>
-                        {searchTerm && (
-                          <p className="text-sm">Tente buscar por outros termos</p>
-                        )}
+                    <TableCell className="py-3 text-sm">
+                      {customer.attributes.cellphone}
+                    </TableCell>
+                    <TableCell className="py-3 text-sm text-muted-foreground hidden md:table-cell">
+                      <span className="block max-w-[220px] truncate">
+                        {customer.attributes.email}
+                      </span>
+                    </TableCell>
+                    <TableCell className="py-3 text-center">
+                      {customer.attributes.blocked ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border bg-white text-sm font-semibold border-red-400 text-red-700">
+                          <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                          Bloqueado
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border bg-white text-sm font-semibold border-green-400 text-green-700">
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
+                          Ativo
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="py-3 text-center">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-md border bg-white text-sm font-semibold border-primary text-primary">
+                        {customer.attributes.orders_count}
+                      </span>
+                    </TableCell>
+                    <TableCell className="py-3 text-center">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 px-2.5 text-sm rounded-md border border-gray-300 cursor-pointer hover:bg-primary hover:text-white"
+                          onClick={() => router.push(`/admin/clientes/${customer.id}`)}
+                        >
+                          <Eye className="h-3.5 w-3.5 mr-1" />
+                          Ver
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 px-2.5 text-sm rounded-md border border-gray-300 cursor-pointer hover:bg-primary hover:text-white"
+                          onClick={() => handleEditCustomer(customer)}
+                        >
+                          <Edit className="h-3.5 w-3.5 mr-1" />
+                          Editar
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className={`h-8 px-2.5 text-sm rounded-md border border-gray-300 cursor-pointer ${
+                            customer.attributes.blocked
+                              ? "hover:bg-green-600 hover:text-white"
+                              : "hover:bg-red-600 hover:text-white"
+                          }`}
+                          onClick={() => handleToggleBlock(customer)}
+                        >
+                          {customer.attributes.blocked ? (
+                            <>
+                              <CheckCircle className="h-3.5 w-3.5 mr-1" />
+                              Desbloquear
+                            </>
+                          ) : (
+                            <>
+                              <Ban className="h-3.5 w-3.5 mr-1" />
+                              Bloquear
+                            </>
+                          )}
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
-                ) : (
-                  customers.map((customer) => (
-                    <TableRow key={customer.id} className={`hover:bg-muted/30 ${customer.attributes.blocked ? "opacity-60" : ""}`}>
-                      <TableCell className="font-medium py-4">
-                        {customer.attributes.name}
-                      </TableCell>
-                      <TableCell className="py-4">
-                        {customer.attributes.cellphone}
-                      </TableCell>
-                      <TableCell className="py-4 text-muted-foreground">
-                        {customer.attributes.email}
-                      </TableCell>
-                      <TableCell className="py-4 text-center">
-                        {customer.attributes.blocked ? (
-                          <Badge variant="destructive" className="border-0">
-                            Bloqueado
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary" className="bg-green-100 text-green-700 border-0">
-                            Ativo
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="py-4 text-center">
-                        <Badge variant="secondary" className="bg-violet-100 text-violet-700 border-0">
-                          {customer.attributes.orders_count}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="py-4 text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 px-3 text-xs border-muted hover:bg-violet-600 hover:text-white"
-                            onClick={() => router.push(`/admin/clientes/${customer.id}`)}
-                          >
-                            <Eye className="h-3 w-3 mr-1" />
-                            Ver
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 px-3 text-xs border-muted hover:bg-primary hover:text-white"
-                            onClick={() => handleEditCustomer(customer)}
-                          >
-                            <Edit className="h-3 w-3 mr-1" />
-                            Editar
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className={`h-8 px-3 text-xs border-muted ${customer.attributes.blocked ? "hover:bg-green-600 hover:text-white" : "hover:bg-red-600 hover:text-white"}`}
-                            onClick={() => handleToggleBlock(customer)}
-                          >
-                            {customer.attributes.blocked ? (
-                              <>
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                Desbloquear
-                              </>
-                            ) : (
-                              <>
-                                <Ban className="h-3 w-3 mr-1" />
-                                Bloquear
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
 
-          {/* Rodapé com informações */}
-          {customers.length > 0 && (
-            <div className="flex items-center justify-between pt-4 text-sm text-muted-foreground">
-              <div>
-                Mostrando {customers.length} clientes
-              </div>
-            </div>
-          )}
-        </Card>
+        {/* Rodape */}
+        {customers.length > 0 && (
+          <div className="flex items-center justify-between pt-3 text-sm text-muted-foreground">
+            <span>Mostrando {customers.length} clientes</span>
+          </div>
+        )}
       </div>
 
       {/* Modal de cliente */}

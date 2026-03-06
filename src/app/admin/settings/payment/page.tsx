@@ -1,16 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, CreditCard, Wallet, QrCode } from "lucide-react";
+import { Loader2, CreditCard, Wallet, QrCode, ArrowLeft } from "lucide-react";
 import { usePayment } from "./usePayment";
 import { AdjustmentType, ValueType } from "./payment-service";
-import AdminHeader from "@/components/admin/catalog-header";
+import Link from "next/link";
 
 interface PaymentMethod {
   id: string;
@@ -176,140 +174,141 @@ export default function PaymentSettingsPage() {
   });
 
   return (
-    <div className="w-full px-0 sm:px-4 lg:px-6 min-h-screen pb-20">
-      <AdminHeader
-        title="CONFIGURAÇÕES DE PAGAMENTO"
-        description="Gerencie os meios de pagamento disponíveis no seu estabelecimento"
-        className="mb-4"
-      />
-
-      {isLoading && (
-        <div className="flex justify-center items-center h-screen">
-          <Loader2 className="w-10 h-10 animate-spin" />
-        </div>
-      )}
-
-      {!isLoading && paymentMethods.length > 0 && (
-        <div className="w-full max-w-7xl mx-auto p-0 md:p-4 lg:p-6 bg-white">
-          <Card className="p-4 md:p-6 shadow-none border-none rounded-xs bg-white">
-            <div className="space-y-6 md:space-y-8">
-              <div className="space-y-4">
-                {paymentMethods.map((method) => (
-                  <div
-                    key={method.id}
-                    className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        {method.icon}
-                        <div className="space-y-1">
-                          <h3 className="font-medium">{method.name}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            {method.description}
-                          </p>
-                        </div>
-                      </div>
-                      <Switch
-                        checked={method.enabled}
-                        onCheckedChange={() => handleTogglePaymentMethod(method.id)}
-                        disabled={isUpdating}
-                      />
-                    </div>
-
-                    {method.enabled && (
-                      <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                          <Select
-                            value={method.adjustmentType}
-                            onValueChange={(value) => handleAdjustmentTypeChange(method.id, value as AdjustmentType)}
-                            disabled={isUpdating}
-                          >
-                            <SelectTrigger className="w-full sm:w-[160px]">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {Object.entries(adjustmentTypeLabels).map(([value, label]) => (
-                                <SelectItem key={value} value={value}>
-                                  {label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-
-                          {method.adjustmentType !== "none" && (
-                            <>
-                              <Input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                value={method.adjustmentValue}
-                                onChange={(e) => handleAdjustmentValueChange(method.id, e.target.value)}
-                                disabled={isUpdating}
-                                className="w-full sm:w-[120px]"
-                                placeholder="Valor"
-                              />
-                              <div className="flex rounded-md border border-gray-300 overflow-hidden">
-                                <button
-                                  type="button"
-                                  onClick={() => handleValueTypeChange(method.id, "fixed")}
-                                  disabled={isUpdating}
-                                  className={`px-3 py-2 text-sm font-medium transition-colors ${
-                                    method.valueType === "fixed"
-                                      ? "bg-primary text-white"
-                                      : "bg-white text-gray-700 hover:bg-gray-100"
-                                  }`}
-                                >
-                                  R$
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleValueTypeChange(method.id, "percentage")}
-                                  disabled={isUpdating}
-                                  className={`px-3 py-2 text-sm font-medium transition-colors ${
-                                    method.valueType === "percentage"
-                                      ? "bg-primary text-white"
-                                      : "bg-white text-gray-700 hover:bg-gray-100"
-                                  }`}
-                                >
-                                  %
-                                </button>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              <Separator className="my-6 bg-gray-200 dark:bg-gray-800" />
-
-              <div className="flex flex-col sm:flex-row justify-end gap-3">
-                <Button
-                  variant="outline"
-                  type="button"
-                  className="w-full sm:w-auto p-6 h-11 border-none shadow-xs rounded-xs hover:bg-gray-100"
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  type="button"
-                  onClick={handleSaveSettings}
-                  disabled={!hasChanges || isUpdating}
-                  className="w-full sm:w-auto p-6 h-11 border-none shadow-xs rounded-xs hover:bg-primary/90"
-                >
-                  {isUpdating ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    "Salvar alterações"
-                  )}
-                </Button>
-              </div>
+    <div className="min-h-screen bg-[#FAF9F7]">
+      {/* Header admin padrao */}
+      <div className="bg-white border-b border-[#E5E2DD]">
+        <div className="max-w-[1920px] mx-auto px-4 sm:px-6">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-4">
+              <Link
+                href="/admin/settings"
+                className="flex items-center gap-1.5 text-muted-foreground hover:text-gray-900 transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                <span className="text-sm font-medium hidden sm:block">Voltar</span>
+              </Link>
+              <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
+              <h1 className="text-base sm:text-lg font-bold text-gray-900">Meios de Pagamento</h1>
             </div>
-          </Card>
+            <Button
+              type="button"
+              onClick={handleSaveSettings}
+              disabled={!hasChanges || isUpdating}
+              className="rounded-md border border-gray-300 cursor-pointer bg-primary text-white hover:bg-primary/90 text-sm"
+            >
+              {isUpdating ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+                  Salvando...
+                </>
+              ) : (
+                "Salvar alterações"
+              )}
+            </Button>
+          </div>
         </div>
-      )}
+      </div>
+
+      {/* Conteudo */}
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {isLoading ? (
+          <div className="flex justify-center items-center py-20">
+            <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {paymentMethods.map((method) => (
+              <div
+                key={method.id}
+                className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden"
+              >
+                {/* Header do card com toggle */}
+                <div className="px-5 py-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    {method.icon}
+                    <div>
+                      <h3 className="text-base font-semibold text-gray-900">{method.name}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {method.description}
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={method.enabled}
+                    onCheckedChange={() => handleTogglePaymentMethod(method.id)}
+                    disabled={isUpdating}
+                  />
+                </div>
+
+                {/* Ajustes (desconto/acrescimo) */}
+                {method.enabled && (
+                  <div className="px-5 py-4 border-t border-[#E5E2DD] bg-[#FAF9F7]">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                      <Select
+                        value={method.adjustmentType}
+                        onValueChange={(value) => handleAdjustmentTypeChange(method.id, value as AdjustmentType)}
+                        disabled={isUpdating}
+                      >
+                        <SelectTrigger className="w-full sm:w-[160px] rounded-md border-[#E5E2DD] bg-white cursor-pointer">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-md border border-[#E5E2DD]">
+                          {Object.entries(adjustmentTypeLabels).map(([value, label]) => (
+                            <SelectItem key={value} value={value}>
+                              {label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      {method.adjustmentType !== "none" && (
+                        <>
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={method.adjustmentValue}
+                            onChange={(e) => handleAdjustmentValueChange(method.id, e.target.value)}
+                            disabled={isUpdating}
+                            className="w-full sm:w-[120px] rounded-md border-[#E5E2DD] bg-white"
+                            placeholder="Valor"
+                          />
+                          <div className="flex rounded-md border border-[#E5E2DD] overflow-hidden">
+                            <button
+                              type="button"
+                              onClick={() => handleValueTypeChange(method.id, "fixed")}
+                              disabled={isUpdating}
+                              className={`px-3 py-2 text-sm font-medium transition-colors cursor-pointer ${
+                                method.valueType === "fixed"
+                                  ? "bg-primary text-white"
+                                  : "bg-white text-gray-700 hover:bg-[#F0EFEB]"
+                              }`}
+                            >
+                              R$
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleValueTypeChange(method.id, "percentage")}
+                              disabled={isUpdating}
+                              className={`px-3 py-2 text-sm font-medium transition-colors cursor-pointer ${
+                                method.valueType === "percentage"
+                                  ? "bg-primary text-white"
+                                  : "bg-white text-gray-700 hover:bg-[#F0EFEB]"
+                              }`}
+                            >
+                              %
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
