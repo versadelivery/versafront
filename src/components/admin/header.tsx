@@ -66,42 +66,43 @@ export function Header() {
   }, [subscribeToAdminOrders, newOrder]);
 
   return (
-    <header className="bg-white border-b border-gray-100">
+    <header className="bg-white border-b border-[#E5E2DD]">
       <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          <div className="flex items-center justify-center gap-4">
+        <div className="flex items-center justify-between h-18">
+          <div className="flex items-center gap-4">
             <Link href="/admin" className="md:hidden">
-              <Image src={favicon} alt="Logo" width={100} height={100} />
+              <Image src={favicon} alt="Logo" width={110} height={110} />
             </Link>
             <Link href="/admin" className="hidden md:block">
-              <Image src={logo_inline} alt="Logo" width={190} height={60} />
+              <Image src={logo_inline} alt="Logo" width={210} height={66} />
             </Link>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-5">
             <CommandMenu />
             <div className="hidden md:block">
               <SoundSettings onSettingsChange={updateSettings} />
             </div>
-            <div className="flex items-center gap-2.5">
-              <Avatar className="h-9 w-9">
+            <div className="h-7 w-px bg-[#E5E2DD] hidden md:block" />
+            <div className="flex items-center gap-3">
+              <Avatar className="h-10 w-10">
                 <AvatarImage src={fixImageUrl(shop?.image_url) || ''} />
-                <AvatarFallback className="bg-gray-100 text-muted-foreground">
-                  <User className="h-4 w-4" />
+                <AvatarFallback className="bg-[#F0EFEB] text-muted-foreground">
+                  <User className="h-5 w-5" />
                 </AvatarFallback>
               </Avatar>
               <div className="hidden md:block">
-                <p className="font-outfit text-sm font-medium text-foreground">{shop?.name}</p>
-                <p className="font-outfit text-xs text-muted-foreground truncate max-w-[200px]">{shop?.address}</p>
+                <p className="text-sm font-semibold text-gray-900">{shop?.name}</p>
+                <p className="text-sm text-muted-foreground truncate max-w-[220px]">{shop?.address}</p>
               </div>
             </div>
             <Button
               variant="outline"
               size="icon"
               onClick={handleSignOut}
-              className="h-9 w-9 rounded-lg border-gray-200 text-muted-foreground hover:text-destructive hover:border-destructive/30 transition-all duration-200"
+              className="h-10 w-10 rounded-md border-[#E5E2DD] text-muted-foreground hover:text-destructive hover:border-red-400 transition-colors cursor-pointer"
             >
-              <LogOut className="h-4 w-4" />
+              <LogOut className="h-4.5 w-4.5" />
             </Button>
           </div>
         </div>

@@ -134,11 +134,11 @@ export function CommandMenu() {
     return (
       <button
         onClick={openMenu}
-        className="flex items-center gap-2 px-3 h-9 rounded-lg border border-gray-200 text-sm text-muted-foreground hover:border-primary/30 hover:text-foreground transition-all duration-200 cursor-pointer"
+        className="flex items-center gap-2.5 px-3.5 h-10 rounded-md border border-[#E5E2DD] text-sm text-muted-foreground hover:border-primary/40 hover:text-foreground transition-colors cursor-pointer"
       >
         <Search className="h-4 w-4" />
         <span className="hidden sm:inline">Buscar...</span>
-        <kbd className="hidden md:inline-flex items-center gap-0.5 rounded border border-gray-200 bg-gray-50 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
+        <kbd className="hidden md:inline-flex items-center gap-0.5 rounded-md border border-[#E5E2DD] bg-[#FAF9F7] px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
           {modKey}K
         </kbd>
       </button>
@@ -156,20 +156,20 @@ export function CommandMenu() {
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] px-4">
         <div
-          className="w-full max-w-lg bg-background rounded-xl border shadow-2xl animate-in fade-in-0 zoom-in-95 duration-150 overflow-hidden"
+          className="w-full max-w-lg bg-white rounded-md border border-[#E5E2DD] animate-in fade-in-0 zoom-in-95 duration-150 overflow-hidden"
           onKeyDown={handleKeyDown}
         >
           {/* Input */}
-          <div className="flex items-center gap-3 px-4 border-b">
-            <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+          <div className="flex items-center gap-3 px-4 border-b border-[#E5E2DD]">
+            <Search className="h-4.5 w-4.5 text-muted-foreground shrink-0" />
             <input
               ref={inputRef}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar páginas, configurações..."
-              className="flex-1 h-12 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+              placeholder="Buscar paginas, configuracoes..."
+              className="flex-1 h-13 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
             />
-            <kbd className="hidden sm:inline-flex items-center rounded border border-gray-200 bg-gray-50 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
+            <kbd className="hidden sm:inline-flex items-center rounded-md border border-[#E5E2DD] bg-[#FAF9F7] px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
               ESC
             </kbd>
           </div>
@@ -198,15 +198,15 @@ export function CommandMenu() {
                         onClick={() => navigate(section)}
                         onMouseEnter={() => setSelectedIndex(globalIndex)}
                         className={cn(
-                          "flex items-center gap-3 w-full rounded-lg px-3 py-2.5 text-left transition-colors cursor-pointer",
+                          "flex items-center gap-3 w-full rounded-md px-3 py-2.5 text-left transition-colors cursor-pointer",
                           isSelected
-                            ? "bg-primary/10 text-foreground"
-                            : "text-foreground/80 hover:bg-muted"
+                            ? "bg-[#FAF9F7] text-foreground"
+                            : "text-foreground/80 hover:bg-[#FAF9F7]"
                         )}
                       >
                         <div
                           className={cn(
-                            "flex items-center justify-center h-8 w-8 rounded-md shrink-0",
+                            "flex items-center justify-center h-9 w-9 rounded-md shrink-0",
                             section.iconBgColor
                           )}
                         >
