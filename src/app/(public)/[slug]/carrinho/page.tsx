@@ -184,7 +184,7 @@ export default function CartPage() {
             </p>
             <Link
               href={`/${slug}`}
-              className="inline-flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white font-medium text-sm px-8 py-3.5 rounded-md transition-colors"
+              className="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-white font-medium text-sm px-8 py-3.5 rounded-md transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
               Explorar cardápio

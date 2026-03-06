@@ -20,6 +20,7 @@ import {
   Package,
   User,
 } from "lucide-react";
+import PublicLoading from "@/components/public-loading";
 
 const statusConfig: Record<string, { label: string; dot: string; border: string; text: string; description: string }> = {
   received:       { label: "Recebido",    dot: "bg-amber-400",   border: "border-amber-300",   text: "text-amber-700",   description: "Seu pedido foi recebido e será processado em breve." },
@@ -132,12 +133,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
     return (
       <>
         {nav}
-        <div className="min-h-screen bg-[#FAF9F7] flex items-center justify-center">
-          <div className="flex flex-col items-center gap-3">
-            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            <p className="text-sm text-muted-foreground">Carregando pedido...</p>
-          </div>
-        </div>
+        <PublicLoading />
       </>
     );
   }

@@ -15,6 +15,7 @@ import {
   MapPin,
   ShoppingBag,
 } from "lucide-react";
+import PublicLoading from "@/components/public-loading";
 import { Button } from "@/components/ui/button";
 import PedidosHeader from "./pedidos-header";
 import Link from "next/link";
@@ -191,12 +192,7 @@ export default function OrdersPage() {
     return (
       <>
         {nav}
-        <div className="h-[calc(100vh-4rem)] bg-[#FAF9F7] flex items-center justify-center">
-          <div className="flex flex-col items-center gap-3">
-            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            <p className="text-sm text-muted-foreground">Carregando pedidos...</p>
-          </div>
-        </div>
+        <PublicLoading />
       </>
     );
   }

@@ -13,6 +13,7 @@ import { z } from "zod";
 import Image from "next/image";
 import logoInline from "@/public/logo/logo-inline-black.svg";
 import { useRouter, useSearchParams } from "next/navigation";
+import PublicLoading from "@/components/public-loading";
 import { formatPhone } from "@/utils/format-phone";
 import { useClient } from "@/app/(public)/[slug]/client-context";
 import { usePhoneMask } from "@/hooks/use-phone-mask";
@@ -256,7 +257,7 @@ function AuthForm() {
 
 export default function AuthPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+    <Suspense fallback={<PublicLoading />}>
       <AuthForm />
     </Suspense>
   );

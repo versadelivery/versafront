@@ -8,14 +8,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { registerSchema } from "../auth-schema";
-import { Loader2, Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { Loader2, Eye, EyeOff, ChevronLeft } from "lucide-react";
 import { z } from "zod";
 import Image from "next/image";
-import logoInline from "@/public/logo/logo-inline-black.svg";
+import favicon from "@/public/logo/favicon.svg";
+import logoInlineBlack from "@/public/logo/logo-inline-black.svg";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useClient } from "@/app/(public)/[slug]/client-context";
 import Link from "next/link";
 import { usePhoneMask } from "@/hooks/use-phone-mask";
+import PublicLoading from "@/components/public-loading";
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 
@@ -29,7 +31,6 @@ function RegisterForm() {
   const redirectTo = searchParams.get('redirect') || '';
   const { formatPhone, getUnmaskedValue } = usePhoneMask();
 
-  // Redirecionar se já estiver logado
   useEffect(() => {
     if (client) {
       const targetPage = redirectTo ? decodeURIComponent(redirectTo) : '/';
@@ -49,9 +50,9 @@ function RegisterForm() {
   });
 
   const onSubmit = async (data: RegisterFormData) => {
-    register({ 
-      name: data.name, 
-      email: data.email, 
+    register({
+      name: data.name,
+      email: data.email,
       password: data.password,
       cellphone: getUnmaskedValue(data.cellphone)
     });
@@ -65,160 +66,154 @@ function RegisterForm() {
     }
   };
 
+  const logoHref = redirectTo ? decodeURIComponent(redirectTo) : '/';
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-[#FAF9F7]">
-      <Button variant="link" type="button" onClick={handleGoBack} className="absolute top-8 left-8 text-primary hover:bg-primary hover:text-white transition-colors rounded-md">
-        <ArrowLeft className="h-5 w-5" />
-        Voltar
-      </Button>
-      <div className="mb-2 text-center flex flex-col items-center">
-        <Image src={logoInline} width={260} alt="Versa Delivery" className="-mb-16" />
-      </div>
-      <div className="w-full max-w-lg space-y-6 bg-white px-8 rounded-md flex flex-col items-center">
-        <div className="text-center w-full">
-          <h2 className="text-3xl font-bold tracking-tight text-gray-700">
-            Criar nova conta
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
+    <div className="min-h-screen bg-[#FAF9F7]">
+      {/* Header */}
+      <header className="sticky top-0 z-50 w-full bg-white border-b border-[#E5E2DD]">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center h-16">
+            <button
+              onClick={handleGoBack}
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors mr-auto cursor-pointer"
+            >
+              <ChevronLeft className="h-5 w-5" />
+              <span className="text-sm font-medium hidden sm:block">Voltar</span>
+            </button>
+            <Link href={logoHref} className="md:hidden">
+              <Image src={favicon} alt="Versa" width={90} height={90} priority />
+            </Link>
+            <Link href={logoHref} className="hidden md:block">
+              <Image src={logoInlineBlack} alt="Versa" width={180} height={56} priority />
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      {/* Content */}
+      <div className="max-w-lg mx-auto px-4 sm:px-6 pt-12 sm:pt-20 pb-12">
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-gray-900">Criar nova conta</h1>
+          <p className="text-base text-muted-foreground mt-1">
             Preencha as informações abaixo para continuar
           </p>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 w-full">
-          <div className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          <div>
+            <Label htmlFor="name" className="text-sm font-medium text-gray-700 mb-1.5 block">Nome</Label>
+            <Input
+              id="name"
+              type="text"
+              {...registerForm("name")}
+              placeholder="Seu nome completo"
+              maxLength={30}
+              className="h-14 rounded-md border-[#E5E2DD] focus:border-primary/40 text-base placeholder:text-gray-400"
+            />
+            {errors.name && (
+              <p className="mt-1.5 text-sm text-red-500">{errors.name.message}</p>
+            )}
+          </div>
+
+          <div>
+            <Label htmlFor="cellphone" className="text-sm font-medium text-gray-700 mb-1.5 block">Celular</Label>
+            <Input
+              id="cellphone"
+              type="tel"
+              value={watch("cellphone") || ""}
+              placeholder="(00) 00000-0000"
+              className="h-14 rounded-md border-[#E5E2DD] focus:border-primary/40 text-base placeholder:text-gray-400"
+              onChange={(e) => {
+                const formattedValue = formatPhone(e.target.value);
+                setValue("cellphone", formattedValue, { shouldValidate: true });
+              }}
+            />
+            {errors.cellphone && (
+              <p className="mt-1.5 text-sm text-red-500">{errors.cellphone.message}</p>
+            )}
+          </div>
+
+          <div>
+            <Label htmlFor="email" className="text-sm font-medium text-gray-700 mb-1.5 block">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              {...registerForm("email")}
+              placeholder="johndoe@mail.com"
+              className="h-14 rounded-md border-[#E5E2DD] focus:border-primary/40 text-base placeholder:text-gray-400"
+            />
+            {errors.email && (
+              <p className="mt-1.5 text-sm text-red-500">{errors.email.message}</p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
-              <Label htmlFor="name" className="text-sm font-bold text-foreground/40 mb-2 block">Nome</Label>
-              <Input
-                id="name"
-                type="text"
-                {...registerForm("name")}
-                placeholder="John Doe"
-                maxLength={30}
-                className="rounded-md bg-transparent w-full p-8 border border-[#E5E2DD] pr-10 placeholder:text-foreground/40"
-              />
-              {errors.name && (
-                <p className="mt-1 text-sm text-red-600">
-                  {errors.name.message}
-                </p>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="cellphone" className="text-sm font-bold text-foreground/40 mb-2 block">Celular</Label>
-              <Input
-                id="cellphone"
-                type="tel"
-                value={watch("cellphone") || ""}
-                placeholder="(00) 00000-0000"
-                className="rounded-md bg-transparent w-full p-8 border border-[#E5E2DD] pr-10 placeholder:text-foreground/40"
-                onChange={(e) => {
-                  const formattedValue = formatPhone(e.target.value);
-                  setValue("cellphone", formattedValue, { shouldValidate: true });
-                }}
-              />
-              {errors.cellphone && (
-                <p className="mt-1 text-sm text-red-600">
-                  {errors.cellphone.message}
-                </p>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="email" className="text-sm font-bold text-foreground/40 mb-2 block">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                {...registerForm("email")}
-                placeholder="johndoe@mail.com"
-                className="rounded-md bg-transparent w-full p-8 border border-[#E5E2DD] pr-10 placeholder:text-foreground/40"
-              />
-              {errors.email && (
-                <p className="mt-1 text-sm text-red-600">
-                  {errors.email.message}
-                </p>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="password" className="text-sm font-bold text-foreground/40 mb-2 block">Senha</Label>
+              <Label htmlFor="password" className="text-sm font-medium text-gray-700 mb-1.5 block">Senha</Label>
               <div className="relative">
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
                   {...registerForm("password")}
-                  placeholder="••••••••"
-                  className="rounded-md bg-transparent w-full p-8 border border-[#E5E2DD] pr-10 placeholder:text-foreground/40"
+                  placeholder="********"
+                  className="h-14 rounded-md border-[#E5E2DD] focus:border-primary/40 text-base pr-11 placeholder:text-gray-400"
                 />
-                <Button
+                <button
                   type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 p-0"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
                   onClick={() => setShowPassword(!showPassword)}
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </Button>
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
               </div>
               {errors.password && (
-                <p className="mt-1 text-sm text-red-600">
-                  {errors.password.message}
-                </p>
+                <p className="mt-1.5 text-sm text-red-500">{errors.password.message}</p>
               )}
             </div>
+
             <div>
-              <Label htmlFor="confirmPassword" className="text-sm font-bold text-foreground/40 mb-2 block">Confirmar Senha</Label>
+              <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700 mb-1.5 block">Confirmar Senha</Label>
               <div className="relative">
                 <Input
                   id="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
                   {...registerForm("confirmPassword")}
-                  placeholder="••••••••"
-                  className="rounded-md bg-transparent w-full p-8 border border-[#E5E2DD] pr-10 placeholder:text-foreground/40"
+                  placeholder="********"
+                  className="h-14 rounded-md border-[#E5E2DD] focus:border-primary/40 text-base pr-11 placeholder:text-gray-400"
                 />
-                <Button
+                <button
                   type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 p-0"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 >
-                  {showConfirmPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </Button>
+                  {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
               </div>
               {errors.confirmPassword && (
-                <p className="mt-1 text-sm text-red-600">
-                  {errors.confirmPassword.message}
-                </p>
+                <p className="mt-1.5 text-sm text-red-500">{errors.confirmPassword.message}</p>
               )}
             </div>
           </div>
 
-          <div>
-            <Button
-              type="submit"
-              className="w-full flex justify-center p-8 border pr-10 text-lg font-medium rounded-md bg-primary hover:bg-primary/90 text-white transition-colors"
-              disabled={isLoading}
-            >
-              {isLoading && (
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              )}
-              Criar Conta
-            </Button>
-          </div>
+          <Button
+            type="submit"
+            className="w-full h-14 rounded-md text-base font-semibold bg-primary hover:bg-primary/90 text-white transition-colors cursor-pointer"
+            disabled={isLoading}
+          >
+            {isLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
+            Criar Conta
+          </Button>
 
-          <div className="text-center w-full">
-            <Link 
+          <p className="text-center text-base text-muted-foreground">
+            Já tem uma conta?{' '}
+            <Link
               href={`/auth/login${redirectTo ? `?redirect=${encodeURIComponent(redirectTo)}` : ''}`}
-              className="text-md font-medium text-primary hover:text-primary/90 transition-colors"
+              className="font-semibold text-primary hover:text-primary/90 transition-colors"
             >
-              Já tem uma conta? Entre
+              Entre
             </Link>
-          </div>
+          </p>
         </form>
       </div>
     </div>
@@ -227,7 +222,7 @@ function RegisterForm() {
 
 export default function RegisterPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+    <Suspense fallback={<PublicLoading />}>
       <RegisterForm />
     </Suspense>
   );

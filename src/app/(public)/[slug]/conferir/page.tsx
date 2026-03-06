@@ -26,6 +26,7 @@ import Image from 'next/image'
 import favicon from "@/public/logo/favicon.svg"
 import logoInlineBlack from "@/public/logo/logo-inline-black.svg"
 import Link from 'next/link'
+import PublicLoading from '@/components/public-loading'
 
 type DeliveryOption = 'delivery' | 'pickup'
 type PaymentMethod = 'credit' | 'debit' | 'manual_pix' | 'cash'
@@ -525,14 +526,7 @@ export default function CheckoutPage() {
   const isBelowMinOrder = deliveryOption === 'delivery' && minOrderValue > 0 && effectiveValue < minOrderValue
 
   if (isLoadingShop || isLoading) {
-    return (
-      <div className="min-h-screen bg-[#FAF9F7] flex items-center justify-center">
-        <div className="text-center space-y-3">
-          <div className="animate-spin rounded-full h-10 w-10 border-2 border-primary border-t-transparent mx-auto" />
-          <p className="text-sm text-muted-foreground">Carregando pedido...</p>
-        </div>
-      </div>
-    )
+    return <PublicLoading />
   }
 
   if (cartItems.length === 0) {
