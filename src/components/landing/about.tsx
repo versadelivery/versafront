@@ -2,143 +2,112 @@
 
 import { useRef } from "react";
 import Image from "next/image";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { motion, useInView } from "framer-motion";
-import meat from "../../../public/img/meat_img.png"
+import { ShoppingBag, Truck, BarChart3 } from "lucide-react";
+import meat from "../../../public/img/meat_img.png";
+
+const highlights = [
+  {
+    icon: <ShoppingBag className="w-6 h-6 text-[#009246]" />,
+    title: "Catálogo flexível",
+    description:
+      "Venda por peso, por unidade ou como fizer sentido pro seu negócio. O cliente escolhe exatamente o que precisa.",
+  },
+  {
+    icon: <Truck className="w-6 h-6 text-[#009246]" />,
+    title: "Pedidos ao vivo",
+    description:
+      "Painel com atualização instantânea. Cada pedido aparece na hora, do recebimento até a entrega.",
+  },
+  {
+    icon: <BarChart3 className="w-6 h-6 text-[#009246]" />,
+    title: "Controle na sua mão",
+    description:
+      "Métricas, relatórios e gestão completa do seu negócio numa plataforma só.",
+  },
+];
 
 const About = () => {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: false, amount: 0.3 });
-  
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.2,
-        delayChildren: 0.1
-      }
-    }
-  };
-  
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
-  };
+  const isInView = useInView(ref, { once: true, amount: 0.2 });
 
   return (
-    <section 
-      id="sobre" 
-      ref={ref}
-      className="relative bg-white text-black py-20 overflow-hidden font-antarctican-mono"
-    >
-      <div className="absolute top-0 left-0 w-24 h-24 bg-primary/10 rounded-full -translate-x-1/2 -translate-y-1/2"></div>
-      <div className="absolute bottom-0 right-0 w-48 h-48 bg-primary/10 rounded-full translate-x-1/3 translate-y-1/3"></div>
-      
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate={isInView ? "visible" : "hidden"}
-        className="max-w-7xl mx-auto px-4"
-      >
-        <div className="grid md:grid-cols-2 gap-12 items-start">
-          <div>
-            <motion.div variants={itemVariants} className="inline-block">
-              <div className="flex flex-col items-start">
-                <p className="bg-transparent font-bold text-xl md:text-3xl">O QUE É O</p>
-                <h2 className="bg-primary font-black text-2xl md:text-5xl text-white px-2 py-1">
-                  VERSA DELIVERY?
-                </h2>
-              </div>
-            </motion.div>
-
-            <motion.div variants={itemVariants} className="inline-block">
-              <div className="font-mono flex flex-col items-start mt-8">
-                <p className="bg-transparent text-black font-bold text-lg md:text-3xl">A PLATAFORMA QUE SE ADAPTA AO</p>
-                <h3 className="text-lg md:text-3xl font-bold bg-black text-white inline-block px-2 py-1">
-                  SEU JEITO DE VENDER.
-                </h3>
-              </div>
-            </motion.div>
-
-            <motion.p 
-              variants={itemVariants}
-              className="font-regular mt-8 text-lg"
-            >
-              O <span className="font-bold">VERSA DELIVERY</span> É A PLATAFORMA FLEXÍVEL
-              QUE PERMITE AO SEU CLIENTE ESCOLHER EXATAMENTE
-              COMO QUER RECEBER O PEDIDO — <span className="font-bold">DESDE O PESO IDEAL
-              DO PRODUTO ATÉ A FORMA DE ENTREGA.</span>
-            </motion.p>
-
-            <motion.div variants={itemVariants}>
-              <p className="mt-12 font-bold text-lg">
-                SIMPLES, DIRETO E COM TOTAL CONTROLE NAS SUAS MÃOS.
-              </p>
-              <p className="text-lg">
-                VOCÊ VENDE COMO QUISER, E SEU CLIENTE COMPRA COMO PRECISA.
-              </p>
-            </motion.div>
-            
-            <motion.div 
-              variants={itemVariants}
-              className="mt-8"
-            >
-              <Link href="/login">
-                <Button className="bg-primary hover:bg-primary/80 text-white rounded-xs text-lg px-8 py-6 shadow-lg shadow-primary/20 transition-all duration-300 hover:shadow-primary/40 font-antarctican-mono">
-                  COMEÇAR AGORA
-                </Button>
-              </Link>
-            </motion.div>
-          </div>
-
-          <motion.div 
-            variants={itemVariants}
-            className="relative flex justify-center md:justify-end"
+    <section id="sobre" ref={ref} className="py-20 md:py-28 bg-[#FFFDF6]">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            animate={isInView ? { opacity: 1, x: 0 } : {}}
+            transition={{ duration: 0.6 }}
+            className="relative flex justify-center"
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/20 rounded-2xl transform rotate-3 scale-105"></div>
-            <Image
-              src={meat}
-              alt="Meat cuts"
-              className="rounded-2xl w-full max-w-[300px] md:max-w-[400px] lg:max-w-[500px] shadow-xl relative z-10 transform hover:scale-105 transition-transform duration-500"
-              width={500}
-              height={300}
-            />
-            
-            <motion.div
-              animate={{ 
-                y: [0, -10, 0],
-                rotate: [0, 5, 0]
-              }}
-              transition={{ 
-                duration: 4, 
-                repeat: Infinity,
-                repeatType: "reverse" 
-              }}
-              className="absolute top-10 left-10 w-16 h-16 bg-black/80 text-white rounded-full flex items-center justify-center font-bold z-20 shadow-lg"
-            >
-              100%
-            </motion.div>
-            
-            <motion.div
-              animate={{ 
-                y: [0, 10, 0],
-                rotate: [0, -5, 0]
-              }}
-              transition={{ 
-                duration: 5, 
-                repeat: Infinity,
-                repeatType: "reverse",
-                delay: 0.5
-              }}
-              className="absolute bottom-10 right-10 w-20 h-20 bg-primary text-white rounded-full flex items-center justify-center font-bold z-20 shadow-lg"
-            >
-              Flexível
-            </motion.div>
+            <div className="relative">
+              <div className="absolute -inset-6 rounded-[2rem]" />
+              <Image
+                src={meat}
+                alt="Produtos Versa Delivery"
+                className="relative rounded-2xl w-full max-w-[450px]"
+                width={450}
+                height={350}
+              />
+              <div className="absolute -bottom-4 -right-4 bg-white rounded-2xl shadow-md px-5 py-3 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center">
+                  <ShoppingBag className="w-5 h-5 text-[#009246]" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-[#1B1B1B]">
+                    +200 negócios
+                  </p>
+                  <p className="text-xs text-[#858585]">já usam o Versa</p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            animate={isInView ? { opacity: 1, x: 0 } : {}}
+            transition={{ duration: 0.6, delay: 0.1 }}
+          >
+            <span className="font-tomato inline-block text-[#009246] text-sm font-semibold tracking-wide uppercase mb-3">
+              Sobre o Versa
+            </span>
+            <h2 className="font-tomato text-3xl sm:text-4xl font-semibold text-[#1B1B1B] tracking-tight leading-tight mb-5">
+              Feito pra quem vende de verdade
+            </h2>
+            <p className="text-lg text-[#474747] leading-relaxed mb-8">
+              O Versa é a plataforma que deixa seu cliente escolher como quer
+              comprar: o peso do produto, a forma de entrega, tudo do jeito
+              dele. Você monta a loja, recebe os pedidos e gerencia tudo num só
+              lugar.
+            </p>
+
+            <div className="space-y-5">
+              {highlights.map((item, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={isInView ? { opacity: 1, y: 0 } : {}}
+                  transition={{ duration: 0.4, delay: 0.2 + index * 0.1 }}
+                  className="flex gap-4"
+                >
+                  <div className="flex-shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center">
+                    {item.icon}
+                  </div>
+                  <div>
+                    <h3 className="text-base font-semibold text-[#1B1B1B] mb-1">
+                      {item.title}
+                    </h3>
+                    <p className="text-sm text-[#474747] leading-relaxed">
+                      {item.description}
+                    </p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
           </motion.div>
         </div>
-      </motion.div>
+      </div>
     </section>
   );
 };
