@@ -2,8 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from "next/navigation";
-import { getClientToken } from "@/lib/auth";
-import { getCustomerOrders, getOrdersByPhone } from "@/services/order-service";
+import { getOrdersByPhone } from "@/services/order-service";
 import { CustomerOrder } from "@/types/order";
 import { useCustomerOrdersWebSocket } from "@/hooks/use-customer-orders-websocket";
 import { formatCurrency } from "@/lib/utils";
@@ -64,18 +63,20 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<CustomerOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [unauthorized, setUnauthorized] = useState(false);
-  const [guestPhone, setGuestPhone] = useState<string | null>(null);
   const { subscribeToOrders, isLoading: wsLoading } = useCustomerOrdersWebSocket();
 
   useEffect(() => {
-    const token = getClientToken();
-    const storedGuestPhone = localStorage.getItem('guest_phone');
-    
-    if (storedGuestPhone) {
-      setGuestPhone(storedGuestPhone);
-    }
+    let phone: string | null = null;
+    try {
+      const stored = localStorage.getItem('customer_info');
+      if (stored) {
+        const info = JSON.parse(stored);
+        if (info.phone) phone = info.phone.replace(/\D/g, '');
+      }
+    } catch {}
+    if (!phone) phone = localStorage.getItem('guest_phone');
 
-    if (!token && !storedGuestPhone) {
+    if (!phone) {
       setUnauthorized(true);
       setLoading(false);
       return;
@@ -83,13 +84,7 @@ export default function OrdersPage() {
 
     const fetchOrders = async () => {
       try {
-        let response;
-        if (token) {
-          response = await getCustomerOrders();
-        } else if (storedGuestPhone) {
-          response = await getOrdersByPhone(storedGuestPhone);
-        }
-        
+        const response = await getOrdersByPhone(phone!);
         if (response) {
           setOrders(response.data);
           setUnauthorized(false);
@@ -136,51 +131,33 @@ export default function OrdersPage() {
               <ShoppingBag className="w-7 h-7 text-muted-foreground" />
             </div>
             <h2 className="text-lg font-bold text-foreground mb-2">Acompanhe seus pedidos</h2>
-            <p className="text-sm text-muted-foreground mb-6">Entre na sua conta ou informe seu telefone usado na compra.</p>
-            
-            <div className="space-y-4">
-              <div className="p-4 bg-white border border-[#E5E2DD] rounded-md">
-                <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 text-left">Consultar por Telefone</p>
-                <form 
-                  className="flex flex-col gap-2"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    const phone = (e.currentTarget.elements.namedItem('phone') as HTMLInputElement).value.replace(/\D/g, '');
-                    if (phone.length >= 10) {
-                      localStorage.setItem('guest_phone', phone);
-                      window.location.reload();
-                    }
-                  }}
-                >
-                  <input 
-                    name="phone"
-                    type="tel" 
-                    placeholder="(00) 00000-0000"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    required
-                  />
-                  <Button type="submit" className="w-full">
-                    Buscar Pedidos
-                  </Button>
-                </form>
-              </div>
+            <p className="text-sm text-muted-foreground mb-6">Informe seu telefone usado na compra para consultar seus pedidos.</p>
 
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-[#E5E2DD]" />
-                </div>
-                <div className="relative flex justify-center text-sm uppercase">
-                  <span className="bg-[#FAF9F7] px-2 text-muted-foreground">Ou acesse sua conta</span>
-                </div>
-              </div>
-
-              <Button 
-                variant="outline"
-                onClick={() => router.push(`/auth/login?redirect=/pedidos`)} 
-                className="w-full rounded-md"
+            <div className="p-4 bg-white border border-[#E5E2DD] rounded-md">
+              <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 text-left">Consultar por Telefone</p>
+              <form
+                className="flex flex-col gap-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const phone = (e.currentTarget.elements.namedItem('phone') as HTMLInputElement).value.replace(/\D/g, '');
+                  if (phone.length >= 10) {
+                    localStorage.setItem('guest_phone', phone);
+                    localStorage.setItem('customer_info', JSON.stringify({ phone }));
+                    window.location.reload();
+                  }
+                }}
               >
-                Entrar na conta
-              </Button>
+                <input
+                  name="phone"
+                  type="tel"
+                  placeholder="(00) 00000-0000"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  required
+                />
+                <Button type="submit" className="w-full">
+                  Buscar Pedidos
+                </Button>
+              </form>
             </div>
           </div>
         </div>

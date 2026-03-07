@@ -13,7 +13,6 @@ import { Separator } from '@/components/ui/separator'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useCart } from '../cart/cart-context'
 import { useParams, useRouter } from 'next/navigation'
-import { useClient } from '../client-context'
 import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CreateOrderRequest, Order } from '@/types/order'
@@ -64,7 +63,6 @@ export default function CheckoutPage() {
   const router = useRouter()
   const params = useParams()
   const storeSlug = params.slug as string
-  const { client } = useClient()
   const { isOpen: isShopOpen, loading: shopStatusLoading, checkStatus } = useShopStatusContext()
 
   const { data: shopData, isLoading: isLoadingShop } = useShopBySlug(storeSlug)
@@ -84,8 +82,25 @@ export default function CheckoutPage() {
   const [selectedNeighborhood, setSelectedNeighborhood] = useState<string>('')
   const [order, setOrder] = useState<Order | null>(null)
   const [itemObservations, setItemObservations] = useState<Record<string, string>>({})
-  const [guestName, setGuestName] = useState('')
-  const [guestPhone, setGuestPhone] = useState('')
+  const [guestName, setGuestName] = useState(() => {
+    if (typeof window === 'undefined') return ''
+    try {
+      const info = JSON.parse(localStorage.getItem('customer_info') || '{}')
+      return info.name || ''
+    } catch { return '' }
+  })
+  const [guestPhone, setGuestPhone] = useState(() => {
+    if (typeof window === 'undefined') return ''
+    try {
+      const info = JSON.parse(localStorage.getItem('customer_info') || '{}')
+      const phone = info.phone || ''
+      if (!phone) return ''
+      const d = phone.replace(/\D/g, '')
+      if (d.length === 11) return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`
+      if (d.length === 10) return `(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`
+      return phone
+    } catch { return '' }
+  })
   const [couponCode, setCouponCode] = useState('')
   const [appliedCoupon, setAppliedCoupon] = useState<ValidateCouponData | null>(null)
   const [couponError, setCouponError] = useState('')
@@ -363,23 +378,21 @@ export default function CheckoutPage() {
       return
     }
 
-    // Validação campo a campo para guests
+    // Validação campo a campo
     const errors: Record<string, string> = {}
-    if (!client) {
-      const trimmedName = guestName.trim()
-      if (!trimmedName) {
-        errors.guestName = 'Nome é obrigatório'
-      } else if (trimmedName.length < 3) {
-        errors.guestName = 'Nome deve ter pelo menos 3 caracteres'
-      }
-      const phoneDigits = guestPhone.replace(/\D/g, '')
-      if (!phoneDigits) {
-        errors.guestPhone = 'Telefone é obrigatório'
-      } else if (phoneDigits.length < 10) {
-        errors.guestPhone = 'Telefone deve ter DDD + número (min 10 dígitos)'
-      } else if (phoneDigits.length > 11) {
-        errors.guestPhone = 'Telefone inválido'
-      }
+    const trimmedName = guestName.trim()
+    if (!trimmedName) {
+      errors.guestName = 'Nome é obrigatório'
+    } else if (trimmedName.length < 3) {
+      errors.guestName = 'Nome deve ter pelo menos 3 caracteres'
+    }
+    const phoneDigits = guestPhone.replace(/\D/g, '')
+    if (!phoneDigits) {
+      errors.guestPhone = 'Telefone é obrigatório'
+    } else if (phoneDigits.length < 10) {
+      errors.guestPhone = 'Telefone deve ter DDD + número (min 10 dígitos)'
+    } else if (phoneDigits.length > 11) {
+      errors.guestPhone = 'Telefone inválido'
     }
     if (deliveryOption === 'delivery') {
       if (!address.trim()) errors.address = 'Endereço é obrigatório'
@@ -416,14 +429,13 @@ export default function CheckoutPage() {
       }
     }
 
-    const isGuest = !client
-
     const orderData: CreateOrderRequest = {
       order: {
         shop_id: Number(shop?.data.id),
         withdrawal: deliveryOption === 'pickup',
         payment_method: paymentMethod as any,
-        ...(isGuest && { customer_name: guestName.trim(), customer_phone: guestPhone.replace(/\D/g, '') }),
+        customer_name: guestName.trim(),
+        customer_phone: guestPhone.replace(/\D/g, ''),
         ...(appliedCoupon && { coupon_code: appliedCoupon.code }),
         address: {
           address,
@@ -449,14 +461,14 @@ export default function CheckoutPage() {
     }
 
     try {
-      const response = await createOrder(orderData, isGuest ? 'normal' : 'client')
+      const response = await createOrder(orderData, 'normal')
       const orderId = response.order_id
       setOrder(response)
       toast.success("Pedido realizado com sucesso!")
       clearCart()
-      if (isGuest && guestPhone) {
-        localStorage.setItem('guest_phone', guestPhone.replace(/\D/g, ''))
-      }
+      const customerPhone = guestPhone.replace(/\D/g, '')
+      localStorage.setItem('customer_info', JSON.stringify({ name: guestName.trim(), phone: customerPhone }))
+      localStorage.setItem('guest_phone', customerPhone)
       if (orderId) router.push(`/pedidos/${orderId}`)
     } catch (error: any) {
       console.error('Erro ao enviar pedido:', error)
@@ -551,7 +563,7 @@ export default function CheckoutPage() {
 
   const canSubmit = !isSubmitting && isShopOpen && !shopStatusLoading && !isBelowMinOrder && !noPaymentMethods &&
     (deliveryOption === 'pickup' || !!address.trim()) &&
-    (!!client || (guestName.trim().length >= 3 && guestPhone.replace(/\D/g, '').length >= 10))
+    (guestName.trim().length >= 3 && guestPhone.replace(/\D/g, '').length >= 10)
 
   return (
     <div className="min-h-screen bg-[#FAF9F7]">
@@ -593,22 +605,12 @@ export default function CheckoutPage() {
               </Alert>
             )}
 
-            {/* Identificação do guest */}
-            {!client && (
-              <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
-                <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
-                  <User className="h-4 w-4 text-primary" />
-                  <h2 className="text-base font-semibold text-gray-900">Identificação</h2>
-                  <span className="ml-auto text-sm text-muted-foreground">
-                    Ou{' '}
-                    <button
-                      onClick={() => router.push(`/auth/login?redirect=${encodeURIComponent(window.location.pathname)}`)}
-                      className="font-semibold text-primary underline underline-offset-2 cursor-pointer"
-                    >
-                      faça login
-                    </button>
-                  </span>
-                </div>
+            {/* Identificação */}
+            <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+              <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
+                <User className="h-4 w-4 text-primary" />
+                <h2 className="text-base font-semibold text-gray-900">Identificação</h2>
+              </div>
                 <div className="px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <Label htmlFor="guestName" className="text-sm font-medium text-gray-700 mb-1.5 block">Nome <span className="text-red-500">*</span></Label>
@@ -637,7 +639,6 @@ export default function CheckoutPage() {
                   </div>
                 </div>
               </div>
-            )}
 
             {/* ── Itens ── */}
             <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
@@ -1071,7 +1072,6 @@ export default function CheckoutPage() {
                 isSubmitting={isSubmitting}
                 isShopOpen={isShopOpen}
                 shopStatusLoading={shopStatusLoading}
-                client={client}
                 canSubmit={canSubmit}
                 onSubmit={handleSubmitOrder}
                 couponDiscount={couponDiscount}
@@ -1107,7 +1107,6 @@ export default function CheckoutPage() {
                 isSubmitting={isSubmitting}
                 isShopOpen={isShopOpen}
                 shopStatusLoading={shopStatusLoading}
-                client={client}
                 canSubmit={canSubmit}
                 onSubmit={handleSubmitOrder}
                 couponDiscount={couponDiscount}
@@ -1136,7 +1135,6 @@ interface OrderSummaryProps {
   isSubmitting: boolean
   isShopOpen: boolean
   shopStatusLoading: boolean
-  client: any
   canSubmit: boolean
   onSubmit: () => void
   couponDiscount?: number
@@ -1148,7 +1146,7 @@ interface OrderSummaryProps {
 function OrderSummary({
   totalPrice, deliveryOption, deliveryFeeDisplay, calculateTotal,
   cartItems, isBelowMinOrder, minOrderValue, isSubmitting, isShopOpen,
-  shopStatusLoading, client, canSubmit, onSubmit, couponDiscount = 0, appliedCouponCode,
+  shopStatusLoading, canSubmit, onSubmit, couponDiscount = 0, appliedCouponCode,
   paymentAdjustment = 0, paymentMethodLabel
 }: OrderSummaryProps) {
   const totalDiscount = cartItems.reduce((sum, item) => {

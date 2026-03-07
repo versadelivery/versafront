@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useClient } from "../client-context";
 import { Store, Clock, Truck, Receipt, MapPin, Package, Megaphone } from 'lucide-react';
 import Image from 'next/image';
@@ -18,7 +18,12 @@ interface StoreHeaderProps {
 }
 
 export default function StoreHeader({ shop: initialShop }: StoreHeaderProps) {
-  const { client, shop: contextShop } = useClient();
+  const { shop: contextShop } = useClient();
+  const [hasCustomerInfo, setHasCustomerInfo] = useState(false);
+
+  useEffect(() => {
+    setHasCustomerInfo(!!localStorage.getItem('customer_info'));
+  }, []);
   const shopData = contextShop?.data ?? null;
   const attributes = shopData?.attributes || initialShop?.attributes || {};
 
@@ -99,7 +104,7 @@ export default function StoreHeader({ shop: initialShop }: StoreHeaderProps) {
 
             <div className="flex items-center gap-3 sm:gap-4">
               <AuthIndicator isDarkHeader={isDark} />
-              {client && (
+              {hasCustomerInfo && (
                 <>
                   <Link
                     href="/pedidos"

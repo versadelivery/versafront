@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getClientToken } from "@/lib/auth";
-import { useClientActionCable, ClientOrderData } from "@/lib/client-cable";
+import { ClientOrderData } from "@/lib/client-cable";
 import { formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -72,7 +71,6 @@ const formatDate = (dateString: string) => {
 export default function OrderDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const { id } = React.use(params);
-  const { subscribeToOrder, disconnect } = useClientActionCable(id);
   const [orderData, setOrderData] = useState<ClientOrderData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -80,45 +78,27 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
   useEffect(() => {
     if (!id) return;
 
-    const clientToken = getClientToken();
-
-    if (clientToken) {
-      // Cliente logado → usa ActionCable para atualizações em tempo real
-      const unsubscribe = subscribeToOrder((data: ClientOrderData) => {
-        setOrderData(data);
+    const fetchOrder = async () => {
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+        const res = await fetch(`${baseUrl}/orders/${id}`, {
+          headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' }
+        });
+        if (!res.ok) throw new Error('Pedido não encontrado');
+        const json = await res.json();
+        const orderPayload = json?.data ?? json;
+        setOrderData(orderPayload);
         setIsLoading(false);
         setError(null);
-      });
+      } catch (err) {
+        setError('Não foi possível carregar o pedido.');
+        setIsLoading(false);
+      }
+    };
 
-      return () => {
-        if (unsubscribe) unsubscribe();
-        disconnect();
-      };
-    } else {
-      // Guest → busca via HTTP e faz polling a cada 10s
-      const fetchOrder = async () => {
-        try {
-          const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-          const res = await fetch(`${baseUrl}/orders/${id}`, {
-            headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' }
-          });
-          if (!res.ok) throw new Error('Pedido não encontrado');
-          const json = await res.json();
-          // O serializer retorna { data: { ... } }
-          const orderPayload = json?.data ?? json;
-          setOrderData(orderPayload);
-          setIsLoading(false);
-          setError(null);
-        } catch (err) {
-          setError('Não foi possível carregar o pedido.');
-          setIsLoading(false);
-        }
-      };
-
-      fetchOrder();
-      const interval = setInterval(fetchOrder, 10000);
-      return () => clearInterval(interval);
-    }
+    fetchOrder();
+    const interval = setInterval(fetchOrder, 10000);
+    return () => clearInterval(interval);
   }, [id]);
 
   const shopSlug = typeof window !== 'undefined'
