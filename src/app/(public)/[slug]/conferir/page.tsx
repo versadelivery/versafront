@@ -1216,7 +1216,7 @@ function OrderSummary({
           <div className="flex items-start gap-2 bg-white border border-amber-400 rounded-md px-3 py-2.5">
             <AlertTriangle className="h-3.5 w-3.5 text-amber-500 flex-shrink-0 mt-0.5" />
             <p className="text-sm text-amber-700">
-              Mínimo R$ {minOrderValue.toFixed(2).replace('.', ',')}. Faltam R$ {(minOrderValue - effectiveValue).toFixed(2).replace('.', ',')}.
+              Mínimo para entrega: R$ {minOrderValue.toFixed(2).replace('.', ',')}. Faltam R$ {(minOrderValue - effectiveValue).toFixed(2).replace('.', ',')}.
             </p>
           </div>
         )}

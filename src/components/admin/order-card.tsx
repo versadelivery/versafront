@@ -113,8 +113,8 @@ export default function OrderCard({
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showDeliveryPersonModal, setShowDeliveryPersonModal] = useState(false);
 
-  // Statuses onde o dropdown de entregador fica disponível
-  const showDeliveryDropdown = ['recebidos', 'aceitos', 'em_analise', 'em_preparo', 'prontos'].includes(order.status);
+  // Statuses onde o dropdown de entregador fica disponível (apenas para delivery)
+  const showDeliveryDropdown = order.deliveryType === 'delivery' && ['recebidos', 'aceitos', 'em_analise', 'em_preparo', 'prontos'].includes(order.status);
 
   // Pré-selecionar motoboy padrão quando pedido de delivery não tem entregador
   const defaultAppliedRef = useRef(false);
@@ -788,24 +788,35 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
                   <Copy className="w-4 h-4"/>
                 </Button>
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                <Button 
-                  variant="outline" 
-                  className="w-full rounded-md border border-gray-300 cursor-pointer"
-                  onClick={handleLeftForDelivery}
-                >
-                  <Truck className="w-3 h-3" />
-                  SAIU
-                </Button>
-                <Button 
-                  variant="outline" 
+              {order.deliveryType === 'delivery' ? (
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant="outline"
+                    className="w-full rounded-md border border-gray-300 cursor-pointer"
+                    onClick={handleLeftForDelivery}
+                  >
+                    <Truck className="w-3 h-3" />
+                    SAIU
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full rounded-md border border-gray-300 cursor-pointer"
+                    onClick={handleDelivered}
+                  >
+                    <CheckCircle className="w-2 h-2" />
+                    ENTREGUE
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
                   className="w-full rounded-md border border-gray-300 cursor-pointer"
                   onClick={handleDelivered}
                 >
                   <CheckCircle className="w-2 h-2" />
                   ENTREGUE
                 </Button>
-              </div>
+              )}
               <Button 
                 variant="destructive" 
                 className="w-full rounded-md border border-gray-300 cursor-pointer"
