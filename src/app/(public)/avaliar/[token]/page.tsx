@@ -31,7 +31,7 @@ type ReviewData = ReviewInfo | AlreadyReviewedInfo;
 
 export default function ReviewPage() {
   const params = useParams();
-  const token = params.token as string;
+  const orderId = params.token as string;
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +44,7 @@ export default function ReviewPage() {
   useEffect(() => {
     async function fetchReviewInfo() {
       try {
-        const response = await fetch(`${API_BASE_URL}/reviews/${token}`);
+        const response = await fetch(`${API_BASE_URL}/reviews/${orderId}`);
         if (!response.ok) {
           const data = await response.json();
           setError(data.error || "Link de avaliacao invalido");
@@ -59,7 +59,7 @@ export default function ReviewPage() {
       }
     }
     fetchReviewInfo();
-  }, [token]);
+  }, [orderId]);
 
   const handleSubmit = async () => {
     if (rating === 0) return;
@@ -70,7 +70,7 @@ export default function ReviewPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          review_token: token,
+          order_id: orderId,
           rating,
           comment: comment.trim() || null,
         }),

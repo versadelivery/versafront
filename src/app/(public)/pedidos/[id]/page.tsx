@@ -177,7 +177,6 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
     discount_amount: parseFloat((orderData.attributes as any).discount_amount ?? '0'),
     payment_adjustment_amount: parseFloat((orderData.attributes as any).payment_adjustment_amount ?? '0'),
     coupon_code: (orderData.attributes as any).coupon_code ?? null,
-    review_token: (orderData.attributes as any).review_token ?? null,
   };
 
   const statusCfg = statusConfig[order.status] ?? statusConfig.received;
@@ -413,14 +412,14 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
               </InfoCard>
 
               {/* Review button */}
-              {order.status === 'delivered' && order.review_token && (
+              {order.status === 'delivered' && (
                 <div className="bg-white border border-[#E5E2DD] rounded-md p-5">
                   <div className="text-center">
                     <Star className="w-8 h-8 text-amber-400 mx-auto mb-2" />
                     <p className="font-semibold text-foreground mb-1">Como foi seu pedido?</p>
                     <p className="text-sm text-muted-foreground mb-4">Sua opinião nos ajuda a melhorar!</p>
                     <Button asChild className="w-full rounded-md bg-amber-500 hover:bg-amber-600 text-white">
-                      <Link href={`/avaliar/${order.review_token}`}>
+                      <Link href={`/avaliar/${order.id}`}>
                         Avaliar pedido
                       </Link>
                     </Button>
