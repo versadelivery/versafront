@@ -76,7 +76,7 @@ export default function CustomerAcquisitionTab() {
             <Card>
               <CardContent>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-blue-100">
+                  <div className="p-2 rounded-lg">
                     <UserPlus className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
@@ -94,7 +94,7 @@ export default function CustomerAcquisitionTab() {
             <Card>
               <CardContent>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-emerald-100">
+                  <div className="p-2 rounded-lg">
                     <UserCheck className="h-5 w-5 text-emerald-600" />
                   </div>
                   <div>
@@ -112,7 +112,7 @@ export default function CustomerAcquisitionTab() {
             <Card>
               <CardContent>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-amber-100">
+                  <div className="p-2 rounded-lg">
                     <DollarSign className="h-5 w-5 text-amber-600" />
                   </div>
                   <div>
@@ -130,7 +130,7 @@ export default function CustomerAcquisitionTab() {
             <Card>
               <CardContent>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-purple-100">
+                  <div className="p-2 rounded-lg">
                     <Percent className="h-5 w-5 text-purple-600" />
                   </div>
                   <div>
@@ -148,7 +148,7 @@ export default function CustomerAcquisitionTab() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Novos Clientes por Dia</CardTitle>
+              <CardTitle className="font-tomato">Novos Clientes por Dia</CardTitle>
             </CardHeader>
             <CardContent>
               {breakdown.some((d) => d.new_customers > 0) ? (

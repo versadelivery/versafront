@@ -44,7 +44,7 @@ export default function SelectDeliveryPersonModal({
             <Truck className="w-4 h-4 text-blue-600" />
           </div>
           <div>
-            <DialogTitle className="text-base font-semibold text-gray-900">
+            <DialogTitle className="font-tomato text-base font-semibold text-gray-900">
               Selecionar Entregador
             </DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground">

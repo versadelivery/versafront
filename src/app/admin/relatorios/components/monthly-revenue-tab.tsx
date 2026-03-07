@@ -60,7 +60,7 @@ export default function MonthlyRevenueTab() {
         <Card>
           <CardContent>
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-blue-100">
+              <div className="p-2 rounded-lg">
                 <DollarSign className="h-5 w-5 text-blue-600" />
               </div>
               <div>
@@ -78,7 +78,7 @@ export default function MonthlyRevenueTab() {
         <Card>
           <CardContent>
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-emerald-100">
+              <div className="p-2 rounded-lg">
                 <TrendingUp className="h-5 w-5 text-emerald-600" />
               </div>
               <div>
@@ -94,7 +94,7 @@ export default function MonthlyRevenueTab() {
         <Card>
           <CardContent>
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-amber-100">
+              <div className="p-2 rounded-lg">
                 <Trophy className="h-5 w-5 text-amber-600" />
               </div>
               <div>
@@ -117,7 +117,7 @@ export default function MonthlyRevenueTab() {
         <Card>
           <CardContent>
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-purple-100">
+              <div className="p-2 rounded-lg">
                 <CalendarDays className="h-5 w-5 text-purple-600" />
               </div>
               <div>
@@ -140,7 +140,7 @@ export default function MonthlyRevenueTab() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Faturamento por Mês</CardTitle>
+          <CardTitle className="font-tomato">Faturamento por Mês</CardTitle>
         </CardHeader>
         <CardContent>
           {data.length > 0 ? (
@@ -156,7 +156,7 @@ export default function MonthlyRevenueTab() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Detalhamento Mensal</CardTitle>
+          <CardTitle className="font-tomato">Detalhamento Mensal</CardTitle>
         </CardHeader>
         <CardContent>
           {data.length > 0 ? (

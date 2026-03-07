@@ -30,7 +30,7 @@ export function AdminDashboardCard({
             <Icon className="h-5 w-5 text-white" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-base font-semibold text-gray-900 mb-1 truncate">{title}</h3>
+            <h3 className="font-tomato text-base font-semibold text-gray-900 mb-1 truncate">{title}</h3>
             <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{description}</p>
             <span className="inline-flex items-center gap-1 text-sm font-medium text-primary group-hover:gap-2 transition-all">
               Acessar

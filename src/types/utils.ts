@@ -1,6 +1,3 @@
-import { StaticImageData } from "next/image";
-
-
 
 export interface ShopData {
   name: string
@@ -41,10 +38,6 @@ export interface AuthBreadcrumbProps {
 export interface AuthLayoutProps {
   children: React.ReactNode;
   title: string;
-  imageSrc: string | StaticImageData;
-  imagePosition?: "left" | "right";
-  headerDisplay?: boolean;
-  imageDisplay?: boolean;
 }
 
 export interface AuthFormFooterProps {

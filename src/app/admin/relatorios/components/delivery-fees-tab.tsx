@@ -72,7 +72,7 @@ export default function DeliveryFeesTab() {
             <Card>
               <CardContent>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-blue-100">
+                  <div className="p-2 rounded-lg">
                     <Hash className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
@@ -90,7 +90,7 @@ export default function DeliveryFeesTab() {
             <Card>
               <CardContent>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-emerald-100">
+                  <div className="p-2 rounded-lg">
                     <DollarSign className="h-5 w-5 text-emerald-600" />
                   </div>
                   <div>
@@ -108,7 +108,7 @@ export default function DeliveryFeesTab() {
             <Card>
               <CardContent>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-amber-100">
+                  <div className="p-2 rounded-lg">
                     <Truck className="h-5 w-5 text-amber-600" />
                   </div>
                   <div>
@@ -124,7 +124,7 @@ export default function DeliveryFeesTab() {
             <Card>
               <CardContent>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-purple-100">
+                  <div className="p-2 rounded-lg">
                     <Users className="h-5 w-5 text-purple-600" />
                   </div>
                   <div>
@@ -140,7 +140,7 @@ export default function DeliveryFeesTab() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Taxas por Motoboy</CardTitle>
+              <CardTitle className="font-tomato">Taxas por Motoboy</CardTitle>
             </CardHeader>
             <CardContent>
               {data.length > 0 ? (

@@ -578,7 +578,7 @@ export default function CheckoutPage() {
             <ShoppingCart className="h-7 w-7 text-gray-400" />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900">Carrinho vazio</h3>
+            <h3 className="font-tomato font-semibold text-gray-900">Carrinho vazio</h3>
             <p className="text-sm text-muted-foreground mt-1">Adicione itens para continuar</p>
           </div>
           <Button onClick={() => router.push(`/${storeSlug}`)} variant="outline" size="sm" className="gap-2">
@@ -638,7 +638,7 @@ export default function CheckoutPage() {
             <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
               <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
                 <User className="h-4 w-4 text-primary" />
-                <h2 className="text-base font-semibold text-gray-900">Identificação</h2>
+                <h2 className="font-tomato text-base font-semibold text-gray-900">Identificação</h2>
               </div>
                 <div className="px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
@@ -674,7 +674,7 @@ export default function CheckoutPage() {
               <div className="px-5 py-4 flex items-center justify-between border-b border-[#E5E2DD]">
                 <div className="flex items-center gap-2">
                   <Package className="h-4 w-4 text-primary" />
-                  <h2 className="text-base font-semibold text-gray-900">Itens do pedido</h2>
+                  <h2 className="font-tomato text-base font-semibold text-gray-900">Itens do pedido</h2>
                 </div>
                 <span className="text-sm text-muted-foreground border border-[#E5E2DD] px-2.5 py-0.5 rounded-md">
                   {cartItems.reduce((s, i) => s + i.quantity, 0)} {cartItems.reduce((s, i) => s + i.quantity, 0) === 1 ? 'item' : 'itens'}
@@ -712,7 +712,7 @@ export default function CheckoutPage() {
                         {/* Info */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2">
-                            <h3 className="text-base font-semibold text-gray-900 leading-tight">{item.name}</h3>
+                            <h3 className="font-tomato text-base font-semibold text-gray-900 leading-tight">{item.name}</h3>
                             <button
                               onClick={() => {
                                 removeItem(item.cartId)
@@ -898,7 +898,7 @@ export default function CheckoutPage() {
             <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
               <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
                 <Truck className="h-4 w-4 text-primary" />
-                <h2 className="text-base font-semibold text-gray-900">Entrega</h2>
+                <h2 className="font-tomato text-base font-semibold text-gray-900">Entrega</h2>
               </div>
 
               <div className="px-5 py-4 space-y-4">
@@ -1016,7 +1016,7 @@ export default function CheckoutPage() {
             <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
               <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
                 <CreditCard className="h-4 w-4 text-primary" />
-                <h2 className="text-base font-semibold text-gray-900">Pagamento</h2>
+                <h2 className="font-tomato text-base font-semibold text-gray-900">Pagamento</h2>
               </div>
 
               <div className="px-5 py-4 space-y-3">
@@ -1190,7 +1190,7 @@ function OrderSummary({
   return (
     <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
       <div className="px-5 py-4 border-b border-[#E5E2DD]">
-        <h2 className="text-base font-semibold text-gray-900">Resumo</h2>
+        <h2 className="font-tomato text-base font-semibold text-gray-900">Resumo</h2>
       </div>
 
       <div className="px-5 py-4 space-y-3">
@@ -1305,7 +1305,7 @@ function CouponSection({
     <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
       <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
         <Tag className="h-4 w-4 text-primary" />
-        <h2 className="text-base font-semibold text-gray-900">Cupom de desconto</h2>
+        <h2 className="font-tomato text-base font-semibold text-gray-900">Cupom de desconto</h2>
       </div>
       <div className="px-5 py-4 space-y-3">
         {appliedCoupon ? (

@@ -23,7 +23,7 @@ export default function Error({
         </div>
         
         <div className="space-y-2">
-          <h1 className="text-2xl font-bold text-foreground">
+          <h1 className="font-tomato text-2xl font-bold text-foreground">
             Ops! Algo deu errado
           </h1>
           <p className="text-muted-foreground">

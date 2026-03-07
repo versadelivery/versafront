@@ -191,7 +191,7 @@ export default function UserModal({
                 <User className="w-5 h-5 text-emerald-600" />
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-foreground">
+                <h2 className="font-tomato text-xl font-semibold text-foreground">
                   {isEdit ? "Editar Usuário" : "Criar Novo Usuário"}
                 </h2>
                 <p className="text-sm text-muted-foreground">
@@ -217,7 +217,7 @@ export default function UserModal({
                 <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <User className="w-6 h-6 text-red-600" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                <h3 className="font-tomato text-lg font-semibold text-gray-900 mb-2">
                   Confirmar Exclusão
                 </h3>
                 <p className="text-sm text-gray-600 mb-4">

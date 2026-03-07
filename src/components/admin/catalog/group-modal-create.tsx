@@ -185,7 +185,7 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
       <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent className="rounded-lg sm:max-w-[640px] p-0 bg-white max-h-[90vh] flex flex-col overflow-hidden">
           <DialogHeader className="px-6 pt-6 pb-4 border-b border-gray-100">
-            <DialogTitle className="text-lg font-semibold">
+            <DialogTitle className="font-tomato text-lg font-semibold">
               {isEditing ? "Editar Grupo" : "Novo Grupo"}
             </DialogTitle>
           </DialogHeader>

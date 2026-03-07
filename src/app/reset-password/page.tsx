@@ -3,10 +3,8 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AuthLayout } from "@/components/auth/auth-layout";
-import cesta from "../../../public/img/cesta.png";
 import { resetPasswordSchema, ResetPasswordFormData } from "@/schemas/auth-schemas";
 import { z } from "zod";
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Loader2, CheckCircle, XCircle } from "lucide-react";
 import { AuthFormInput } from "@/components/auth/auth-form-input";
@@ -83,20 +81,16 @@ function ResetPasswordContent() {
 
   if (!token) {
     return (
-      <AuthLayout
-        title="Link Inválido"
-        imageSrc={cesta}
-        imagePosition="left"
-      >
+      <AuthLayout title="Link Inválido">
         <div className="flex flex-col items-center text-center">
           <XCircle className="w-16 h-16 text-red-500 mb-4" />
-          <p className="text-gray-600 mb-6">
+          <p className="text-[#474747] mb-6">
             O link de recuperação de senha é inválido ou expirou.
           </p>
           <Link href="/forgot-password">
-            <Button className="w-full">
+            <button className="bg-[#1B1B1B] hover:bg-black text-white text-base font-medium px-8 py-4 rounded-2xl transition-colors cursor-pointer">
               Solicitar novo link
-            </Button>
+            </button>
           </Link>
         </div>
       </AuthLayout>
@@ -105,20 +99,16 @@ function ResetPasswordContent() {
 
   if (isSuccess) {
     return (
-      <AuthLayout
-        title="Senha Alterada!"
-        imageSrc={cesta}
-        imagePosition="left"
-      >
+      <AuthLayout title="Senha Alterada!">
         <div className="flex flex-col items-center text-center">
-          <CheckCircle className="w-16 h-16 text-green-500 mb-4" />
-          <p className="text-gray-600 mb-6">
+          <CheckCircle className="w-16 h-16 text-[#009246] mb-4" />
+          <p className="text-[#474747] mb-6">
             Sua senha foi alterada com sucesso. Você já pode fazer login com a nova senha.
           </p>
           <Link href="/login">
-            <Button className="w-full">
+            <button className="bg-[#1B1B1B] hover:bg-black text-white text-base font-medium px-8 py-4 rounded-2xl transition-colors cursor-pointer">
               Ir para o Login
-            </Button>
+            </button>
           </Link>
         </div>
       </AuthLayout>
@@ -126,15 +116,11 @@ function ResetPasswordContent() {
   }
 
   return (
-    <AuthLayout
-      title="Redefinir Senha"
-      imageSrc={cesta}
-      imagePosition="left"
-    >
-      <p className="text-gray-600 text-center mb-6">
+    <AuthLayout title="Redefinir Senha">
+      <p className="text-[#858585] text-center mb-6 -mt-4">
         Digite sua nova senha abaixo.
       </p>
-      <div className="w-full flex flex-col justify-center mb-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
         <AuthFormInput
           type="password"
           name="password"
@@ -146,8 +132,6 @@ function ResetPasswordContent() {
           error={errors.password}
           showPasswordToggle
         />
-      </div>
-      <div className="w-full flex flex-col justify-center mb-4">
         <AuthFormInput
           type="password"
           name="confirmPassword"
@@ -159,15 +143,14 @@ function ResetPasswordContent() {
           error={errors.confirmPassword}
           showPasswordToggle
         />
-      </div>
-      <Button
-        type="submit"
-        className="w-full mt-4 mb-4 text-lg font-bold py-8"
-        onClick={handleSubmit}
-        disabled={isLoading}
-      >
-        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Redefinir Senha"}
-      </Button>
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="w-full bg-[#1B1B1B] hover:bg-black text-white text-base font-medium py-4 rounded-2xl transition-colors cursor-pointer disabled:opacity-50"
+        >
+          {isLoading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "Redefinir Senha"}
+        </button>
+      </form>
     </AuthLayout>
   );
 }
@@ -175,9 +158,9 @@ function ResetPasswordContent() {
 export default function ResetPassword() {
   return (
     <Suspense fallback={
-      <AuthLayout title="Carregando..." imageSrc={cesta} imagePosition="left">
+      <AuthLayout title="Carregando...">
         <div className="flex justify-center">
-          <Loader2 className="w-8 h-8 animate-spin" />
+          <Loader2 className="w-8 h-8 animate-spin text-[#858585]" />
         </div>
       </AuthLayout>
     }>

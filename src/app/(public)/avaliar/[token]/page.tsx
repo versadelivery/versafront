@@ -106,7 +106,7 @@ export default function ReviewPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
         <Card className="p-8 max-w-md w-full text-center">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-lg font-semibold mb-2">Ops!</h2>
+          <h2 className="font-tomato text-lg font-semibold mb-2">Ops!</h2>
           <p className="text-muted-foreground">{error}</p>
         </Card>
       </div>
@@ -122,7 +122,7 @@ export default function ReviewPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
         <Card className="p-8 max-w-md w-full text-center">
           <CheckCircle2 className="h-12 w-12 text-emerald-500 mx-auto mb-4" />
-          <h2 className="text-lg font-semibold mb-2">
+          <h2 className="font-tomato text-lg font-semibold mb-2">
             Obrigado pela sua avaliacao!
           </h2>
           <p className="text-muted-foreground mb-4">
@@ -144,7 +144,7 @@ export default function ReviewPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <Card className="p-6 md:p-8 max-w-md w-full">
         <div className="text-center mb-6">
-          <h2 className="text-xl font-semibold mb-1">
+          <h2 className="font-tomato text-xl font-semibold mb-1">
             Como foi seu pedido?
           </h2>
           <p className="text-muted-foreground text-sm">

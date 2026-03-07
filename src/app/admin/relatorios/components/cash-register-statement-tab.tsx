@@ -74,7 +74,7 @@ export default function CashRegisterStatementTab() {
             <Card>
               <CardContent>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-emerald-100">
+                  <div className="p-2 rounded-lg">
                     <ArrowUpCircle className="h-5 w-5 text-emerald-600" />
                   </div>
                   <div>
@@ -92,7 +92,7 @@ export default function CashRegisterStatementTab() {
             <Card>
               <CardContent>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-red-100">
+                  <div className="p-2 rounded-lg">
                     <ArrowDownCircle className="h-5 w-5 text-red-600" />
                   </div>
                   <div>
@@ -110,7 +110,7 @@ export default function CashRegisterStatementTab() {
             <Card>
               <CardContent>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-blue-100">
+                  <div className="p-2 rounded-lg">
                     <Scale className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
@@ -126,7 +126,7 @@ export default function CashRegisterStatementTab() {
             <Card>
               <CardContent>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-purple-100">
+                  <div className="p-2 rounded-lg">
                     <Receipt className="h-5 w-5 text-purple-600" />
                   </div>
                   <div>
@@ -144,7 +144,7 @@ export default function CashRegisterStatementTab() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Extrato de Caixa</CardTitle>
+              <CardTitle className="font-tomato">Extrato de Caixa</CardTitle>
             </CardHeader>
             <CardContent>
               {transactions.length > 0 ? (

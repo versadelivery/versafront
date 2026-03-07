@@ -39,7 +39,7 @@ export default function ReviewsSection({ slug, accentColor }: ReviewsSectionProp
   return (
     <div className="mb-8">
       <div className="flex items-center gap-3 mb-4">
-        <h3 className="text-lg font-semibold" style={accentColor ? { color: accentColor } : undefined}>
+        <h3 className="font-tomato text-lg font-semibold" style={accentColor ? { color: accentColor } : undefined}>
           O que nossos clientes dizem
         </h3>
         <div className="flex items-center gap-1.5 bg-yellow-50 px-2.5 py-1 rounded-full">

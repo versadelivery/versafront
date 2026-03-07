@@ -116,7 +116,7 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onClick, className }) => {
                   </div>
                 )}
 
-                <h3 className="font-bold text-base sm:text-lg text-gray-900 line-clamp-2 mb-1 sm:mb-2 hover:break-words">
+                <h3 className="font-tomato font-bold text-base sm:text-lg text-gray-900 line-clamp-2 mb-1 sm:mb-2 hover:break-words">
                   {attributes.name}
                 </h3>
                 

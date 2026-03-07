@@ -286,7 +286,7 @@ function CatalogPage() {
                   <span className="text-sm font-medium hidden sm:block">Voltar</span>
                 </a>
                 <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
-                <h1 className="text-base sm:text-lg font-bold text-gray-900">Catálogo</h1>
+                <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900">Catálogo</h1>
               </div>
               <div className="flex items-center gap-1 bg-[#F0EFEB] p-1 rounded-md">
                 <button
@@ -351,7 +351,7 @@ function CatalogPage() {
                 /* Empty State */
                 <div className="flex flex-col items-center justify-center py-16 gap-4">
                   <Package className="h-10 w-10 text-muted-foreground" />
-                  <h3 className="text-base font-semibold text-foreground">Nenhum grupo encontrado</h3>
+                  <h3 className="font-tomato text-base font-semibold text-foreground">Nenhum grupo encontrado</h3>
                   <p className="text-sm text-muted-foreground text-center max-w-xs leading-relaxed">
                     Crie seu primeiro grupo para começar a organizar seus produtos
                   </p>
@@ -389,7 +389,7 @@ function CatalogPage() {
                                       </div>
                                     )}
                                     <div className="flex-1 min-w-0">
-                                      <h2 className="text-base font-semibold text-foreground truncate">
+                                      <h2 className="font-tomato text-base font-semibold text-foreground truncate">
                                         {group.attributes.name}
                                       </h2>
                                       {group.attributes.description && (

@@ -45,11 +45,11 @@ export default function BillingCard({ charge, onViewPayment }: BillingCardProps)
   const getStatusColor = (status: string) => {
     switch (status) {
       case "paid":
-        return "bg-green-50 border-green-200";
+        return "border-green-200";
       case "overdue":
-        return "bg-red-50 border-red-200";
+        return "border-red-200";
       case "pending":
-        return "bg-amber-50 border-amber-200";
+        return "border-amber-200";
       default:
         return "";
     }
@@ -66,7 +66,7 @@ export default function BillingCard({ charge, onViewPayment }: BillingCardProps)
             </div>
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <h3 className="font-semibold">{attributes.reference_period}</h3>
+                <h3 className="font-tomato font-semibold">{attributes.reference_period}</h3>
                 <Badge variant={getStatusVariant(attributes.status)}>
                   {attributes.status_description}
                 </Badge>

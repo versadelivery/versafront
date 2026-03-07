@@ -465,7 +465,7 @@ ${order.items.map((item) => `${item.quantity}x ${item.name} - ${formatCurrency(i
         <div className="px-6 py-4 border-b border-[#E5E2DD] flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-4">
             <div>
-              <h2 className="text-lg font-bold text-gray-900">Pedido #{order.id}</h2>
+              <h2 className="font-tomato text-lg font-bold text-gray-900">Pedido #{order.id}</h2>
               <div className="flex items-center gap-3 mt-1">
                 <span className="text-sm text-muted-foreground flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5" />

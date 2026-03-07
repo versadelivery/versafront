@@ -209,7 +209,7 @@ export default function UserModal({
         <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-2">
             <User className="h-4 w-4 text-primary" />
-            <h2 className="text-base font-semibold text-gray-900">
+            <h2 className="font-tomato text-base font-semibold text-gray-900">
               {isEdit ? "Editar Usuário" : "Criar Novo Usuário"}
             </h2>
           </div>
@@ -230,7 +230,7 @@ export default function UserModal({
                 <div className="w-12 h-12 bg-white border border-red-400 rounded-full flex items-center justify-center mx-auto mb-4">
                   <User className="w-6 h-6 text-red-600" />
                 </div>
-                <h3 className="text-base font-semibold text-gray-900 mb-2">
+                <h3 className="font-tomato text-base font-semibold text-gray-900 mb-2">
                   Confirmar Exclusão
                 </h3>
                 <p className="text-sm text-muted-foreground mb-4">

@@ -97,7 +97,7 @@ export default function WeeklySummaryTab() {
             <Card>
               <CardContent>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-emerald-100">
+                  <div className="p-2 rounded-lg">
                     <DollarSign className="h-5 w-5 text-emerald-600" />
                   </div>
                   <div className="flex-1">
@@ -118,7 +118,7 @@ export default function WeeklySummaryTab() {
             <Card>
               <CardContent>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-blue-100">
+                  <div className="p-2 rounded-lg">
                     <ShoppingCart className="h-5 w-5 text-blue-600" />
                   </div>
                   <div className="flex-1">
@@ -137,7 +137,7 @@ export default function WeeklySummaryTab() {
             <Card>
               <CardContent>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-amber-100">
+                  <div className="p-2 rounded-lg">
                     <Receipt className="h-5 w-5 text-amber-600" />
                   </div>
                   <div className="flex-1">
@@ -160,7 +160,7 @@ export default function WeeklySummaryTab() {
             <Card>
               <CardContent>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-purple-100">
+                  <div className="p-2 rounded-lg">
                     <CalendarDays className="h-5 w-5 text-purple-600" />
                   </div>
                   <div>
@@ -188,7 +188,7 @@ export default function WeeklySummaryTab() {
             <Card>
               <CardContent>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-orange-100">
+                  <div className="p-2 rounded-lg">
                     <Star className="h-5 w-5 text-orange-600" />
                   </div>
                   <div>

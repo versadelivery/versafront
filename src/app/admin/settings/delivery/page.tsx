@@ -294,7 +294,7 @@ export default function DeliverySettingsPage() {
                 <span className="text-sm font-medium hidden sm:block">Voltar</span>
               </a>
               <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
-              <h1 className="text-base sm:text-lg font-bold text-gray-900">
+              <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900">
                 Configuracoes de Entrega
               </h1>
             </div>
@@ -307,7 +307,7 @@ export default function DeliverySettingsPage() {
         <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
           <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
             <ShoppingCart className="h-4 w-4 text-primary" />
-            <h2 className="text-base font-semibold text-gray-900">Valor Minimo do Pedido</h2>
+            <h2 className="font-tomato text-base font-semibold text-gray-900">Valor Minimo do Pedido</h2>
           </div>
           <div className="px-5 py-5">
             <p className="text-sm text-muted-foreground mb-4">
@@ -348,7 +348,7 @@ export default function DeliverySettingsPage() {
           <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Truck className="h-4 w-4 text-primary" />
-              <h2 className="text-base font-semibold text-gray-900">Taxa de Entrega</h2>
+              <h2 className="font-tomato text-base font-semibold text-gray-900">Taxa de Entrega</h2>
             </div>
             {deliveryType === "per_neighborhood" && (
               <Button
@@ -659,7 +659,7 @@ export default function DeliverySettingsPage() {
               <MapPin className="w-4 h-4 text-primary" />
             </div>
             <div>
-              <DialogTitle className="text-base font-semibold text-gray-900">
+              <DialogTitle className="font-tomato text-base font-semibold text-gray-900">
                 {isEditing ? "Editar Bairro" : "Cadastrar Novo Bairro"}
               </DialogTitle>
               <DialogDescription className="text-sm text-muted-foreground">

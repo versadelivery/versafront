@@ -82,7 +82,7 @@ export default function PaymentMethodsTab() {
             <Card>
               <CardContent>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-blue-100">
+                  <div className="p-2 rounded-lg">
                     <ShoppingCart className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
@@ -100,7 +100,7 @@ export default function PaymentMethodsTab() {
             <Card>
               <CardContent>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-emerald-100">
+                  <div className="p-2 rounded-lg">
                     <DollarSign className="h-5 w-5 text-emerald-600" />
                   </div>
                   <div>
@@ -118,7 +118,7 @@ export default function PaymentMethodsTab() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Distribuição por Forma de Pagamento</CardTitle>
+              <CardTitle className="font-tomato">Distribuição por Forma de Pagamento</CardTitle>
             </CardHeader>
             <CardContent>
               {data.length > 0 ? (
@@ -135,7 +135,7 @@ export default function PaymentMethodsTab() {
           {data.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>Detalhamento</CardTitle>
+                <CardTitle className="font-tomato">Detalhamento</CardTitle>
               </CardHeader>
               <CardContent>
                 <Table>

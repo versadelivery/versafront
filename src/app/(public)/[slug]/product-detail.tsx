@@ -298,7 +298,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
 
           {/* Item info */}
           <div className="px-5 pt-5 pb-4">
-            <h2 className="text-[22px] font-bold text-gray-900 leading-tight">
+            <h2 className="font-tomato text-[22px] font-bold text-gray-900 leading-tight">
               {attributes.name}
             </h2>
 
@@ -333,7 +333,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
               <div className="border-t-[6px] border-[#E5E2DD]">
                 <div className="px-5 py-4">
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-base font-bold text-gray-900">
+                    <h3 className="font-tomato text-base font-bold text-gray-900">
                       Quanto você gostaria?
                     </h3>
                     <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-md">
@@ -368,7 +368,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
               <div className="border-t-[6px] border-[#E5E2DD]">
                 <div className="px-5 py-4">
                   <div className="flex items-center justify-between mb-1">
-                    <h3 className="text-base font-bold text-gray-900">Adicionais</h3>
+                    <h3 className="font-tomato text-base font-bold text-gray-900">Adicionais</h3>
                     <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-md">
                       Opcional
                     </span>
@@ -409,7 +409,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
                 <div key={group.id} className="border-t-[6px] border-[#E5E2DD]">
                   <div className="px-5 py-4">
                     <div className="flex items-center justify-between mb-1">
-                      <h3 className="text-base font-bold text-gray-900">{group.attributes.name}</h3>
+                      <h3 className="font-tomato text-base font-bold text-gray-900">{group.attributes.name}</h3>
                       <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-md">
                         Opcional
                       </span>
@@ -452,7 +452,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
               <div className="border-t-[6px] border-[#E5E2DD]">
                 <div className="px-5 py-4">
                   <div className="flex items-center justify-between mb-1">
-                    <h3 className="text-base font-bold text-gray-900">Modo de Preparo</h3>
+                    <h3 className="font-tomato text-base font-bold text-gray-900">Modo de Preparo</h3>
                     <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-md">
                       Opcional
                     </span>
@@ -488,7 +488,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
                 <div key={step.id} className="border-t-[6px] border-[#E5E2DD]">
                   <div className="px-5 py-4">
                     <div className="mb-1">
-                      <h3 className="text-base font-bold text-gray-900">{step.attributes.name}</h3>
+                      <h3 className="font-tomato text-base font-bold text-gray-900">{step.attributes.name}</h3>
                     </div>
                     <p className="text-sm text-gray-400 mb-4">Selecione 1 opção</p>
                     <div className="space-y-0">

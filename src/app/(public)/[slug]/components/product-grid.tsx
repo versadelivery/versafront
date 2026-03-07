@@ -69,7 +69,7 @@ export default function ProductGrid({ categories, activeCategory, searchQuery, o
           >
             <Search className="h-7 w-7" style={{ color: bgTheme.textMuted }} />
           </div>
-          <h3 className="text-lg font-semibold mb-2" style={{ color: bgTheme.text }}>
+          <h3 className="font-tomato text-lg font-semibold mb-2" style={{ color: bgTheme.text }}>
             Nenhum produto encontrado
           </h3>
           <p className="text-sm mb-6" style={{ color: bgTheme.textMuted }}>
@@ -114,7 +114,7 @@ export default function ProductGrid({ categories, activeCategory, searchQuery, o
                   className={`w-5 h-5 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`}
                   style={{ color: bgTheme.textMuted }}
                 />
-                <h2 className="text-lg font-bold" style={{ color: bgTheme.text }}>
+                <h2 className="font-tomato text-lg font-bold" style={{ color: bgTheme.text }}>
                   {group.attributes.name}
                 </h2>
               </div>

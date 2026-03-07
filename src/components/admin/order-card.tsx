@@ -4,15 +4,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useUsers } from '@/app/admin/settings/users/hooks/useUsers';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import {
   Truck,
   CheckCircle,
   XCircle,
   Copy,
-  SquarePen,
-  Bell,
   ArrowRight,
   MessageCircle,
   Printer,
@@ -20,7 +17,6 @@ import {
   Phone,
   MapPin,
   Tag,
-  Timer
 } from 'lucide-react';
 import {
   Select,
@@ -104,7 +100,7 @@ export default function OrderCard({
   const timer = prepTimer || deliveryTimer;
   const hasActiveTimer = !!timer;
   const deliveryPeople = users.filter((u: User) => u.attributes.role === 'delivery_man');
-  const isPronto = order.status === 'prontos';
+
   const isRecebido = order.status === 'recebidos';
   const isEntregue = order.status === 'entregue';
   const isCancelled = order.status === 'cancelled';
@@ -314,6 +310,17 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
     });
   };
 
+  const items = order.socketData?.attributes?.items?.data;
+  const itemCount = items?.length || 0;
+  const address = order.socketData?.attributes?.address?.data?.attributes;
+  const customerPhone = order.socketData?.attributes?.customer?.data?.attributes?.cellphone;
+  const paymentMethod = order.socketData?.attributes?.payment_method;
+  const deliveryFee = order.socketData?.attributes?.delivery_fee ? parseFloat(order.socketData.attributes.delivery_fee) : 0;
+  const couponCode = order.socketData?.attributes?.coupon_code;
+  const discountAmount = parseFloat(order.socketData?.attributes?.discount_amount || '0');
+  const paymentAdj = order.socketData?.attributes?.payment_adjustment_amount ? parseFloat(order.socketData.attributes.payment_adjustment_amount) : 0;
+  const hasObservations = items?.some((item: any) => item.attributes.observation);
+
   return (
     <>
     <Card className={cn(
@@ -321,220 +328,232 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
       timer?.isOverdue
         ? "border-red-400"
         : "border-[#E5E2DD]",
-      isPronto ? "bg-primary border-primary"
-        : isRecebido ? "bg-[#FFFBF5]"
-        : isEntregue ? "bg-[#F0FFF4]"
+      isRecebido ? "bg-[#FFFBF5]"
+        : isEntregue ? "bg-[#c0fea4]"
         : isCancelled ? "bg-white opacity-50"
         : "bg-white"
     )}>
-      <CardContent className="p-3">
-        <div className="flex justify-between items-center mb-1.5">
-          <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-md border",
-            isPronto
-              ? "bg-white/20 text-white border-white/30"
-              : order.paymentStatus === 'pending'
-                ? 'text-red-600 bg-white border-red-300'
-                : 'text-green-600 bg-white border-green-300'
-          )}>
-            {order.paymentStatus === 'pending' ? 'Aguardando pgto' : 'Pago'}
-          </span>
-          <div className="flex items-center gap-1.5">
-            {order.deliveryType === 'delivery' && <Truck className={cn("w-3.5 h-3.5", isPronto ? "text-white" : "text-muted-foreground")} />}
-            <span className={cn("text-xs", isPronto ? "text-white/80" : "text-muted-foreground")}>{order.time}</span>
-          </div>
-        </div>
-
-        <div className="mb-1.5 flex items-center gap-2 min-w-0">
-          <h3 className={cn("font-bold text-sm leading-tight truncate", isPronto ? "text-white" : "text-gray-900")}>
-            {order.customerName}
-          </h3>
-          <span className={cn("text-xs px-1.5 py-0.5 rounded-md border flex-shrink-0",
-            isPronto ? "bg-white/20 text-white border-white/30" : "bg-[#FAF9F7] text-muted-foreground border-[#E5E2DD]"
-          )}>
-            {order.socketData?.attributes?.items?.data?.length || 0} itens
-          </span>
-        </div>
-        <div className={cn("font-bold text-base mb-1.5", isPronto ? "text-white" : "text-primary")}>
-          {formatPrice(order.amount)}
-        </div>
-
-        {/* Forma de pagamento */}
-        <div className={cn("text-xs mb-1", isPronto ? "text-white/90" : "text-gray-600")}>
-          <div className="flex items-center gap-2">
-            <CreditCard className={cn("w-3.5 h-3.5 flex-shrink-0", isPronto ? "text-white/90" : "text-gray-500")} />
-            <span>{getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}</span>
-          </div>
-        </div>
-
-        {/* Taxa de entrega */}
-        {order.deliveryType === 'delivery' && order.socketData?.attributes?.delivery_fee && parseFloat(order.socketData.attributes.delivery_fee) > 0 && (
-          <div className={cn("text-xs mb-1", isPronto ? "text-white/90" : "text-blue-600")}>
-            <div className="flex items-center gap-2">
-              <Truck className={cn("w-3.5 h-3.5 flex-shrink-0", isPronto ? "text-white/90" : "text-blue-500")} />
-              <span>Taxa de entrega: {formatPrice(parseFloat(order.socketData.attributes.delivery_fee))}</span>
-            </div>
-          </div>
-        )}
-
-        {/* Cupom de desconto */}
-        {order.socketData?.attributes?.coupon_code && (
-          <div className={cn("text-xs mb-1", isPronto ? "text-white/90" : "text-green-600")}>
-            <div className="flex items-center gap-2">
-              <Tag className={cn("w-3.5 h-3.5 flex-shrink-0", isPronto ? "text-white/90" : "text-green-500")} />
-              <span>Cupom: {order.socketData.attributes.coupon_code} (-{formatPrice(parseFloat(order.socketData.attributes.discount_amount || '0'))})</span>
-            </div>
-          </div>
-        )}
-
-        {/* Ajuste de pagamento */}
-        {order.socketData?.attributes?.payment_adjustment_amount && parseFloat(order.socketData.attributes.payment_adjustment_amount) !== 0 && (() => {
-          const adj = parseFloat(order.socketData.attributes.payment_adjustment_amount);
-          const isDiscount = adj < 0;
-          return (
-            <div className={cn("text-xs mb-2", isPronto ? "text-white" : isDiscount ? "text-green-600" : "text-orange-600")}>
-              <div className="flex items-center gap-2">
-                <span className={cn("w-2 h-2 rounded-full flex-shrink-0 inline-block", isDiscount ? "bg-green-500" : "bg-orange-500")} />
-                <span>{isDiscount ? "Desc." : "Acresc."} pagamento: {isDiscount ? "-" : "+"}{formatPrice(Math.abs(adj))}</span>
-              </div>
-            </div>
-          );
-        })()}
-
-        {/* Timer de preparo/entrega */}
-        {hasActiveTimer && timer && (
-          <div className={cn(
-            "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border bg-white text-sm font-semibold mb-2",
-            timer.isOverdue
-              ? "border-red-400 text-red-700"
-              : "border-[#E5E2DD] text-gray-700"
-          )}>
-            <span className={cn("w-1.5 h-1.5 rounded-full", timer.isOverdue ? "bg-red-500" : "bg-primary")} />
-            <span>{timer.timerLabel}</span>
-            <span className={cn("tabular-nums font-bold", timer.isOverdue ? "text-red-700" : "text-gray-900")}>
-              {timer.label}
-            </span>
-          </div>
-        )}
-
-        <div className={cn("text-xs", isPronto ? "text-white/60" : "text-gray-400", "mb-1")}>#{order.id}</div>
-        
-        {/* Informações do cliente */}
-        <div className={cn("text-xs mb-1", isPronto ? "text-white/90" : "text-gray-600")}>
-          <div className="flex items-center gap-2">
-            <Phone className={cn("w-3.5 h-3.5 flex-shrink-0", isPronto ? "text-white/90" : "text-gray-500")} />
-            <span>{order.socketData?.attributes?.customer?.data?.attributes?.cellphone || 'N/A'}</span>
-          </div>
-        </div>
-
-        {/* Endereço para delivery */}
-        {order.deliveryType === 'delivery' && order.socketData?.attributes?.address?.data && (
-          <div className={cn("text-xs mb-1", isPronto ? "text-white/90" : "text-gray-600")}>
-            <div className="font-medium flex items-center gap-1">
-              <MapPin className={cn("w-3.5 h-3.5 flex-shrink-0", isPronto ? "text-white/90" : "text-gray-500")} />
-              Entrega:
-            </div>
-            <div className="ml-2 truncate">
-              <div className="truncate">{order.socketData.attributes.address.data.attributes.address}</div>
-              {order.socketData.attributes.address.data.attributes.complement && (
-                <div className="text-gray-500 truncate">{order.socketData.attributes.address.data.attributes.complement}</div>
-              )}
-              <div className="text-gray-500 truncate">{order.socketData.attributes.address.data.attributes.neighborhood}</div>
-            </div>
-          </div>
-        )}
-        
-        {/* Mostrar itens do pedido */}
-        {order.socketData?.attributes?.items?.data?.length > 0 && (
-          <div className={cn("text-xs mb-1", isPronto ? "text-white/90" : "text-gray-600")}>
-            <div className="font-medium mb-1">Itens:</div>
-            {order.socketData.attributes.items.data.slice(0, 2).map((item: any, index: number) => (
-              <div key={item.id} className="flex justify-between items-center gap-2">
-                <span className="truncate min-w-0">
-                  {item.attributes.quantity}x {item.attributes.catalog_item?.data?.attributes?.name || item.attributes.name || 'Item não encontrado'}
-                </span>
-                <span className="flex-shrink-0">
-                  {formatPrice(parseFloat(item.attributes.total_price || '0'))}
-                </span>
-              </div>
-            ))}
-            {order.socketData.attributes.items.data.length > 2 && (
-              <div className="text-gray-500 italic">
-                +{order.socketData.attributes.items.data.length - 2} mais itens
-              </div>
+      <CardContent className="p-0">
+        {/* ── Header: ID + horário + tipo + pagamento ── */}
+        <div className="flex items-center justify-between px-3 pt-3 pb-2">
+          <div className="flex items-center gap-1.5 text-xs text-gray-700">
+            <span className="font-medium">#{order.id}</span>
+            <span>·</span>
+            <span>{order.time}</span>
+            {order.deliveryType === 'delivery' && (
+              <>
+                <span>·</span>
+                <Truck className="w-3 h-3" />
+              </>
             )}
           </div>
-        )}
+          <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded border",
+            order.paymentStatus === 'pending'
+              ? 'text-red-600 bg-white border-red-200'
+              : 'text-green-600 bg-white border-green-200'
+          )}>
+            {order.paymentStatus === 'pending' ? 'Aguardando' : 'Pago'}
+          </span>
+        </div>
 
-        {/* Mostrar observações se houver */}
-        {order.socketData?.attributes?.items?.data?.some((item: any) => item.attributes.observation) && (
-          <div className={cn("text-xs mb-1", isPronto ? "text-white/90" : "text-orange-600")}>
-            <div className="font-medium">Observações:</div>
-            {order.socketData.attributes.items.data
-              .filter((item: any) => item.attributes.observation)
-              .slice(0, 1)
-              .map((item: any) => (
-                <div key={item.id} className="italic">
-                  "{item.attributes.observation}"
-                </div>
-              ))}
-          </div>
-        )}
-
-        {/* Exibir horários de saída e entrega */}
-        {order.leftTime && (
-          <div className={cn("text-xs mb-1", isPronto ? "text-white/90" : "text-blue-600")}>
-            <div className="flex items-center gap-2">
-              <Truck className={cn("w-3.5 h-3.5 flex-shrink-0", isPronto ? "text-white/90" : "text-blue-500")} />
-              <span>Saiu para entrega: {order.leftTime}</span>
+        {/* ── Cliente ── */}
+        <div className="px-3 pb-2">
+          <h3 className="font-bold text-sm leading-tight truncate text-gray-900">
+            {order.customerName}
+          </h3>
+          {customerPhone && (
+            <div className="flex items-center gap-1.5 text-xs text-gray-700 mt-0.5">
+              <Phone className="w-3 h-3" />
+              <span>{customerPhone}</span>
             </div>
-          </div>
-        )}
-        
-        {order.deliveredTime && (
-          <div className={cn("text-xs mb-1", isPronto ? "text-white/90" : "text-green-600")}>
-            <div className="flex items-center gap-2">
-              <CheckCircle className={cn("w-3.5 h-3.5 flex-shrink-0", isPronto ? "text-white/90" : "text-green-500")} />
-              <span>Entregue em: {order.deliveredTime}</span>
-            </div>
-          </div>
-        )}
-
-        <div className={cn("text-xs", isPronto ? "text-white/90" : "text-gray-600", "mb-3")}>
-          {showDeliveryDropdown ? (
-            <div className="flex items-center gap-2">
-              <span>Entregador:</span>
-              <Select
-                value={order.deliveryPerson || "none"}
-                onValueChange={handleDeliveryPersonChange}
-                disabled={loadingUsers}
-              >
-                <SelectTrigger className={cn(
-                  "h-8 text-sm max-w-[200px] rounded-md cursor-pointer",
-                  isPronto ? "border-white/30 bg-white/10 text-white" : "border-[#E5E2DD] bg-white"
-                )}>
-                  <SelectValue placeholder="Selecione um entregador" />
-                </SelectTrigger>
-                <SelectContent className="rounded-md border-[#E5E2DD]">
-                  <SelectItem value="none">Selecione um entregador</SelectItem>
-                  {deliveryPeople.map(deliveryPerson => (
-                    <SelectItem key={deliveryPerson.id} value={deliveryPerson.attributes.name}>
-                      {deliveryPerson.attributes.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {loadingUsers && <span className="text-xs text-gray-400 ml-2">Carregando...</span>}
-            </div>
-          ) : (
-            order.deliveryPerson ? (
-              <>
-                Entregador: <span className={cn("font-semibold", isPronto && "text-white")}>{order.deliveryPerson}</span>
-              </>
-            ) : null
           )}
         </div>
 
-        <div className="space-y-2">
+        <hr className="border-[#E5E2DD]" />
+
+        {/* ── Itens + Total ── */}
+        <div className="px-3 py-2">
+          {itemCount > 0 && (
+            <div className="space-y-0.5 text-xs text-gray-700 mb-2">
+              {items.slice(0, 3).map((item: any) => (
+                <div key={item.id} className="flex justify-between items-center gap-2">
+                  <span className="truncate min-w-0">
+                    {item.attributes.quantity}x {item.attributes.catalog_item?.data?.attributes?.name || item.attributes.name || 'Item removido'}
+                  </span>
+                  <span className="flex-shrink-0 text-gray-700">
+                    {formatPrice(parseFloat(item.attributes.total_price || '0'))}
+                  </span>
+                </div>
+              ))}
+              {itemCount > 3 && (
+                <div className="text-gray-700 text-[11px]">
+                  +{itemCount - 3} {itemCount - 3 === 1 ? 'item' : 'itens'}
+                </div>
+              )}
+            </div>
+          )}
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-gray-700">Total</span>
+            <span className={cn("font-bold text-base", isEntregue ? "text-[#1B1B1B]" : "text-primary")}>
+              {formatPrice(order.amount)}
+            </span>
+          </div>
+        </div>
+
+        {/* ── Detalhes financeiros (pagamento, taxa, cupom, ajuste) ── */}
+        {(paymentMethod || (order.deliveryType === 'delivery' && deliveryFee > 0) || couponCode || paymentAdj !== 0) && (
+          <>
+            <hr className="border-[#E5E2DD]" />
+            <div className="px-3 py-2 space-y-1 text-xs">
+              {paymentMethod && (
+                <div className="flex items-center gap-1.5 text-gray-700">
+                  <CreditCard className="w-3 h-3 text-gray-700" />
+                  <span>{getPaymentMethodLabel(paymentMethod)}</span>
+                </div>
+              )}
+              {order.deliveryType === 'delivery' && deliveryFee > 0 && (
+                <div className="flex items-center gap-1.5 text-gray-700">
+                  <Truck className="w-3 h-3 text-gray-700" />
+                  <span>Entrega: {formatPrice(deliveryFee)}</span>
+                </div>
+              )}
+              {couponCode && (
+                <div className="flex items-center gap-1.5 text-green-600">
+                  <Tag className="w-3 h-3 text-green-500" />
+                  <span>{couponCode} (-{formatPrice(discountAmount)})</span>
+                </div>
+              )}
+              {paymentAdj !== 0 && (
+                <div className={cn("flex items-center gap-1.5", paymentAdj < 0 ? "text-green-600" : "text-orange-600")}>
+                  <span className={cn("w-2 h-2 rounded-full flex-shrink-0", paymentAdj < 0 ? "bg-green-500" : "bg-orange-500")} />
+                  <span>{paymentAdj < 0 ? "Desc." : "Acresc."}: {paymentAdj < 0 ? "-" : "+"}{formatPrice(Math.abs(paymentAdj))}</span>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* ── Endereço (delivery) ── */}
+        {order.deliveryType === 'delivery' && address && (
+          <>
+            <hr className="border-[#E5E2DD]" />
+            <div className="px-3 py-2">
+              <div className="flex items-start gap-1.5 text-xs text-gray-700">
+                <MapPin className="w-3 h-3 text-gray-700 mt-0.5 flex-shrink-0" />
+                <div className="min-w-0">
+                  <div className="truncate">{address.address}</div>
+                  {address.complement && (
+                    <div className="text-gray-700 truncate">{address.complement}</div>
+                  )}
+                  <div className="text-gray-700 truncate">{address.neighborhood}</div>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* ── Observações ── */}
+        {hasObservations && (
+          <>
+            <hr className="border-[#E5E2DD]" />
+            <div className="px-3 py-2">
+              <div className="text-xs text-orange-600 space-y-0.5">
+                {items
+                  .filter((item: any) => item.attributes.observation)
+                  .slice(0, 2)
+                  .map((item: any) => (
+                    <div key={item.id} className="flex items-start gap-1.5">
+                      <MessageCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                      <span className="italic">"{item.attributes.observation}"</span>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* ── Entregador ── */}
+        {(showDeliveryDropdown || order.deliveryPerson) && (
+          <>
+            <hr className="border-[#E5E2DD]" />
+            <div className="px-3 py-2 text-xs text-gray-700">
+              {showDeliveryDropdown ? (
+                <div className="flex items-center gap-2">
+                  <Truck className="w-3 h-3 text-gray-700" />
+                  <Select
+                    value={order.deliveryPerson || "none"}
+                    onValueChange={handleDeliveryPersonChange}
+                    disabled={loadingUsers}
+                  >
+                    <SelectTrigger className="h-7 text-xs max-w-[180px] rounded-md cursor-pointer border-[#E5E2DD] bg-white">
+                      <SelectValue placeholder="Selecione entregador" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-md border-[#E5E2DD]">
+                      <SelectItem value="none">Selecione entregador</SelectItem>
+                      {deliveryPeople.map(dp => (
+                        <SelectItem key={dp.id} value={dp.attributes.name}>
+                          {dp.attributes.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {loadingUsers && <span className="text-gray-700 ml-1">Carregando...</span>}
+                </div>
+              ) : order.deliveryPerson ? (
+                <div className="flex items-center gap-1.5">
+                  <Truck className="w-3 h-3 text-gray-700" />
+                  <span>Entregador: <span className="font-semibold">{order.deliveryPerson}</span></span>
+                </div>
+              ) : null}
+            </div>
+          </>
+        )}
+
+        {/* ── Timer de preparo/entrega ── */}
+        {hasActiveTimer && timer && (
+          <>
+            <hr className="border-[#E5E2DD]" />
+            <div className="px-3 py-2">
+              <div className={cn(
+                "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-xs font-semibold",
+                timer.isOverdue
+                  ? "border-red-300 bg-white text-red-700"
+                  : "border-[#E5E2DD] bg-white text-gray-700"
+              )}>
+                <span className={cn("w-1.5 h-1.5 rounded-full", timer.isOverdue ? "bg-red-500" : "bg-primary")} />
+                <span>{timer.timerLabel}</span>
+                <span className={cn("tabular-nums font-bold", timer.isOverdue ? "text-red-700" : "text-gray-900")}>
+                  {timer.label}
+                </span>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* ── Timeline (saiu / entregue) ── */}
+        {(order.leftTime || order.deliveredTime) && (
+          <>
+            <hr className="border-[#E5E2DD]" />
+            <div className="px-3 py-2 space-y-1 text-xs">
+              {order.leftTime && (
+                <div className="flex items-center gap-1.5 text-blue-600">
+                  <Truck className="w-3 h-3" />
+                  <span>Saiu: {order.leftTime}</span>
+                </div>
+              )}
+              {order.deliveredTime && (
+                <div className="flex items-center gap-1.5 text-green-600">
+                  <CheckCircle className="w-3 h-3" />
+                  <span>Entregue: {order.deliveredTime}</span>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* ── Ações ── */}
+        <hr className="border-[#E5E2DD]" />
+        <div className="px-3 py-2.5 space-y-2">
           {order.status === 'recebidos' && (
             <div className="space-y-2">
               <Button 
@@ -762,7 +781,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
               <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="rounded-md border border-gray-300 cursor-pointer text-white"
+                  className="rounded-md border border-gray-300 cursor-pointer"
                   onClick={handleWhatsAppNotification}
                   title="Notificar via WhatsApp"
                 >
@@ -772,7 +791,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="rounded-md border border-gray-300 cursor-pointer text-white"
+                  className="rounded-md border border-gray-300 cursor-pointer"
                   onClick={handlePrintOrder}
                   title="Imprimir Pedido"
                 >
@@ -781,7 +800,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="rounded-md border border-gray-300 cursor-pointer text-white"
+                  className="rounded-md border border-gray-300 cursor-pointer"
                   onClick={handleCopyPrintFormat}
                   title="Copiar Formato de Impressão"
                 >
@@ -853,7 +872,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
 
           <Button
             variant="outline"
-            className="w-full rounded-md text-xs border border-gray-300 cursor-pointer"
+            className="w-full rounded-md text-xs border border-gray-300 cursor-pointer bg-black text-white"
             size="sm"
             onClick={handleOpenOrderDetails}
           >

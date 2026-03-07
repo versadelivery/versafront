@@ -531,7 +531,7 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
       <DialogContent className="rounded-lg sm:max-w-[640px] p-0 bg-white max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
         <DialogHeader className="px-6 pt-6 pb-4 border-b border-gray-100">
-          <DialogTitle className="text-lg font-semibold">Novo Item</DialogTitle>
+          <DialogTitle className="font-tomato text-lg font-semibold">Novo Item</DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
             Adicione um novo item ao catálogo
           </DialogDescription>
@@ -994,7 +994,7 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
       <AlertDialog open={showCloseConfirm} onOpenChange={setShowCloseConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Descartar alterações?</AlertDialogTitle>
+            <AlertDialogTitle className="font-tomato">Descartar alterações?</AlertDialogTitle>
             <AlertDialogDescription>
               Tem certeza que deseja fechar? Os dados preenchidos serão perdidos.
             </AlertDialogDescription>

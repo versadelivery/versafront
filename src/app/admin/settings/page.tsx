@@ -21,7 +21,7 @@ export default function SettingsPage() {
                 <span className="text-sm font-medium hidden sm:block">Voltar</span>
               </Link>
               <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
-              <h1 className="text-base sm:text-lg font-bold text-gray-900">Configurações</h1>
+              <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900">Configurações</h1>
             </div>
           </div>
         </div>
