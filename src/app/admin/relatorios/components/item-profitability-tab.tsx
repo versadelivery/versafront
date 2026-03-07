@@ -76,7 +76,7 @@ export default function ItemProfitabilityTab() {
             <Card>
               <CardContent>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-blue-100">
+                  <div className="p-2 rounded-lg">
                     <DollarSign className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
@@ -92,7 +92,7 @@ export default function ItemProfitabilityTab() {
             <Card>
               <CardContent>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-red-100">
+                  <div className="p-2 rounded-lg">
                     <Package className="h-5 w-5 text-red-600" />
                   </div>
                   <div>
@@ -108,7 +108,7 @@ export default function ItemProfitabilityTab() {
             <Card>
               <CardContent>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-green-100">
+                  <div className="p-2 rounded-lg">
                     <TrendingUp className="h-5 w-5 text-green-600" />
                   </div>
                   <div>
@@ -127,7 +127,7 @@ export default function ItemProfitabilityTab() {
               <Card>
                 <CardContent>
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-amber-100">
+                    <div className="p-2 rounded-lg">
                       <AlertCircle className="h-5 w-5 text-amber-600" />
                     </div>
                     <div>

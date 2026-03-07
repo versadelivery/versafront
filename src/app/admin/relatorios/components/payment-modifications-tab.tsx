@@ -66,7 +66,7 @@ export default function PaymentModificationsTab() {
             <Card>
               <CardContent>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-blue-100">
+                  <div className="p-2 rounded-lg">
                     <CreditCard className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
@@ -84,7 +84,7 @@ export default function PaymentModificationsTab() {
             <Card>
               <CardContent>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-purple-100">
+                  <div className="p-2 rounded-lg">
                     <ShoppingCart className="h-5 w-5 text-purple-600" />
                   </div>
                   <div>

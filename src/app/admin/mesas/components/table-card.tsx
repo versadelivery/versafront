@@ -29,9 +29,9 @@ export default function TableCard({ table, onClick, onConfigClick }: TableCardPr
       return "bg-gray-100 border-gray-300 text-gray-500";
     }
     if (attrs.occupied) {
-      return "bg-red-50 border-red-300 text-red-700 hover:bg-red-100";
+      return "bg-white border-red-300 text-red-700 hover:bg-gray-50";
     }
-    return "bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-emerald-100";
+    return "bg-white border-emerald-300 text-emerald-700 hover:bg-gray-50";
   };
 
   const formatDuration = (minutes: number) => {

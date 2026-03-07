@@ -68,7 +68,7 @@ export default function ItemModificationsTab() {
             <Card>
               <CardContent>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-blue-100">
+                  <div className="p-2 rounded-lg">
                     <ClipboardList className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
@@ -86,7 +86,7 @@ export default function ItemModificationsTab() {
             <Card>
               <CardContent>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-amber-100">
+                  <div className="p-2 rounded-lg">
                     <FileEdit className="h-5 w-5 text-amber-600" />
                   </div>
                   <div>
@@ -102,7 +102,7 @@ export default function ItemModificationsTab() {
             <Card>
               <CardContent>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-red-100">
+                  <div className="p-2 rounded-lg">
                     <Trash2 className="h-5 w-5 text-red-600" />
                   </div>
                   <div>
@@ -118,7 +118,7 @@ export default function ItemModificationsTab() {
             <Card>
               <CardContent>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-purple-100">
+                  <div className="p-2 rounded-lg">
                     <ShoppingCart className="h-5 w-5 text-purple-600" />
                   </div>
                   <div>

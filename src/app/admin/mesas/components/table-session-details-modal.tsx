@@ -51,7 +51,7 @@ export default function TableSessionDetailsModal({
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center">
                 <UtensilsCrossed className="w-5 h-5 text-blue-600" />
               </div>
               <div>
@@ -81,7 +81,7 @@ export default function TableSessionDetailsModal({
                 variant="secondary"
                 className={
                   attrs.status === "open"
-                    ? "bg-emerald-100 text-emerald-700 border-0"
+                    ? "text-emerald-700 border-0"
                     : "bg-gray-100 text-gray-700 border-0"
                 }
               >

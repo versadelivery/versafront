@@ -140,7 +140,7 @@ export default function TableConfigModal({
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center">
                 <UtensilsCrossed className="w-5 h-5 text-emerald-600" />
               </div>
               <div>
@@ -165,7 +165,7 @@ export default function TableConfigModal({
           {showDeleteConfirm ? (
             <div className="space-y-4">
               <div className="text-center">
-                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
                   <UtensilsCrossed className="w-6 h-6 text-red-600" />
                 </div>
                 <h3 className="font-tomato text-lg font-semibold text-gray-900 mb-2">Confirmar Exclusao</h3>
