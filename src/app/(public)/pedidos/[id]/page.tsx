@@ -206,7 +206,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2 flex-wrap mb-1">
-                  <h1 className="text-xl font-bold text-foreground">Pedido #{order.id}</h1>
+                  <h1 className="font-tomato text-xl font-bold text-foreground">Pedido #{order.id}</h1>
                   <StatusBadge status={order.status} />
                 </div>
                 <p className="text-base font-medium text-foreground">{order.shop.name}</p>

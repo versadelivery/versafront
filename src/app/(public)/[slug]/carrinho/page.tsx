@@ -172,7 +172,7 @@ export default function CartPage() {
       </header>
 
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-8 sm:mb-10">
+        <h1 className="font-tomato text-3xl sm:text-4xl font-bold text-gray-900 mb-8 sm:mb-10">
           Carrinho
         </h1>
 
@@ -181,7 +181,7 @@ export default function CartPage() {
             <div className="w-20 h-20 bg-gray-100 rounded-md flex items-center justify-center mx-auto mb-5">
               <ShoppingCart className="w-9 h-9 text-gray-300" />
             </div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Seu carrinho está vazio</h2>
+            <h2 className="font-tomato text-xl font-bold text-gray-900 mb-2">Seu carrinho está vazio</h2>
             <p className="text-gray-500 mb-8 max-w-sm mx-auto">
               Explore nosso cardápio e adicione itens ao seu carrinho
             </p>

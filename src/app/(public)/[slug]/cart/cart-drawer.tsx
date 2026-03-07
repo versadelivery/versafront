@@ -111,7 +111,7 @@ export function CartDrawer() {
       <DrawerContent className="max-h-[90vh] pb-6">
         <div className="mx-auto w-full max-w-2xl">
           <DrawerHeader className="text-left px-4 pt-4">
-            <DrawerTitle className="flex items-center gap-2">
+            <DrawerTitle className="font-tomato flex items-center gap-2">
               <ShoppingCart className="w-5 h-5" />
               Meu Carrinho ({totalItems})
             </DrawerTitle>
@@ -120,7 +120,7 @@ export function CartDrawer() {
           {items.length === 0 ? (
             <div className="p-8 text-center">
               <ShoppingCart className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900">Seu carrinho está vazio</h3>
+              <h3 className="font-tomato text-lg font-medium text-gray-900">Seu carrinho está vazio</h3>
               <p className="mt-1 text-gray-500">Adicione itens para continuar</p>
             </div>
           ) : (

@@ -91,7 +91,7 @@ export default function NotFound() {
                 <Image src={logoHero} width={256} height={256} alt="Versa Delivery" />
               </div>
 
-              <h1 className="text-4xl md:text-6xl font-bold mb-4 tracking-tight">
+              <h1 className="font-tomato text-4xl md:text-6xl font-bold mb-4 tracking-tight">
                 <motion.span 
                   className="inline-block text-primary"
                   animate={{ 

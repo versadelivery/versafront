@@ -130,7 +130,7 @@ export default function OrdersPage() {
             <div className="w-16 h-16 bg-[#F0EFEB] rounded-md flex items-center justify-center mx-auto mb-4">
               <ShoppingBag className="w-7 h-7 text-muted-foreground" />
             </div>
-            <h2 className="text-lg font-bold text-foreground mb-2">Acompanhe seus pedidos</h2>
+            <h2 className="font-tomato text-lg font-bold text-foreground mb-2">Acompanhe seus pedidos</h2>
             <p className="text-sm text-muted-foreground mb-6">Informe seu telefone usado na compra para consultar seus pedidos.</p>
 
             <div className="p-4 bg-white border border-[#E5E2DD] rounded-md">
@@ -183,7 +183,7 @@ export default function OrdersPage() {
             <div className="w-16 h-16 bg-[#F0EFEB] rounded-md flex items-center justify-center mx-auto mb-4">
               <ShoppingBag className="w-7 h-7 text-muted-foreground" />
             </div>
-            <h2 className="text-lg font-bold text-foreground mb-2">Nenhum pedido ainda</h2>
+            <h2 className="font-tomato text-lg font-bold text-foreground mb-2">Nenhum pedido ainda</h2>
             <p className="text-sm text-muted-foreground mb-6">Seus pedidos aparecerão aqui após a primeira compra.</p>
             {shopSlug && (
               <Button asChild className="rounded-md">
@@ -202,7 +202,7 @@ export default function OrdersPage() {
       <div className="min-h-screen bg-[#FAF9F7]">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-[1400px] py-8">
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-foreground">Meus Pedidos</h1>
+            <h1 className="font-tomato text-2xl font-bold text-foreground">Meus Pedidos</h1>
             <p className="text-base text-muted-foreground mt-0.5">{orders.length} {orders.length === 1 ? 'pedido' : 'pedidos'} encontrado{orders.length !== 1 ? 's' : ''}</p>
           </div>
 
