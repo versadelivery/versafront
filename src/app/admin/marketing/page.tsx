@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
-import { Ticket } from "lucide-react";
+import { Ticket, QrCode, FileText, Star } from "lucide-react";
 import AdminHeader from "@/components/admin/catalog-header";
 
 const marketingModules = [
@@ -12,6 +12,27 @@ const marketingModules = [
     href: "/admin/marketing/coupons",
     icon: Ticket,
     iconBgColor: "bg-emerald-500",
+  },
+  {
+    title: "QR Code do Cardapio",
+    description: "Gere QR Codes para impressao em materiais de divulgacao",
+    href: "/admin/marketing/qrcode",
+    icon: QrCode,
+    iconBgColor: "bg-blue-500",
+  },
+  {
+    title: "Cardapio em PDF",
+    description: "Exporte seu catalogo completo como PDF profissional",
+    href: "/admin/marketing/pdf-catalog",
+    icon: FileText,
+    iconBgColor: "bg-purple-500",
+  },
+  {
+    title: "Avaliacoes",
+    description: "Veja as avaliacoes dos seus clientes sobre os pedidos",
+    href: "/admin/marketing/reviews",
+    icon: Star,
+    iconBgColor: "bg-yellow-500",
   },
 ];
 

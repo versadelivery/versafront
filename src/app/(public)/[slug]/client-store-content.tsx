@@ -14,6 +14,7 @@ import type { CatalogItem } from './types';
 import { useClient } from './client-context';
 import ahoy from '@/lib/ahoy';
 import { getTextColors } from './theme-utils';
+import ReviewsSection from './components/reviews-section';
 
 interface ClientStoreContentProps {
   shop: ShopResponse;
@@ -171,6 +172,8 @@ export default function ClientStoreContent({ shop: initialShop }: ClientStoreCon
             <p className="whitespace-pre-line">{welcomeMessage}</p>
           </div>
         )}
+
+        <ReviewsSection slug={slug} accentColor={accentColor} />
 
         <ProductGrid
           categories={groups}

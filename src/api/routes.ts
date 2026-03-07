@@ -29,6 +29,10 @@ export const API_ENDPOINTS = {
   COUPONS: "/coupons",
   VALIDATE_COUPON: "/coupons/validate",
 
+  // Reviews
+  ORDER_REVIEWS: "/order_reviews",
+  REVIEWS: "/reviews",
+
   // Tables
   TABLES: "/tables",
   TABLES_UPDATE_POSITIONS: "/tables/update_positions",
