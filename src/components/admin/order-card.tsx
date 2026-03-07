@@ -58,6 +58,16 @@ interface Order {
   socketData?: any; // Dados do socket para informações adicionais
 }
 
+// Labels para o botão de avançar status
+const nextStatusLabels: Record<string, string> = {
+  aceitos: 'ACEITAR',
+  em_analise: 'EM ANÁLISE',
+  em_preparo: 'EM PREPARO',
+  prontos: 'PRONTO',
+  saiu: 'SAIU P/ ENTREGA',
+  entregue: 'ENTREGUE',
+};
+
 interface OrderCardProps {
   order: Order;
   config: any;
@@ -69,6 +79,7 @@ interface OrderCardProps {
   onDeliveryPersonChange: (orderId: string, deliveryPerson: string) => void;
   onOpenOrderDetails: (orderId: string) => void;
   onCancelOrder?: (orderId: string, reason: string, reasonType?: string) => void;
+  nextStatus?: Order['status'] | null;
 }
 
 export default function OrderCard({
@@ -81,7 +92,8 @@ export default function OrderCard({
   onTogglePaymentStatus,
   onDeliveryPersonChange,
   onOpenOrderDetails,
-  onCancelOrder
+  onCancelOrder,
+  nextStatus
 }: OrderCardProps) {
   // Buscar entregadores reais
   const { users, loading: loadingUsers } = useUsers();
@@ -554,320 +566,87 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
         {/* ── Ações ── */}
         <hr className="border-[#E5E2DD]" />
         <div className="px-3 py-2.5 space-y-2">
-          {order.status === 'recebidos' && (
-            <div className="space-y-2">
-              <Button 
-                className="w-full bg-white text-black font-semibold hover:bg-primary/90 hover:text-white rounded-md border border-gray-300 cursor-pointer"
-                onClick={() => onUpdateOrderStatus(order.id, 'aceitos')}
+          {/* Botões utilitários (WhatsApp, Imprimir, Copiar) — aparecem após recebido */}
+          {!isRecebido && !isEntregue && !isCancelled && (
+            <div className="flex gap-1 justify-center">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="rounded-md border border-gray-300 cursor-pointer text-green-600 hover:text-green-700"
+                onClick={handleWhatsAppNotification}
+                title="Notificar via WhatsApp"
               >
-                ACEITAR
-                <ArrowRight className="w-4 h-4 ml-2" />
+                <img src="/whatsapp.svg" alt="WhatsApp" className="w-4 h-4" />
+                <span>WhatsApp</span>
               </Button>
-              <Button 
-                variant="destructive" 
-                className="w-full rounded-md border border-gray-300 cursor-pointer"
-                onClick={handleCancelOrder}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="rounded-md border border-gray-300 cursor-pointer"
+                onClick={handlePrintOrder}
+                title="Imprimir Pedido"
               >
-                RECUSAR
-                <XCircle className="w-4 h-4 mr-2" />
+                <Printer className="w-4 h-4"/>
               </Button>
-            </div>
-          )}
-
-          {order.status === 'aceitos' && (
-            <div className="space-y-2">
-              <div className="flex gap-1 justify-center">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="rounded-md border border-gray-300 cursor-pointer text-green-600 hover:text-green-700"
-                  onClick={handleWhatsAppNotification}
-                  title="Notificar via WhatsApp"
-                >
-                  <img src="/whatsapp.svg" alt="WhatsApp" className="w-4 h-4" />
-                  <span>WhatsApp</span>
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="rounded-md border border-gray-300 cursor-pointer"
-                  onClick={handlePrintOrder}
-                  title="Imprimir Pedido"
-                >
-                  <Printer className="w-4 h-4"/>
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="rounded-md border border-gray-300 cursor-pointer"
-                  onClick={handleCopyPrintFormat}
-                  title="Copiar Formato de Impressão"
-                >
-                  <Copy className="w-4 h-4"/>
-                </Button>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <Button 
-                  variant="outline"
-                  className="w-full rounded-md border border-gray-300 cursor-pointer"
-                  onClick={() => onUpdateOrderStatus(order.id, 'em_analise')}
-                >
-                  EM ANÁLISE
-                </Button>
-                <Button 
-                  variant="outline"
-                  className="w-full rounded-md border border-gray-300 cursor-pointer"
-                  onClick={() => onUpdateOrderStatus(order.id, 'em_preparo')}
-                >
-                  EM PREPARO
-                </Button>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <Button 
-                  variant={order.paymentStatus === 'paid' ? 'default' : 'outline'}
-                  className={cn('w-full rounded-md border border-gray-300 cursor-pointer', order.paymentStatus === 'paid' ? 'bg-primary text-white hover:bg-primary/90' : '')}
-                  onClick={() => onTogglePaymentStatus(order.id)}
-                >
-                  PAGO {order.paymentStatus === 'paid' && <CheckCircle className="w-4 h-4 ml-1" />}
-                </Button>
-                <Button 
-                  variant="outline"
-                  className="w-full rounded-md border border-gray-300 cursor-pointer"
-                  onClick={() => onUpdateOrderStatus(order.id, 'prontos')}
-                >
-                  PRONTO
-                </Button>
-              </div>
-              
-              <Button 
-                variant="destructive" 
-                className="w-full rounded-md border border-gray-300 cursor-pointer"
-                onClick={handleCancelOrder}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="rounded-md border border-gray-300 cursor-pointer"
+                onClick={handleCopyPrintFormat}
+                title="Copiar Formato de Impressão"
               >
-                CANCELAR
-                <XCircle className="w-4 h-4 mr-2" />
+                <Copy className="w-4 h-4"/>
               </Button>
             </div>
           )}
 
-          {order.status === 'em_analise' && (
-            <div className="space-y-2">
-              <div className="flex gap-1 justify-center">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="rounded-md border border-gray-300 cursor-pointer text-green-600 hover:text-green-700"
-                  onClick={handleWhatsAppNotification}
-                  title="Notificar via WhatsApp"
-                >
-                  <img src="/whatsapp.svg" alt="WhatsApp" className="w-4 h-4" />
-                  <span>WhatsApp</span>
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="rounded-md border border-gray-300 cursor-pointer"
-                  onClick={handlePrintOrder}
-                  title="Imprimir Pedido"
-                >
-                  <Printer className="w-4 h-4"/>
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="rounded-md border border-gray-300 cursor-pointer"
-                  onClick={handleCopyPrintFormat}
-                  title="Copiar Formato de Impressão"
-                >
-                  <Copy className="w-4 h-4"/>
-                </Button>
-              </div>
-              <Button 
-                variant="outline"
-                className="w-full rounded-md border border-gray-300 cursor-pointer"
-                onClick={() => onUpdateOrderStatus(order.id, 'em_preparo')}
-              >
-                EM PREPARO
-              </Button>
-              <div className="grid grid-cols-2 gap-2">
-                <Button 
-                  variant={order.paymentStatus === 'paid' ? 'default' : 'outline'}
-                  className={cn('w-full rounded-md border border-gray-300 cursor-pointer', order.paymentStatus === 'paid' ? 'bg-primary text-white hover:bg-primary/90' : '')}
-                  onClick={() => onTogglePaymentStatus(order.id)}
-                >
-                  PAGO {order.paymentStatus === 'paid' && <CheckCircle className="w-4 h-4 ml-1" />}
-                </Button>
-                <Button 
-                  variant="outline"
-                  className="w-full rounded-md border border-gray-300 cursor-pointer"
-                  onClick={() => onUpdateOrderStatus(order.id, 'prontos')}
-                >
-                  PRONTO
-                </Button>
-              </div>
-              <Button 
-                variant="destructive" 
-                className="w-full rounded-md border border-gray-300 cursor-pointer"
-                onClick={handleCancelOrder}
-              >
-                CANCELAR
-                <XCircle className="w-4 h-4 mr-2" />
-              </Button>
-            </div>
-          )}
-
-          {order.status === 'em_preparo' && (
-            <div className="space-y-2">
-              <div className="flex gap-1 justify-center">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="rounded-md border border-gray-300 cursor-pointer text-green-600 hover:text-green-700"
-                  onClick={handleWhatsAppNotification}
-                  title="Notificar via WhatsApp"
-                >
-                  <img src="/whatsapp.svg" alt="WhatsApp" className="w-4 h-4" />
-                  <span>WhatsApp</span>
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="rounded-md border border-gray-300 cursor-pointer"
-                  onClick={handlePrintOrder}
-                  title="Imprimir Pedido"
-                >
-                  <Printer className="w-4 h-4"/>
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="rounded-md border border-gray-300 cursor-pointer"
-                  onClick={handleCopyPrintFormat}
-                  title="Copiar Formato de Impressão"
-                >
-                  <Copy className="w-4 h-4"/>
-                </Button>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <Button 
-                  variant={order.paymentStatus === 'paid' ? 'default' : 'outline'}
-                  className={cn('w-full rounded-md border border-gray-300 cursor-pointer', order.paymentStatus === 'paid' ? 'bg-primary text-white hover:bg-primary/90' : '')}
-                  onClick={() => onTogglePaymentStatus(order.id)}
-                >
-                  PAGO {order.paymentStatus === 'paid' && <CheckCircle className="w-4 h-4 ml-1" />}
-                </Button>
-                <Button 
-                  variant="outline"
-                  className="w-full rounded-md border border-gray-300 cursor-pointer"
-                  onClick={() => onUpdateOrderStatus(order.id, 'prontos')}
-                >
-                  PRONTO
-                </Button>
-              </div>
-              <Button 
-                variant="destructive" 
-                className="w-full rounded-md border border-gray-300 cursor-pointer"
-                onClick={handleCancelOrder}
-              >
-                CANCELAR
-                <XCircle className="w-4 h-4 mr-2" />
-              </Button>
-            </div>
-          )}
-
-          {order.status === 'prontos' && (
-            <div className="space-y-2">
-              <div className="flex gap-1 justify-center">
-              <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="rounded-md border border-gray-300 cursor-pointer"
-                  onClick={handleWhatsAppNotification}
-                  title="Notificar via WhatsApp"
-                >
-                  <img src="/whatsapp.svg" alt="WhatsApp" className="w-4 h-4" />
-                  <span>WhatsApp</span>
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="rounded-md border border-gray-300 cursor-pointer"
-                  onClick={handlePrintOrder}
-                  title="Imprimir Pedido"
-                >
-                  <Printer className="w-4 h-4"/>
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="rounded-md border border-gray-300 cursor-pointer"
-                  onClick={handleCopyPrintFormat}
-                  title="Copiar Formato de Impressão"
-                >
-                  <Copy className="w-4 h-4"/>
-                </Button>
-              </div>
-              {order.deliveryType === 'delivery' ? (
-                <div className="grid grid-cols-2 gap-2">
-                  <Button
-                    variant="outline"
-                    className="w-full rounded-md border border-gray-300 cursor-pointer"
-                    onClick={handleLeftForDelivery}
-                  >
-                    <Truck className="w-3 h-3" />
-                    SAIU
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full rounded-md border border-gray-300 cursor-pointer"
-                    onClick={handleDelivered}
-                  >
-                    <CheckCircle className="w-2 h-2" />
-                    ENTREGUE
-                  </Button>
-                </div>
-              ) : (
-                <Button
-                  variant="outline"
-                  className="w-full rounded-md border border-gray-300 cursor-pointer"
-                  onClick={handleDelivered}
-                >
-                  <CheckCircle className="w-2 h-2" />
-                  ENTREGUE
-                </Button>
+          {/* Botão principal: avançar para o próximo status do fluxo */}
+          {nextStatus && !isEntregue && !isCancelled && (
+            <Button
+              className={cn(
+                "w-full font-semibold rounded-md border border-gray-300 cursor-pointer",
+                isRecebido
+                  ? "bg-white text-black hover:bg-primary/90 hover:text-white"
+                  : nextStatus === 'saiu'
+                    ? "bg-white text-black hover:bg-blue-500 hover:text-white"
+                    : nextStatus === 'entregue'
+                      ? "bg-white text-black hover:bg-green-500 hover:text-white"
+                      : "bg-white text-black hover:bg-primary/90 hover:text-white"
               )}
-              <Button 
-                variant="destructive" 
-                className="w-full rounded-md border border-gray-300 cursor-pointer"
-                onClick={handleCancelOrder}
-              >
-                CANCELAR
-                <XCircle className="w-4 h-4 mr-2" />
-              </Button>
-            </div>
+              onClick={() => {
+                if (nextStatus === 'saiu') {
+                  handleLeftForDelivery();
+                } else {
+                  onUpdateOrderStatus(order.id, nextStatus);
+                }
+              }}
+            >
+              {nextStatusLabels[nextStatus] || nextStatus.toUpperCase()}
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
           )}
 
-          {order.status === 'saiu' && (
-            <div className="space-y-2">
-              <div className="grid grid-cols-2 gap-2">
-                <Button 
-                  variant="outline" 
-                  className="w-full rounded-md border border-gray-300 cursor-pointer"
-                  onClick={handleDelivered}
-                >
-                  <CheckCircle className="w-2 h-2" />
-                  ENTREGUE
-                </Button>
-                <Button 
-                  variant="destructive" 
-                  className="w-full rounded-md border border-gray-300 cursor-pointer"
-                  onClick={handleCancelOrder}
-                >
-                  CANCELAR
-                  <XCircle className="w-4 h-4 mr-2" />
-                </Button>
-              </div>
-            </div>
+          {/* Botão PAGO — disponível enquanto o pedido está em andamento */}
+          {!isRecebido && !isEntregue && !isCancelled && (
+            <Button
+              variant={order.paymentStatus === 'paid' ? 'default' : 'outline'}
+              className={cn('w-full rounded-md border border-gray-300 cursor-pointer', order.paymentStatus === 'paid' ? 'bg-primary text-white hover:bg-primary/90' : '')}
+              onClick={() => onTogglePaymentStatus(order.id)}
+            >
+              PAGO {order.paymentStatus === 'paid' && <CheckCircle className="w-4 h-4 ml-1" />}
+            </Button>
+          )}
+
+          {/* Botão CANCELAR / RECUSAR */}
+          {!isEntregue && !isCancelled && (
+            <Button
+              variant="destructive"
+              className="w-full rounded-md border border-gray-300 cursor-pointer"
+              onClick={handleCancelOrder}
+            >
+              {isRecebido ? 'RECUSAR' : 'CANCELAR'}
+              <XCircle className="w-4 h-4 mr-2" />
+            </Button>
           )}
 
           <Button

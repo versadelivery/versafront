@@ -1,4 +1,4 @@
-import { Settings, Users, Truck, CreditCard, Bell, Palette } from "lucide-react";
+import { Settings, Users, Truck, CreditCard, Bell, Palette, ListOrdered } from "lucide-react";
 
 export const settingsCards = [
   {
@@ -42,5 +42,12 @@ export const settingsCards = [
     title: "Notificações",
     description: "Configure os templates de mensagem WhatsApp",
     iconBgColor: "bg-green-600"
+  },
+  {
+    href: "/admin/settings/order-flow",
+    icon: ListOrdered,
+    title: "Fluxo de Pedidos",
+    description: "Configure as etapas que um pedido percorre na sua loja",
+    iconBgColor: "bg-orange-500"
   },
 ];

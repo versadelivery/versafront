@@ -15,6 +15,9 @@ export const API_ENDPOINTS = {
   ORDERS: "/orders",
   ADMIN_ORDERS: "/orders",
   
+  // Order Flow Config
+  ORDER_FLOW_CONFIG: "/shop_order_flow_configs",
+
   // Customers
   CUSTOMERS: {
     LOGIN: "/customers/login",

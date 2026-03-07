@@ -12,7 +12,6 @@ import {
   Users,
   Truck,
   Wallet,
-  Bell,
   MonitorSmartphone,
   LayoutDashboard,
   Contact,
@@ -29,6 +28,7 @@ import {
   QrCode,
   FileText,
   Star,
+  ListOrdered,
   type LucideIcon,
 } from "lucide-react"
 
@@ -494,13 +494,13 @@ export const adminSections: AdminSection[] = [
     group: "Configurações",
   },
   {
-    id: "settings-notifications",
-    title: "Notificações WhatsApp",
-    description: "Templates de mensagens WhatsApp",
-    href: "/admin/settings/notifications",
-    icon: Bell,
-    iconBgColor: "bg-gray-600",
-    keywords: ["notificacoes", "whatsapp", "mensagem", "template", "aviso"],
+    id: "order-flow",
+    title: "Fluxo de Pedidos",
+    description: "Configure as etapas que um pedido percorre na sua loja",
+    href: "/admin/settings/order-flow",
+    icon: ListOrdered,
+    iconBgColor: "bg-orange-500",
+    keywords: ["fluxo", "pedidos", "status", "pipeline", "colunas", "etapas", "order flow"],
     group: "Configurações",
   },
 ]

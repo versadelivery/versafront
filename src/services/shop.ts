@@ -25,6 +25,7 @@ export interface ShopAttributes {
   business_category?: string | null;
   default_delivery_person_id?: number | string | null;
   default_delivery_person_name?: string | null;
+  order_flow?: string[];
 }
 
 export interface ShopResponse {

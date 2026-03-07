@@ -178,6 +178,20 @@ const mapOrderStatus = (status: Order['status']) => {
   return statusMap[status] || 'processing';
 };
 
+// Mapeamento backend status → frontend status
+const backendToFrontendStatus: Record<string, Order['status']> = {
+  'received': 'recebidos',
+  'accepted': 'aceitos',
+  'in_analysis': 'em_analise',
+  'in_preparation': 'em_preparo',
+  'ready': 'prontos',
+  'left_for_delivery': 'saiu',
+  'delivered': 'entregue',
+  'cancelled': 'cancelled'
+};
+
+const DEFAULT_ORDER_FLOW = ['received', 'accepted', 'in_preparation', 'ready', 'left_for_delivery', 'delivered'];
+
 export default function OrderManagement() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -208,6 +222,24 @@ export default function OrderManagement() {
   const { shop } = useShop();
   const estimatedPrepTime = shop?.estimated_prep_time ?? null;
   const estimatedDeliveryTime = shop?.estimated_delivery_time ?? null;
+
+  // Fluxo de status configurado pela loja (backend status keys)
+  const orderFlow = shop?.order_flow ?? DEFAULT_ORDER_FLOW;
+
+  // Status ativos no frontend (mapeados do backend) + cancelled sempre presente
+  const activeStatuses = React.useMemo(() => {
+    const mapped = orderFlow
+      .map((s: string) => backendToFrontendStatus[s])
+      .filter(Boolean) as Order['status'][];
+    return [...mapped, 'cancelled' as Order['status']];
+  }, [orderFlow]);
+
+  // Dado um status frontend, retorna o próximo no fluxo
+  const getNextStatus = React.useCallback((currentStatus: Order['status']): Order['status'] | null => {
+    const idx = activeStatuses.indexOf(currentStatus);
+    if (idx === -1 || idx >= activeStatuses.length - 2) return null; // -2 porque cancelled é o último
+    return activeStatuses[idx + 1];
+  }, [activeStatuses]);
   const seenOrderIdsRef = useRef<Set<string>>(new Set());
   const overdueAlertedRef = useRef<Set<string>>(new Set());
   const isInitialLoadRef = useRef(true);
@@ -784,14 +816,12 @@ export default function OrderManagement() {
                   </SelectTrigger>
                   <SelectContent className="rounded-md">
                     <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="recebidos">Recebidos</SelectItem>
-                    <SelectItem value="aceitos">Aceitos</SelectItem>
-                    <SelectItem value="em_analise">Em Análise</SelectItem>
-                    <SelectItem value="em_preparo">Em Preparo</SelectItem>
-                    <SelectItem value="prontos">Entrega</SelectItem>
-                    <SelectItem value="saiu">Saiu para Entrega</SelectItem>
-                    <SelectItem value="entregue">Entregue</SelectItem>
-                    <SelectItem value="cancelled">Cancelados</SelectItem>
+                    {activeStatuses.map((status) => {
+                      const cfg = statusConfig[status];
+                      return cfg ? (
+                        <SelectItem key={status} value={status}>{cfg.title}</SelectItem>
+                      ) : null;
+                    })}
                   </SelectContent>
                 </Select>
               </div>
@@ -824,10 +854,13 @@ export default function OrderManagement() {
           <TabsContent value="painel">
             {isMobile ? (
               <div className="space-y-4">
-                {Object.entries(statusConfig).map(([status, config]) => {
-                  const statusOrders = getOrdersByStatus(status as Order['status']);
+                {activeStatuses.map((status) => {
+                  const config = statusConfig[status];
+                  if (!config) return null;
+                  const statusOrders = getOrdersByStatus(status);
                   const isExpanded = expandedColumns[status];
-                  
+                  const nextStatus = getNextStatus(status);
+
                   return (
                     <div key={status} className="bg-[#FAF9F7] rounded-md border border-[#E5E2DD]">
                       <button
@@ -859,6 +892,7 @@ export default function OrderManagement() {
                               onDeliveryPersonChange={updateDeliveryPerson}
                               onOpenOrderDetails={setSelectedOrderId}
                               onCancelOrder={cancelOrder}
+                              nextStatus={nextStatus}
                             />
                           ))}
                           {statusOrders.length === 0 && (
@@ -874,9 +908,12 @@ export default function OrderManagement() {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {Object.entries(statusConfig).map(([status, config]) => {
-                  const statusOrders = getOrdersByStatus(status as Order['status']);
+                {activeStatuses.map((status) => {
+                  const config = statusConfig[status];
+                  if (!config) return null;
+                  const statusOrders = getOrdersByStatus(status);
                   const isExpanded = expandedColumns[status];
+                  const nextStatus = getNextStatus(status);
 
                   return (
                     <div key={status} className="bg-[#FAF9F7] rounded-md border border-[#E5E2DD] overflow-hidden flex flex-col">
@@ -912,6 +949,7 @@ export default function OrderManagement() {
                               onDeliveryPersonChange={updateDeliveryPerson}
                               onOpenOrderDetails={setSelectedOrderId}
                               onCancelOrder={cancelOrder}
+                              nextStatus={nextStatus}
                             />
                           ))}
                           {statusOrders.length === 0 && (
