@@ -164,6 +164,35 @@ export default function CheckoutPage() {
     }
   }, [shopPaymentConfig])
 
+  // Pré-preencher endereço do último pedido
+  useEffect(() => {
+    const phone = (() => {
+      try {
+        const info = JSON.parse(localStorage.getItem('customer_info') || '{}')
+        return info.phone?.replace(/\D/g, '') || ''
+      } catch { return '' }
+    })()
+    if (!phone || phone.length < 10) return
+
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+    fetch(`${baseUrl}/customers/orders/last_order_info?phone=${phone}`, {
+      headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' }
+    })
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (!data) return
+        if (data.address) {
+          if (data.address.address && !address) setAddress(data.address.address)
+          if (data.address.complement && !complement) setComplement(data.address.complement)
+          if (data.address.reference && !reference) setReference(data.address.reference)
+          if (data.address.shop_delivery_neighborhood_id && !selectedNeighborhood) {
+            setSelectedNeighborhood(String(data.address.shop_delivery_neighborhood_id))
+          }
+        }
+      })
+      .catch(() => {})
+  }, [])
+
   // Set de IDs realmente disponíveis (ativo + grupo ativo + dia da semana)
   const availableItemIds = useMemo(() => {
     const ids = new Set<string>()
