@@ -85,7 +85,6 @@ export default function CartPage() {
   const handleCheckout = () => {
     if (!isShopOpen) return
     if (hasUnavailableItems) return
-    if (isBelowMinOrder) return
     router.push(`/${slug}/conferir`)
   }
 
@@ -400,7 +399,7 @@ export default function CartPage() {
                   </div>
                   {minimumOrderValue > 0 && (
                     <div className="flex justify-between items-center px-5 py-4">
-                      <span className="text-sm text-gray-600">Pedido mínimo</span>
+                      <span className="text-sm text-gray-600">Pedido mínimo (entrega)</span>
                       <span className={`text-sm font-medium ${isBelowMinOrder ? 'text-red-500' : 'text-green-600'}`}>
                         {formatPrice(minimumOrderValue)}
                       </span>
@@ -416,22 +415,15 @@ export default function CartPage() {
               <div className="relative group mt-4">
                 <button
                   onClick={handleCheckout}
-                  disabled={!isShopOpen || shopStatusLoading || hasUnavailableItems || isBelowMinOrder}
+                  disabled={!isShopOpen || shopStatusLoading || hasUnavailableItems}
                   className="w-full h-13 bg-primary hover:bg-primary/90 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold text-base rounded-md transition-colors flex items-center justify-center"
                 >
                   {!isShopOpen && !shopStatusLoading
                     ? 'Loja Fechada'
                     : hasUnavailableItems
                     ? 'Remova itens indisponíveis'
-                    : isBelowMinOrder
-                    ? `Pedido mínimo: ${formatPrice(minimumOrderValue)}`
                     : 'Finalizar Compra'}
                 </button>
-                {isBelowMinOrder && (
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                    Adicione mais {formatPrice(minimumOrderValue - totalPrice)} para atingir o pedido mínimo
-                  </div>
-                )}
               </div>
 
               <Link
