@@ -663,7 +663,7 @@ export default function OrderManagement() {
                 <span className="text-sm font-medium hidden sm:block">Voltar</span>
               </a>
               <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
-              <h1 className="text-base sm:text-lg font-bold text-gray-900">
+              <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900">
                 Pedidos
               </h1>
             </div>
@@ -830,10 +830,10 @@ export default function OrderManagement() {
                   const isExpanded = expandedColumns[status];
                   
                   return (
-                    <div key={status} className="bg-white rounded-md border border-[#E5E2DD]">
+                    <div key={status} className="bg-[#FAF9F7] rounded-md border border-[#E5E2DD]">
                       <button
                         onClick={() => toggleColumn(status)}
-                        className="w-full px-4 py-3 flex items-center justify-between"
+                        className="w-full px-4 py-3 flex items-center justify-between bg-white rounded-t-md"
                       >
                         <div className="flex items-center gap-2">
                           <span className={`w-2 h-2 rounded-full ${config.color}`} />
@@ -863,8 +863,8 @@ export default function OrderManagement() {
                             />
                           ))}
                           {statusOrders.length === 0 && (
-                            <div className="text-center py-8 text-gray-500">
-                              Nenhum pedido neste status
+                            <div className="text-center py-8 text-gray-400 text-sm">
+                              Nenhum pedido
                             </div>
                           )}
                         </div>
@@ -880,10 +880,10 @@ export default function OrderManagement() {
                   const isExpanded = expandedColumns[status];
 
                   return (
-                    <div key={status} className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+                    <div key={status} className="bg-[#FAF9F7] rounded-md border border-[#E5E2DD] overflow-hidden flex flex-col">
                       <button
                         onClick={() => toggleColumn(status)}
-                        className="w-full px-4 py-3 flex items-center justify-between border-b border-[#E5E2DD]"
+                        className="w-full px-4 py-3 flex items-center justify-between border-b border-[#E5E2DD] bg-white"
                       >
                         <div className="flex items-center gap-2">
                           <span className={`w-2 h-2 rounded-full ${config.color}`} />
@@ -896,7 +896,10 @@ export default function OrderManagement() {
                       </button>
 
                       {isExpanded && (
-                        <div className="p-3 max-h-[80vh] overflow-y-auto bg-[#FAF9F7]">
+                        <div className={cn(
+                          "p-3 max-h-[80vh] overflow-y-auto",
+                          statusOrders.length === 0 && "flex-1 flex items-center justify-center"
+                        )}>
                           {statusOrders.map(order => (
                             <OrderCard
                               key={order.id}
@@ -913,7 +916,7 @@ export default function OrderManagement() {
                             />
                           ))}
                           {statusOrders.length === 0 && (
-                            <div className="text-center py-8 text-gray-500">
+                            <div className="text-center text-gray-400 text-sm">
                               Nenhum pedido
                             </div>
                           )}
