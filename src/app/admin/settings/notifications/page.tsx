@@ -47,7 +47,7 @@ export default function NotificationsPage() {
                 <span className="text-sm font-medium hidden sm:block">Voltar</span>
               </a>
               <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
-              <h1 className="text-base sm:text-lg font-bold text-gray-900">
+              <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900">
                 Notificacoes WhatsApp
               </h1>
             </div>
@@ -60,7 +60,7 @@ export default function NotificationsPage() {
         <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
           <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
             <MessageCircle className="h-4 w-4 text-primary" />
-            <h2 className="text-base font-semibold text-gray-900">Preview do Template</h2>
+            <h2 className="font-tomato text-base font-semibold text-gray-900">Preview do Template</h2>
           </div>
           <div className="px-5 py-5 space-y-4">
             <p className="text-sm text-muted-foreground">
@@ -96,7 +96,7 @@ export default function NotificationsPage() {
         <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
           <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
             <Code className="h-4 w-4 text-primary" />
-            <h2 className="text-base font-semibold text-gray-900">Variaveis do Template</h2>
+            <h2 className="font-tomato text-base font-semibold text-gray-900">Variaveis do Template</h2>
           </div>
           <div className="px-5 py-5">
             <div className="space-y-2.5">

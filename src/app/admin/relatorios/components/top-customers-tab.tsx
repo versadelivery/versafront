@@ -129,7 +129,7 @@ export default function TopCustomersTab() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Ranking de Clientes</CardTitle>
+              <CardTitle className="font-tomato">Ranking de Clientes</CardTitle>
             </CardHeader>
             <CardContent>
               {customers.length > 0 ? (

@@ -63,7 +63,7 @@ export default function SupportPage() {
                 <HelpCircle className="w-12 h-12 text-primary" />
               </div>
             </div>
-            <CardTitle className="text-3xl font-bold text-primary mb-2">
+            <CardTitle className="font-tomato text-3xl font-bold text-primary mb-2">
               Central de Suporte
             </CardTitle>
             <CardDescription className="text-lg">
@@ -77,7 +77,7 @@ export default function SupportPage() {
           <CardHeader>
             <div className="flex items-center gap-2">
               <Phone className="w-6 h-6 text-primary" />
-              <CardTitle className="text-2xl">Fale Conosco</CardTitle>
+              <CardTitle className="font-tomato text-2xl">Fale Conosco</CardTitle>
             </div>
             <CardDescription>
               Nossa equipe está pronta para ajudar você
@@ -92,7 +92,7 @@ export default function SupportPage() {
                     <Phone className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">Telefone</h3>
+                    <h3 className="font-tomato font-semibold">Telefone</h3>
                     <p className="text-sm text-muted-foreground">Segunda a Sexta: 8h às 18h</p>
                   </div>
                 </div>
@@ -113,7 +113,7 @@ export default function SupportPage() {
                     <img src="/whatsapp.svg" className="w-5 h-5 text-white" alt="WhatsApp" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">WhatsApp</h3>
+                    <h3 className="font-tomato font-semibold">WhatsApp</h3>
                     <p className="text-sm text-muted-foreground">Resposta rápida</p>
                   </div>
                 </div>
@@ -136,7 +136,7 @@ export default function SupportPage() {
           <CardHeader>
             <div className="flex items-center gap-2">
               <HelpCircle className="w-6 h-6 text-primary" />
-              <CardTitle className="text-2xl">Perguntas Frequentes</CardTitle>
+              <CardTitle className="font-tomato text-2xl">Perguntas Frequentes</CardTitle>
             </div>
             <CardDescription>
               Encontre respostas rápidas para as dúvidas mais comuns

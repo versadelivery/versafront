@@ -68,7 +68,7 @@ export default function PaymentModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="font-tomato flex items-center gap-2">
             Pagamento - {attributes.reference_period}
             <Badge
               variant={

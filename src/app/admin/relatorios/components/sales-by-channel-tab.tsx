@@ -139,7 +139,7 @@ export default function SalesByChannelTab() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Faturamento por Canal</CardTitle>
+              <CardTitle className="font-tomato">Faturamento por Canal</CardTitle>
             </CardHeader>
             <CardContent>
               {data.some((d) => d.orders > 0) ? (
@@ -156,7 +156,7 @@ export default function SalesByChannelTab() {
           {data.some((d) => d.orders > 0) && (
             <Card>
               <CardHeader>
-                <CardTitle>Detalhamento por Canal</CardTitle>
+                <CardTitle className="font-tomato">Detalhamento por Canal</CardTitle>
               </CardHeader>
               <CardContent>
                 <Table>

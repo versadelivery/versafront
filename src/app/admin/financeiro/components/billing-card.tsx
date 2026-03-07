@@ -66,7 +66,7 @@ export default function BillingCard({ charge, onViewPayment }: BillingCardProps)
             </div>
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <h3 className="font-semibold">{attributes.reference_period}</h3>
+                <h3 className="font-tomato font-semibold">{attributes.reference_period}</h3>
                 <Badge variant={getStatusVariant(attributes.status)}>
                   {attributes.status_description}
                 </Badge>

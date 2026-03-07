@@ -148,7 +148,7 @@ export default function DiscountedOrdersTab() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Pedidos com Desconto</CardTitle>
+              <CardTitle className="font-tomato">Pedidos com Desconto</CardTitle>
             </CardHeader>
             <CardContent>
               {orders.length > 0 ? (

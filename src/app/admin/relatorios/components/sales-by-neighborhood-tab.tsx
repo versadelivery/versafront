@@ -128,7 +128,7 @@ export default function SalesByNeighborhoodTab() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Ranking por Bairro</CardTitle>
+              <CardTitle className="font-tomato">Ranking por Bairro</CardTitle>
             </CardHeader>
             <CardContent>
               {data.length > 0 ? (

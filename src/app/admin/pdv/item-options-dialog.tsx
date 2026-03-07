@@ -318,7 +318,7 @@ export function ItemOptionsDialog({
       <DialogContent className="sm:max-w-[640px] p-0 bg-white max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header com nome do produto */}
         <DialogHeader className="px-6 pt-6 pb-4 border-b border-[#E5E2DD] flex-shrink-0">
-          <DialogTitle className="text-lg font-bold text-gray-900 truncate">
+          <DialogTitle className="font-tomato text-lg font-bold text-gray-900 truncate">
             {attrs.name}
           </DialogTitle>
         </DialogHeader>

@@ -154,7 +154,7 @@ export default function AverageDeliveryTimeTab() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Tempo Médio de Entrega por Dia</CardTitle>
+              <CardTitle className="font-tomato">Tempo Médio de Entrega por Dia</CardTitle>
             </CardHeader>
             <CardContent>
               {data.some((d) => d.order_count > 0) ? (

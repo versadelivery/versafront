@@ -108,7 +108,7 @@ export default function CustomerModal({
             <User className="w-4 h-4 text-primary" />
           </div>
           <div>
-            <DialogTitle className="text-base font-semibold text-gray-900">
+            <DialogTitle className="font-tomato text-base font-semibold text-gray-900">
               {isEdit ? "Editar Cliente" : "Novo Cliente"}
             </DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground">

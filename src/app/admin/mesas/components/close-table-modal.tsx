@@ -124,7 +124,7 @@ export default function CloseTableModal({
                 <UtensilsCrossed className="w-5 h-5 text-red-600" />
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-foreground">
+                <h2 className="font-tomato text-xl font-semibold text-foreground">
                   Fechar Comanda
                 </h2>
                 <p className="text-sm text-muted-foreground">

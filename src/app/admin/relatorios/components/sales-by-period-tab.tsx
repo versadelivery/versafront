@@ -70,7 +70,7 @@ export default function SalesByPeriodTab() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Faturamento Diário</CardTitle>
+              <CardTitle className="font-tomato">Faturamento Diário</CardTitle>
             </CardHeader>
             <CardContent>
               {data.current_period.daily_breakdown.some((d) => d.orders > 0) ? (
@@ -86,7 +86,7 @@ export default function SalesByPeriodTab() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Detalhamento Diário</CardTitle>
+              <CardTitle className="font-tomato">Detalhamento Diário</CardTitle>
             </CardHeader>
             <CardContent>
               <SalesPeriodTable data={data.current_period.daily_breakdown} />

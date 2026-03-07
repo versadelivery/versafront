@@ -118,7 +118,7 @@ export default function CustomerDetailPage() {
                   <span className="text-sm font-medium hidden sm:block">Voltar</span>
                 </a>
                 <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
-                <h1 className="text-base sm:text-lg font-bold text-gray-900">Cliente</h1>
+                <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900">Cliente</h1>
               </div>
             </div>
           </div>
@@ -145,7 +145,7 @@ export default function CustomerDetailPage() {
                   <span className="text-sm font-medium hidden sm:block">Voltar</span>
                 </a>
                 <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
-                <h1 className="text-base sm:text-lg font-bold text-gray-900">Cliente</h1>
+                <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900">Cliente</h1>
               </div>
             </div>
           </div>
@@ -179,7 +179,7 @@ export default function CustomerDetailPage() {
                 <span className="text-sm font-medium hidden sm:block">Voltar</span>
               </a>
               <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
-              <h1 className="text-base sm:text-lg font-bold text-gray-900 truncate max-w-[300px]">
+              <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900 truncate max-w-[300px]">
                 {customer.attributes.name}
               </h1>
               {customer.attributes.blocked ? (
@@ -235,7 +235,7 @@ export default function CustomerDetailPage() {
         <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
           <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
             <User className="h-4 w-4 text-primary" />
-            <h2 className="text-base font-semibold text-gray-900">Informacoes do cliente</h2>
+            <h2 className="font-tomato text-base font-semibold text-gray-900">Informacoes do cliente</h2>
             <span className="text-sm text-muted-foreground ml-auto">#{customer.id}</span>
           </div>
           <div className="px-5 py-5">
@@ -286,7 +286,7 @@ export default function CustomerDetailPage() {
         <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
           <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
             <ClipboardList className="h-4 w-4 text-primary" />
-            <h2 className="text-base font-semibold text-gray-900">Historico de Pedidos</h2>
+            <h2 className="font-tomato text-base font-semibold text-gray-900">Historico de Pedidos</h2>
           </div>
 
           {orders.length === 0 ? (

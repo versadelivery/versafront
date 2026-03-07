@@ -154,7 +154,7 @@ export default function AveragePrepTimeTab() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Tempo Médio de Preparo por Dia</CardTitle>
+              <CardTitle className="font-tomato">Tempo Médio de Preparo por Dia</CardTitle>
             </CardHeader>
             <CardContent>
               {data.some((d) => d.order_count > 0) ? (

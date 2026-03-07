@@ -118,7 +118,7 @@ export default function PaymentMethodsTab() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Distribuição por Forma de Pagamento</CardTitle>
+              <CardTitle className="font-tomato">Distribuição por Forma de Pagamento</CardTitle>
             </CardHeader>
             <CardContent>
               {data.length > 0 ? (
@@ -135,7 +135,7 @@ export default function PaymentMethodsTab() {
           {data.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>Detalhamento</CardTitle>
+                <CardTitle className="font-tomato">Detalhamento</CardTitle>
               </CardHeader>
               <CardContent>
                 <Table>

@@ -148,7 +148,7 @@ export default function CustomerAcquisitionTab() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Novos Clientes por Dia</CardTitle>
+              <CardTitle className="font-tomato">Novos Clientes por Dia</CardTitle>
             </CardHeader>
             <CardContent>
               {breakdown.some((d) => d.new_customers > 0) ? (

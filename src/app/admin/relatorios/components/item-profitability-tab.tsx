@@ -146,7 +146,7 @@ export default function ItemProfitabilityTab() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Lucratividade por Item</CardTitle>
+              <CardTitle className="font-tomato">Lucratividade por Item</CardTitle>
             </CardHeader>
             <CardContent>
               {items.length > 0 ? (

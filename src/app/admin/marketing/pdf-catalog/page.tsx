@@ -77,7 +77,7 @@ export default function PdfCatalogPage() {
             <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
               <FileText className="h-10 w-10 text-purple-500 shrink-0" />
               <div>
-                <h3 className="font-semibold text-foreground">
+                <h3 className="font-tomato font-semibold text-foreground">
                   {shop?.name || "Carregando..."}
                 </h3>
                 <p className="text-sm text-muted-foreground">

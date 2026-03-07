@@ -116,7 +116,7 @@ export default function CaixaPage() {
     <div className="max-w-4xl mx-auto p-6">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Controle de caixa</h1>
+          <h1 className="font-tomato text-3xl font-bold text-gray-900">Controle de caixa</h1>
           <Badge 
             variant={isOpen ? "default" : "destructive"}
             className="mt-2 text-sm"
@@ -143,7 +143,7 @@ export default function CaixaPage() {
 
       <Card className="mb-8 w-1/3">
         <CardHeader>
-          <CardTitle>Valor de abertura</CardTitle>
+          <CardTitle className="font-tomato">Valor de abertura</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex gap-4 items-end">
@@ -182,7 +182,7 @@ export default function CaixaPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-md">
+          <CardTitle className="font-tomato text-md">
             Opcional: informe a quantidade de moedas e cédulas para calcular o caixa
           </CardTitle>
         </CardHeader>
@@ -190,7 +190,7 @@ export default function CaixaPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Seção de Moedas */}
             <div>
-              <h3 className="text-lg font-semibold mb-4 text-gray-700">Moedas</h3>
+              <h3 className="font-tomato text-lg font-semibold mb-4 text-gray-700">Moedas</h3>
               <div className="space-y-3">
                 {Object.entries(coins).map(([denomination, quantity]) => (
                   <div key={denomination} className="flex items-center justify-between">
@@ -211,7 +211,7 @@ export default function CaixaPage() {
 
             {/* Seção de Cédulas */}
             <div>
-              <h3 className="text-lg font-semibold mb-4 text-gray-700">Cédulas</h3>
+              <h3 className="font-tomato text-lg font-semibold mb-4 text-gray-700">Cédulas</h3>
               <div className="space-y-3">
                 {Object.entries(bills).map(([denomination, quantity]) => (
                   <div key={denomination} className="flex items-center justify-between">

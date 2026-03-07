@@ -144,7 +144,7 @@ export default function CashRegisterStatementTab() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Extrato de Caixa</CardTitle>
+              <CardTitle className="font-tomato">Extrato de Caixa</CardTitle>
             </CardHeader>
             <CardContent>
               {transactions.length > 0 ? (

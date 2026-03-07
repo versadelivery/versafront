@@ -157,7 +157,7 @@ export default function AverageTicketTab() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Ticket Médio por Período</CardTitle>
+              <CardTitle className="font-tomato">Ticket Médio por Período</CardTitle>
             </CardHeader>
             <CardContent>
               {breakdown.some((d) => d.orders > 0) ? (

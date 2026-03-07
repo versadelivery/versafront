@@ -112,7 +112,7 @@ export default function UsersManagementPage() {
                 <span className="text-sm font-medium hidden sm:block">Voltar</span>
               </Link>
               <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
-              <h1 className="text-base sm:text-lg font-bold text-gray-900">Gerenciamento de Usuários</h1>
+              <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900">Gerenciamento de Usuários</h1>
             </div>
             <Button
               className="rounded-md border border-gray-300 cursor-pointer bg-primary text-white hover:bg-primary/90 gap-2"
@@ -132,7 +132,7 @@ export default function UsersManagementPage() {
           <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-primary" />
-              <h2 className="text-base font-semibold text-gray-900">Usuários</h2>
+              <h2 className="font-tomato text-base font-semibold text-gray-900">Usuários</h2>
               <span className="text-sm text-muted-foreground">({users.length})</span>
             </div>
             <div className="relative w-full max-w-xs">

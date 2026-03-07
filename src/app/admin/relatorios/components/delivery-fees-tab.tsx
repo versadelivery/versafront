@@ -140,7 +140,7 @@ export default function DeliveryFeesTab() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Taxas por Motoboy</CardTitle>
+              <CardTitle className="font-tomato">Taxas por Motoboy</CardTitle>
             </CardHeader>
             <CardContent>
               {data.length > 0 ? (

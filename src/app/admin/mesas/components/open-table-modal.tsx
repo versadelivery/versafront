@@ -64,7 +64,7 @@ export default function OpenTableModal({
                 <UtensilsCrossed className="w-5 h-5 text-emerald-600" />
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-foreground">
+                <h2 className="font-tomato text-xl font-semibold text-foreground">
                   Abrir Comanda
                 </h2>
                 <p className="text-sm text-muted-foreground">

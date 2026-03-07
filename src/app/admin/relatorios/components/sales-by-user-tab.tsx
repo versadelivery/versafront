@@ -117,7 +117,7 @@ export default function SalesByUserTab() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Vendas por Atendente</CardTitle>
+              <CardTitle className="font-tomato">Vendas por Atendente</CardTitle>
             </CardHeader>
             <CardContent>
               {data.length > 0 ? (

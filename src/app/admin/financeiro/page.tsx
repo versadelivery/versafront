@@ -70,7 +70,7 @@ export default function FinanceiroPage() {
               <div className="flex items-start gap-3">
                 <AlertTriangle className="h-6 w-6 text-red-500 flex-shrink-0" />
                 <div>
-                  <h3 className="font-semibold text-red-700">
+                  <h3 className="font-tomato font-semibold text-red-700">
                     Sua loja está bloqueada por inadimplência
                   </h3>
                   <p className="text-sm text-red-600 mt-1">
@@ -158,7 +158,7 @@ export default function FinanceiroPage() {
         {currentCharge && (
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="font-tomato flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
                 Cobrança Atual
                 <Badge
@@ -183,7 +183,7 @@ export default function FinanceiroPage() {
         {/* Histórico de cobranças */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="font-tomato flex items-center gap-2">
               <CreditCard className="h-5 w-5" />
               Histórico de Cobranças
             </CardTitle>

@@ -20,7 +20,7 @@ export default function AdminHeader({ title, description, className }: Props) {
           </div>
 
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="font-tomato text-2xl font-bold text-gray-900">
               {title}
             </h1>
             <p className="text-base text-muted-foreground pl-3 border-l-4 border-primary max-w-2xl">

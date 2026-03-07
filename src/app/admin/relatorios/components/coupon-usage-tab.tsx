@@ -148,7 +148,7 @@ export default function CouponUsageTab() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Cupons Utilizados</CardTitle>
+              <CardTitle className="font-tomato">Cupons Utilizados</CardTitle>
             </CardHeader>
             <CardContent>
               {coupons.length > 0 ? (

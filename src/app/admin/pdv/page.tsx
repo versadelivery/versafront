@@ -567,7 +567,7 @@ export default function PDVPage() {
                 <span className="text-sm font-medium hidden sm:block">Voltar</span>
               </a>
               <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
-              <h1 className="text-base sm:text-lg font-bold text-gray-900">
+              <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900">
                 Ponto de Venda (PDV)
               </h1>
             </div>
@@ -582,7 +582,7 @@ export default function PDVPage() {
         <div className="lg:col-span-2 space-y-4">
           <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
             <div className="px-5 py-4 border-b border-[#E5E2DD]">
-              <h2 className="flex items-center gap-2 text-base font-semibold text-gray-900 mb-3">
+              <h2 className="font-tomato flex items-center gap-2 text-base font-semibold text-gray-900 mb-3">
                 <Package className="h-5 w-5 text-primary" />
                 Catálogo de Produtos
               </h2>
@@ -702,7 +702,7 @@ export default function PDVPage() {
                       {/* Cabeçalho do grupo */}
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                          <h3 className="text-lg sm:text-xl font-semibold text-primary">
+                          <h3 className="font-tomato text-lg sm:text-xl font-semibold text-primary">
                             {group.attributes.name}
                           </h3>
                           <Badge variant="outline" className="text-xs">
@@ -855,7 +855,7 @@ export default function PDVPage() {
           {/* Carrinho */}
           <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
             <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center justify-between">
-              <h2 className="flex items-center gap-2 text-base font-semibold text-gray-900">
+              <h2 className="font-tomato flex items-center gap-2 text-base font-semibold text-gray-900">
                 <ShoppingCart className="h-5 w-5 text-primary" />
                 Carrinho
                 {cart.length > 0 && (
@@ -1073,7 +1073,7 @@ export default function PDVPage() {
           {/* Cupom de Desconto */}
           <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
             <div className="px-5 py-4 border-b border-[#E5E2DD]">
-              <h2 className="flex items-center gap-2 text-base font-semibold text-gray-900">
+              <h2 className="font-tomato flex items-center gap-2 text-base font-semibold text-gray-900">
                 <Tag className="h-5 w-5 text-primary" />
                 Cupom de Desconto
               </h2>
@@ -1133,7 +1133,7 @@ export default function PDVPage() {
           {tables.length > 0 && (
             <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
               <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center justify-between">
-                <h2 className="flex items-center gap-2 text-base font-semibold text-gray-900">
+                <h2 className="font-tomato flex items-center gap-2 text-base font-semibold text-gray-900">
                   <UtensilsCrossed className="h-5 w-5 text-primary" />
                   Mesa
                 </h2>
@@ -1227,7 +1227,7 @@ export default function PDVPage() {
           {!isTableOrder && (
             <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
               <div className="px-5 py-4 border-b border-[#E5E2DD]">
-                <h2 className="flex items-center gap-2 text-base font-semibold text-gray-900">
+                <h2 className="font-tomato flex items-center gap-2 text-base font-semibold text-gray-900">
                   <MapPin className="h-5 w-5 text-primary" />
                   Tipo de Pedido
                 </h2>
@@ -1252,7 +1252,7 @@ export default function PDVPage() {
           {/* Dados do cliente — esconde quando vinculado a mesa */}
           {!isTableOrder && <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
             <div className="px-5 py-4 border-b border-[#E5E2DD]">
-              <h2 className="flex items-center gap-2 text-base font-semibold text-gray-900">
+              <h2 className="font-tomato flex items-center gap-2 text-base font-semibold text-gray-900">
                 <User className="h-5 w-5 text-primary" />
                 {orderType === "delivery" ? "Dados de Entrega" : "Dados do Cliente"}
               </h2>
@@ -1375,7 +1375,7 @@ export default function PDVPage() {
           {/* Pagamento */}
           <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
             <div className="px-5 py-4 border-b border-[#E5E2DD]">
-              <h2 className="flex items-center gap-2 text-base font-semibold text-gray-900">
+              <h2 className="font-tomato flex items-center gap-2 text-base font-semibold text-gray-900">
                 <CreditCard className="h-5 w-5 text-primary" />
                 Pagamento
               </h2>

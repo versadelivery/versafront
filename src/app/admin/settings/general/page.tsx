@@ -165,7 +165,7 @@ export default function GeneralSettingsPage() {
                 <span className="text-sm font-medium hidden sm:block">Voltar</span>
               </Link>
               <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
-              <h1 className="text-base sm:text-lg font-bold text-gray-900">Configurações Gerais</h1>
+              <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900">Configurações Gerais</h1>
             </div>
             {/* Botoes de acao */}
             <div className="flex items-center gap-2">
@@ -201,7 +201,7 @@ export default function GeneralSettingsPage() {
           <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
             <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
               <Settings className="h-4 w-4 text-primary" />
-              <h2 className="text-base font-semibold text-gray-900">Informações do Estabelecimento</h2>
+              <h2 className="font-tomato text-base font-semibold text-gray-900">Informações do Estabelecimento</h2>
             </div>
             <div className="px-5 py-5">
               <div className="flex flex-col md:flex-row gap-6">
@@ -327,7 +327,7 @@ export default function GeneralSettingsPage() {
           <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
             <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
               <Phone className="h-4 w-4 text-primary" />
-              <h2 className="text-base font-semibold text-gray-900">Informações de Contato</h2>
+              <h2 className="font-tomato text-base font-semibold text-gray-900">Informações de Contato</h2>
             </div>
             <div className="px-5 py-5">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -384,7 +384,7 @@ export default function GeneralSettingsPage() {
           <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
             <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
               <Truck className="h-4 w-4 text-primary" />
-              <h2 className="text-base font-semibold text-gray-900">Entregador Padrão</h2>
+              <h2 className="font-tomato text-base font-semibold text-gray-900">Entregador Padrão</h2>
             </div>
             <div className="px-5 py-5">
               <p className="text-sm text-muted-foreground mb-4">
@@ -425,7 +425,7 @@ export default function GeneralSettingsPage() {
           <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
             <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
               <ShoppingBag className="h-4 w-4 text-primary" />
-              <h2 className="text-base font-semibold text-gray-900">Pedidos</h2>
+              <h2 className="font-tomato text-base font-semibold text-gray-900">Pedidos</h2>
             </div>
             <div className="px-5 py-5">
               <div className="flex items-center justify-between">
@@ -454,7 +454,7 @@ export default function GeneralSettingsPage() {
           <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
             <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
               <Timer className="h-4 w-4 text-primary" />
-              <h2 className="text-base font-semibold text-gray-900">Tempo Estimado</h2>
+              <h2 className="font-tomato text-base font-semibold text-gray-900">Tempo Estimado</h2>
             </div>
             <div className="px-5 py-5">
               <p className="text-sm text-muted-foreground mb-4">
@@ -507,7 +507,7 @@ export default function GeneralSettingsPage() {
           <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
             <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
               <Wallet className="h-4 w-4 text-primary" />
-              <h2 className="text-base font-semibold text-gray-900">Caixa</h2>
+              <h2 className="font-tomato text-base font-semibold text-gray-900">Caixa</h2>
             </div>
             <div className="px-5 py-5 space-y-4">
               <div className="flex items-center justify-between">
@@ -561,7 +561,7 @@ export default function GeneralSettingsPage() {
           <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
             <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
               <Clock className="h-4 w-4 text-primary" />
-              <h2 className="text-base font-semibold text-gray-900">Horário de Funcionamento</h2>
+              <h2 className="font-tomato text-base font-semibold text-gray-900">Horário de Funcionamento</h2>
             </div>
             <div className="px-5 py-5">
               <ScheduleSettings />

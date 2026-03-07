@@ -80,7 +80,7 @@ export default function SalesByItemTab() {
           {currentData.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>Top 10 {view === "items" ? "Itens" : "Grupos"}</CardTitle>
+                <CardTitle className="font-tomato">Top 10 {view === "items" ? "Itens" : "Grupos"}</CardTitle>
               </CardHeader>
               <CardContent>
                 <SalesByItemChart data={currentData} />
@@ -90,7 +90,7 @@ export default function SalesByItemTab() {
 
           <Card>
             <CardHeader>
-              <CardTitle>
+              <CardTitle className="font-tomato">
                 {view === "items" ? "Ranking de Itens" : "Ranking de Grupos"}
               </CardTitle>
             </CardHeader>

@@ -102,7 +102,7 @@ export default function PaymentModificationsTab() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Alterações de Pagamento</CardTitle>
+              <CardTitle className="font-tomato">Alterações de Pagamento</CardTitle>
             </CardHeader>
             <CardContent>
               {modifications.length > 0 ? (

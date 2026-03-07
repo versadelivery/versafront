@@ -130,7 +130,7 @@ export default function SalesByHourTab() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Volume de Vendas por Horário</CardTitle>
+              <CardTitle className="font-tomato">Volume de Vendas por Horário</CardTitle>
             </CardHeader>
             <CardContent>
               {data.some((d) => d.orders > 0) ? (

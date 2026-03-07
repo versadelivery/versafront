@@ -60,7 +60,7 @@ export default function MarketingPage() {
                   <module.icon className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-foreground text-lg">{module.title}</h3>
+                  <h3 className="font-tomato font-semibold text-foreground text-lg">{module.title}</h3>
                   <p className="text-sm text-muted-foreground mt-1">{module.description}</p>
                 </div>
               </div>

@@ -142,7 +142,7 @@ export default function SalesByWeekdayTab() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Vendas por Dia da Semana</CardTitle>
+              <CardTitle className="font-tomato">Vendas por Dia da Semana</CardTitle>
             </CardHeader>
             <CardContent>
               {data.some((d) => d.orders > 0) ? (
@@ -159,7 +159,7 @@ export default function SalesByWeekdayTab() {
           {data.some((d) => d.orders > 0) && (
             <Card>
               <CardHeader>
-                <CardTitle>Detalhamento por Dia</CardTitle>
+                <CardTitle className="font-tomato">Detalhamento por Dia</CardTitle>
               </CardHeader>
               <CardContent>
                 <Table>

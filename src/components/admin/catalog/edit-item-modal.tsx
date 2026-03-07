@@ -682,7 +682,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
       <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent className="rounded-lg sm:max-w-[640px] p-0 bg-white">
           <DialogHeader className="px-6 pt-6 pb-4">
-            <DialogTitle>Carregando...</DialogTitle>
+            <DialogTitle className="font-tomato">Carregando...</DialogTitle>
           </DialogHeader>
           <div className="flex justify-center items-center h-40">
             <Loader2 className="h-8 w-8 animate-spin" />
@@ -701,7 +701,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
       <DialogContent className="rounded-lg sm:max-w-[640px] p-0 bg-white max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
         <DialogHeader className="px-6 pt-6 pb-4 border-b border-gray-100">
-          <DialogTitle className="text-lg font-semibold">Editar Item</DialogTitle>
+          <DialogTitle className="font-tomato text-lg font-semibold">Editar Item</DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
             Edite as informações do item
           </DialogDescription>
@@ -1151,7 +1151,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
       <Dialog open={showDisableWarning} onOpenChange={setShowDisableWarning}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Confirmar desativação</DialogTitle>
+            <DialogTitle className="font-tomato">Confirmar desativação</DialogTitle>
             <DialogDescription>
               Ao salvar, todos os{' '}
               <strong>{disableWarningItems.join(' e ')}</strong> cadastrados serão
@@ -1172,7 +1172,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
       <AlertDialog open={showCloseConfirm} onOpenChange={setShowCloseConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Descartar alterações?</AlertDialogTitle>
+            <AlertDialogTitle className="font-tomato">Descartar alterações?</AlertDialogTitle>
             <AlertDialogDescription>
               Tem certeza que deseja fechar? As alterações não salvas serão perdidas.
             </AlertDialogDescription>

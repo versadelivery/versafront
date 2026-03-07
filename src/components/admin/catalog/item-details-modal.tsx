@@ -73,7 +73,7 @@ export function ItemDetailsModal({ id, isOpen, onClose }: ItemDetailsModalProps)
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="rounded-md sm:max-w-[640px] p-0 bg-white">
           <DialogHeader className="px-6 pt-6 pb-4">
-            <DialogTitle>Carregando...</DialogTitle>
+            <DialogTitle className="font-tomato">Carregando...</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col items-center justify-center h-40 gap-3">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -93,7 +93,7 @@ export function ItemDetailsModal({ id, isOpen, onClose }: ItemDetailsModalProps)
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="rounded-md sm:max-w-[640px] p-0 bg-white">
           <DialogHeader className="px-6 pt-6 pb-4">
-            <DialogTitle>Erro</DialogTitle>
+            <DialogTitle className="font-tomato">Erro</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col items-center justify-center h-40 gap-3">
             <p className="text-sm text-muted-foreground">Não foi possível carregar os detalhes do item</p>
@@ -126,7 +126,7 @@ export function ItemDetailsModal({ id, isOpen, onClose }: ItemDetailsModalProps)
       <DialogContent className="rounded-md sm:max-w-[640px] p-0 bg-white max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
         <DialogHeader className="px-6 pt-6 pb-4 border-b border-[#E5E2DD]">
-          <DialogTitle className="flex items-center gap-2 text-lg font-semibold">
+          <DialogTitle className="font-tomato flex items-center gap-2 text-lg font-semibold">
             <Package className="h-5 w-5" />
             Detalhes do Item
           </DialogTitle>
@@ -151,7 +151,7 @@ export function ItemDetailsModal({ id, isOpen, onClose }: ItemDetailsModalProps)
           <div className="px-6 py-5 space-y-5">
             {/* Nome e Descrição */}
             <div>
-              <h2 className="text-xl font-bold text-foreground">{attrs.name}</h2>
+              <h2 className="font-tomato text-xl font-bold text-foreground">{attrs.name}</h2>
               {attrs.description && (
                 <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{attrs.description}</p>
               )}

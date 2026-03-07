@@ -144,7 +144,7 @@ export default function TableConfigModal({
                 <UtensilsCrossed className="w-5 h-5 text-emerald-600" />
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-foreground">
+                <h2 className="font-tomato text-xl font-semibold text-foreground">
                   {isEdit ? "Editar Mesa" : "Nova Mesa"}
                 </h2>
                 <p className="text-sm text-muted-foreground">
@@ -168,7 +168,7 @@ export default function TableConfigModal({
                 <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <UtensilsCrossed className="w-6 h-6 text-red-600" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Confirmar Exclusao</h3>
+                <h3 className="font-tomato text-lg font-semibold text-gray-900 mb-2">Confirmar Exclusao</h3>
                 <p className="text-sm text-gray-600 mb-4">
                   Tem certeza que deseja excluir a <strong>Mesa {table?.attributes.number}</strong>?
                   Esta acao nao pode ser desfeita.

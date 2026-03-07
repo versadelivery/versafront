@@ -140,7 +140,7 @@ export default function MonthlyRevenueTab() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Faturamento por Mês</CardTitle>
+          <CardTitle className="font-tomato">Faturamento por Mês</CardTitle>
         </CardHeader>
         <CardContent>
           {data.length > 0 ? (
@@ -156,7 +156,7 @@ export default function MonthlyRevenueTab() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Detalhamento Mensal</CardTitle>
+          <CardTitle className="font-tomato">Detalhamento Mensal</CardTitle>
         </CardHeader>
         <CardContent>
           {data.length > 0 ? (

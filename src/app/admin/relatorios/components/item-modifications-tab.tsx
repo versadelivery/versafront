@@ -136,7 +136,7 @@ export default function ItemModificationsTab() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Alterações de Itens</CardTitle>
+              <CardTitle className="font-tomato">Alterações de Itens</CardTitle>
             </CardHeader>
             <CardContent>
               {modifications.length > 0 ? (

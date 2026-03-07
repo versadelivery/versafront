@@ -119,7 +119,7 @@ export default function VisitorsTab() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Visitantes por Dia</CardTitle>
+              <CardTitle className="font-tomato">Visitantes por Dia</CardTitle>
             </CardHeader>
             <CardContent>
               {breakdown.some((d) => d.unique_visitors > 0) ? (
