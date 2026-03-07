@@ -1,14 +1,35 @@
 import type { Metadata } from "next";
-import { Work_Sans } from "next/font/google";
+import { Inter } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 import { Toaster } from "sonner";
 import { Providers } from "./providers";
 
-const plusJakartaSans = Work_Sans({
-  variable: "--font-plus-jakarta-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["300", "400", "500", "600", "700", "800"],
+});
+
+const tomatoGrotesk = localFont({
+  src: [
+    {
+      path: "../../public/fonts/TomatoGrotesk-Regular.woff2",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/TomatoGrotesk-SemiBold.woff2",
+      weight: "600",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/TomatoGrotesk-Bold.woff2",
+      weight: "700",
+      style: "normal",
+    },
+  ],
+  variable: "--font-tomato-grotesk",
 });
 
 const antarcticanMono = localFont({
@@ -62,7 +83,7 @@ export default function RootLayout({
     <html lang="en">
       <body
         suppressHydrationWarning
-        className={`${plusJakartaSans.variable} ${antarcticanMono.variable} antialiased bg-white`}
+        className={`${inter.variable} ${tomatoGrotesk.variable} ${antarcticanMono.variable} antialiased bg-white`}
       >
         <Toaster position="top-center" />
         <Providers>
