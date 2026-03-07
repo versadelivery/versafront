@@ -1,7 +1,7 @@
 "use client";
 
 import { Header } from "@/components/admin/header";
-import { Footer } from "@/components/footer";
+import Footer from "@/components/landing/footer";
 import ProtectedRoute from "@/components/protected-route";
 
 export default function CatalogLayout({
