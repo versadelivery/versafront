@@ -209,7 +209,7 @@ export default function OrderManagement() {
     prontos: true,
     saiu: true,
     entregue: true,
-    cancelled: true
+    cancelled: false
   });
   const [isMobile, setIsMobile] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
@@ -854,7 +854,7 @@ export default function OrderManagement() {
           <TabsContent value="painel">
             {isMobile ? (
               <div className="space-y-4">
-                {activeStatuses.map((status) => {
+                {activeStatuses.filter(s => s !== 'cancelled').map((status) => {
                   const config = statusConfig[status];
                   if (!config) return null;
                   const statusOrders = getOrdersByStatus(status);
@@ -905,38 +905,33 @@ export default function OrderManagement() {
                     </div>
                   );
                 })}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {activeStatuses.map((status) => {
-                  const config = statusConfig[status];
-                  if (!config) return null;
-                  const statusOrders = getOrdersByStatus(status);
-                  const isExpanded = expandedColumns[status];
-                  const nextStatus = getNextStatus(status);
+
+                {/* Cancelados - seção separada */}
+                {(() => {
+                  const cancelledOrders = getOrdersByStatus('cancelled');
+                  if (cancelledOrders.length === 0) return null;
+                  const config = statusConfig['cancelled'];
+                  const isExpanded = expandedColumns['cancelled'];
 
                   return (
-                    <div key={status} className="bg-[#FAF9F7] rounded-md border border-[#E5E2DD] overflow-hidden flex flex-col">
+                    <div className="bg-[#FAF9F7] rounded-md border border-dashed border-gray-300 opacity-75">
                       <button
-                        onClick={() => toggleColumn(status)}
-                        className="w-full px-4 py-3 flex items-center justify-between border-b border-[#E5E2DD] bg-white"
+                        onClick={() => toggleColumn('cancelled')}
+                        className="w-full px-4 py-3 flex items-center justify-between bg-white/50 rounded-t-md"
                       >
                         <div className="flex items-center gap-2">
-                          <span className={`w-2 h-2 rounded-full ${config.color}`} />
-                          <h2 className="font-semibold text-sm text-gray-900">
-                            {config.title}
-                          </h2>
-                          <span className="text-sm text-muted-foreground">({statusOrders.length})</span>
+                          <XCircle className="w-3.5 h-3.5 text-gray-400" />
+                          <span className="font-medium text-sm text-gray-500">
+                            Cancelados
+                          </span>
+                          <span className="text-sm text-gray-400">({cancelledOrders.length})</span>
                         </div>
-                        {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+                        {isExpanded ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
                       </button>
 
                       {isExpanded && (
-                        <div className={cn(
-                          "p-3 max-h-[80vh] overflow-y-auto",
-                          statusOrders.length === 0 && "flex-1 flex items-center justify-center"
-                        )}>
-                          {statusOrders.map(order => (
+                        <div className="px-3 pb-3 border-t border-dashed border-gray-300">
+                          {cancelledOrders.map(order => (
                             <OrderCard
                               key={order.id}
                               order={order}
@@ -949,19 +944,122 @@ export default function OrderManagement() {
                               onDeliveryPersonChange={updateDeliveryPerson}
                               onOpenOrderDetails={setSelectedOrderId}
                               onCancelOrder={cancelOrder}
-                              nextStatus={nextStatus}
+                              nextStatus={null}
                             />
                           ))}
-                          {statusOrders.length === 0 && (
-                            <div className="text-center text-gray-400 text-sm">
-                              Nenhum pedido
-                            </div>
-                          )}
                         </div>
                       )}
                     </div>
                   );
-                })}
+                })()}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {activeStatuses.filter(s => s !== 'cancelled').map((status) => {
+                    const config = statusConfig[status];
+                    if (!config) return null;
+                    const statusOrders = getOrdersByStatus(status);
+                    const isExpanded = expandedColumns[status];
+                    const nextStatus = getNextStatus(status);
+
+                    return (
+                      <div key={status} className="bg-[#FAF9F7] rounded-md border border-[#E5E2DD] overflow-hidden flex flex-col">
+                        <button
+                          onClick={() => toggleColumn(status)}
+                          className="w-full px-4 py-3 flex items-center justify-between border-b border-[#E5E2DD] bg-white"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className={`w-2 h-2 rounded-full ${config.color}`} />
+                            <h2 className="font-semibold text-sm text-gray-900">
+                              {config.title}
+                            </h2>
+                            <span className="text-sm text-muted-foreground">({statusOrders.length})</span>
+                          </div>
+                          {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+                        </button>
+
+                        {isExpanded && (
+                          <div className={cn(
+                            "p-3 max-h-[80vh] overflow-y-auto",
+                            statusOrders.length === 0 && "flex-1 flex items-center justify-center"
+                          )}>
+                            {statusOrders.map(order => (
+                              <OrderCard
+                                key={order.id}
+                                order={order}
+                                config={config}
+                                estimatedPrepTime={estimatedPrepTime}
+                                estimatedDeliveryTime={estimatedDeliveryTime}
+                                defaultDeliveryPersonName={shop?.default_delivery_person_name}
+                                onUpdateOrderStatus={updateOrderStatus}
+                                onTogglePaymentStatus={togglePaymentStatus}
+                                onDeliveryPersonChange={updateDeliveryPerson}
+                                onOpenOrderDetails={setSelectedOrderId}
+                                onCancelOrder={cancelOrder}
+                                nextStatus={nextStatus}
+                              />
+                            ))}
+                            {statusOrders.length === 0 && (
+                              <div className="text-center text-gray-400 text-sm">
+                                Nenhum pedido
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Cancelados - seção separada abaixo do grid */}
+                {(() => {
+                  const cancelledOrders = getOrdersByStatus('cancelled');
+                  if (cancelledOrders.length === 0) return null;
+                  const config = statusConfig['cancelled'];
+                  const isExpanded = expandedColumns['cancelled'];
+
+                  return (
+                    <div className="bg-[#FAF9F7] rounded-md border border-dashed border-gray-300 opacity-75">
+                      <button
+                        onClick={() => toggleColumn('cancelled')}
+                        className="w-full px-4 py-3 flex items-center justify-between bg-white/50 rounded-t-md"
+                      >
+                        <div className="flex items-center gap-2">
+                          <XCircle className="w-3.5 h-3.5 text-gray-400" />
+                          <span className="font-medium text-sm text-gray-500">
+                            Cancelados
+                          </span>
+                          <span className="text-sm text-gray-400">({cancelledOrders.length})</span>
+                        </div>
+                        {isExpanded ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+                      </button>
+
+                      {isExpanded && (
+                        <div className="p-3 border-t border-dashed border-gray-300">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                            {cancelledOrders.map(order => (
+                              <OrderCard
+                                key={order.id}
+                                order={order}
+                                config={config}
+                                estimatedPrepTime={estimatedPrepTime}
+                                estimatedDeliveryTime={estimatedDeliveryTime}
+                                defaultDeliveryPersonName={shop?.default_delivery_person_name}
+                                onUpdateOrderStatus={updateOrderStatus}
+                                onTogglePaymentStatus={togglePaymentStatus}
+                                onDeliveryPersonChange={updateDeliveryPerson}
+                                onOpenOrderDetails={setSelectedOrderId}
+                                onCancelOrder={cancelOrder}
+                                nextStatus={null}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             )}
           </TabsContent>
