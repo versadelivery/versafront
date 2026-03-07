@@ -8,7 +8,7 @@ import { buildWhatsAppOrderMessage } from "@/utils/whatsapp-template";
 
 const PREVIEW_ORDER = {
   orderId: "1234",
-  customerName: "Joao Silva",
+  customerName: "João Silva",
   status: "em_preparo",
   items: [
     { name: "Pizza Margherita", quantity: 1, totalPrice: 45.9 },
@@ -34,7 +34,7 @@ export default function NotificationsPage() {
 
   return (
     <div className="min-h-screen bg-[#FAF9F7]">
-      {/* Header admin padrao */}
+      {/* Header admin padrão */}
       <div className="bg-white border-b border-[#E5E2DD]">
         <div className="max-w-[1920px] mx-auto px-4 sm:px-6">
           <div className="flex items-center h-16">
@@ -48,7 +48,7 @@ export default function NotificationsPage() {
               </a>
               <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
               <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900">
-                Notificacoes WhatsApp
+                Notificações WhatsApp
               </h1>
             </div>
           </div>
@@ -64,7 +64,7 @@ export default function NotificationsPage() {
           </div>
           <div className="px-5 py-5 space-y-4">
             <p className="text-sm text-muted-foreground">
-              Esta e a mensagem que sera enviada ao cliente quando o status do pedido for atualizado.
+              Esta é a mensagem que será enviada ao cliente quando o status do pedido for atualizado.
             </p>
 
             <div className="bg-[#e9fbe5] border border-green-400 rounded-md px-4 py-3 font-mono text-sm whitespace-pre-wrap text-gray-800">
@@ -92,16 +92,16 @@ export default function NotificationsPage() {
           </div>
         </div>
 
-        {/* Variaveis disponiveis */}
+        {/* Variáveis disponíveis */}
         <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
           <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
             <Code className="h-4 w-4 text-primary" />
-            <h2 className="font-tomato text-base font-semibold text-gray-900">Variaveis do Template</h2>
+            <h2 className="font-tomato text-base font-semibold text-gray-900">Variáveis do Template</h2>
           </div>
           <div className="px-5 py-5">
             <div className="space-y-2.5">
               {[
-                { key: "orderId", desc: "Numero do pedido" },
+                { key: "orderId", desc: "Número do pedido" },
                 { key: "customerName", desc: "Nome do cliente" },
                 { key: "status", desc: "Status atual do pedido" },
                 { key: "items", desc: "Lista de itens do pedido" },

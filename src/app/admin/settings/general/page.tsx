@@ -193,11 +193,11 @@ export default function GeneralSettingsPage() {
         </div>
       </div>
 
-      {/* Conteudo */}
+      {/* Conteúdo */}
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <form id="general-settings-form" onSubmit={handleSubmit} className="space-y-5">
 
-          {/* SectionCard: Informacoes do Estabelecimento */}
+          {/* SectionCard: Informações do Estabelecimento */}
           <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
             <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
               <Settings className="h-4 w-4 text-primary" />
@@ -247,7 +247,7 @@ export default function GeneralSettingsPage() {
                   </div>
                 </div>
 
-                {/* Nome e Descricao */}
+                {/* Nome e Descrição */}
                 <div className="flex-1 space-y-4">
                   <div className="space-y-1.5">
                     <Label htmlFor="name" className="text-sm font-medium">
@@ -323,7 +323,7 @@ export default function GeneralSettingsPage() {
             </div>
           </div>
 
-          {/* SectionCard: Informacoes de Contato */}
+          {/* SectionCard: Informações de Contato */}
           <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
             <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
               <Phone className="h-4 w-4 text-primary" />

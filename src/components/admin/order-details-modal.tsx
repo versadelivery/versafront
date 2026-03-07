@@ -307,15 +307,15 @@ export default function OrderDetailsModal({
   const copyOrderInfo = () => {
     const orderInfo = `
 Pedido #${order.id}
-Cliente: ${order.customer?.name || 'Nao informado'}
-Telefone: ${order.customer?.phone || 'Nao informado'}
+Cliente: ${order.customer?.name || 'Não informado'}
+Telefone: ${order.customer?.phone || 'Não informado'}
 Valor: ${formatCurrency(order.total)}
 Status: ${statusInfo.label}
 Forma de pagamento: ${paymentLabel}
 ${
   !order.withdrawal && order.address
     ? `
-Endereco: ${order.address.address}
+Endereço: ${order.address.address}
 Bairro: ${order.address.neighborhood}
 ${order.address.complement ? `Complemento: ${order.address.complement}` : ''}
 ${order.address.reference ? `Referencia: ${order.address.reference}` : ''}

@@ -100,7 +100,7 @@ export default function OpenTableModal({
 
             <div className="space-y-2">
               <Label htmlFor="customer_count" className="text-sm font-medium text-foreground">
-                Numero de pessoas
+                Número de pessoas
               </Label>
               <Input
                 id="customer_count"

@@ -151,7 +151,7 @@ export default function CustomerDetailPage() {
           </div>
         </div>
         <div className="flex flex-col items-center justify-center py-20 gap-4">
-          <p className="text-sm text-muted-foreground">Cliente nao encontrado</p>
+          <p className="text-sm text-muted-foreground">Cliente não encontrado</p>
           <Button
             variant="outline"
             className="rounded-md border border-gray-300 cursor-pointer"
@@ -235,7 +235,7 @@ export default function CustomerDetailPage() {
         <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
           <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
             <User className="h-4 w-4 text-primary" />
-            <h2 className="font-tomato text-base font-semibold text-gray-900">Informacoes do cliente</h2>
+            <h2 className="font-tomato text-base font-semibold text-gray-900">Informações do cliente</h2>
             <span className="text-sm text-muted-foreground ml-auto">#{customer.id}</span>
           </div>
           <div className="px-5 py-5">
@@ -282,18 +282,18 @@ export default function CustomerDetailPage() {
           </div>
         </div>
 
-        {/* Historico de pedidos */}
+        {/* Histórico de pedidos */}
         <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
           <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
             <ClipboardList className="h-4 w-4 text-primary" />
-            <h2 className="font-tomato text-base font-semibold text-gray-900">Historico de Pedidos</h2>
+            <h2 className="font-tomato text-base font-semibold text-gray-900">Histórico de Pedidos</h2>
           </div>
 
           {orders.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
               <ShoppingCart className="h-8 w-8 mb-3" />
               <p className="text-sm font-medium">Nenhum pedido encontrado</p>
-              <p className="text-sm">Este cliente ainda nao fez pedidos na sua loja.</p>
+              <p className="text-sm">Este cliente ainda não fez pedidos na sua loja.</p>
             </div>
           ) : (
             <Table>
@@ -343,7 +343,7 @@ export default function CustomerDetailPage() {
         </div>
       </div>
 
-      {/* Modal de edicao */}
+      {/* Modal de edição */}
       <CustomerModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

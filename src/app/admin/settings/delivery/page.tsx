@@ -137,18 +137,18 @@ export default function DeliverySettingsPage() {
     const newErrors: typeof errors = {};
 
     if (!currentNeighborhood.name.trim()) {
-      newErrors.neighborhoodName = "Nome do bairro e obrigatorio";
+      newErrors.neighborhoodName = "Nome do bairro é obrigatório";
     }
 
     if (currentNeighborhood.hasFreeDelivery) {
       if (!currentNeighborhood.freeDeliveryThreshold || currentNeighborhood.freeDeliveryThreshold <= 0) {
-        newErrors.neighborhoodFreeDeliveryThreshold = "Valor minimo para taxa gratuita e obrigatorio";
+        newErrors.neighborhoodFreeDeliveryThreshold = "Valor mínimo para taxa gratuita é obrigatório";
       }
     } else {
       if (!currentNeighborhood.value) {
-        newErrors.neighborhoodValue = "Valor da entrega e obrigatorio";
+        newErrors.neighborhoodValue = "Valor da entrega é obrigatório";
       } else if (currentNeighborhood.value < 0) {
-        newErrors.neighborhoodValue = "Valor nao pode ser negativo";
+        newErrors.neighborhoodValue = "Valor não pode ser negativo";
       }
     }
 
@@ -164,7 +164,7 @@ export default function DeliverySettingsPage() {
     const onError = (error: any) => {
       const msg = error?.message || '';
       if (msg.toLowerCase().includes('name') || msg.toLowerCase().includes('nome') || msg.toLowerCase().includes('already') || msg.toLowerCase().includes('já')) {
-        setErrors({ neighborhoodName: "Ja existe um bairro com este nome" });
+        setErrors({ neighborhoodName: "Já existe um bairro com este nome" });
       } else {
         toast.error(isEditing ? "Erro ao atualizar bairro" : "Erro ao criar bairro");
       }
@@ -233,18 +233,18 @@ export default function DeliverySettingsPage() {
 
     const minVal = parseFloat(minOrderValue);
     if (minOrderValue && minVal < 0) {
-      newErrors.minOrderValue = "Valor minimo nao pode ser negativo";
+      newErrors.minOrderValue = "Valor mínimo não pode ser negativo";
     }
 
     if (deliveryType === "fixed") {
       const feeVal = parseFloat(fixedFee);
       if (fixedFee && feeVal < 0) {
-        newErrors.fixedFee = "Taxa nao pode ser negativa";
+        newErrors.fixedFee = "Taxa não pode ser negativa";
       }
     }
 
     if (hasFreeDelivery && parseFloat(freeDeliveryThreshold) <= parseFloat(fixedFee)) {
-      newErrors.freeDeliveryThreshold = "O valor minimo para frete gratis deve ser maior que o valor da taxa";
+      newErrors.freeDeliveryThreshold = "O valor mínimo para frete grátis deve ser maior que o valor da taxa";
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -423,7 +423,7 @@ export default function DeliverySettingsPage() {
                       <div className="space-y-0.5">
                         <Label htmlFor="freeDelivery" className="text-sm font-medium">Taxa Gratuita</Label>
                         <p className="text-sm text-muted-foreground">
-                          Ative para oferecer taxa gratuita a partir de um valor minimo
+                          Ative para oferecer taxa gratuita a partir de um valor mínimo
                         </p>
                       </div>
                     </div>
@@ -438,7 +438,7 @@ export default function DeliverySettingsPage() {
                     <div className="space-y-1.5 pl-1">
                       <Label htmlFor="freeDeliveryThreshold" className="text-sm font-medium flex items-center gap-2">
                         <Package className="w-3.5 h-3.5" />
-                        Valor Minimo para Taxa Gratuita
+                        Valor Mínimo para Taxa Gratuita
                       </Label>
                       <div className="space-y-1.5 max-w-md">
                         <div className="relative">
@@ -468,7 +468,7 @@ export default function DeliverySettingsPage() {
                         )}
                         <p className="text-sm text-muted-foreground flex items-center gap-1">
                           <Info className="w-3.5 h-3.5 flex-shrink-0" />
-                          A taxa de entrega sera gratuita quando o valor do pedido for igual ou maior que este valor
+                          A taxa de entrega será gratuita quando o valor do pedido for igual ou maior que este valor
                         </p>
                       </div>
                     </div>
@@ -478,7 +478,7 @@ export default function DeliverySettingsPage() {
             ) : deliveryType === "to_be_agreed" ? (
               <div className="p-4 bg-[#FAF9F7] rounded-md border border-[#E5E2DD]">
                 <p className="text-sm text-muted-foreground">
-                  O valor da entrega sera combinado diretamente com o cliente.
+                  O valor da entrega será combinado diretamente com o cliente.
                 </p>
               </div>
             ) : (
@@ -553,7 +553,7 @@ export default function DeliverySettingsPage() {
                             Taxa Gratuita
                           </div>
                         </TableHead>
-                        <TableHead className="text-right font-semibold text-foreground py-3 text-sm">Acoes</TableHead>
+                        <TableHead className="text-right font-semibold text-foreground py-3 text-sm">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -576,7 +576,7 @@ export default function DeliverySettingsPage() {
                                 </span>
                               : <span className="text-muted-foreground inline-flex items-center gap-1.5">
                                   <Clock className="w-3.5 h-3.5" />
-                                  Nao
+                                  Não
                                 </span>
                             }
                           </TableCell>
@@ -625,7 +625,7 @@ export default function DeliverySettingsPage() {
           </div>
         </div>
 
-        {/* Botoes de acao */}
+        {/* Botões de ação */}
         <div className="flex flex-col sm:flex-row justify-end gap-3">
           <Button
             variant="outline"
@@ -644,7 +644,7 @@ export default function DeliverySettingsPage() {
             {isUpdating ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              "Salvar alteracoes"
+              "Salvar alterações"
             )}
           </Button>
         </div>
@@ -663,7 +663,7 @@ export default function DeliverySettingsPage() {
                 {isEditing ? "Editar Bairro" : "Cadastrar Novo Bairro"}
               </DialogTitle>
               <DialogDescription className="text-sm text-muted-foreground">
-                {isEditing ? "Atualize as informacoes do bairro" : "Preencha os dados do bairro"}
+                {isEditing ? "Atualize as informações do bairro" : "Preencha os dados do bairro"}
               </DialogDescription>
             </div>
           </div>
@@ -739,7 +739,7 @@ export default function DeliverySettingsPage() {
                   <div className="space-y-0.5">
                     <Label htmlFor="freeDelivery" className="text-sm font-medium">Taxa Gratuita</Label>
                     <p className="text-sm text-muted-foreground">
-                      Ative para oferecer taxa gratuita a partir de um valor minimo
+                      Ative para oferecer taxa gratuita a partir de um valor mínimo
                     </p>
                   </div>
                 </div>
@@ -764,7 +764,7 @@ export default function DeliverySettingsPage() {
                 <div className="space-y-1.5">
                   <Label htmlFor="freeDeliveryThreshold" className="text-sm font-medium flex items-center gap-2">
                     <Package className="w-3.5 h-3.5" />
-                    Valor Minimo para Taxa Gratuita
+                    Valor Mínimo para Taxa Gratuita
                   </Label>
                   <div className="space-y-1.5">
                     <div className="relative">
@@ -797,7 +797,7 @@ export default function DeliverySettingsPage() {
                     )}
                     <p className="text-sm text-muted-foreground flex items-center gap-1">
                       <Info className="w-3.5 h-3.5 flex-shrink-0" />
-                      A taxa de entrega sera gratuita quando o valor do pedido for igual ou maior que este valor
+                      A taxa de entrega será gratuita quando o valor do pedido for igual ou maior que este valor
                     </p>
                   </div>
                 </div>

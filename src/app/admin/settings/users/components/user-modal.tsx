@@ -224,7 +224,7 @@ export default function UserModal({
         {/* Body scrollavel */}
         <div className="flex-1 overflow-y-auto bg-[#FAF9F7] px-5 py-5">
           {showDeleteConfirm ? (
-            /* Confirmacao de exclusao */
+            /* Confirmação de exclusão */
             <div className="space-y-4">
               <div className="text-center">
                 <div className="w-12 h-12 bg-white border border-red-400 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -341,7 +341,7 @@ export default function UserModal({
                 {errors.role && <p className="text-xs text-red-500">{errors.role}</p>}
               </div>
 
-              {/* Senhas (apenas para criacao) */}
+              {/* Senhas (apenas para criação) */}
               {!isEdit && (
                 <>
                   <div className="space-y-1.5">

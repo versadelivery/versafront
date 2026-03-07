@@ -74,7 +74,7 @@ export default function TableConfigModal({
     const newErrors: { [key: string]: string } = {};
 
     if (!formData.number || Number(formData.number) <= 0) {
-      newErrors.number = "Numero da mesa deve ser maior que zero";
+      newErrors.number = "Número da mesa deve ser maior que zero";
     }
 
     if (!formData.capacity || Number(formData.capacity) <= 0) {
@@ -148,7 +148,7 @@ export default function TableConfigModal({
                   {isEdit ? "Editar Mesa" : "Nova Mesa"}
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  {isEdit ? "Atualize as informacoes da mesa" : "Configure uma nova mesa"}
+                  {isEdit ? "Atualize as informações da mesa" : "Configure uma nova mesa"}
                 </p>
               </div>
             </div>
@@ -168,10 +168,10 @@ export default function TableConfigModal({
                 <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
                   <UtensilsCrossed className="w-6 h-6 text-red-600" />
                 </div>
-                <h3 className="font-tomato text-lg font-semibold text-gray-900 mb-2">Confirmar Exclusao</h3>
+                <h3 className="font-tomato text-lg font-semibold text-gray-900 mb-2">Confirmar Exclusão</h3>
                 <p className="text-sm text-gray-600 mb-4">
                   Tem certeza que deseja excluir a <strong>Mesa {table?.attributes.number}</strong>?
-                  Esta acao nao pode ser desfeita.
+                  Esta ação não pode ser desfeita.
                 </p>
               </div>
               <div className="flex gap-3">
@@ -195,7 +195,7 @@ export default function TableConfigModal({
                       Excluindo...
                     </>
                   ) : (
-                    "Confirmar Exclusao"
+                    "Confirmar Exclusão"
                   )}
                 </Button>
               </div>
@@ -204,7 +204,7 @@ export default function TableConfigModal({
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-2">
                 <Label htmlFor="number" className="text-sm font-medium text-foreground">
-                  Numero da mesa
+                  Número da mesa
                 </Label>
                 <Input
                   id="number"
@@ -220,7 +220,7 @@ export default function TableConfigModal({
 
               <div className="space-y-2">
                 <Label htmlFor="label" className="text-sm font-medium text-foreground">
-                  Rotulo (opcional)
+                  Rótulo (opcional)
                 </Label>
                 <Input
                   id="label"
@@ -306,7 +306,7 @@ export default function TableConfigModal({
                       {isEdit ? "Salvando..." : "Criando..."}
                     </>
                   ) : isEdit ? (
-                    "Salvar alteracoes"
+                    "Salvar alterações"
                   ) : (
                     "Criar mesa"
                   )}

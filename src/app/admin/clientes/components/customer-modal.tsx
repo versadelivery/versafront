@@ -54,19 +54,19 @@ export default function CustomerModal({
     const newErrors: { [key: string]: string } = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = "Nome e obrigatorio";
+      newErrors.name = "Nome é obrigatório";
     }
 
     if (!formData.email.trim()) {
-      newErrors.email = "E-mail e obrigatorio";
+      newErrors.email = "E-mail é obrigatório";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "E-mail invalido";
+      newErrors.email = "E-mail inválido";
     }
 
     if (!formData.cellphone.trim()) {
-      newErrors.cellphone = "Celular e obrigatorio";
+      newErrors.cellphone = "Celular é obrigatório";
     } else if (formData.cellphone.replace(/\D/g, "").length < 10) {
-      newErrors.cellphone = "Celular deve ter pelo menos 10 digitos";
+      newErrors.cellphone = "Celular deve ter pelo menos 10 dígitos";
     }
 
     setErrors(newErrors);
@@ -113,7 +113,7 @@ export default function CustomerModal({
             </DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground">
               {isEdit
-                ? "Atualize as informacoes do cliente"
+                ? "Atualize as informações do cliente"
                 : "Preencha os dados para cadastrar um novo cliente"}
             </DialogDescription>
           </div>
@@ -132,7 +132,7 @@ export default function CustomerModal({
                 <Input
                   id="name"
                   type="text"
-                  placeholder="Ex: Joao Silva"
+                  placeholder="Ex: João Silva"
                   value={formData.name}
                   onChange={(e) => handleChange("name", e.target.value)}
                   className={`pl-10 h-10 rounded-md border-[#E5E2DD] bg-white ${
@@ -187,7 +187,7 @@ export default function CustomerModal({
 
             {!isEdit && (
               <p className="text-sm text-muted-foreground">
-                Uma senha temporaria sera gerada automaticamente para o cliente.
+                Uma senha temporária será gerada automaticamente para o cliente.
               </p>
             )}
           </div>

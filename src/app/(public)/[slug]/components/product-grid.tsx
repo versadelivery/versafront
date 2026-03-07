@@ -75,7 +75,7 @@ export default function ProductGrid({ categories, activeCategory, searchQuery, o
           <p className="text-sm mb-6" style={{ color: bgTheme.textMuted }}>
             {searchQuery
               ? `Nenhum resultado para "${searchQuery}".`
-              : 'Nao ha produtos disponiveis no momento.'}
+              : 'Não há produtos disponíveis no momento.'}
           </p>
           {searchQuery && (
             <button

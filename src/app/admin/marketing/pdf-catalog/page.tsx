@@ -103,10 +103,10 @@ export default function PdfCatalogPage() {
               <div className="flex items-center justify-between p-3 border rounded-lg">
                 <div>
                   <Label htmlFor="descriptions" className="font-medium">
-                    Incluir descricoes
+                    Incluir descrições
                   </Label>
                   <p className="text-sm text-muted-foreground">
-                    Adiciona a descricao de cada item no PDF
+                    Adiciona a descrição de cada item no PDF
                   </p>
                 </div>
                 <Switch
