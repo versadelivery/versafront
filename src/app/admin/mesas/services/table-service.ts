@@ -43,6 +43,7 @@ export interface TableSessionAttributes {
   customer_count: number;
   notes: string | null;
   total_amount: string;
+  service_fee_amount: string | null;
   duration_minutes: number;
   table_number: number;
   table_label: string | null;

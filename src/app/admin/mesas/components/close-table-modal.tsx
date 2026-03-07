@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { X, UtensilsCrossed, Loader2, Clock, Users, ShoppingCart, DollarSign } from "lucide-react";
+import { X, UtensilsCrossed, Loader2, Clock, Users, ShoppingCart, DollarSign, Percent } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableSession, CloseTableSessionPayload } from "../services/table-service";
+import { getPaymentMethods } from "@/app/admin/settings/payment/payment-service";
 
 interface CloseTableModalProps {
   isOpen: boolean;
@@ -31,10 +33,22 @@ export default function CloseTableModal({
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const { data: paymentConfig } = useQuery({
+    queryKey: ["payment-methods"],
+    queryFn: getPaymentMethods,
+    enabled: isOpen,
+  });
+
   if (!isOpen || !table || !session) return null;
 
   const sessionAttrs = session.attributes;
   const hasOrders = sessionAttrs.orders && sessionAttrs.orders.length > 0;
+
+  const serviceFeeEnabled = paymentConfig?.data?.attributes?.service_fee_enabled ?? false;
+  const serviceFeePercentage = Number(paymentConfig?.data?.attributes?.service_fee_percentage ?? 0);
+  const subtotal = hasOrders ? Number(sessionAttrs.orders_total) : Number(formData.total_amount || 0);
+  const serviceFeeAmount = serviceFeeEnabled ? (subtotal * serviceFeePercentage / 100) : 0;
+  const totalWithFee = subtotal + serviceFeeAmount;
 
   const formatCurrency = (value: string | number) => {
     return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
@@ -193,12 +207,30 @@ export default function CloseTableModal({
                   </div>
                 ))}
               </div>
-              <div className="flex justify-between items-center mt-3 px-1 py-2 border-t border-[#E5E2DD]">
-                <div className="flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-foreground" />
-                  <span className="text-sm font-semibold">Total</span>
+              <div className="mt-3 px-1 py-2 border-t border-[#E5E2DD] space-y-1">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">Subtotal</span>
+                  </div>
+                  <span className="text-sm font-medium">{formatCurrency(sessionAttrs.orders_total)}</span>
                 </div>
-                <span className="text-lg font-bold text-primary">{formatCurrency(sessionAttrs.orders_total)}</span>
+                {serviceFeeEnabled && (
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <Percent className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Taxa de serviço ({serviceFeePercentage}%)</span>
+                    </div>
+                    <span className="text-sm font-medium">{formatCurrency(serviceFeeAmount)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center pt-1">
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="w-4 h-4 text-foreground" />
+                    <span className="text-sm font-semibold">Total</span>
+                  </div>
+                  <span className="text-lg font-bold text-primary">{formatCurrency(totalWithFee)}</span>
+                </div>
               </div>
             </div>
           )}
@@ -226,6 +258,22 @@ export default function CloseTableModal({
                 </div>
                 {errors.total_amount && (
                   <p className="text-xs text-red-500">{errors.total_amount}</p>
+                )}
+                {serviceFeeEnabled && subtotal > 0 && (
+                  <div className="bg-[#FAF9F7] rounded-md border border-[#E5E2DD] p-3 space-y-1">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">Subtotal</span>
+                      <span className="font-medium">{formatCurrency(subtotal)}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">Taxa de serviço ({serviceFeePercentage}%)</span>
+                      <span className="font-medium">{formatCurrency(serviceFeeAmount)}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm pt-1 border-t border-[#E5E2DD]">
+                      <span className="font-semibold">Total</span>
+                      <span className="font-bold text-primary">{formatCurrency(totalWithFee)}</span>
+                    </div>
+                  </div>
                 )}
               </div>
             )}

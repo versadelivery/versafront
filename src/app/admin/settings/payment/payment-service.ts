@@ -24,6 +24,8 @@ export type ShopPaymentConfig = {
       manual_pix_adjustment_type: AdjustmentType;
       manual_pix_adjustment_value: string;
       manual_pix_value_type: ValueType;
+      service_fee_enabled: boolean;
+      service_fee_percentage: string;
     };
   };
 };

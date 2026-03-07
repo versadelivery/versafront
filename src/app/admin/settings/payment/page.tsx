@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, CreditCard, Wallet, QrCode, ArrowLeft } from "lucide-react";
+import { Loader2, CreditCard, Wallet, QrCode, ArrowLeft, Percent } from "lucide-react";
+import { Label } from "@/components/ui/label";
 import { usePayment } from "./usePayment";
 import { AdjustmentType, ValueType } from "./payment-service";
 import Link from "next/link";
@@ -37,6 +38,7 @@ const adjustmentTypeLabels: Record<AdjustmentType, string> = {
 export default function PaymentSettingsPage() {
   const { paymentMethodsData, isLoading, updatePaymentMethodsMutation, isUpdating } = usePayment();
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [serviceFee, setServiceFee] = useState({ enabled: false, percentage: "10" });
 
   useEffect(() => {
     if (paymentMethodsData) {
@@ -83,6 +85,10 @@ export default function PaymentSettingsPage() {
           valueType: attrs.manual_pix_value_type || "fixed"
         }
       ]);
+      setServiceFee({
+        enabled: attrs.service_fee_enabled ?? false,
+        percentage: attrs.service_fee_percentage ?? "10",
+      });
     }
   }, [paymentMethodsData]);
 
@@ -151,13 +157,22 @@ export default function PaymentSettingsPage() {
           credit_value_type: credit?.valueType || "fixed",
           manual_pix_adjustment_type: pix?.adjustmentType || "none",
           manual_pix_adjustment_value: pix?.adjustmentValue || "0",
-          manual_pix_value_type: pix?.valueType || "fixed"
+          manual_pix_value_type: pix?.valueType || "fixed",
+          service_fee_enabled: serviceFee.enabled,
+          service_fee_percentage: serviceFee.percentage
         }
       }
     });
   };
 
-  const hasChanges = paymentMethodsData && paymentMethods.some(method => {
+  const hasServiceFeeChanges = paymentMethodsData && (() => {
+    const attrs = paymentMethodsData.data.attributes;
+    if (serviceFee.enabled !== (attrs.service_fee_enabled ?? false)) return true;
+    if (String(serviceFee.percentage) !== String(attrs.service_fee_percentage ?? "10")) return true;
+    return false;
+  })();
+
+  const hasChanges = hasServiceFeeChanges || paymentMethodsData && paymentMethods.some(method => {
     const attrKey = idToAttributeKey[method.id as keyof typeof idToAttributeKey];
     const attrs = paymentMethodsData.data.attributes;
     if (method.enabled !== attrs[attrKey]) return true;
@@ -217,6 +232,49 @@ export default function PaymentSettingsPage() {
           </div>
         ) : (
           <div className="space-y-4">
+            {/* Taxa de Servico */}
+            <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+              <div className="px-5 py-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Percent className="w-5 h-5 text-primary" />
+                  <div>
+                    <h3 className="text-base font-semibold text-gray-900">Taxa de Servico</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Aplicada automaticamente ao fechar comandas de mesa
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  checked={serviceFee.enabled}
+                  onCheckedChange={(checked) => setServiceFee(prev => ({ ...prev, enabled: checked }))}
+                  disabled={isUpdating}
+                />
+              </div>
+              {serviceFee.enabled && (
+                <div className="px-5 py-4 border-t border-[#E5E2DD] bg-[#FAF9F7]">
+                  <div className="flex items-center gap-3">
+                    <Label className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                      Percentual
+                    </Label>
+                    <div className="relative w-[120px]">
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.5"
+                        value={serviceFee.percentage}
+                        onChange={(e) => setServiceFee(prev => ({ ...prev, percentage: e.target.value }))}
+                        disabled={isUpdating}
+                        className="rounded-md border-[#E5E2DD] bg-white pr-8"
+                        placeholder="10"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">%</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {paymentMethods.map((method) => (
               <div
                 key={method.id}
