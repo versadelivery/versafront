@@ -12,8 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, Star, MessageSquare } from "lucide-react";
-import AdminHeader from "@/components/admin/catalog-header";
+import { Search, Star, MessageSquare, ArrowLeft } from "lucide-react";
 import { StarRating } from "@/components/star-rating";
 import { useReviews } from "./hooks/use-reviews";
 
@@ -45,14 +44,23 @@ export default function ReviewsPage() {
   };
 
   return (
-    <div className="w-full px-0 sm:px-4 lg:px-6 min-h-screen pb-20">
-      <AdminHeader
-        title="AVALIACOES"
-        description="Veja as avaliacoes dos seus clientes"
-        className="mb-4"
-      />
+    <div className="min-h-screen bg-[#FAF9F7]">
+      <div className="bg-white border-b border-[#E5E2DD]">
+        <div className="max-w-[1920px] mx-auto px-4 sm:px-6">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-4">
+              <a href="/admin/marketing" className="flex items-center gap-1.5 text-muted-foreground hover:text-gray-900 transition-colors">
+                <ArrowLeft className="w-5 h-5" />
+                <span className="text-sm font-medium hidden sm:block">Voltar</span>
+              </a>
+              <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
+              <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900">Avaliações</h1>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <div className="w-full max-w-7xl mx-auto p-0 md:p-4 lg:p-6 bg-white">
+      <div className="max-w-[1920px] mx-auto px-4 sm:px-6 py-6">
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 p-4 md:p-0">
           <Card className="p-4 shadow-none border">

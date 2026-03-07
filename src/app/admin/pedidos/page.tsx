@@ -39,7 +39,6 @@ import { useAdminActionCable, AdminOrderData } from '@/lib/admin-cable';
 import OrderCard from '@/components/admin/order-card';
 import { useRestaurantSounds } from '@/hooks/use-restaurant-sounds';
 import { useShop } from '@/hooks/use-shop';
-import AdminHeader from '@/components/admin/catalog-header';
 import { useRouter } from 'next/navigation';
 // Controle de som foi movido para o Header global da administração
 

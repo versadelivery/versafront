@@ -1,10 +1,9 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import AdminHeader from "@/components/admin/catalog-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { DollarSign, ShoppingCart, Users, Shield } from "lucide-react";
+import { DollarSign, ShoppingCart, Users, Shield, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SalesByPeriodTab from "./components/sales-by-period-tab";
 import MonthlyRevenueTab from "./components/monthly-revenue-tab";
@@ -138,14 +137,23 @@ export default function RelatoriosPage() {
   };
 
   return (
-    <div className="w-full px-0 sm:px-4 lg:px-6 min-h-screen pb-20">
-      <AdminHeader
-        title="RELATÓRIOS"
-        description="Acompanhe o faturamento e as métricas da sua loja"
-        className="mb-4"
-      />
+    <div className="min-h-screen bg-[#FAF9F7]">
+      <div className="bg-white border-b border-[#E5E2DD]">
+        <div className="max-w-[1920px] mx-auto px-4 sm:px-6">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-4">
+              <a href="/admin" className="flex items-center gap-1.5 text-muted-foreground hover:text-gray-900 transition-colors">
+                <ArrowLeft className="w-5 h-5" />
+                <span className="text-sm font-medium hidden sm:block">Voltar</span>
+              </a>
+              <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
+              <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900">Relatórios</h1>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <div className="w-full max-w-7xl mx-auto p-4 space-y-4">
+      <div className="max-w-[1920px] mx-auto px-4 sm:px-6 py-6 space-y-4">
         <div className="flex gap-2 overflow-x-auto">
           {CATEGORIES.map((cat) => {
             const Icon = cat.icon;

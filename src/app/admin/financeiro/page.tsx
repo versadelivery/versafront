@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import AdminHeader from "@/components/admin/catalog-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,6 +12,7 @@ import {
   Calendar,
   CheckCircle,
   Clock,
+  ArrowLeft,
 } from "lucide-react";
 import { useBilling } from "./hooks/useBilling";
 import BillingCard from "./components/billing-card";
@@ -39,7 +39,7 @@ export default function FinanceiroPage() {
 
   if (loading) {
     return (
-      <div className="w-full min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-[#FAF9F7] flex items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-muted-foreground" />
       </div>
     );
@@ -47,7 +47,7 @@ export default function FinanceiroPage() {
 
   if (error) {
     return (
-      <div className="w-full min-h-screen flex flex-col items-center justify-center gap-4">
+      <div className="min-h-screen bg-[#FAF9F7] flex flex-col items-center justify-center gap-4">
         <AlertTriangle className="h-10 w-10 text-red-500" />
         <p className="text-red-500">{error}</p>
       </div>
@@ -55,17 +55,26 @@ export default function FinanceiroPage() {
   }
 
   return (
-    <div className="w-full px-0 sm:px-4 lg:px-6 min-h-screen pb-20">
-      <AdminHeader
-        title="FINANCEIRO"
-        description="Gerencie suas mensalidades e pagamentos"
-        className="mb-4"
-      />
+    <div className="min-h-screen bg-[#FAF9F7]">
+      <div className="bg-white border-b border-[#E5E2DD]">
+        <div className="max-w-[1920px] mx-auto px-4 sm:px-6">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-4">
+              <a href="/admin" className="flex items-center gap-1.5 text-muted-foreground hover:text-gray-900 transition-colors">
+                <ArrowLeft className="w-5 h-5" />
+                <span className="text-sm font-medium hidden sm:block">Voltar</span>
+              </a>
+              <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
+              <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900">Financeiro</h1>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <div className="w-full max-w-7xl mx-auto p-4 space-y-6">
+      <div className="max-w-[1920px] mx-auto px-4 sm:px-6 py-6 space-y-6">
         {/* Alerta de inadimplência */}
         {summary?.is_delinquent && (
-          <Card className="border-red-300 bg-red-50">
+          <Card className="border-red-300">
             <CardContent className="pt-4">
               <div className="flex items-start gap-3">
                 <AlertTriangle className="h-6 w-6 text-red-500 flex-shrink-0" />
@@ -94,7 +103,7 @@ export default function FinanceiroPage() {
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-blue-100">
+                <div className="p-2 rounded-lg">
                   <CreditCard className="h-5 w-5 text-blue-600" />
                 </div>
                 <div>
@@ -108,7 +117,7 @@ export default function FinanceiroPage() {
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-amber-100">
+                <div className="p-2 rounded-lg">
                   <Clock className="h-5 w-5 text-amber-600" />
                 </div>
                 <div>
@@ -124,7 +133,7 @@ export default function FinanceiroPage() {
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-red-100">
+                <div className="p-2 rounded-lg">
                   <AlertTriangle className="h-5 w-5 text-red-600" />
                 </div>
                 <div>
@@ -140,7 +149,7 @@ export default function FinanceiroPage() {
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-green-100">
+                <div className="p-2 rounded-lg">
                   <TrendingUp className="h-5 w-5 text-green-600" />
                 </div>
                 <div>

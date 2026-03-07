@@ -4,8 +4,7 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Map, History } from "lucide-react";
-import AdminHeader from "@/components/admin/catalog-header";
+import { Plus, Map, History, ArrowLeft } from "lucide-react";
 import TableMap from "./components/table-map";
 import TableHistory from "./components/table-history";
 import TableConfigModal from "./components/table-config-modal";
@@ -110,27 +109,36 @@ export default function MesasPage() {
   const availableCount = activeTables.filter((t) => !t.attributes.occupied).length;
 
   return (
-    <div className="w-full px-0 sm:px-4 lg:px-6 min-h-screen pb-20">
-      <AdminHeader
-        title="GERENCIAMENTO DE MESAS"
-        description="Configure mesas, abra e feche comandas, e acompanhe o historico"
-        className="mb-4"
-      />
+    <div className="min-h-screen bg-[#FAF9F7]">
+      <div className="bg-white border-b border-[#E5E2DD]">
+        <div className="max-w-[1920px] mx-auto px-4 sm:px-6">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-4">
+              <a href="/admin" className="flex items-center gap-1.5 text-muted-foreground hover:text-gray-900 transition-colors">
+                <ArrowLeft className="w-5 h-5" />
+                <span className="text-sm font-medium hidden sm:block">Voltar</span>
+              </a>
+              <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
+              <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900">Mesas</h1>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <div className="w-full max-w-7xl mx-auto p-0 md:p-4 lg:p-6 bg-white">
+      <div className="max-w-[1920px] mx-auto px-4 sm:px-6 py-6">
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4 mb-6 px-4 md:px-0">
           <Card className="p-4 text-center shadow-none border">
             <p className="text-2xl font-bold text-foreground">{tables.length}</p>
             <p className="text-sm text-muted-foreground">Total de mesas</p>
           </Card>
-          <Card className="p-4 text-center shadow-none border border-emerald-200 bg-emerald-50">
+          <Card className="p-4 text-center shadow-none border">
             <p className="text-2xl font-bold text-emerald-700">{availableCount}</p>
-            <p className="text-sm text-emerald-600">Disponiveis</p>
+            <p className="text-sm text-muted-foreground">Disponiveis</p>
           </Card>
-          <Card className="p-4 text-center shadow-none border border-red-200 bg-red-50">
+          <Card className="p-4 text-center shadow-none border">
             <p className="text-2xl font-bold text-red-700">{occupiedCount}</p>
-            <p className="text-sm text-red-600">Ocupadas</p>
+            <p className="text-sm text-muted-foreground">Ocupadas</p>
           </Card>
         </div>
 

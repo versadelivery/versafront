@@ -5,14 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { History, TrendingUp, CreditCard } from "lucide-react";
+import { History, TrendingUp, CreditCard, ArrowLeft } from "lucide-react";
 import { closeCashRegister, createManualEntry, listCashRegisters, openCashRegister } from "@/services/cash-register-service";
 
 export default function CaixaPage() {
   const [openingValue, setOpeningValue] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  
+
   // Estados para moedas
   const [coins, setCoins] = useState({
     "0.01": "0",
@@ -43,7 +43,6 @@ export default function CaixaPage() {
         setIsOpen(hasOpen);
       } catch (e) {
         console.error('Erro ao carregar status do caixa:', e);
-        // Mantém o estado padrão (fechado) em caso de erro
       }
     };
     loadStatus();
@@ -60,7 +59,7 @@ export default function CaixaPage() {
         description: "Abertura de caixa",
       });
       setIsOpen(true);
-      setOpeningValue(""); // Limpa o campo após sucesso
+      setOpeningValue("");
       window.alert("Caixa aberto com sucesso");
     } catch (err: any) {
       console.error('Erro ao abrir caixa:', err);
@@ -113,19 +112,32 @@ export default function CaixaPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="font-tomato text-3xl font-bold text-gray-900">Controle de caixa</h1>
-          <Badge 
-            variant={isOpen ? "default" : "destructive"}
-            className="mt-2 text-sm"
-          >
-            {isOpen ? "Aberto" : "Fechado"}
-          </Badge>
+    <div className="min-h-screen bg-[#FAF9F7]">
+      <div className="bg-white border-b border-[#E5E2DD]">
+        <div className="max-w-[1920px] mx-auto px-4 sm:px-6">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-4">
+              <a href="/admin" className="flex items-center gap-1.5 text-muted-foreground hover:text-gray-900 transition-colors">
+                <ArrowLeft className="w-5 h-5" />
+                <span className="text-sm font-medium hidden sm:block">Voltar</span>
+              </a>
+              <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
+              <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900">Controle de Caixa</h1>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge
+                variant={isOpen ? "default" : "destructive"}
+                className="text-sm"
+              >
+                {isOpen ? "Aberto" : "Fechado"}
+              </Badge>
+            </div>
+          </div>
         </div>
-        
-        <div className="flex gap-3">
+      </div>
+
+      <div className="max-w-[1920px] mx-auto px-4 sm:px-6 py-6">
+        <div className="flex gap-3 mb-6">
           <Button variant="outline" className="flex items-center gap-2">
             <History className="w-4 h-4" />
             Histórico
@@ -139,109 +151,111 @@ export default function CaixaPage() {
             Contas a pagar
           </Button>
         </div>
+
+        <div className="max-w-4xl space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-tomato">Valor de abertura</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-4 items-end max-w-sm">
+                <div className="flex-1">
+                  <Input
+                    type="number"
+                    placeholder="Digite o valor"
+                    value={openingValue}
+                    onChange={(e) => setOpeningValue(e.target.value)}
+                    className="text-lg"
+                    step="0.01"
+                    min="0"
+                    disabled={isOpen || loading}
+                  />
+                </div>
+                {!isOpen ? (
+                  <Button
+                    onClick={handleOpenCash}
+                    disabled={!openingValue || parseFloat(openingValue) <= 0 || loading}
+                    className="bg-primary hover:bg-primary/80"
+                  >
+                    {loading ? "Abrindo..." : "Abrir"}
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleCloseCash}
+                    disabled={loading}
+                    variant="destructive"
+                  >
+                    {loading ? "Fechando..." : "Fechar"}
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-tomato text-md">
+                Opcional: informe a quantidade de moedas e cédulas para calcular o caixa
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Seção de Moedas */}
+                <div>
+                  <h3 className="font-tomato text-lg font-semibold mb-4 text-gray-700">Moedas</h3>
+                  <div className="space-y-3">
+                    {Object.entries(coins).map(([denomination, quantity]) => (
+                      <div key={denomination} className="flex items-center justify-between">
+                        <Badge variant="secondary" className="text-sm">
+                          R$ {denomination}
+                        </Badge>
+                        <Input
+                          type="number"
+                          value={quantity}
+                          onChange={(e) => handleCoinChange(denomination, e.target.value)}
+                          className="w-20 text-center"
+                          min="0"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Seção de Cédulas */}
+                <div>
+                  <h3 className="font-tomato text-lg font-semibold mb-4 text-gray-700">Cédulas</h3>
+                  <div className="space-y-3">
+                    {Object.entries(bills).map(([denomination, quantity]) => (
+                      <div key={denomination} className="flex items-center justify-between">
+                        <Badge variant="secondary" className="text-sm">
+                          R$ {denomination}
+                        </Badge>
+                        <Input
+                          type="number"
+                          value={quantity}
+                          onChange={(e) => handleBillChange(denomination, e.target.value)}
+                          className="w-20 text-center"
+                          min="0"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Total calculado */}
+              <div className="mt-8 pt-6 border-t border-gray-200">
+                <div className="text-center">
+                  <p className="text-sm text-gray-600 mb-2">Total calculado:</p>
+                  <p className="text-2xl font-bold text-green-600">
+                    R$ {calculateTotal()}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-
-      <Card className="mb-8 w-1/3">
-        <CardHeader>
-          <CardTitle className="font-tomato">Valor de abertura</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-4 items-end">
-            <div className="flex-1">
-              <Input
-                type="number"
-                placeholder="Digite o valor"
-                value={openingValue}
-                onChange={(e) => setOpeningValue(e.target.value)}
-                className="text-lg"
-                step="0.01"
-                min="0"
-                disabled={isOpen || loading}
-              />
-            </div>
-            {!isOpen ? (
-              <Button 
-                onClick={handleOpenCash}
-                disabled={!openingValue || parseFloat(openingValue) <= 0 || loading}
-                className="bg-primary hover:bg-primary/80"
-              >
-                {loading ? "Abrindo..." : "Abrir"}
-              </Button>
-            ) : (
-              <Button 
-                onClick={handleCloseCash}
-                disabled={loading}
-                variant="destructive"
-              >
-                {loading ? "Fechando..." : "Fechar"}
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="font-tomato text-md">
-            Opcional: informe a quantidade de moedas e cédulas para calcular o caixa
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Seção de Moedas */}
-            <div>
-              <h3 className="font-tomato text-lg font-semibold mb-4 text-gray-700">Moedas</h3>
-              <div className="space-y-3">
-                {Object.entries(coins).map(([denomination, quantity]) => (
-                  <div key={denomination} className="flex items-center justify-between">
-                    <Badge variant="secondary" className="text-sm">
-                      R$ {denomination}
-                    </Badge>
-                    <Input
-                      type="number"
-                      value={quantity}
-                      onChange={(e) => handleCoinChange(denomination, e.target.value)}
-                      className="w-20 text-center"
-                      min="0"
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Seção de Cédulas */}
-            <div>
-              <h3 className="font-tomato text-lg font-semibold mb-4 text-gray-700">Cédulas</h3>
-              <div className="space-y-3">
-                {Object.entries(bills).map(([denomination, quantity]) => (
-                  <div key={denomination} className="flex items-center justify-between">
-                    <Badge variant="secondary" className="text-sm">
-                      R$ {denomination}
-                    </Badge>
-                    <Input
-                      type="number"
-                      value={quantity}
-                      onChange={(e) => handleBillChange(denomination, e.target.value)}
-                      className="w-20 text-center"
-                      min="0"
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Total calculado */}
-          <div className="mt-8 pt-6 border-t border-gray-200">
-            <div className="text-center">
-              <p className="text-sm text-gray-600 mb-2">Total calculado:</p>
-              <p className="text-2xl font-bold text-green-600">
-                R$ {calculateTotal()}
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

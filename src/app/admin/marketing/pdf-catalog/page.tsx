@@ -5,8 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { FileText, Download, Loader2 } from "lucide-react";
-import AdminHeader from "@/components/admin/catalog-header";
+import { FileText, Download, Loader2, ArrowLeft } from "lucide-react";
 import { useShop } from "@/hooks/use-shop";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/api/config";
@@ -63,14 +62,23 @@ export default function PdfCatalogPage() {
     }, 0) || 0;
 
   return (
-    <div className="w-full px-0 sm:px-4 lg:px-6 min-h-screen pb-20">
-      <AdminHeader
-        title="CARDAPIO EM PDF"
-        description="Exporte seu catalogo completo como PDF profissional"
-        className="mb-4"
-      />
+    <div className="min-h-screen bg-[#FAF9F7]">
+      <div className="bg-white border-b border-[#E5E2DD]">
+        <div className="max-w-[1920px] mx-auto px-4 sm:px-6">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-4">
+              <a href="/admin/marketing" className="flex items-center gap-1.5 text-muted-foreground hover:text-gray-900 transition-colors">
+                <ArrowLeft className="w-5 h-5" />
+                <span className="text-sm font-medium hidden sm:block">Voltar</span>
+              </a>
+              <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
+              <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900">Cardápio em PDF</h1>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <div className="w-full max-w-3xl mx-auto p-0 md:p-4 lg:p-6">
+      <div className="max-w-[1920px] mx-auto px-4 sm:px-6 py-6">
         <Card className="p-6 md:p-8 shadow-none border rounded-xs bg-white">
           <div className="flex flex-col gap-6">
             {/* Preview info */}

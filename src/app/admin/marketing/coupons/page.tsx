@@ -13,8 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Ticket, Search, Edit, Trash2, Plus } from "lucide-react";
-import AdminHeader from "@/components/admin/catalog-header";
+import { Ticket, Search, Edit, Trash2, Plus, ArrowLeft } from "lucide-react";
 import CouponModal from "./components/coupon-modal";
 import { useCoupons } from "./hooks/use-coupons";
 import { Coupon } from "./services/coupon-service";
@@ -120,14 +119,23 @@ export default function CouponsPage() {
   };
 
   return (
-    <div className="w-full px-0 sm:px-4 lg:px-6 min-h-screen pb-20">
-      <AdminHeader
-        title="CUPONS DE DESCONTO"
-        description="Crie e gerencie cupons promocionais para seus clientes"
-        className="mb-4"
-      />
+    <div className="min-h-screen bg-[#FAF9F7]">
+      <div className="bg-white border-b border-[#E5E2DD]">
+        <div className="max-w-[1920px] mx-auto px-4 sm:px-6">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-4">
+              <a href="/admin/marketing" className="flex items-center gap-1.5 text-muted-foreground hover:text-gray-900 transition-colors">
+                <ArrowLeft className="w-5 h-5" />
+                <span className="text-sm font-medium hidden sm:block">Voltar</span>
+              </a>
+              <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
+              <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900">Cupons de Desconto</h1>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <div className="w-full max-w-7xl mx-auto p-0 md:p-4 lg:p-6 bg-white">
+      <div className="max-w-[1920px] mx-auto px-4 sm:px-6 py-6">
         <Card className="p-4 md:p-6 shadow-none border-none rounded-xs bg-white">
           {/* Header da tabela */}
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mb-6">
