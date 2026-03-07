@@ -29,7 +29,7 @@ const CallToAction = () => {
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link href="/login">
-                <button className="bg-[#1B1B1B] flex flex-row items-center justify-center gap-2 hover:bg-black text-white text-base font-medium px-14 py-5 rounded-2xl transition-colors cursor-pointer">
+                <button className="flex flex-row items-center justify-center gap2 bg-[#1B1B1B] hover:bg-[#c0fea4] text-white hover:text-black text-xl font-semibold px-16 py-6 rounded-2xl transition-colors cursor-pointer">
                   Comece agora
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                 </button>
