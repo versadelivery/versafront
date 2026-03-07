@@ -107,6 +107,7 @@ export default function CheckoutPage() {
   const [couponLoading, setCouponLoading] = useState(false)
   const [couponDiscount, setCouponDiscount] = useState(0)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [orderCompleted, setOrderCompleted] = useState(false)
 
   const phoneValidationRegex = /^\(\d{2}\) \d{4,5}-\d{4}$/
 
@@ -494,6 +495,7 @@ export default function CheckoutPage() {
       const orderId = response.order_id
       setOrder(response)
       toast.success("Pedido realizado com sucesso!")
+      setOrderCompleted(true)
       clearCart()
       const customerPhone = guestPhone.replace(/\D/g, '')
       localStorage.setItem('customer_info', JSON.stringify({ name: guestName.trim(), phone: customerPhone }))
@@ -568,6 +570,23 @@ export default function CheckoutPage() {
 
   if (isLoadingShop || isLoading) {
     return <PublicLoading />
+  }
+
+  if (orderCompleted) {
+    return (
+      <div className="min-h-screen bg-[#FAF9F7] flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto">
+            <CheckCircle2 className="h-8 w-8 text-[#009246]" />
+          </div>
+          <div>
+            <h3 className="font-tomato font-semibold text-gray-900">Pedido realizado!</h3>
+            <p className="text-sm text-muted-foreground mt-1">Redirecionando para os detalhes...</p>
+          </div>
+          <Loader2 className="h-5 w-5 animate-spin text-[#009246] mx-auto" />
+        </div>
+      </div>
+    )
   }
 
   if (cartItems.length === 0) {
