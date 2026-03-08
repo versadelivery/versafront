@@ -8,11 +8,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import Image from "next/image";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Camera, Loader2, Plus, Trash2 } from "lucide-react";
+import { Camera, Loader2, Plus, Trash2, Egg } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCatalogGroup, useCatalogItem } from "@/hooks/useCatalogGroup";
 import { useCatalogComplement } from "@/hooks/useCatalogComplement";
+import { useIngredient } from "@/hooks/useIngredient";
 import { Checkbox } from "@/components/ui/checkbox";
 
 import { updateCatalogItem } from "@/api/requests/catalog_item/requests";
@@ -131,7 +132,9 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
   const { complementGroups } = useCatalogComplement();
   const [selectedComplements, setSelectedComplements] = useState<string[]>([]);
 
-
+  // Estados - Ingredientes
+  const { ingredients } = useIngredient();
+  const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
 
   // Estados - UI
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -267,6 +270,12 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
         setSelectedComplements([]);
       }
 
+      // Ingredientes
+      if (item.ingredients) {
+        setSelectedIngredients(item.ingredients.map((i: any) => i.id.toString()));
+      } else {
+        setSelectedIngredients([]);
+      }
 
       // Registra estado original para detectar desativações com dados salvos
       originalHasExtras.current = item.extra?.data?.length > 0;
@@ -560,6 +569,14 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
         formData.append('catalog_complement_group_ids[]', id);
       });
 
+      // Ingredientes
+      if (selectedIngredients.length > 0) {
+        selectedIngredients.forEach((id) => {
+          formData.append('ingredient_ids[]', id);
+        });
+      } else {
+        formData.append('ingredient_ids[]', '');
+      }
 
       // Extras
       if (hasExtras) {
@@ -950,6 +967,59 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
                       </span>
                       <Checkbox
                         id={`comp-edit-${group.id}`}
+                        checked={isSelected}
+                        className="pointer-events-none"
+                      />
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <hr className="border-gray-100" />
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Egg className="h-4 w-4 text-primary" />
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Ingredientes</p>
+            </div>
+            {ingredients.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhum ingrediente cadastrado. Cadastre na aba Ingredientes.</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {ingredients.map((ingredient: any) => {
+                  const isSelected = selectedIngredients.includes(ingredient.id.toString());
+                  const isOutOfStock = !ingredient.attributes.in_stock;
+                  return (
+                    <button
+                      key={ingredient.id}
+                      type="button"
+                      onClick={() => {
+                        const id = ingredient.id.toString();
+                        if (isSelected) {
+                          setSelectedIngredients(selectedIngredients.filter((i: string) => i !== id));
+                        } else {
+                          setSelectedIngredients([...selectedIngredients, id]);
+                        }
+                      }}
+                      className={`flex items-center justify-between w-full p-3 rounded-lg border-2 transition-all cursor-pointer ${
+                        isSelected
+                          ? isOutOfStock ? 'border-destructive shadow-sm' : 'border-primary shadow-sm'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className={`text-sm font-medium ${isSelected ? (isOutOfStock ? 'text-destructive' : 'text-primary') : 'text-foreground'}`}>
+                          {ingredient.attributes.name}
+                        </span>
+                        {isOutOfStock && (
+                          <span className="bg-destructive/10 text-destructive text-[10px] font-bold px-1.5 py-0.5 rounded">
+                            SEM ESTOQUE
+                          </span>
+                        )}
+                      </div>
+                      <Checkbox
+                        id={`ing-edit-${ingredient.id}`}
                         checked={isSelected}
                         className="pointer-events-none"
                       />

@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { DeleteConfirmation } from "@/components/ui/delete-confirmation";
 import { ComplementManagement } from "@/components/admin/catalog/complement-management";
+import { IngredientManagement } from "@/components/admin/catalog/ingredient-management";
 import {
   DndContext,
   closestCenter,
@@ -87,7 +88,7 @@ function CatalogPage() {
   const [editingGroup, setEditingGroup] = useState<string | null>(null);
   const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] = useState(false);
   const [groupIdToDelete, setGroupIdToDelete] = useState<string | null>(null);
-  const [tab, setTab] = useState<"catalog" | "complements">("catalog");
+  const [tab, setTab] = useState<"catalog" | "complements" | "ingredients">("catalog");
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<CatalogFiltersState>(DEFAULT_FILTERS);
 
@@ -192,6 +193,7 @@ function CatalogPage() {
     best_seller_tag: !!(node.attributes as any).best_seller_tag,
     highlight: !!(node.attributes as any).highlight,
     promotion_tag: !!(node.attributes as any).promotion_tag,
+    has_out_of_stock_ingredient: !!(node.attributes as any).has_out_of_stock_ingredient,
     catalog_item_extras_attributes: node.attributes.extra?.data as unknown as any[],
     catalog_item_prepare_methods_attributes: node.attributes.prepare_method?.data as unknown as any[],
     catalog_item_steps_attributes: node.attributes.steps?.data as unknown as any[],
@@ -308,6 +310,16 @@ function CatalogPage() {
                   }`}
                 >
                   Adicionais
+                </button>
+                <button
+                  onClick={() => setTab("ingredients")}
+                  className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all cursor-pointer ${
+                    tab === "ingredients"
+                      ? "bg-white text-primary border border-[#E5E2DD]"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Ingredientes
                 </button>
               </div>
             </div>
@@ -452,8 +464,10 @@ function CatalogPage() {
                 </DndContext>
               )}
             </>
-          ) : (
+          ) : tab === "complements" ? (
             <ComplementManagement />
+          ) : (
+            <IngredientManagement />
           )}
         </div>
 

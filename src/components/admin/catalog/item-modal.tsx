@@ -8,10 +8,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import Image from "next/image";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Camera, Loader2, Plus, Trash2, Boxes } from "lucide-react";
+import { Camera, Loader2, Plus, Trash2, Boxes, Egg } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useCatalogGroup } from "@/hooks/useCatalogGroup";
 import { useCatalogComplement } from "@/hooks/useCatalogComplement";
+import { useIngredient } from "@/hooks/useIngredient";
 import { Checkbox } from "@/components/ui/checkbox";
 
 
@@ -119,7 +120,9 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
   const { complementGroups } = useCatalogComplement();
   const [selectedComplements, setSelectedComplements] = useState<string[]>([]);
 
-
+  // Estados - Ingredientes
+  const { ingredients } = useIngredient();
+  const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
 
   // Estados - Erros e UI
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -187,6 +190,8 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
     setPromotionTag(false);
     setActiveDays(DEFAULT_ACTIVE_DAYS);
     setActive(true);
+    setSelectedComplements([]);
+    setSelectedIngredients([]);
 
     setErrors({});
     formDirtyRef.current = false;
@@ -466,7 +471,10 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
       formData.append('catalog_complement_group_ids[]', id);
     });
 
-
+    // Ingredientes
+    selectedIngredients.forEach((id) => {
+      formData.append('ingredient_ids[]', id);
+    });
 
     // Extras - filtrar apenas os que têm nome preenchido
     if (hasExtras) {
@@ -815,6 +823,58 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
                       </span>
                       <Checkbox
                         id={`comp-${group.id}`}
+                        checked={isSelected}
+                        className="pointer-events-none"
+                      />
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <hr className="border-gray-100" />
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Egg className="h-4 w-4 text-primary" />
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Ingredientes</p>
+            </div>
+            {ingredients.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhum ingrediente cadastrado. Cadastre na aba Ingredientes.</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {ingredients.map((ingredient: any) => {
+                  const isSelected = selectedIngredients.includes(ingredient.id);
+                  const isOutOfStock = !ingredient.attributes.in_stock;
+                  return (
+                    <button
+                      key={ingredient.id}
+                      type="button"
+                      onClick={() => {
+                        if (isSelected) {
+                          setSelectedIngredients(selectedIngredients.filter((id: string) => id !== ingredient.id));
+                        } else {
+                          setSelectedIngredients([...selectedIngredients, ingredient.id]);
+                        }
+                      }}
+                      className={`flex items-center justify-between w-full p-3 rounded-lg border-2 transition-all cursor-pointer ${
+                        isSelected
+                          ? isOutOfStock ? 'border-destructive shadow-sm' : 'border-primary shadow-sm'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className={`text-sm font-medium ${isSelected ? (isOutOfStock ? 'text-destructive' : 'text-primary') : 'text-foreground'}`}>
+                          {ingredient.attributes.name}
+                        </span>
+                        {isOutOfStock && (
+                          <span className="bg-destructive/10 text-destructive text-[10px] font-bold px-1.5 py-0.5 rounded">
+                            SEM ESTOQUE
+                          </span>
+                        )}
+                      </div>
+                      <Checkbox
+                        id={`ing-${ingredient.id}`}
                         checked={isSelected}
                         className="pointer-events-none"
                       />

@@ -1,6 +1,6 @@
 "use client"
 
-import { memo, useMemo } from 'react';
+import React, { memo, useMemo } from 'react';
 import { Utensils } from 'lucide-react';
 import { formatPrice } from '../format-price';
 import { CatalogItem } from '../types';
@@ -61,14 +61,19 @@ const ProductCard = memo(function ProductCard({ item, index, layout = 'grid', gr
   const hasCustomization = hasComplements || attributes.extra?.data?.length > 0 || attributes.steps?.data?.length > 0;
 
   const cardBg = groupColor || '#FFFFFF';
+  const isUnavailable = !!attributes.has_out_of_stock_ingredient;
+
+  const wrapWithModal = (content: React.ReactNode) => {
+    if (isUnavailable) {
+      return <>{content}</>;
+    }
+    return <ProductModal product={item} trigger={content} />;
+  };
 
   if (layout === 'list') {
-    return (
-      <ProductModal
-        product={item}
-        trigger={
+    return wrapWithModal(
           <div
-            className="group relative rounded-md hover:shadow-sm transition-all duration-200 cursor-pointer flex flex-row h-auto overflow-hidden"
+            className={`group relative rounded-md hover:shadow-sm transition-all duration-200 flex flex-row h-auto overflow-hidden ${isUnavailable ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
             style={{
               backgroundColor: cardBg,
               border: `1px solid ${theme.border}`,
@@ -133,19 +138,19 @@ const ProductCard = memo(function ProductCard({ item, index, layout = 'grid', gr
               <Tags attributes={attributes} />
               <DiscountBadge attributes={attributes} hasDiscount={hasDiscount} />
             </div>
+            {isUnavailable && (
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-20">
+                <span className="bg-white/95 text-foreground text-xs font-bold px-3 py-1.5 rounded-md">Indisponível</span>
+              </div>
+            )}
           </div>
-        }
-      />
     );
   }
 
   // Grid layout
-  return (
-    <ProductModal
-      product={item}
-      trigger={
+  return wrapWithModal(
         <div
-          className="group relative rounded-md hover:shadow-sm transition-all duration-200 cursor-pointer flex flex-col h-full overflow-hidden"
+          className={`group relative rounded-md hover:shadow-sm transition-all duration-200 flex flex-col h-full overflow-hidden ${isUnavailable ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
           style={{
             backgroundColor: cardBg,
             border: `1px solid ${theme.border}`,
@@ -211,9 +216,12 @@ const ProductCard = memo(function ProductCard({ item, index, layout = 'grid', gr
               )}
             </div>
           </div>
+          {isUnavailable && (
+            <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-20 rounded-md">
+              <span className="bg-white/95 text-foreground text-xs font-bold px-3 py-1.5 rounded-md">Indisponível</span>
+            </div>
+          )}
         </div>
-      }
-    />
   );
 });
 

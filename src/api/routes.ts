@@ -11,6 +11,9 @@ export const API_ENDPOINTS = {
   CATALOG: "/catalog_groups",
   CATALOG_ITEMS: "/catalog_items",
 
+  // Ingredients
+  INGREDIENTS: "/ingredients",
+
   // Orders
   ORDERS: "/orders",
   ADMIN_ORDERS: "/orders",

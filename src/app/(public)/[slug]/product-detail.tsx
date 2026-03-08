@@ -174,6 +174,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
   const [selectedSharedComplements, setSelectedSharedComplements] = useState<string[]>([]);
 
   const { attributes } = product;
+  const isUnavailable = !!attributes.has_out_of_stock_ingredient;
   const isWeightBased = attributes.item_type === "weight_per_kg" || attributes.item_type === "weight_per_g";
   const isGrams = attributes.item_type === "weight_per_g";
   const hasDiscount = !!attributes.price_with_discount &&
@@ -265,6 +266,15 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
 
         {/* ── Scrollable area (image + info + options) ── */}
         <div className="flex-1 overflow-y-auto">
+
+          {isUnavailable && (
+            <div className="bg-destructive/10 border-b border-destructive/20 px-4 py-3 flex items-center gap-2">
+              <Info className="h-4 w-4 text-destructive shrink-0" />
+              <p className="text-sm text-destructive font-medium">
+                Este item está temporariamente indisponível devido a um ingrediente em falta.
+              </p>
+            </div>
+          )}
 
           {/* Hero image */}
           <div className="relative w-full aspect-[4/3] bg-gray-100">
@@ -539,9 +549,14 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
             {/* Add to cart button */}
             <button
               onClick={handleAddToCart}
-              className="flex-1 h-12 bg-primary hover:bg-primary/90 text-white font-bold text-base rounded-full transition-colors flex items-center justify-center gap-2"
+              disabled={isUnavailable}
+              className={`flex-1 h-12 font-bold text-base rounded-full transition-colors flex items-center justify-center gap-2 ${
+                isUnavailable
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-primary hover:bg-primary/90 text-white'
+              }`}
             >
-              Adicionar {formatPrice(calculatedPrice)}
+              {isUnavailable ? 'Indisponível' : `Adicionar ${formatPrice(calculatedPrice)}`}
             </button>
           </div>
         </div>

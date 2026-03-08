@@ -33,6 +33,7 @@ interface ItemCardProps {
     highlight?: boolean;
     promotion_tag?: boolean;
     active: boolean;
+    has_out_of_stock_ingredient?: boolean;
     catalog_item_extras_attributes?: any[];
     catalog_item_prepare_methods_attributes?: any[];
     catalog_item_steps_attributes?: any[];
@@ -223,6 +224,13 @@ export function ItemCard({ item }: ItemCardProps) {
                   : getWeightUnit()
                 }
               </span>
+            </div>
+          )}
+
+          {/* Ingrediente indisponível */}
+          {item.has_out_of_stock_ingredient && (
+            <div className="flex items-center gap-1 mt-1">
+              <span className="bg-destructive text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md">INGREDIENTE INDISPONÍVEL</span>
             </div>
           )}
 
