@@ -64,7 +64,7 @@ const Header = () => {
               Conectar-se
             </button>
           </Link>
-          <Link href="/login">
+          <Link href="/register">
             <button className="bg-[#1B1B1B] hover:bg-[#7ED957] text-white text-[15px] font-semibold px-4 lg:px-6 py-2.5 rounded-xl transition-colors cursor-pointer whitespace-nowrap">
               Comece agora
             </button>
@@ -104,7 +104,7 @@ const Header = () => {
                     Conectar-se
                   </button>
                 </Link>
-                <Link href="/login" onClick={closeMenu} className="block">
+                <Link href="/register" onClick={closeMenu} className="block">
                   <button className="w-full bg-[#1B1B1B] hover:bg-[#7ED957] text-white text-base font-semibold py-3 rounded-xl transition-colors cursor-pointer">
                     Comece agora
                   </button>
