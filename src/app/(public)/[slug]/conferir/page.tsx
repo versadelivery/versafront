@@ -56,7 +56,7 @@ function OrderSuccessScreen() {
         transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.1 }}
         className="mb-8"
       >
-        <div className="w-24 h-24 rounded-full bg-primary flex items-center justify-center">
+        <div className="w-24 h-24 rounded-full bg-[#7ED957] flex items-center justify-center">
           <CheckCircle2 className="w-12 h-12 text-white" />
         </div>
       </motion.div>
