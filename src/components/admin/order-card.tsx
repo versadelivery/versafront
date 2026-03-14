@@ -25,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { usePrepTimer } from '@/hooks/use-prep-timer';
 import { cn } from '@/lib/utils';
 import { formatPrice } from '@/app/(public)/[slug]/format-price';
@@ -359,13 +360,20 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
               </>
             )}
           </div>
-          <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded border",
-            order.paymentStatus === 'pending'
-              ? 'text-red-600 bg-white border-red-200'
-              : 'text-green-600 bg-white border-green-200'
-          )}>
-            {order.paymentStatus === 'pending' ? 'Aguardando' : 'Pago'}
-          </span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className={cn("text-[10px] font-semibold underline underline-offset-2 cursor-default",
+                order.paymentStatus === 'pending'
+                  ? 'text-red-600 decoration-red-600'
+                  : 'text-green-600 decoration-green-600'
+              )}>
+                {order.paymentStatus === 'pending' ? 'Aguardando' : 'Pago'}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="bg-gray-800 text-white [&>svg]:fill-gray-800 [&>svg]:bg-gray-800">
+              {order.paymentStatus === 'pending' ? 'Aguardando pagamento' : 'O pedido foi pago'}
+            </TooltipContent>
+          </Tooltip>
         </div>
 
         {/* ── Cliente ── */}
@@ -603,16 +611,8 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
           {/* Botão principal: avançar para o próximo status do fluxo */}
           {nextStatus && !isEntregue && !isCancelled && (
             <Button
-              className={cn(
-                "w-full font-semibold rounded-md border border-gray-300 cursor-pointer",
-                isRecebido
-                  ? "bg-white text-black hover:bg-primary/90 hover:text-white"
-                  : nextStatus === 'saiu'
-                    ? "bg-white text-black hover:bg-blue-500 hover:text-white"
-                    : nextStatus === 'entregue'
-                      ? "bg-white text-black hover:bg-green-500 hover:text-white"
-                      : "bg-white text-black hover:bg-primary/90 hover:text-white"
-              )}
+              variant="ghost"
+              className="w-full font-semibold rounded-xl bg-[#1B1B1B] text-white hover:bg-[#7ED957] hover:text-black transition-colors cursor-pointer"
               onClick={() => {
                 if (nextStatus === 'saiu') {
                   handleLeftForDelivery();
@@ -629,8 +629,13 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
           {/* Botão PAGO — disponível enquanto o pedido está em andamento */}
           {!isRecebido && !isEntregue && !isCancelled && (
             <Button
-              variant={order.paymentStatus === 'paid' ? 'default' : 'outline'}
-              className={cn('w-full rounded-md border border-gray-300 cursor-pointer', order.paymentStatus === 'paid' ? 'bg-primary text-white hover:bg-primary/90' : '')}
+              variant="ghost"
+              className={cn(
+                'w-full font-semibold rounded-xl border transition-colors cursor-pointer',
+                order.paymentStatus === 'paid'
+                  ? 'bg-primary text-white border-primary hover:bg-primary/90 hover:text-white'
+                  : 'bg-white text-[#1B1B1B] border-[#1B1B1B] hover:!bg-primary hover:!text-white hover:!border-primary'
+              )}
               onClick={() => onTogglePaymentStatus(order.id)}
             >
               PAGO {order.paymentStatus === 'paid' && <CheckCircle className="w-4 h-4 ml-1" />}
@@ -640,23 +645,22 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
           {/* Botão CANCELAR / RECUSAR */}
           {!isEntregue && !isCancelled && (
             <Button
-              variant="destructive"
-              className="w-full rounded-md border border-gray-300 cursor-pointer"
+              variant="ghost"
+              className="w-full font-semibold rounded-xl bg-red-600 text-white hover:bg-red-700 hover:text-white transition-colors cursor-pointer"
               onClick={handleCancelOrder}
             >
               {isRecebido ? 'RECUSAR' : 'CANCELAR'}
-              <XCircle className="w-4 h-4 mr-2" />
+              <XCircle className="w-4 h-4 ml-1" />
             </Button>
           )}
 
           <Button
-            variant="outline"
-            className="w-full rounded-md text-xs border border-gray-300 cursor-pointer bg-black text-white"
-            size="sm"
+            variant="ghost"
+            className="w-full font-semibold rounded-xl bg-white text-[#1B1B1B] border border-[#1B1B1B] hover:!bg-[#1B1B1B] hover:!text-white transition-colors cursor-pointer"
             onClick={handleOpenOrderDetails}
           >
             DETALHES DO PEDIDO
-            <ArrowRight className="w-3 h-3 ml-1" />
+            <ArrowRight className="w-4 h-4 ml-1" />
           </Button>
         </div>
       </CardContent>
