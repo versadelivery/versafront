@@ -81,7 +81,7 @@ export default function StoreHeader({ shop: initialShop }: StoreHeaderProps) {
       >
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <Link href={`/${attributes.slug}`} className="md:hidden">
+            <Link href={`/${attributes.slug}`} className="md:hidden cursor-pointer">
               <Image
                 src={favicon}
                 alt="Versa"
@@ -91,7 +91,7 @@ export default function StoreHeader({ shop: initialShop }: StoreHeaderProps) {
                 style={isDark ? { filter: 'brightness(0) invert(1)' } : undefined}
               />
             </Link>
-            <Link href={`/${attributes.slug}`} className="hidden md:block">
+            <Link href={`/${attributes.slug}`} className="hidden md:block cursor-pointer">
               <Image
                 src={logoInlineBlack}
                 alt="Versa"
@@ -108,7 +108,7 @@ export default function StoreHeader({ shop: initialShop }: StoreHeaderProps) {
                 <>
                   <Link
                     href="/pedidos"
-                    className="hidden md:flex items-center gap-2 text-sm font-medium transition-colors"
+                    className="hidden md:flex items-center gap-2 text-sm font-medium transition-colors cursor-pointer"
                     style={{ color: mutedColor }}
                   >
                     <Package className="w-5 h-5" />
@@ -116,7 +116,7 @@ export default function StoreHeader({ shop: initialShop }: StoreHeaderProps) {
                   </Link>
                   <Link
                     href="/pedidos"
-                    className="md:hidden flex items-center justify-center h-10 w-10 rounded-md transition-colors"
+                    className="md:hidden flex items-center justify-center h-10 w-10 rounded-md transition-colors cursor-pointer"
                     style={{ borderColor, color: mutedColor, borderWidth: '1px' }}
                   >
                     <Package className="w-5 h-5" />

@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useShop } from "@/hooks/use-shop";
 import { ShopAttributes } from "@/services/shop";
-import Link from "next/link";
 import {
   ArrowLeft,
   Palette,
@@ -21,6 +20,7 @@ import {
   Clock,
   Truck,
   Receipt,
+  Loader2,
 } from "lucide-react";
 
 const COLOR_PRESETS = [
@@ -142,7 +142,7 @@ export default function AppearanceSettingsPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#FAF9F7] flex items-center justify-center">
-        <div className="text-sm text-muted-foreground">Carregando...</div>
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -154,45 +154,24 @@ export default function AppearanceSettingsPage() {
         <div className="max-w-[1920px] mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-4">
-              <Link
+              <a
                 href="/admin/settings"
                 className="flex items-center gap-1.5 text-muted-foreground hover:text-gray-900 transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
                 <span className="text-sm font-medium hidden sm:block">Voltar</span>
-              </Link>
+              </a>
               <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
               <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900">
                 Aparência do Cardápio
               </h1>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                type="button"
-                onClick={handleCancel}
-                className="rounded-md border border-gray-300 cursor-pointer text-sm"
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="button"
-                disabled={!hasChanges || isUpdating}
-                onClick={() => {
-                  const form = document.getElementById("appearance-settings-form") as HTMLFormElement;
-                  form?.requestSubmit();
-                }}
-                className="rounded-md border border-gray-300 cursor-pointer bg-primary text-white hover:bg-primary/90 text-sm"
-              >
-                {isUpdating ? "Salvando..." : "Salvar alterações"}
-              </Button>
             </div>
           </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-[1920px] mx-auto px-4 sm:px-6 py-6">
         <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
           {/* Form - left side */}
           <div className="xl:col-span-3">
@@ -357,7 +336,7 @@ export default function AppearanceSettingsPage() {
                       onClick={() => setFormData((prev) => ({ ...prev, catalog_layout: "list" }))}
                       className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-md border-2 transition-colors cursor-pointer ${
                         formData.catalog_layout === "list"
-                          ? "border-primary bg-primary/5"
+                          ? "border-primary bg-white"
                           : "border-[#E5E2DD] hover:border-gray-300"
                       }`}
                     >
@@ -372,7 +351,7 @@ export default function AppearanceSettingsPage() {
                       onClick={() => setFormData((prev) => ({ ...prev, catalog_layout: "grid" }))}
                       className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-md border-2 transition-colors cursor-pointer ${
                         formData.catalog_layout === "grid"
-                          ? "border-primary bg-primary/5"
+                          ? "border-primary bg-white"
                           : "border-[#E5E2DD] hover:border-gray-300"
                       }`}
                     >
@@ -452,6 +431,28 @@ export default function AppearanceSettingsPage() {
                     </div>
                   )}
                 </div>
+              </div>
+              {/* Botões de ação */}
+              <div className="flex flex-col sm:flex-row justify-end gap-3">
+                <Button
+                  variant="outline"
+                  type="button"
+                  onClick={handleCancel}
+                  className="w-full sm:w-auto h-10 rounded-md border border-gray-300 cursor-pointer hover:bg-[#FAF9F7]"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={!hasChanges || isUpdating}
+                  className="w-full sm:w-auto h-10 rounded-md bg-primary hover:bg-primary/90 text-white border border-gray-300 cursor-pointer text-base font-semibold"
+                >
+                  {isUpdating ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Salvar alterações"
+                  )}
+                </Button>
               </div>
             </form>
           </div>

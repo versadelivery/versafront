@@ -80,7 +80,7 @@ export default function ProductGrid({ categories, activeCategory, searchQuery, o
           {searchQuery && (
             <button
               onClick={onClearSearch}
-              className="px-6 py-2.5 text-sm font-medium rounded-md transition-colors"
+              className="px-6 py-2.5 text-sm font-medium rounded-md transition-colors cursor-pointer"
               style={{
                 backgroundColor: bgTheme.isDark ? '#F9FAFB' : '#111827',
                 color: bgTheme.isDark ? '#111827' : '#FFFFFF',

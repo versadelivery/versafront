@@ -530,7 +530,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
             {!isWeightBased && (
               <div className="flex items-center rounded-full border border-gray-300 overflow-hidden flex-shrink-0">
                 <button
-                  className="h-10 w-10 flex items-center justify-center hover:bg-gray-50 disabled:opacity-30 transition-colors"
+                  className="h-10 w-10 flex items-center justify-center hover:bg-gray-50 disabled:opacity-30 transition-colors cursor-pointer"
                   onClick={() => setQuantity(prev => Math.max(1, prev - 1))}
                   disabled={quantity <= 1}
                 >
@@ -538,7 +538,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
                 </button>
                 <span className="w-8 text-center font-bold text-base text-gray-900">{quantity}</span>
                 <button
-                  className="h-10 w-10 flex items-center justify-center hover:bg-gray-50 transition-colors"
+                  className="h-10 w-10 flex items-center justify-center hover:bg-gray-50 transition-colors cursor-pointer"
                   onClick={() => setQuantity(prev => prev + 1)}
                 >
                   <Plus className="h-4 w-4 text-gray-700" />
@@ -553,7 +553,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
               className={`flex-1 h-12 font-bold text-base rounded-full transition-colors flex items-center justify-center gap-2 ${
                 isUnavailable
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-primary hover:bg-primary/90 text-white'
+                  : 'bg-primary hover:bg-primary/90 text-white cursor-pointer'
               }`}
             >
               {isUnavailable ? 'Indisponível' : `Adicionar ${formatPrice(calculatedPrice)}`}

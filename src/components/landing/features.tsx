@@ -144,7 +144,7 @@ const Features = () => {
               initial={{ opacity: 0, y: 15 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.4, delay: 0.3 + index * 0.05 }}
-              className="bg-white rounded-2xl border-2 border-black p-5 md:p-6 hover:bg-[#c0fea4] hover:border-[#c0fea4] transition-colors duration-200 cursor-default"
+              className="bg-white rounded-2xl border-2 border-black p-5 md:p-6 hover:bg-[#7ED957] hover:border-[#7ED957] transition-colors duration-200 cursor-default"
             >
               <div className="w-10 h-10 rounded-xl bg-[#F9FFF6] flex items-center justify-center mb-3 text-[#009246]">
                 {feature.icon}
@@ -165,8 +165,8 @@ const Features = () => {
           transition={{ duration: 0.5, delay: 0.6 }}
           className="text-center mt-14"
         >
-          <Link href="/login">
-                <button className="bg-[#1B1B1B] hover:bg-[#c0fea4] text-white hover:text-black text-xl font-semibold px-16 py-6 rounded-2xl transition-colors cursor-pointer">
+          <Link href="/register">
+                <button className="bg-[#1B1B1B] hover:bg-[#7ED957] text-white hover:text-black text-xl font-semibold px-16 py-6 rounded-2xl transition-colors cursor-pointer">
                   Comece agora
                 </button>
               </Link>

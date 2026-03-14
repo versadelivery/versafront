@@ -24,7 +24,7 @@ export default function SearchBar({ value, onChange }: SearchBarProps) {
 
       {value && (
         <button
-          className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-900 transition-colors"
+          className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-900 transition-colors cursor-pointer"
           onClick={() => onChange('')}
           aria-label="Limpar busca"
         >

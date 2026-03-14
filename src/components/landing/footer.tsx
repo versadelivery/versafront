@@ -1,32 +1,42 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Phone, Mail } from "lucide-react";
 import logo from "../../../public/logo/logo-inline.svg";
+import { getToken } from "@/lib/auth";
 
 const productLinks = [
-  { name: "Catálogo online", href: "#recursos" },
-  { name: "Gestão de pedidos", href: "#recursos" },
-  { name: "Venda por peso", href: "#recursos" },
-  { name: "Painel admin", href: "#recursos" },
-  { name: "PDV integrado", href: "#recursos" },
+  { name: "Catálogo online", href: "/admin/catalog" },
+  { name: "Gestão de pedidos", href: "/admin/pedidos" },
+  { name: "Painel admin", href: "/admin" },
+  { name: "PDV integrado", href: "/admin/pdv" },
+  { name: "Relatórios", href: "/admin/relatorios" },
 ];
 
 const resourceLinks = [
-  { name: "Central de ajuda", href: "#" },
-  { name: "Blog", href: "#" },
-  { name: "Suporte", href: "#" },
-  { name: "Status da plataforma", href: "#" },
+  { name: "Central de ajuda", href: "/" },
+  { name: "Blog", href: "/" },
+  { name: "Suporte", href: "/" },
+  { name: "Status da plataforma", href: "/" },
 ];
 
 const legalLinks = [
-  { name: "Termos de uso", href: "#termos" },
-  { name: "Privacidade", href: "#privacidade" },
-  { name: "Cookies", href: "#cookies" },
+  { name: "Termos de uso", href: "/" },
+  { name: "Privacidade", href: "/" },
+  { name: "Cookies", href: "/" },
 ];
 
 const Footer = () => {
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    setIsAdmin(!!getToken());
+  }, []);
+
+  if (!isAdmin) return null;
+
   return (
     <footer className="bg-[#1B1B1B] text-white">
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
