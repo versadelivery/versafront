@@ -28,6 +28,117 @@ import Link from 'next/link'
 import PublicLoading from '@/components/public-loading'
 
 type DeliveryOption = 'delivery' | 'pickup'
+
+function OrderSuccessScreen() {
+  const [step, setStep] = useState(0)
+
+  useEffect(() => {
+    const timers = [
+      setTimeout(() => setStep(1), 400),
+      setTimeout(() => setStep(2), 1200),
+      setTimeout(() => setStep(3), 2000),
+    ]
+    return () => timers.forEach(clearTimeout)
+  }, [])
+
+  const steps = [
+    { icon: Package, text: "Preparando seu pedido..." },
+    { icon: CheckCircle2, text: "Pedido confirmado!" },
+    { icon: Truck, text: "Acompanhe em tempo real" },
+  ]
+
+  return (
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center px-6">
+      {/* Ícone principal com animação */}
+      <motion.div
+        initial={{ scale: 0, rotate: -180 }}
+        animate={{ scale: 1, rotate: 0 }}
+        transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.1 }}
+        className="mb-8"
+      >
+        <div className="w-24 h-24 rounded-full bg-primary flex items-center justify-center">
+          <CheckCircle2 className="w-12 h-12 text-white" />
+        </div>
+      </motion.div>
+
+      {/* Título */}
+      <motion.h1
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="font-tomato text-2xl sm:text-3xl font-bold text-[#1B1B1B] text-center mb-2"
+      >
+        Pedido realizado!
+      </motion.h1>
+
+      <motion.p
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+        className="text-gray-500 text-center mb-10"
+      >
+        Tudo certo, estamos cuidando de tudo pra você
+      </motion.p>
+
+      {/* Steps progressivos */}
+      <div className="flex flex-col gap-4 w-full max-w-xs">
+        {steps.map((s, i) => {
+          const Icon = s.icon
+          const isActive = step >= i
+          return (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{
+                opacity: isActive ? 1 : 0.3,
+                x: isActive ? 0 : -20,
+              }}
+              transition={{ delay: 0.4 + i * 0.3, duration: 0.4 }}
+              className="flex items-center gap-3"
+            >
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-colors duration-300 ${
+                isActive ? "bg-[#1B1B1B] text-white" : "bg-gray-100 text-gray-400"
+              }`}>
+                <Icon className="w-5 h-5" />
+              </div>
+              <span className={`text-sm font-medium transition-colors duration-300 ${
+                isActive ? "text-[#1B1B1B]" : "text-gray-400"
+              }`}>
+                {s.text}
+              </span>
+              {isActive && i < steps.length - 1 && (
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="ml-auto"
+                >
+                  <CheckCircle2 className="w-4 h-4 text-primary" />
+                </motion.div>
+              )}
+            </motion.div>
+          )
+        })}
+      </div>
+
+      {/* Barra de progresso */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.6 }}
+        className="w-full max-w-xs mt-8"
+      >
+        <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
+          <motion.div
+            initial={{ width: "0%" }}
+            animate={{ width: "100%" }}
+            transition={{ duration: 2.5, ease: "easeInOut" }}
+            className="h-full bg-primary rounded-full"
+          />
+        </div>
+      </motion.div>
+    </div>
+  )
+}
 type PaymentMethod = 'credit' | 'debit' | 'manual_pix' | 'cash'
 
 interface CartItemWithExtras {
@@ -573,20 +684,7 @@ export default function CheckoutPage() {
   }
 
   if (orderCompleted) {
-    return (
-      <div className="min-h-screen bg-[#FAF9F7] flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto">
-            <CheckCircle2 className="h-8 w-8 text-[#009246]" />
-          </div>
-          <div>
-            <h3 className="font-tomato font-semibold text-gray-900">Pedido realizado!</h3>
-            <p className="text-sm text-muted-foreground mt-1">Redirecionando para os detalhes...</p>
-          </div>
-          <Loader2 className="h-5 w-5 animate-spin text-[#009246] mx-auto" />
-        </div>
-      </div>
-    )
+    return <OrderSuccessScreen />
   }
 
   if (cartItems.length === 0) {
@@ -626,10 +724,10 @@ export default function CheckoutPage() {
               <ChevronLeft className="h-5 w-5" />
               <span className="text-sm font-medium hidden sm:block">Voltar</span>
             </button>
-            <Link href={`/${storeSlug}`} className="md:hidden">
+            <Link href={`/${storeSlug}`} className="md:hidden cursor-pointer">
               <Image src={favicon} alt="Versa" width={90} height={90} priority />
             </Link>
-            <Link href={`/${storeSlug}`} className="hidden md:block">
+            <Link href={`/${storeSlug}`} className="hidden md:block cursor-pointer">
               <Image src={logoInlineBlack} alt="Versa" width={180} height={56} priority />
             </Link>
           </div>

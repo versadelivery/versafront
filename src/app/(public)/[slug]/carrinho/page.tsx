@@ -157,14 +157,14 @@ export default function CartPage() {
       <header className="sticky top-0 z-50 w-full bg-white border-b border-[#E5E2DD]">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center h-16">
-            <Link href={`/${slug}`} className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors mr-auto">
+            <Link href={`/${slug}`} className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors mr-auto cursor-pointer">
               <ArrowLeft className="w-5 h-5" />
               <span className="text-sm font-medium hidden sm:block">Continuar comprando</span>
             </Link>
-            <Link href={`/${slug}`} className="md:hidden">
+            <Link href={`/${slug}`} className="md:hidden cursor-pointer">
               <Image src={favicon} alt="Versa" width={90} height={90} priority />
             </Link>
-            <Link href={`/${slug}`} className="hidden md:block">
+            <Link href={`/${slug}`} className="hidden md:block cursor-pointer">
               <Image src={logoInlineBlack} alt="Versa" width={180} height={56} priority />
             </Link>
           </div>
@@ -187,7 +187,7 @@ export default function CartPage() {
             </p>
             <Link
               href={`/${slug}`}
-              className="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-white font-medium text-sm px-8 py-3.5 rounded-md transition-colors"
+              className="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-white font-medium text-sm px-8 py-3.5 rounded-md transition-colors cursor-pointer"
             >
               <ArrowLeft className="w-4 h-4" />
               Explorar cardápio
@@ -226,7 +226,7 @@ export default function CartPage() {
                             </div>
                             <button
                               onClick={() => removeItem(item.cartId)}
-                              className="text-sm text-red-600 hover:text-red-800 font-medium flex-shrink-0"
+                              className="text-sm text-red-600 hover:text-red-800 font-medium flex-shrink-0 cursor-pointer"
                             >
                               Remover
                             </button>
@@ -292,7 +292,7 @@ export default function CartPage() {
                                 </div>
                                 <button
                                   onClick={() => removeItem(item.cartId)}
-                                  className="text-xs text-red-500 hover:text-red-700 font-medium transition-colors"
+                                  className="text-xs text-red-500 hover:text-red-700 font-medium transition-colors cursor-pointer"
                                 >
                                   Remover
                                 </button>
@@ -300,7 +300,7 @@ export default function CartPage() {
                               {hasDetails && (
                                 <button
                                   onClick={() => toggleExpand(item.cartId)}
-                                  className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                                  className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
                                 >
                                   {isExpanded ? 'Ocultar' : 'Detalhes'}
                                   <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
@@ -373,7 +373,7 @@ export default function CartPage() {
               <div className="flex justify-end mt-4">
                 <button
                   onClick={clearCart}
-                  className="text-sm text-gray-500 underline underline-offset-2 hover:text-red-600 transition-colors"
+                  className="text-sm text-gray-500 underline underline-offset-2 hover:text-red-600 transition-colors cursor-pointer"
                 >
                   Limpar carrinho
                 </button>
@@ -416,7 +416,7 @@ export default function CartPage() {
                 <button
                   onClick={handleCheckout}
                   disabled={!isShopOpen || shopStatusLoading || hasUnavailableItems}
-                  className="w-full h-13 bg-primary hover:bg-primary/90 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold text-base rounded-md transition-colors flex items-center justify-center"
+                  className="w-full h-13 bg-primary hover:bg-primary/90 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold text-base rounded-md transition-colors flex items-center justify-center cursor-pointer"
                 >
                   {!isShopOpen && !shopStatusLoading
                     ? 'Loja Fechada'
