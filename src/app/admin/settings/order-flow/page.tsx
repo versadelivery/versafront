@@ -410,9 +410,9 @@ export default function OrderFlowSettingsPage() {
                     className={cn(
                       "flex items-center gap-2 px-3 py-2 rounded-md border text-sm font-medium transition-all",
                       locked
-                        ? "border-orange-200 bg-orange-50 text-orange-600 cursor-not-allowed"
+                        ? "border-orange-600 bg-white text-orange-600 cursor-not-allowed"
                         : active
-                          ? "border-primary bg-white text-primary ring-1 ring-primary cursor-pointer"
+                          ? "border-primary bg-white text-primary cursor-pointer"
                           : "border-[#E5E2DD] bg-white text-gray-500 hover:border-gray-400 cursor-pointer"
                     )}
                   >
