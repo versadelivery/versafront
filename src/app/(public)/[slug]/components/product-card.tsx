@@ -73,7 +73,7 @@ const ProductCard = memo(function ProductCard({ item, index, layout = 'grid', gr
   if (layout === 'list') {
     return wrapWithModal(
           <div
-            className={`group relative rounded-md hover:shadow-sm transition-all duration-200 flex flex-row h-auto overflow-hidden ${isUnavailable ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+            className={`group relative rounded-md hover:shadow-sm transition-all duration-200 flex flex-row h-[112px] sm:h-[144px] overflow-hidden ${isUnavailable ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
             style={{
               backgroundColor: cardBg,
               border: `1px solid ${theme.border}`,
@@ -120,7 +120,7 @@ const ProductCard = memo(function ProductCard({ item, index, layout = 'grid', gr
             </div>
 
             {/* Image right */}
-            <div className="relative w-28 sm:w-36 flex-shrink-0 overflow-hidden" style={{ backgroundColor: theme.subtleBg }}>
+            <div className="relative w-28 sm:w-36 h-28 sm:h-36 flex-shrink-0 overflow-hidden" style={{ backgroundColor: theme.subtleBg }}>
               {hasImage ? (
                 <img
                   src={attributes.image_url!}
