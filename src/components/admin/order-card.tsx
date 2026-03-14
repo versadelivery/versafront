@@ -341,7 +341,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
         ? "border-red-400"
         : "border-[#E5E2DD]",
       isRecebido ? "bg-[#FFFBF5]"
-        : isEntregue ? "bg-[#c0fea4]"
+        : isEntregue ? "bg-[#7ED957]"
         : isCancelled ? "bg-white opacity-50"
         : "bg-white"
     )}>

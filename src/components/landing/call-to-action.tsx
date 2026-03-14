@@ -10,7 +10,7 @@ const CallToAction = () => {
   const isInView = useInView(ref, { once: true, amount: 0.4 });
 
   return (
-    <section ref={ref} className="py-20 md:py-28 bg-[#c0fea4]">
+    <section ref={ref} className="py-20 md:py-28 bg-[#7ED957]">
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -29,7 +29,7 @@ const CallToAction = () => {
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link href="/login">
-                <button className="flex flex-row items-center justify-center gap2 bg-[#1B1B1B] hover:bg-[#c0fea4] text-white hover:text-black text-xl font-semibold px-16 py-6 rounded-2xl transition-colors cursor-pointer">
+                <button className="flex flex-row items-center justify-center gap2 bg-[#1B1B1B] hover:bg-[#7ED957] text-white hover:text-black text-xl font-semibold px-16 py-6 rounded-2xl transition-colors cursor-pointer">
                   Comece agora
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                 </button>
