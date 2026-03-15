@@ -326,7 +326,8 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
   const items = order.socketData?.attributes?.items?.data;
   const itemCount = items?.length || 0;
   const address = order.socketData?.attributes?.address?.data?.attributes;
-  const customerPhone = order.socketData?.attributes?.customer?.data?.attributes?.cellphone;
+  const rawPhone = order.socketData?.attributes?.customer?.data?.attributes?.cellphone;
+  const customerPhone = rawPhone && rawPhone !== 'N/A' ? rawPhone : undefined;
   const paymentMethod = order.socketData?.attributes?.payment_method;
   const deliveryFee = order.socketData?.attributes?.delivery_fee ? parseFloat(order.socketData.attributes.delivery_fee) : 0;
   const couponCode = order.socketData?.attributes?.coupon_code;
