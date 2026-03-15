@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   ShoppingCart, Plus, Minus, Trash2, Search,
   CreditCard, MapPin, User, Package, Settings2,
-  Tag, X, CheckCircle2, Loader2, UtensilsCrossed, ArrowLeft,
+  Tag, X, CheckCircle2, Loader2, UtensilsCrossed, ArrowLeft, AlertCircle,
 } from "lucide-react";
 import { useCatalogGroup } from "@/hooks/useCatalogGroup";
 import Image from "next/image";
@@ -369,6 +369,11 @@ export default function PDVPage() {
   // Recalcular desconto do cupom quando o carrinho muda
   useEffect(() => {
     if (!appliedCoupon) { setCouponDiscount(0); return; }
+    const minOrder = parseFloat(appliedCoupon.minimum_order_value) || 0;
+    if (minOrder > 0 && cartTotal < minOrder) {
+      setCouponDiscount(0);
+      return;
+    }
     let discount = 0;
     if (appliedCoupon.discount_type === "fixed_value") {
       discount = Math.min(parseFloat(appliedCoupon.value), cartTotal);
@@ -962,22 +967,14 @@ export default function PDVPage() {
                             </p>
                           )}
 
-                          <div className="flex items-center justify-between mt-2">
-                            {item.weight && item.itemType ? (
-                              <span className="text-xs text-muted-foreground">
-                                {item.weight} {item.itemType === 'weight_per_g' ? 'g' : 'kg'}
-                              </span>
-                            ) : (
-                              <span className="text-xs text-muted-foreground">
-                                {formatPrice(item.price)} × {item.quantity}
-                              </span>
-                            )}
-                            <span className="font-semibold text-sm text-primary">
-                              {formatPrice(item.totalPrice)}
-                            </span>
-                          </div>
+                          <span className="text-xs text-muted-foreground mt-1">
+                            {item.weight && item.itemType
+                              ? `${item.weight} ${item.itemType === 'weight_per_g' ? 'g' : 'kg'}`
+                              : `${formatPrice(item.price)} × ${item.quantity}`}
+                          </span>
                         </div>
-                        <div className="flex items-center gap-1 flex-shrink-0">
+                        <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                          <div className="flex items-center gap-1">
                           {item.weight && item.itemType ? (
                             <Button
                               size="sm"
@@ -1018,6 +1015,10 @@ export default function PDVPage() {
                               </Button>
                             </>
                           )}
+                          </div>
+                          <span className="font-semibold text-sm text-primary">
+                            {formatPrice(item.totalPrice)}
+                          </span>
                         </div>
                       </div>
                     ))}
@@ -1080,26 +1081,43 @@ export default function PDVPage() {
             </div>
             <div className="px-5 py-4">
               {appliedCoupon ? (
-                <div className="flex items-center justify-between bg-white border border-green-400 rounded-md px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    <div>
-                      <span className="text-sm font-semibold text-green-700">{appliedCoupon.code}</span>
-                      <p className="text-xs text-green-600">
-                        {appliedCoupon.discount_type === "percentage"
-                          ? `${parseFloat(appliedCoupon.value)}% de desconto`
-                          : `${formatPrice(parseFloat(appliedCoupon.value))} de desconto`}
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleRemoveCoupon}
-                    className="h-7 w-7 p-0 text-green-600 hover:text-red-500"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+                <div className="space-y-2">
+                  {(() => {
+                    const minOrder = parseFloat(appliedCoupon.minimum_order_value) || 0;
+                    const belowMin = minOrder > 0 && cartTotal < minOrder;
+                    return (
+                      <>
+                        <div className={`flex items-center justify-between bg-white border rounded-md px-4 py-3 ${belowMin ? "border-amber-400" : "border-green-400"}`}>
+                          <div className="flex items-center gap-2">
+                            {belowMin
+                              ? <AlertCircle className="h-4 w-4 text-amber-500" />
+                              : <CheckCircle2 className="h-4 w-4 text-green-600" />}
+                            <div>
+                              <span className={`text-sm font-semibold ${belowMin ? "text-amber-700" : "text-green-700"}`}>{appliedCoupon.code}</span>
+                              <p className={`text-xs ${belowMin ? "text-amber-600" : "text-green-600"}`}>
+                                {appliedCoupon.discount_type === "percentage"
+                                  ? `${parseFloat(appliedCoupon.value)}% de desconto`
+                                  : `${formatPrice(parseFloat(appliedCoupon.value))} de desconto`}
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleRemoveCoupon}
+                            className={`h-7 w-7 p-0 hover:text-red-500 ${belowMin ? "text-amber-500" : "text-green-600"}`}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        {belowMin && (
+                          <p className="text-xs text-amber-600">
+                            Pedido mínimo de {formatPrice(minOrder)} para usar este cupom (faltam {formatPrice(minOrder - cartTotal)})
+                          </p>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
               ) : (
                 <div className="space-y-2">
