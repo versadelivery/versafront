@@ -55,10 +55,10 @@ export default function StoreHeader({ shop: initialShop }: StoreHeaderProps) {
       {/* Banner promocional */}
       {attributes.banner_active && attributes.banner_text && (
         <div
-          className="w-full px-4 py-2 text-center text-sm font-medium z-[51] sticky top-0"
+          className="w-full px-4 py-2 text-center text-sm font-medium z-40 sticky top-0"
           style={{
             backgroundColor: headerColor || '#1F2937',
-            color: isDark || !headerColor ? '#FFFFFF' : '#FFFFFF',
+            color: headerColor ? textColor : '#FFFFFF',
             borderBottom: `1px solid ${borderColor}`,
           }}
         >
@@ -71,7 +71,7 @@ export default function StoreHeader({ shop: initialShop }: StoreHeaderProps) {
 
       {/* Nav header */}
       <header
-        className="sticky z-50 w-full"
+        className="sticky z-40 w-full"
         style={{
           ...headerStyle,
           ...(!headerColor ? { backgroundColor: '#FFFFFF' } : {}),
