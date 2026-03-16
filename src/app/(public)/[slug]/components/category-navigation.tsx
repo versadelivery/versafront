@@ -51,7 +51,7 @@ const CategoryNavigation = memo(function CategoryNavigation({ categories, active
         <button
           onClick={() => scrollToCategory('all')}
           className={`
-            whitespace-nowrap px-5 py-2 text-sm font-semibold transition-all duration-150 flex-shrink-0 border rounded-md
+            whitespace-nowrap px-5 py-2 text-sm font-semibold transition-all duration-150 flex-shrink-0 border rounded-md cursor-pointer
             ${activeCategory === 'all'
               ? (accentColor ? '' : 'bg-primary text-white border-primary')
               : 'bg-white text-gray-600 border-[#E5E2DD] hover:border-gray-400 hover:text-gray-900'}
@@ -66,7 +66,7 @@ const CategoryNavigation = memo(function CategoryNavigation({ categories, active
             key={category.id}
             onClick={() => scrollToCategory(category.attributes.name)}
             className={`
-              whitespace-nowrap px-5 py-2 text-sm font-semibold transition-all duration-150 flex-shrink-0 border rounded-md
+              whitespace-nowrap px-5 py-2 text-sm font-semibold transition-all duration-150 flex-shrink-0 border rounded-md cursor-pointer
               ${activeCategory === category.attributes.name
                 ? (accentColor ? '' : 'bg-primary text-white border-primary')
                 : 'bg-white text-gray-600 border-[#E5E2DD] hover:border-gray-400 hover:text-gray-900'}

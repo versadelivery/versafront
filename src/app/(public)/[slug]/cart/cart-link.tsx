@@ -18,7 +18,7 @@ export function CartLink({ isDarkHeader = false }: { isDarkHeader?: boolean }) {
       {/* Desktop */}
       <Link
         href={`/${slug}/carrinho`}
-        className="hidden md:flex items-center gap-2 rounded-md transition-all duration-150 relative h-10 px-4 text-sm font-medium"
+        className="hidden md:flex items-center gap-2 rounded-md transition-all duration-150 relative h-10 px-4 text-sm font-medium cursor-pointer"
         style={{
           borderWidth: '1px',
           borderColor: borderStyle,
@@ -37,7 +37,7 @@ export function CartLink({ isDarkHeader = false }: { isDarkHeader?: boolean }) {
       {/* Mobile */}
       <Link
         href={`/${slug}/carrinho`}
-        className="md:hidden flex items-center justify-center h-10 w-10 rounded-md relative transition-all duration-150"
+        className="md:hidden flex items-center justify-center h-10 w-10 rounded-md relative transition-all duration-150 cursor-pointer"
         style={{
           borderWidth: '1px',
           borderColor: borderStyle,

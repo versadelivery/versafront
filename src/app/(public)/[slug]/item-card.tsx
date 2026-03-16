@@ -155,7 +155,7 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onClick, className }) => {
                     )}
                   </div>
 
-                  <button className="text-primary hover:text-primary-dark transition-colors">
+                  <button className="text-primary hover:text-primary-dark transition-colors cursor-pointer">
                     <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
                 </div>

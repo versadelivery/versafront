@@ -40,7 +40,7 @@ export default function AuthIndicator({ isDarkHeader = false }: { isDarkHeader?:
       style={isDarkHeader ? { color: 'rgba(255,255,255,0.85)' } : undefined}
     >
       <Avatar className="w-8 h-8">
-        <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
+        <AvatarFallback className="bg-gray-100 text-[#1B1B1B] text-xs font-semibold">
           {getInitials(customerName)}
         </AvatarFallback>
       </Avatar>

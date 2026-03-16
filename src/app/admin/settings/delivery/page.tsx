@@ -295,7 +295,7 @@ export default function DeliverySettingsPage() {
               </a>
               <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
               <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900">
-                Configuracoes de Entrega
+                Configurações de Entrega
               </h1>
             </div>
           </div>
@@ -307,11 +307,11 @@ export default function DeliverySettingsPage() {
         <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
           <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
             <ShoppingCart className="h-4 w-4 text-primary" />
-            <h2 className="font-tomato text-base font-semibold text-gray-900">Valor Minimo do Pedido</h2>
+            <h2 className="font-tomato text-base font-semibold text-gray-900">Valor mínimo do Pedido</h2>
           </div>
           <div className="px-5 py-5">
             <p className="text-sm text-muted-foreground mb-4">
-              Define o valor total minimo para que o cliente consiga finalizar um pedido
+              Define o valor total mínimo para que o cliente consiga finalizar um pedido
             </p>
             <div className="max-w-xs">
               <div className="relative">

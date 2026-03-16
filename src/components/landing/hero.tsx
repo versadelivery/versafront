@@ -65,8 +65,8 @@ const Hero = () => {
               transition={{ duration: 0.5, delay: 0.3 }}
               className="flex flex-col sm:flex-row gap-3 lg:justify-start justify-center"
             >
-              <Link href="/login">
-                <button className="bg-[#1B1B1B] hover:bg-[#c0fea4] text-white hover:text-black text-xl font-semibold px-16 py-6 rounded-2xl transition-colors cursor-pointer">
+              <Link href="/register">
+                <button className="bg-[#1B1B1B] hover:bg-[#7ED957] text-white hover:text-black text-xl font-semibold px-16 py-6 rounded-2xl transition-colors cursor-pointer">
                   Comece agora
                 </button>
               </Link>
