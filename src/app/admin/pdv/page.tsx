@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   ShoppingCart, Plus, Minus, Trash2, Search,
   CreditCard, MapPin, User, Package, Settings2,
-  Tag, X, CheckCircle2, Loader2, UtensilsCrossed, ArrowLeft,
+  Tag, X, CheckCircle2, Loader2, UtensilsCrossed, ArrowLeft, AlertCircle,
 } from "lucide-react";
 import { useCatalogGroup } from "@/hooks/useCatalogGroup";
 import Image from "next/image";
@@ -65,7 +65,7 @@ export default function PDVPage() {
     complement: "",
     reference: "",
   });
-  const [orderType, setOrderType] = useState<"delivery" | "pickup">("delivery");
+  const [orderType, setOrderType] = useState<"delivery" | "pickup" | "table">("delivery");
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "credit" | "debit" | "pix">("credit");
   const [changeAmount, setChangeAmount] = useState("");
   const [notes, setNotes] = useState("");
@@ -154,7 +154,7 @@ export default function PDVPage() {
   const neighborhoods = deliveryConfig?.neighborhoods ?? [];
 
   const calculateDeliveryFee = (): number => {
-    if (orderType !== "delivery" || !!selectedTableSessionId) return 0;
+    if (orderType !== "delivery") return 0;
     if (deliveryConfig?.delivery_fee_kind === "fixed") {
       const minFree = deliveryConfig.min_value_free_delivery ?? 0;
       if (minFree > 0 && cartTotal >= minFree) return 0;
@@ -330,7 +330,7 @@ export default function PDVPage() {
     setOpenSessions(s.data);
   };
 
-  const isTableOrder = !!selectedTableSessionId;
+  const isTableOrder = orderType === "table" && !!selectedTableSessionId;
   const isBelowMinOrder = orderType === "delivery" && !isTableOrder && minimumOrderValue > 0 && cartTotal < minimumOrderValue;
   const selectedSession = isTableOrder ? openSessions.find((s) => s.id === selectedTableSessionId) : null;
   const selectedTable = selectedSession
@@ -369,6 +369,11 @@ export default function PDVPage() {
   // Recalcular desconto do cupom quando o carrinho muda
   useEffect(() => {
     if (!appliedCoupon) { setCouponDiscount(0); return; }
+    const minOrder = parseFloat(appliedCoupon.minimum_order_value) || 0;
+    if (minOrder > 0 && cartTotal < minOrder) {
+      setCouponDiscount(0);
+      return;
+    }
     let discount = 0;
     if (appliedCoupon.discount_type === "fixed_value") {
       discount = Math.min(parseFloat(appliedCoupon.value), cartTotal);
@@ -560,7 +565,7 @@ export default function PDVPage() {
           <div className="flex items-center h-16">
             <div className="flex items-center gap-4">
               <a
-                href="/admin"
+                href="/admin/pedidos"
                 className="flex items-center gap-1.5 text-muted-foreground hover:text-gray-900 transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
@@ -962,22 +967,14 @@ export default function PDVPage() {
                             </p>
                           )}
 
-                          <div className="flex items-center justify-between mt-2">
-                            {item.weight && item.itemType ? (
-                              <span className="text-xs text-muted-foreground">
-                                {item.weight} {item.itemType === 'weight_per_g' ? 'g' : 'kg'}
-                              </span>
-                            ) : (
-                              <span className="text-xs text-muted-foreground">
-                                {formatPrice(item.price)} × {item.quantity}
-                              </span>
-                            )}
-                            <span className="font-semibold text-sm text-primary">
-                              {formatPrice(item.totalPrice)}
-                            </span>
-                          </div>
+                          <span className="text-xs text-muted-foreground mt-1">
+                            {item.weight && item.itemType
+                              ? `${item.weight} ${item.itemType === 'weight_per_g' ? 'g' : 'kg'}`
+                              : `${formatPrice(item.price)} × ${item.quantity}`}
+                          </span>
                         </div>
-                        <div className="flex items-center gap-1 flex-shrink-0">
+                        <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                          <div className="flex items-center gap-1">
                           {item.weight && item.itemType ? (
                             <Button
                               size="sm"
@@ -1018,6 +1015,10 @@ export default function PDVPage() {
                               </Button>
                             </>
                           )}
+                          </div>
+                          <span className="font-semibold text-sm text-primary">
+                            {formatPrice(item.totalPrice)}
+                          </span>
                         </div>
                       </div>
                     ))}
@@ -1080,26 +1081,43 @@ export default function PDVPage() {
             </div>
             <div className="px-5 py-4">
               {appliedCoupon ? (
-                <div className="flex items-center justify-between bg-white border border-green-400 rounded-md px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    <div>
-                      <span className="text-sm font-semibold text-green-700">{appliedCoupon.code}</span>
-                      <p className="text-xs text-green-600">
-                        {appliedCoupon.discount_type === "percentage"
-                          ? `${parseFloat(appliedCoupon.value)}% de desconto`
-                          : `${formatPrice(parseFloat(appliedCoupon.value))} de desconto`}
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleRemoveCoupon}
-                    className="h-7 w-7 p-0 text-green-600 hover:text-red-500"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+                <div className="space-y-2">
+                  {(() => {
+                    const minOrder = parseFloat(appliedCoupon.minimum_order_value) || 0;
+                    const belowMin = minOrder > 0 && cartTotal < minOrder;
+                    return (
+                      <>
+                        <div className={`flex items-center justify-between bg-white border rounded-md px-4 py-3 ${belowMin ? "border-amber-400" : "border-green-400"}`}>
+                          <div className="flex items-center gap-2">
+                            {belowMin
+                              ? <AlertCircle className="h-4 w-4 text-amber-500" />
+                              : <CheckCircle2 className="h-4 w-4 text-green-600" />}
+                            <div>
+                              <span className={`text-sm font-semibold ${belowMin ? "text-amber-700" : "text-green-700"}`}>{appliedCoupon.code}</span>
+                              <p className={`text-xs ${belowMin ? "text-amber-600" : "text-green-600"}`}>
+                                {appliedCoupon.discount_type === "percentage"
+                                  ? `${parseFloat(appliedCoupon.value)}% de desconto`
+                                  : `${formatPrice(parseFloat(appliedCoupon.value))} de desconto`}
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleRemoveCoupon}
+                            className={`h-7 w-7 p-0 hover:text-red-500 ${belowMin ? "text-amber-500" : "text-green-600"}`}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        {belowMin && (
+                          <p className="text-xs text-amber-600">
+                            Pedido mínimo de {formatPrice(minOrder)} para usar este cupom (faltam {formatPrice(minOrder - cartTotal)})
+                          </p>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -1129,128 +1147,108 @@ export default function PDVPage() {
             </div>
           </div>
 
-          {/* Mesa (opcional) */}
-          {tables.length > 0 && (
-            <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
-              <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center justify-between">
-                <h2 className="font-tomato flex items-center gap-2 text-base font-semibold text-gray-900">
-                  <UtensilsCrossed className="h-5 w-5 text-primary" />
-                  Mesa
-                </h2>
-                {isTableOrder && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleSelectTableSession(null)}
-                    className="h-7 px-2 text-xs text-muted-foreground cursor-pointer"
-                  >
-                    Remover mesa
-                  </Button>
-                )}
-              </div>
-              <div className="px-5 py-4">
-                <div className="grid grid-cols-3 gap-2">
-                  {tables
-                    .sort((a, b) => a.attributes.number - b.attributes.number)
-                    .map((table) => {
-                      const session = openSessions.find(
-                        (s) => s.attributes.table_number === table.attributes.number
-                      );
-                      const hasSession = !!session;
-                      const isSelected = hasSession && selectedTableSessionId === session.id;
-                      const isOpening = openingTableId === table.id;
-
-                      return (
-                        <button
-                          key={table.id}
-                          type="button"
-                          disabled={isOpening}
-                          onClick={() => {
-                            if (hasSession) {
-                              handleSelectTableSession(isSelected ? null : session.id);
-                            } else {
-                              handleOpenSession(table.id);
-                            }
-                          }}
-                          className={`relative flex flex-col items-center justify-center rounded-md border-2 p-3 text-center transition-all cursor-pointer ${
-                            isSelected
-                              ? "border-emerald-500 bg-white ring-2 ring-emerald-200"
-                              : hasSession
-                              ? "border-amber-400 bg-white hover:border-amber-500"
-                              : "border-dashed border-[#E5E2DD] bg-[#FAF9F7] hover:border-gray-400 hover:bg-[#F0EFEB]"
-                          }`}
-                        >
-                          <span className={`text-sm font-bold ${
-                            isSelected ? "text-emerald-700" : hasSession ? "text-amber-700" : "text-gray-500"
-                          }`}>
-                            {table.attributes.number}
-                          </span>
-                          <span className={`text-[10px] mt-0.5 ${
-                            isSelected ? "text-emerald-600" : hasSession ? "text-amber-600" : "text-gray-400"
-                          }`}>
-                            {isOpening
-                              ? "Abrindo..."
-                              : isSelected
-                              ? "Selecionada"
-                              : hasSession
-                              ? session.attributes.customer_name || "Ocupada"
-                              : "Abrir"}
-                          </span>
-                          {hasSession && (
-                            <span className={`absolute top-1 right-1 w-2 h-2 rounded-full ${
-                              isSelected ? "bg-emerald-500" : "bg-amber-400"
-                            }`} />
-                          )}
-                        </button>
-                      );
-                    })}
-                </div>
-                {isTableOrder && (() => {
-                  const session = openSessions.find((s) => s.id === selectedTableSessionId);
-                  return (
-                    <div className="bg-white border border-emerald-400 rounded-md px-3 py-2.5 mt-3 space-y-1">
-                      <p className="text-xs text-emerald-700 font-medium">
-                        Pedido para Mesa {session?.attributes.table_number}
-                        {session?.attributes.customer_name ? ` — ${session.attributes.customer_name}` : ""}
-                      </p>
-                      <p className="text-xs text-emerald-600">
-                        Dados de cliente e entrega não são necessarios
-                      </p>
-                    </div>
-                  );
-                })()}
-              </div>
+          {/* Tipo de Pedido */}
+          <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+            <div className="px-5 py-4 border-b border-[#E5E2DD]">
+              <h2 className="font-tomato flex items-center gap-2 text-base font-semibold text-gray-900">
+                <MapPin className="h-5 w-5 text-primary" />
+                Tipo de Pedido
+              </h2>
             </div>
-          )}
+            <div className="px-5 py-4 space-y-4">
+              <Select
+                value={orderType}
+                onValueChange={(v: "delivery" | "pickup" | "table") => {
+                  setOrderType(v);
+                  setFormErrors({});
+                  if (v !== "table") setSelectedTableSessionId(null);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="delivery">Entrega</SelectItem>
+                  <SelectItem value="pickup">Retirada</SelectItem>
+                  {tables.length > 0 && <SelectItem value="table">Mesa</SelectItem>}
+                </SelectContent>
+              </Select>
 
-          {/* Tipo de Pedido — esconde quando vinculado a mesa */}
-          {!isTableOrder && (
-            <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
-              <div className="px-5 py-4 border-b border-[#E5E2DD]">
-                <h2 className="font-tomato flex items-center gap-2 text-base font-semibold text-gray-900">
-                  <MapPin className="h-5 w-5 text-primary" />
-                  Tipo de Pedido
-                </h2>
-              </div>
-              <div className="px-5 py-4">
-                <Select
-                  value={orderType}
-                  onValueChange={(v: "delivery" | "pickup") => { setOrderType(v); setFormErrors({}); }}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="delivery">Entrega</SelectItem>
-                    <SelectItem value="pickup">Retirada</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Grid de mesas — visível apenas quando tipo = mesa */}
+              {orderType === "table" && tables.length > 0 && (
+                <>
+                  <div className="grid grid-cols-3 gap-2">
+                    {tables
+                      .sort((a, b) => a.attributes.number - b.attributes.number)
+                      .map((table) => {
+                        const session = openSessions.find(
+                          (s) => s.attributes.table_number === table.attributes.number
+                        );
+                        const hasSession = !!session;
+                        const isSelected = hasSession && selectedTableSessionId === session.id;
+                        const isOpening = openingTableId === table.id;
+
+                        return (
+                          <button
+                            key={table.id}
+                            type="button"
+                            disabled={isOpening}
+                            onClick={() => {
+                              if (hasSession) {
+                                handleSelectTableSession(isSelected ? null : session.id);
+                              } else {
+                                handleOpenSession(table.id);
+                              }
+                            }}
+                            className={`flex flex-col items-center justify-center rounded-md border-2 p-3 text-center transition-all cursor-pointer ${
+                              isSelected
+                                ? "border-primary bg-white ring-2 ring-primary/20"
+                                : hasSession
+                                ? "border-amber-400 bg-white hover:border-amber-500"
+                                : "border-dashed border-[#E5E2DD] bg-[#FAF9F7] hover:border-gray-400 hover:bg-[#F0EFEB]"
+                            }`}
+                          >
+                            <span className={`text-sm font-bold ${
+                              isSelected ? "text-primary" : hasSession ? "text-amber-700" : "text-gray-500"
+                            }`}>
+                              {table.attributes.number}
+                            </span>
+                            <span className={`text-[10px] mt-0.5 ${
+                              isSelected ? "text-primary/80" : hasSession ? "text-amber-600" : "text-gray-400"
+                            }`}>
+                              {isOpening
+                                ? "Abrindo..."
+                                : isSelected
+                                ? "Selecionada"
+                                : hasSession
+                                ? session.attributes.customer_name || "Ocupada"
+                                : "Abrir"}
+                            </span>
+                          </button>
+                        );
+                      })}
+                  </div>
+                  {isTableOrder && (() => {
+                    const session = openSessions.find((s) => s.id === selectedTableSessionId);
+                    return (
+                      <div className="border border-primary/30 rounded-md px-3 py-2.5 space-y-1">
+                        <p className="text-xs text-primary font-medium">
+                          Pedido para Mesa {session?.attributes.table_number}
+                          {session?.attributes.customer_name ? ` — ${session.attributes.customer_name}` : ""}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Dados de cliente e entrega não são necessários
+                        </p>
+                      </div>
+                    );
+                  })()}
+                </>
+              )}
             </div>
-          )}
+          </div>
 
-          {/* Dados do cliente — esconde quando vinculado a mesa */}
-          {!isTableOrder && <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+          {/* Dados do cliente — esconde quando tipo = mesa */}
+          {orderType !== "table" && <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
             <div className="px-5 py-4 border-b border-[#E5E2DD]">
               <h2 className="font-tomato flex items-center gap-2 text-base font-semibold text-gray-900">
                 <User className="h-5 w-5 text-primary" />
