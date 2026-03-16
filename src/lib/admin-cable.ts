@@ -360,7 +360,7 @@ export function useAdminActionCable() {
       if (data.items) {
         supportedData.items = data.items;
       }
-      
+
       if (data.total !== undefined) {
         supportedData.total = data.total;
       }
@@ -369,8 +369,29 @@ export function useAdminActionCable() {
         supportedData.delivery_person = data.deliveryPerson;
       }
 
+      if (data.payment_method !== undefined) {
+        supportedData.payment_method = data.payment_method;
+      }
+
+      if (data.manual_adjustment !== undefined) {
+        supportedData.manual_adjustment = data.manual_adjustment;
+      }
+
+      if (data.removed_item_ids) {
+        supportedData.removed_item_ids = data.removed_item_ids;
+      }
+
+      if (data.new_items) {
+        supportedData.new_items = data.new_items;
+      }
+
+      if (data.withdrawal !== undefined) {
+        supportedData.withdrawal = data.withdrawal;
+      }
+
       // Determinar se é uma edição completa ou atualização simples
-      const hasItemsChanges = data.items && Object.keys(data.items).length > 0;
+      const hasItemsChanges = (data.items && (Array.isArray(data.items) ? data.items.length > 0 : Object.keys(data.items).length > 0)) ||
+        data.removed_item_ids || data.new_items;
       const event = hasItemsChanges ? "edit_order" : "update_order";
 
       const updateData = {

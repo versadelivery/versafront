@@ -1119,18 +1119,43 @@ export default function OrderManagement() {
               observation: item.attributes.observation,
               image: item.attributes.catalog_item?.data?.attributes?.image_url,
               weight: item.attributes.item_type === 'weight_per_kg' ? `${item.attributes.quantity}kg` : undefined,
-              extras: item.attributes.catalog_item?.data?.attributes?.extra?.data?.map((extra: any) => ({
+              selected_extras: (item.attributes as any).selected_extras?.map((e: any) => ({
+                id: e.id,
+                name: e.name,
+                price: parseFloat(e.price)
+              })) || [],
+              selected_prepare_methods: (item.attributes as any).selected_prepare_methods?.map((m: any) => ({
+                id: m.id,
+                name: m.name
+              })) || [],
+              available_extras: item.attributes.catalog_item?.data?.attributes?.extra?.data?.map((extra: any) => ({
+                id: parseInt(extra.id),
                 name: extra.attributes.name,
                 price: parseFloat(extra.attributes.price)
               })) || [],
-              prepare_methods: item.attributes.catalog_item?.data?.attributes?.prepare_method?.data?.map((method: any) => ({
+              available_prepare_methods: item.attributes.catalog_item?.data?.attributes?.prepare_method?.data?.map((method: any) => ({
+                id: parseInt(method.id),
                 name: method.attributes.name
+              })) || [],
+              extras: (item.attributes as any).selected_extras?.map((e: any) => ({
+                name: e.name,
+                price: parseFloat(e.price)
+              })) || [],
+              prepare_methods: (item.attributes as any).selected_prepare_methods?.map((m: any) => ({
+                name: m.name
               })) || [],
               steps: item.attributes.catalog_item?.data?.attributes?.steps?.data?.map((step: any) => ({
                 name: step.attributes.name,
                 options: step.attributes.options?.data?.map((option: any) => ({
                   name: option.attributes.name
                 })) || []
+              })) || [],
+              selected_steps: (item.attributes as any).selected_steps?.map((s: any) => ({
+                id: s.id,
+                step_name: s.step_name,
+                option_name: s.option_name,
+                catalog_item_step_id: s.catalog_item_step_id,
+                catalog_item_step_option_id: s.catalog_item_step_option_id
               })) || [],
               complements: (item.attributes as any).complements?.map((comp: any) => ({
                 name: comp.name,
@@ -1151,6 +1176,7 @@ export default function OrderManagement() {
             deliveryPerson: selectedOrder.deliveryPerson || (selectedOrder.socketData.attributes as any).delivery_person || '',
             discount_amount: parseFloat(selectedOrder.socketData.attributes.discount_amount || '0'),
             payment_adjustment_amount: parseFloat(selectedOrder.socketData.attributes.payment_adjustment_amount || '0'),
+            manual_adjustment: parseFloat((selectedOrder.socketData.attributes as any).manual_adjustment || '0'),
             coupon_code: selectedOrder.socketData.attributes.coupon_code || undefined
           }}
           onUpdateOrder={async (orderId, data) => {
