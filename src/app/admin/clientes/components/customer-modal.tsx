@@ -37,12 +37,20 @@ export default function CustomerModal({
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const maskPhone = (value: string): string => {
+    const digits = value.replace(/\D/g, "").slice(0, 11);
+    if (digits.length <= 2) return digits.length ? `(${digits}` : "";
+    if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+    if (digits.length <= 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  };
+
   useEffect(() => {
     if (isEdit && customer) {
       setFormData({
         name: customer.attributes.name || "",
         email: customer.attributes.email || "",
-        cellphone: customer.attributes.cellphone || "",
+        cellphone: maskPhone(customer.attributes.cellphone || ""),
       });
     } else {
       setFormData({ name: "", email: "", cellphone: "" });
@@ -55,18 +63,23 @@ export default function CustomerModal({
 
     if (!formData.name.trim()) {
       newErrors.name = "Nome é obrigatório";
+    } else if (formData.name.trim().length < 2) {
+      newErrors.name = "Nome deve ter no mínimo 2 caracteres";
     }
 
     if (!formData.email.trim()) {
       newErrors.email = "E-mail é obrigatório";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
       newErrors.email = "E-mail inválido";
     }
 
-    if (!formData.cellphone.trim()) {
+    const phoneDigits = formData.cellphone.replace(/\D/g, "");
+    if (!phoneDigits) {
       newErrors.cellphone = "Celular é obrigatório";
-    } else if (formData.cellphone.replace(/\D/g, "").length < 10) {
+    } else if (phoneDigits.length < 10) {
       newErrors.cellphone = "Celular deve ter pelo menos 10 dígitos";
+    } else if (phoneDigits.length > 11) {
+      newErrors.cellphone = "Celular deve ter no máximo 11 dígitos";
     }
 
     setErrors(newErrors);
@@ -80,9 +93,9 @@ export default function CustomerModal({
     setIsSubmitting(true);
     try {
       await onSave({
-        name: formData.name,
-        email: formData.email,
-        cellphone: formData.cellphone,
+        name: formData.name.trim(),
+        email: formData.email.trim().toLowerCase(),
+        cellphone: formData.cellphone.replace(/\D/g, ""),
       });
       onClose();
     } catch (error) {
@@ -93,7 +106,11 @@ export default function CustomerModal({
   };
 
   const handleChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (field === "cellphone") {
+      setFormData((prev) => ({ ...prev, cellphone: maskPhone(value) }));
+    } else {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+    }
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: "" }));
     }
@@ -177,6 +194,7 @@ export default function CustomerModal({
                   placeholder="(11) 99999-9999"
                   value={formData.cellphone}
                   onChange={(e) => handleChange("cellphone", e.target.value)}
+                  maxLength={15}
                   className={`pl-10 h-10 rounded-md border-[#E5E2DD] bg-white ${
                     errors.cellphone ? "border-red-400 focus:border-red-400" : ""
                   }`}
