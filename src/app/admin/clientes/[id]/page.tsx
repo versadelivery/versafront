@@ -12,6 +12,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   ArrowLeft,
   Edit,
   User,
@@ -89,13 +99,17 @@ export default function CustomerDetailPage() {
   const { customer, orders, loading, toggleBlock, refetch } = useCustomerDetail(id);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showBlockConfirm, setShowBlockConfirm] = useState(false);
 
-  const handleToggleBlock = async () => {
+  const handleToggleBlock = () => {
     if (!customer) return;
-    const isBlocked = customer.attributes.blocked;
-    const action = isBlocked ? "desbloquear" : "bloquear";
-    if (!confirm(`Tem certeza que deseja ${action} o cliente "${customer.attributes.name}"?`)) return;
-    await toggleBlock(!isBlocked);
+    setShowBlockConfirm(true);
+  };
+
+  const confirmToggleBlock = async () => {
+    if (!customer) return;
+    await toggleBlock(!customer.attributes.blocked);
+    setShowBlockConfirm(false);
   };
 
   const handleSave = async (data: any) => {
@@ -351,6 +365,35 @@ export default function CustomerDetailPage() {
         customer={customer}
         isEdit
       />
+
+      {/* Confirmação de bloqueio */}
+      <AlertDialog open={showBlockConfirm} onOpenChange={setShowBlockConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {customer.attributes.blocked ? "Desbloquear cliente" : "Bloquear cliente"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {customer.attributes.blocked
+                ? `Deseja desbloquear "${customer.attributes.name}"? O cliente poderá fazer pedidos novamente.`
+                : `Deseja bloquear "${customer.attributes.name}"? O cliente não poderá fazer pedidos.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="cursor-pointer">Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className={`cursor-pointer ${
+                customer.attributes.blocked
+                  ? "bg-green-600 hover:bg-green-700"
+                  : "bg-red-600 hover:bg-red-700"
+              }`}
+              onClick={confirmToggleBlock}
+            >
+              {customer.attributes.blocked ? "Desbloquear" : "Bloquear"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
