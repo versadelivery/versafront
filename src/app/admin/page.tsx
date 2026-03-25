@@ -27,28 +27,43 @@ export default function AdminDashboard() {
   ] as const;
 
   const todayKey = dayKeys[new Date().getDay()] as keyof WeekSchedule;
+  const yesterdayKey = dayKeys[(new Date().getDay() + 6) % 7] as keyof WeekSchedule;
   const todaySchedule = schedule ? schedule[todayKey] : null;
+  const yesterdaySchedule = schedule ? schedule[yesterdayKey] : null;
   const isActiveToday = !!(todaySchedule && todaySchedule.active);
 
   // Calcular se a loja está aberta agora baseado no horário (aproximação para o admin)
   const isWithinHours = () => {
-    if (!todaySchedule || !todaySchedule.active) return false;
-    
     // Pegar horário de Brasília para consistência com o backend
     const now = new Date();
     const brasiliaTime = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
     const currentMinutes = brasiliaTime.getHours() * 60 + brasiliaTime.getMinutes();
-    
-    const [openH, openM] = todaySchedule.open.split(':').map(Number);
-    const [closeH, closeM] = todaySchedule.close.split(':').map(Number);
-    
-    const openMinutes = openH * 60 + openM;
-    const closeMinutes = closeH * 60 + closeM;
-    
-    if (closeMinutes < openMinutes) { // Atravessa meia-noite
-      return currentMinutes >= openMinutes || currentMinutes <= closeMinutes;
+
+    // Verifica o horário de hoje
+    if (todaySchedule && todaySchedule.active) {
+      const [openH, openM] = todaySchedule.open.split(':').map(Number);
+      const [closeH, closeM] = todaySchedule.close.split(':').map(Number);
+      const openMinutes = openH * 60 + openM;
+      const closeMinutes = closeH * 60 + closeM;
+      if (closeMinutes < openMinutes) {
+        if (currentMinutes >= openMinutes) return true;
+      } else {
+        if (currentMinutes >= openMinutes && currentMinutes <= closeMinutes) return true;
+      }
     }
-    return currentMinutes >= openMinutes && currentMinutes <= closeMinutes;
+
+    // Verifica se o horário de ontem cruzava meia-noite e ainda estamos dentro
+    if (yesterdaySchedule && yesterdaySchedule.active) {
+      const [yOpenH, yOpenM] = yesterdaySchedule.open.split(':').map(Number);
+      const [yCloseH, yCloseM] = yesterdaySchedule.close.split(':').map(Number);
+      const yOpenMinutes = yOpenH * 60 + yOpenM;
+      const yCloseMinutes = yCloseH * 60 + yCloseM;
+      if (yCloseMinutes < yOpenMinutes && currentMinutes <= yCloseMinutes) {
+        return true;
+      }
+    }
+
+    return false;
   };
 
   const isReallyOpenNow = isWithinHours();
@@ -77,20 +92,36 @@ export default function AdminDashboard() {
           <div className="bg-background/80 backdrop-blur-sm rounded-lg p-3 shadow-md border border-border flex items-center gap-3">
             <div className="min-w-[120px]">
               <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${isActiveToday ? (isReallyOpenNow ? 'bg-green-500' : 'bg-orange-500') : 'bg-red-500'}`} />
+                <div className={`w-2 h-2 rounded-full ${isReallyOpenNow ? 'bg-green-500' : isActiveToday ? 'bg-orange-500' : 'bg-red-500'}`} />
                 <p className="text-sm font-semibold">
-                  {loadingSchedule || !schedule 
-                    ? 'Carregando...' 
-                    : isActiveToday 
-                      ? (isReallyOpenNow ? 'Aberta agora' : 'Fechada (fora do horário)') 
-                      : 'Fechada hoje'}
+                  {loadingSchedule || !schedule
+                    ? 'Carregando...'
+                    : isReallyOpenNow
+                      ? 'Aberta agora'
+                      : isActiveToday
+                        ? 'Fechada (fora do horário)'
+                        : 'Fechada hoje'}
                 </p>
               </div>
-              {!loadingSchedule && todaySchedule && (
+              {!loadingSchedule && (todaySchedule || (isReallyOpenNow && yesterdaySchedule)) && (
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {isActiveToday 
-                    ? `${todaySchedule.open} às ${todaySchedule.close}`
-                    : 'Dia desativado'}
+                  {(() => {
+                    if (isReallyOpenNow && !isActiveToday && yesterdaySchedule?.active) {
+                      return `${yesterdaySchedule.open} às ${yesterdaySchedule.close}`;
+                    }
+                    if (isReallyOpenNow && isActiveToday && todaySchedule) {
+                      const now = new Date();
+                      const brasiliaTime = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+                      const currentMinutes = brasiliaTime.getHours() * 60 + brasiliaTime.getMinutes();
+                      const [openH, openM] = todaySchedule.open.split(':').map(Number);
+                      if (currentMinutes < openH * 60 + openM && yesterdaySchedule?.active) {
+                        return `${yesterdaySchedule.open} às ${yesterdaySchedule.close}`;
+                      }
+                      return `${todaySchedule.open} às ${todaySchedule.close}`;
+                    }
+                    if (isActiveToday && todaySchedule) return `${todaySchedule.open} às ${todaySchedule.close}`;
+                    return 'Dia desativado';
+                  })()}
                 </p>
               )}
             </div>
