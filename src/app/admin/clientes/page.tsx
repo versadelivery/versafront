@@ -13,6 +13,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   UserPlus,
   Search,
   Edit,
@@ -40,6 +50,7 @@ export default function CustomersPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [blockTarget, setBlockTarget] = useState<any>(null);
 
   const handleCreateCustomer = () => {
     setSelectedCustomer(null);
@@ -53,11 +64,14 @@ export default function CustomersPage() {
     setIsModalOpen(true);
   };
 
-  const handleToggleBlock = async (customer: any) => {
-    const isBlocked = customer.attributes.blocked;
-    const action = isBlocked ? "desbloquear" : "bloquear";
-    if (!confirm(`Tem certeza que deseja ${action} o cliente "${customer.attributes.name}"?`)) return;
-    await toggleBlock(customer.id, !isBlocked);
+  const handleToggleBlock = (customer: any) => {
+    setBlockTarget(customer);
+  };
+
+  const confirmToggleBlock = async () => {
+    if (!blockTarget) return;
+    await toggleBlock(blockTarget.id, !blockTarget.attributes.blocked);
+    setBlockTarget(null);
   };
 
   const handleSaveCustomer = async (data: any) => {
@@ -250,6 +264,35 @@ export default function CustomersPage() {
         customer={selectedCustomer}
         isEdit={isEditing}
       />
+
+      {/* Confirmação de bloqueio */}
+      <AlertDialog open={!!blockTarget} onOpenChange={(open) => !open && setBlockTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {blockTarget?.attributes.blocked ? "Desbloquear cliente" : "Bloquear cliente"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {blockTarget?.attributes.blocked
+                ? `Deseja desbloquear "${blockTarget?.attributes.name}"? O cliente poderá fazer pedidos novamente.`
+                : `Deseja bloquear "${blockTarget?.attributes.name}"? O cliente não poderá fazer pedidos.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="cursor-pointer">Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className={`cursor-pointer ${
+                blockTarget?.attributes.blocked
+                  ? "bg-green-600 hover:bg-green-700"
+                  : "bg-red-600 hover:bg-red-700"
+              }`}
+              onClick={confirmToggleBlock}
+            >
+              {blockTarget?.attributes.blocked ? "Desbloquear" : "Bloquear"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
