@@ -19,6 +19,9 @@ import {
   Package,
   User,
   Star,
+  Copy,
+  CheckCircle2,
+  Clock,
 } from "lucide-react";
 import Link from "next/link";
 import PublicLoading from "@/components/public-loading";
@@ -38,6 +41,7 @@ const paymentConfig: Record<string, { label: string; icon: React.ElementType }> 
   credit:     { label: "Cartão de Crédito", icon: CreditCard },
   debit:      { label: "Cartão de Débito",  icon: CreditCard },
   manual_pix: { label: "PIX",               icon: QrCode     },
+  asaas_pix:  { label: "PIX",               icon: QrCode     },
   cash:       { label: "Dinheiro",          icon: Wallet     },
 };
 
@@ -76,6 +80,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
   const [orderData, setOrderData] = useState<ClientOrderData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [pixCopied, setPixCopied] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -177,6 +182,9 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
     discount_amount: parseFloat((orderData.attributes as any).discount_amount ?? '0'),
     payment_adjustment_amount: parseFloat((orderData.attributes as any).payment_adjustment_amount ?? '0'),
     coupon_code: (orderData.attributes as any).coupon_code ?? null,
+    asaas_pix_code: (orderData.attributes as any).asaas_pix_code ?? null,
+    asaas_pix_expires_at: (orderData.attributes as any).asaas_pix_expires_at ?? null,
+    paid_at: (orderData.attributes as any).paid_at ?? null,
   };
 
   const statusCfg = statusConfig[order.status] ?? statusConfig.received;
@@ -358,7 +366,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                 </InfoCard>
               )}
 
-              {/* PIX */}
+              {/* PIX Manual */}
               {order.payment_method === 'manual_pix' && (
                 <InfoCard title="Pagamento PIX">
                   <p className="text-sm text-muted-foreground mb-3">
@@ -374,6 +382,52 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                       Enviar comprovante (WhatsApp)
                     </Button>
                   )}
+                </InfoCard>
+              )}
+
+              {/* PIX Automatico (ASAAS) */}
+              {order.payment_method === 'asaas_pix' && order.asaas_pix_code && !order.paid_at && (
+                <InfoCard title="Pague via PIX">
+                  <div className="space-y-3">
+                    {order.asaas_pix_expires_at && (
+                      <div className="flex items-center gap-1.5 text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-md px-2.5 py-1.5">
+                        <Clock className="w-3.5 h-3.5 shrink-0" />
+                        <span>
+                          Expira às {new Date(order.asaas_pix_expires_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    )}
+                    <div className="bg-[#FAF9F7] border border-[#E5E2DD] rounded-md p-3">
+                      <p className="text-xs font-mono text-gray-700 break-all leading-relaxed select-all">
+                        {order.asaas_pix_code}
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant={pixCopied ? "outline" : "default"}
+                      className="w-full rounded-md gap-2 cursor-pointer"
+                      onClick={() => {
+                        navigator.clipboard.writeText(order.asaas_pix_code!)
+                        setPixCopied(true)
+                        setTimeout(() => setPixCopied(false), 2500)
+                      }}
+                    >
+                      {pixCopied ? (
+                        <>
+                          <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
+                          <span className="text-green-600">Copiado!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5" />
+                          Copiar código PIX
+                        </>
+                      )}
+                    </Button>
+                    <p className="text-xs text-muted-foreground text-center">
+                      Use <strong>PIX Copia e Cola</strong> no app do seu banco. Confirmação automática.
+                    </p>
+                  </div>
                 </InfoCard>
               )}
 

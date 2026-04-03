@@ -29,7 +29,7 @@ export interface CreateOrderRequest {
   order: {
     shop_id: number;
     withdrawal: boolean;
-    payment_method: 'manual_pix' | 'credit' | 'debit' | 'cash';
+    payment_method: 'manual_pix' | 'asaas_pix' | 'credit' | 'debit' | 'cash';
     customer_name?: string;
     customer_phone?: string;
     coupon_code?: string;

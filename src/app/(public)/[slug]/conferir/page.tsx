@@ -3,7 +3,7 @@
 import {
   CreditCard, Wallet, QrCode, Truck, ChevronDown, ChevronUp,
   Plus, Minus, X, CheckCircle2, Store, Clock, AlertTriangle,
-  ChevronLeft, ShoppingCart, Package, User, Phone, Tag, Loader2
+  ChevronLeft, ShoppingCart, Package, User, Phone, Tag, Loader2, Copy, ExternalLink
 } from 'lucide-react'
 import { toast } from "sonner"
 import { Button } from '@/components/ui/button'
@@ -139,7 +139,113 @@ function OrderSuccessScreen() {
     </div>
   )
 }
-type PaymentMethod = 'credit' | 'debit' | 'manual_pix' | 'cash'
+function PixPaymentScreen({ pixCode, expiresAt, orderId, shopSlug }: {
+  pixCode: string
+  expiresAt: string | null
+  orderId: string
+  shopSlug: string
+}) {
+  const router = useRouter()
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(pixCode)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2500)
+  }
+
+  const expiresDate = expiresAt ? new Date(expiresAt) : null
+  const expiresLabel = expiresDate
+    ? expiresDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+    : null
+
+  return (
+    <div className="min-h-screen bg-[#FAF9F7] flex flex-col items-center justify-center px-4">
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className="w-full max-w-md"
+      >
+        <div className="bg-white rounded-xl border border-[#E5E2DD] overflow-hidden shadow-sm">
+          {/* Header */}
+          <div className="px-6 py-5 border-b border-[#E5E2DD] text-center">
+            <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+              <QrCode className="w-7 h-7 text-primary" />
+            </div>
+            <h2 className="font-tomato text-xl font-bold text-gray-900">Pague via PIX</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Pedido <span className="font-semibold text-gray-900">#{orderId}</span> criado com sucesso
+            </p>
+            {expiresLabel && (
+              <div className="inline-flex items-center gap-1.5 mt-2 text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-md px-2.5 py-1">
+                <Clock className="w-3 h-3" />
+                QR Code expira às {expiresLabel}
+              </div>
+            )}
+          </div>
+
+          {/* PIX code */}
+          <div className="px-6 py-5 space-y-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                Código PIX Copia e Cola
+              </p>
+              <div className="bg-[#FAF9F7] border border-[#E5E2DD] rounded-md p-3">
+                <p className="text-xs font-mono text-gray-700 break-all leading-relaxed select-all">
+                  {pixCode}
+                </p>
+              </div>
+            </div>
+
+            <Button
+              onClick={handleCopy}
+              className="w-full rounded-md gap-2"
+              variant={copied ? "outline" : "default"}
+            >
+              {copied ? (
+                <>
+                  <CheckCircle2 className="w-4 h-4 text-green-600" />
+                  <span className="text-green-600">Copiado!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-4 h-4" />
+                  Copiar código PIX
+                </>
+              )}
+            </Button>
+
+            <p className="text-xs text-center text-muted-foreground">
+              Abra o app do seu banco, escolha <strong>PIX Copia e Cola</strong> e cole o código acima.
+              Seu pedido será confirmado automaticamente após o pagamento.
+            </p>
+          </div>
+
+          {/* Footer */}
+          <div className="px-6 pb-5 space-y-2">
+            <Button
+              onClick={() => router.push(`/pedidos/${orderId}`)}
+              variant="outline"
+              className="w-full rounded-md gap-2 border-[#E5E2DD] cursor-pointer"
+            >
+              <ExternalLink className="w-4 h-4" />
+              Acompanhar pedido
+            </Button>
+            <Button
+              onClick={() => router.push(`/${shopSlug}`)}
+              variant="ghost"
+              className="w-full rounded-md text-muted-foreground hover:text-gray-900 cursor-pointer"
+            >
+              Voltar ao cardápio
+            </Button>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  )
+}
+
+type PaymentMethod = 'credit' | 'debit' | 'manual_pix' | 'asaas_pix' | 'cash'
 
 interface CartItemWithExtras {
   id: string
@@ -167,6 +273,7 @@ const PAYMENT_LABELS: Record<PaymentMethod, { label: string; icon: React.ReactNo
   credit: { label: 'Crédito', icon: <CreditCard className="h-4 w-4" /> },
   debit: { label: 'Débito', icon: <CreditCard className="h-4 w-4" /> },
   manual_pix: { label: 'PIX', icon: <QrCode className="h-4 w-4" /> },
+  asaas_pix: { label: 'PIX', icon: <QrCode className="h-4 w-4" /> },
   cash: { label: 'Dinheiro', icon: <Wallet className="h-4 w-4" /> },
 }
 
@@ -219,6 +326,7 @@ export default function CheckoutPage() {
   const [couponDiscount, setCouponDiscount] = useState(0)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [orderCompleted, setOrderCompleted] = useState(false)
+  const [pixData, setPixData] = useState<{ code: string; expiresAt: string | null; orderId: string } | null>(null)
 
   const phoneValidationRegex = /^\(\d{2}\) \d{4,5}-\d{4}$/
 
@@ -259,10 +367,13 @@ export default function CheckoutPage() {
   }, [totalPrice, appliedCoupon])
 
   // Verificar se há métodos de pagamento disponíveis
+  // asaas_pix e manual_pix são mutuamente exclusivos: asaas_pix tem prioridade
   const availablePaymentMethods = shopPaymentConfig
-    ? (Object.entries(PAYMENT_LABELS) as [PaymentMethod, any][]).filter(([method]) =>
-        shopPaymentConfig[method === 'manual_pix' ? 'manual_pix' : method]
-      )
+    ? (Object.entries(PAYMENT_LABELS) as [PaymentMethod, any][]).filter(([method]) => {
+        if (method === 'asaas_pix') return shopPaymentConfig.asaas_pix
+        if (method === 'manual_pix') return !shopPaymentConfig.asaas_pix && shopPaymentConfig.manual_pix
+        return shopPaymentConfig[method as keyof typeof shopPaymentConfig]
+      })
     : []
   const noPaymentMethods = shopPaymentConfig && availablePaymentMethods.length === 0
 
@@ -465,7 +576,7 @@ export default function CheckoutPage() {
 
   const calculatePaymentAdjustment = (): number => {
     if (!shopPaymentConfig) return 0
-    const attrKey = paymentMethod === 'manual_pix' ? 'manual_pix' : paymentMethod
+    const attrKey = (paymentMethod === 'manual_pix' || paymentMethod === 'asaas_pix') ? paymentMethod : paymentMethod
     const adjType = shopPaymentConfig[`${attrKey}_adjustment_type` as keyof typeof shopPaymentConfig] as string
     if (!adjType || adjType === 'none') return 0
     const adjValue = parseFloat(String(shopPaymentConfig[`${attrKey}_adjustment_value` as keyof typeof shopPaymentConfig] || '0'))
@@ -479,7 +590,7 @@ export default function CheckoutPage() {
 
   const getPaymentAdjustmentBadge = (method: PaymentMethod): { label: string; color: string } | null => {
     if (!shopPaymentConfig) return null
-    const attrKey = method === 'manual_pix' ? 'manual_pix' : method
+    const attrKey = method
     const adjType = shopPaymentConfig[`${attrKey}_adjustment_type` as keyof typeof shopPaymentConfig] as string
     if (!adjType || adjType === 'none') return null
     const adjValue = parseFloat(String(shopPaymentConfig[`${attrKey}_adjustment_value` as keyof typeof shopPaymentConfig] || '0'))
@@ -605,12 +716,19 @@ export default function CheckoutPage() {
       const response = await createOrder(orderData, 'normal')
       const orderId = response.order_id
       setOrder(response)
-      toast.success("Pedido realizado com sucesso!")
-      setOrderCompleted(true)
       clearCart()
       const customerPhone = guestPhone.replace(/\D/g, '')
       localStorage.setItem('customer_info', JSON.stringify({ name: guestName.trim(), phone: customerPhone }))
       localStorage.setItem('guest_phone', customerPhone)
+
+      if (paymentMethod === 'asaas_pix' && response.pix_code) {
+        setPixData({ code: response.pix_code, expiresAt: response.pix_expires_at ?? null, orderId: String(orderId) })
+        setIsSubmitting(false)
+        return
+      }
+
+      toast.success("Pedido realizado com sucesso!")
+      setOrderCompleted(true)
       if (orderId) router.push(`/pedidos/${orderId}`)
     } catch (error: any) {
       console.error('Erro ao enviar pedido:', error)
@@ -685,6 +803,17 @@ export default function CheckoutPage() {
 
   if (orderCompleted) {
     return <OrderSuccessScreen />
+  }
+
+  if (pixData) {
+    return (
+      <PixPaymentScreen
+        pixCode={pixData.code}
+        expiresAt={pixData.expiresAt}
+        orderId={pixData.orderId}
+        shopSlug={storeSlug}
+      />
+    )
   }
 
   if (cartItems.length === 0) {
