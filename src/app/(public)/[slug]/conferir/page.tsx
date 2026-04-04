@@ -721,9 +721,16 @@ export default function CheckoutPage() {
       localStorage.setItem('customer_info', JSON.stringify({ name: guestName.trim(), phone: customerPhone }))
       localStorage.setItem('guest_phone', customerPhone)
 
-      if (paymentMethod === 'asaas_pix' && response.pix_code) {
-        setPixData({ code: response.pix_code, expiresAt: response.pix_expires_at ?? null, orderId: String(orderId) })
-        setIsSubmitting(false)
+      if (paymentMethod === 'asaas_pix') {
+        if (response.pix_code) {
+          setPixData({ code: response.pix_code, expiresAt: response.pix_expires_at ?? null, orderId: String(orderId) })
+          setIsSubmitting(false)
+          return
+        }
+        // PIX gerado sem código — pedido criado mas geração de PIX falhou
+        toast.warning('Pedido criado! Houve um problema ao gerar o código PIX. Entre em contato com a loja para combinar o pagamento.')
+        setOrderCompleted(true)
+        if (orderId) router.push(`/pedidos/${orderId}`)
         return
       }
 
