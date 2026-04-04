@@ -197,7 +197,7 @@ function PixPaymentScreen({ pixCode, expiresAt, orderId, shopSlug }: {
         <div className="bg-white rounded-xl border border-[#E5E2DD] overflow-hidden shadow-sm">
           {/* Header */}
           <div className="px-6 py-5 border-b border-[#E5E2DD] text-center">
-            <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+            <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3">
               <QrCode className="w-7 h-7 text-primary" />
             </div>
             <h2 className="font-tomato text-xl font-bold text-gray-900">Pague via PIX</h2>
