@@ -48,7 +48,7 @@ const paymentConfig: Record<string, { label: string; icon: React.ElementType }> 
 function StatusBadge({ status }: { status: string }) {
   const cfg = statusConfig[status] ?? { label: status, dot: "bg-gray-400", border: "border-gray-300", text: "text-gray-600" };
   return (
-    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md border bg-white text-sm font-semibold ${cfg.border} ${cfg.text}`}>
+    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md underline bg-white text-sm font-semibold ${cfg.border} ${cfg.text}`}>
       <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${cfg.dot}`} />
       {cfg.label}
     </span>
@@ -405,7 +405,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                 <InfoCard title="Pague via PIX">
                   <div className="space-y-3">
                     {order.asaas_pix_expires_at && (
-                      <div className="flex items-center gap-1.5 text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-md px-2.5 py-1.5">
+                      <div className="flex items-center gap-1.5 text-xs text-amber-600 border-amber-200 rounded-md px-2.5 py-1.5">
                         <Clock className="w-3.5 h-3.5 shrink-0" />
                         <span>
                           Expira às {new Date(order.asaas_pix_expires_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
