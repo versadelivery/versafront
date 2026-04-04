@@ -5,6 +5,7 @@ import {
   Plus, Minus, X, CheckCircle2, Store, Clock, AlertTriangle,
   ChevronLeft, ShoppingCart, Package, User, Phone, Tag, Loader2, Copy, ExternalLink
 } from 'lucide-react'
+import { QRCodeSVG } from 'qrcode.react'
 import { toast } from "sonner"
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -159,6 +160,33 @@ function PixPaymentScreen({ pixCode, expiresAt, orderId, shopSlug }: {
     ? expiresDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
     : null
 
+  const navigateToTracking = () => {
+    try { sessionStorage.removeItem('pix_pending') } catch {}
+    router.push(`/pedidos/${orderId}`)
+  }
+
+  // Polling: redireciona automaticamente quando pagamento for confirmado
+  useEffect(() => {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+    const check = async () => {
+      try {
+        const res = await fetch(`${baseUrl}/orders/${orderId}`, {
+          headers: { 'ngrok-skip-browser-warning': 'true' }
+        })
+        if (!res.ok) return
+        const json = await res.json()
+        const attrs = (json?.data ?? json)?.attributes
+        if (attrs?.paid_at) {
+          try { sessionStorage.removeItem('pix_pending') } catch {}
+          toast.success('Pagamento PIX confirmado! Redirecionando...')
+          router.push(`/pedidos/${orderId}`)
+        }
+      } catch {}
+    }
+    const interval = setInterval(check, 5000)
+    return () => clearInterval(interval)
+  }, [orderId, router])
+
   return (
     <div className="min-h-screen bg-[#FAF9F7] flex flex-col items-center justify-center px-4">
       <motion.div
@@ -179,16 +207,20 @@ function PixPaymentScreen({ pixCode, expiresAt, orderId, shopSlug }: {
             {expiresLabel && (
               <div className="inline-flex items-center gap-1.5 mt-2 text-xs text-amber-600 border-amber-200 rounded-md px-2.5 py-1">
                 <Clock className="w-3 h-3" />
-                QR Code expira às {expiresLabel}
+                Expira às {expiresLabel}
               </div>
             )}
           </div>
 
-          {/* PIX code */}
+          {/* QR Code + código copia e cola */}
           <div className="px-6 py-5 space-y-4">
+            <div className="flex justify-center p-4 bg-[#FAF9F7] border border-[#E5E2DD] rounded-md">
+              <QRCodeSVG value={pixCode} size={180} level="M" />
+            </div>
+
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-                Código PIX Copia e Cola
+                PIX Copia e Cola
               </p>
               <div className="bg-[#FAF9F7] border border-[#E5E2DD] rounded-md p-3">
                 <p className="text-xs font-mono text-gray-700 break-all leading-relaxed select-all">
@@ -216,7 +248,7 @@ function PixPaymentScreen({ pixCode, expiresAt, orderId, shopSlug }: {
             </Button>
 
             <p className="text-xs text-center text-muted-foreground">
-              Abra o app do seu banco, escolha <strong>PIX Copia e Cola</strong> e cole o código acima.
+              Escaneie o QR Code ou use <strong>PIX Copia e Cola</strong> no app do seu banco.
               Seu pedido será confirmado automaticamente após o pagamento.
             </p>
           </div>
@@ -224,7 +256,7 @@ function PixPaymentScreen({ pixCode, expiresAt, orderId, shopSlug }: {
           {/* Footer */}
           <div className="px-6 pb-5 space-y-2">
             <Button
-              onClick={() => router.push(`/pedidos/${orderId}`)}
+              onClick={navigateToTracking}
               variant="outline"
               className="w-full rounded-md gap-2 border-[#E5E2DD] cursor-pointer"
             >
@@ -232,7 +264,7 @@ function PixPaymentScreen({ pixCode, expiresAt, orderId, shopSlug }: {
               Acompanhar pedido
             </Button>
             <Button
-              onClick={() => router.push(`/${shopSlug}`)}
+              onClick={() => { try { sessionStorage.removeItem('pix_pending') } catch {}; router.push(`/${shopSlug}`) }}
               variant="ghost"
               className="w-full rounded-md text-muted-foreground hover:text-gray-900 cursor-pointer"
             >
@@ -327,6 +359,16 @@ export default function CheckoutPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [orderCompleted, setOrderCompleted] = useState(false)
   const [pixData, setPixData] = useState<{ code: string; expiresAt: string | null; orderId: string } | null>(null)
+
+  // Restaurar pixData do sessionStorage em caso de refresh na tela de PIX
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem('pix_pending')
+      if (saved) setPixData(JSON.parse(saved))
+    } catch {
+      try { sessionStorage.removeItem('pix_pending') } catch {}
+    }
+  }, [])
 
   const phoneValidationRegex = /^\(\d{2}\) \d{4,5}-\d{4}$/
 
@@ -723,7 +765,9 @@ export default function CheckoutPage() {
 
       if (paymentMethod === 'asaas_pix') {
         if (response.pix_code) {
-          setPixData({ code: response.pix_code, expiresAt: response.pix_expires_at ?? null, orderId: String(orderId) })
+          const newPixData = { code: response.pix_code, expiresAt: response.pix_expires_at ?? null, orderId: String(orderId) }
+          setPixData(newPixData)
+          try { sessionStorage.setItem('pix_pending', JSON.stringify(newPixData)) } catch {}
           setIsSubmitting(false)
           return
         }

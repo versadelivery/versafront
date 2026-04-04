@@ -664,7 +664,13 @@ export default function OrderManagement() {
   };
 
   const getOrdersByStatus = (status: Order['status']) => {
-    return filteredOrders.filter((order: Order) => order.status === status);
+    return filteredOrders
+      .filter((order: Order) => order.status === status)
+      .sort((a, b) => {
+        const dateA = new Date(a.socketData.attributes.created_at).getTime();
+        const dateB = new Date(b.socketData.attributes.created_at).getTime();
+        return dateB - dateA;
+      });
   };
 
   const selectedOrder = orders.find((order: Order) => order.id === selectedOrderId);
