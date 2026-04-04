@@ -177,7 +177,7 @@ function PixPaymentScreen({ pixCode, expiresAt, orderId, shopSlug }: {
               Pedido <span className="font-semibold text-gray-900">#{orderId}</span> criado com sucesso
             </p>
             {expiresLabel && (
-              <div className="inline-flex items-center gap-1.5 mt-2 text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-md px-2.5 py-1">
+              <div className="inline-flex items-center gap-1.5 mt-2 text-xs text-amber-600 border border-amber-200 rounded-md px-2.5 py-1">
                 <Clock className="w-3 h-3" />
                 QR Code expira às {expiresLabel}
               </div>
