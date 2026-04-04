@@ -157,8 +157,8 @@ export const adminSections: AdminSection[] = [
   },
   {
     id: "marketing-reviews",
-    title: "Avaliacoes de Clientes",
-    description: "Veja as avaliacoes dos seus clientes",
+    title: "Avaliações de Clientes",
+    description: "Veja as avaliações dos seus clientes",
     href: "/admin/marketing/reviews",
     icon: Star,
     iconBgColor: "bg-yellow-500",

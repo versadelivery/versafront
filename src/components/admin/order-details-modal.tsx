@@ -100,9 +100,10 @@ const getStatusInfo = (status: string) => {
 
 const getPaymentMethodLabel = (method: string) => {
   const methodMap: Record<string, string> = {
-    credit: 'Cartao de Credito',
-    debit: 'Cartao de Debito',
-    manual_pix: 'Pix',
+    credit: 'Cartão de Crédito',
+    debit: 'Cartão de Débito',
+    manual_pix: 'PIX',
+    asaas_pix: 'PIX Automático',
     cash: 'Dinheiro',
   };
   return methodMap[method] || method;
@@ -593,25 +594,22 @@ ${order.items.map((item) => `${item.quantity}x ${item.name} - ${formatCurrency(i
             </div>
             <span
               className={cn(
-                'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border bg-white text-sm font-semibold',
-                statusInfo.border,
+                'inline-flex items-center gap-1.5 text-sm font-semibold underline underline-offset-2',
                 statusInfo.text,
               )}
             >
-              <span className={cn('w-1.5 h-1.5 rounded-full', statusInfo.dot)} />
+              <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', statusInfo.dot)} />
               {statusInfo.label}
             </span>
             <span
               className={cn(
-                'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border bg-white text-sm font-semibold',
-                order.payment_status === 'paid'
-                  ? 'border-green-400 text-green-700'
-                  : 'border-red-400 text-red-700',
+                'inline-flex items-center gap-1.5 text-sm font-semibold underline underline-offset-2',
+                order.payment_status === 'paid' ? 'text-green-700' : 'text-red-700',
               )}
             >
               <span
                 className={cn(
-                  'w-1.5 h-1.5 rounded-full',
+                  'w-1.5 h-1.5 rounded-full flex-shrink-0',
                   order.payment_status === 'paid' ? 'bg-green-400' : 'bg-red-400',
                 )}
               />
@@ -737,7 +735,7 @@ ${order.items.map((item) => `${item.quantity}x ${item.name} - ${formatCurrency(i
                   ) : (
                     <>
                       <InfoRow label="Nome" value={editedOrder.customer?.name || 'Cliente'} />
-                      <InfoRow label="Telefone" value={editedOrder.customer?.phone || 'N/A'} />
+                      <InfoRow label="Telefone" value={editedOrder.customer?.phone || 'Não informado'} />
                     </>
                   )}
                 </div>
@@ -825,9 +823,10 @@ ${order.items.map((item) => `${item.quantity}x ${item.name} - ${formatCurrency(i
                         </SelectTrigger>
                         <SelectContent className="rounded-md border-[#E5E2DD]">
                           <SelectItem value="cash">Dinheiro</SelectItem>
-                          <SelectItem value="manual_pix">Pix</SelectItem>
-                          <SelectItem value="credit">Cartao de Credito</SelectItem>
-                          <SelectItem value="debit">Cartao de Debito</SelectItem>
+                          <SelectItem value="manual_pix">PIX</SelectItem>
+                          <SelectItem value="asaas_pix">PIX Automático</SelectItem>
+                          <SelectItem value="credit">Cartão de Crédito</SelectItem>
+                          <SelectItem value="debit">Cartão de Débito</SelectItem>
                         </SelectContent>
                       </Select>
                     ) : (

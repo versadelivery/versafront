@@ -1173,11 +1173,12 @@ export default function OrderManagement() {
               phone: selectedOrder.socketData.attributes.shop.data.attributes.cellphone
             },
             customer: selectedOrder.socketData.attributes.customer?.data ? {
-            name: selectedOrder.socketData.attributes.customer.data.attributes.name,
-            phone: selectedOrder.socketData.attributes.customer.data.attributes.cellphone
+              name: selectedOrder.socketData.attributes.customer.data.attributes.name,
+              phone: selectedOrder.socketData.attributes.customer.data.attributes.cellphone
+                  || (selectedOrder.socketData.attributes as any).customer_phone || ''
             } : {
-              name: (selectedOrder.socketData.attributes.customer as any)?.name || 'Cliente',
-              phone: (selectedOrder.socketData.attributes.customer as any)?.cellphone || ''
+              name: (selectedOrder.socketData.attributes as any).customer_name || 'Cliente',
+              phone: (selectedOrder.socketData.attributes as any).customer_phone || ''
             },
             deliveryPerson: selectedOrder.deliveryPerson || (selectedOrder.socketData.attributes as any).delivery_person || '',
             discount_amount: parseFloat(selectedOrder.socketData.attributes.discount_amount || '0'),
