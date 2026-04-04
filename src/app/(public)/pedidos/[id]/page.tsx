@@ -452,16 +452,27 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                   <p className="text-sm text-muted-foreground mb-3">
                     Houve um problema ao gerar o código PIX. Entre em contato com a loja para combinar o pagamento.
                   </p>
-                  {order.shop.phone && (
+                  <div className="space-y-2">
+                    {order.shop.phone && (
+                      <Button
+                        onClick={() => handleWhatsApp('pix')}
+                        size="sm"
+                        className="w-full rounded-md bg-green-600 hover:bg-green-700 text-white gap-2"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        Falar com a loja (WhatsApp)
+                      </Button>
+                    )}
                     <Button
-                      onClick={() => handleWhatsApp('pix')}
+                      onClick={() => router.push(`/pedidos/${order.id}`)}
                       size="sm"
-                      className="w-full rounded-md bg-green-600 hover:bg-green-700 text-white gap-2"
+                      variant="outline"
+                      className="w-full rounded-md gap-2 border-[#E5E2DD]"
                     >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      Falar com a loja (WhatsApp)
+                      <Package className="w-3.5 h-3.5" />
+                      Acompanhar pedido
                     </Button>
-                  )}
+                  </div>
                 </InfoCard>
               )}
 

@@ -30,7 +30,13 @@ import PublicLoading from '@/components/public-loading'
 
 type DeliveryOption = 'delivery' | 'pickup'
 
-function OrderSuccessScreen() {
+function SuccessScreen({ iconColor, title, subtitle, steps, onComplete }: {
+  iconColor: string
+  title: string
+  subtitle: string
+  steps: { icon: React.ElementType; text: string }[]
+  onComplete: () => void
+}) {
   const [step, setStep] = useState(0)
 
   useEffect(() => {
@@ -38,38 +44,31 @@ function OrderSuccessScreen() {
       setTimeout(() => setStep(1), 400),
       setTimeout(() => setStep(2), 1200),
       setTimeout(() => setStep(3), 2000),
+      setTimeout(onComplete, 3500),
     ]
     return () => timers.forEach(clearTimeout)
   }, [])
 
-  const steps = [
-    { icon: Package, text: "Preparando seu pedido..." },
-    { icon: CheckCircle2, text: "Pedido confirmado!" },
-    { icon: Truck, text: "Acompanhe em tempo real" },
-  ]
-
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center px-6">
-      {/* Ícone principal com animação */}
+    <div className="fixed inset-0 z-50 bg-white flex flex-col items-center justify-center px-6">
       <motion.div
         initial={{ scale: 0, rotate: -180 }}
         animate={{ scale: 1, rotate: 0 }}
         transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.1 }}
         className="mb-8"
       >
-        <div className="w-24 h-24 rounded-full bg-[#7ED957] flex items-center justify-center">
+        <div className={`w-24 h-24 rounded-full flex items-center justify-center ${iconColor}`}>
           <CheckCircle2 className="w-12 h-12 text-white" />
         </div>
       </motion.div>
 
-      {/* Título */}
       <motion.h1
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
         className="font-tomato text-2xl sm:text-3xl font-bold text-[#1B1B1B] text-center mb-2"
       >
-        Pedido realizado!
+        {title}
       </motion.h1>
 
       <motion.p
@@ -78,10 +77,9 @@ function OrderSuccessScreen() {
         transition={{ delay: 0.5 }}
         className="text-gray-500 text-center mb-10"
       >
-        Tudo certo, estamos cuidando de tudo pra você
+        {subtitle}
       </motion.p>
 
-      {/* Steps progressivos */}
       <div className="flex flex-col gap-4 w-full max-w-xs">
         {steps.map((s, i) => {
           const Icon = s.icon
@@ -90,10 +88,7 @@ function OrderSuccessScreen() {
             <motion.div
               key={i}
               initial={{ opacity: 0, x: -20 }}
-              animate={{
-                opacity: isActive ? 1 : 0.3,
-                x: isActive ? 0 : -20,
-              }}
+              animate={{ opacity: isActive ? 1 : 0.3, x: isActive ? 0 : -20 }}
               transition={{ delay: 0.4 + i * 0.3, duration: 0.4 }}
               className="flex items-center gap-3"
             >
@@ -108,11 +103,7 @@ function OrderSuccessScreen() {
                 {s.text}
               </span>
               {isActive && i < steps.length - 1 && (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="ml-auto"
-                >
+                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="ml-auto">
                   <CheckCircle2 className="w-4 h-4 text-primary" />
                 </motion.div>
               )}
@@ -121,7 +112,6 @@ function OrderSuccessScreen() {
         })}
       </div>
 
-      {/* Barra de progresso */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -132,7 +122,7 @@ function OrderSuccessScreen() {
           <motion.div
             initial={{ width: "0%" }}
             animate={{ width: "100%" }}
-            transition={{ duration: 2.5, ease: "easeInOut" }}
+            transition={{ duration: 3, ease: "easeInOut" }}
             className="h-full bg-primary rounded-full"
           />
         </div>
@@ -140,11 +130,44 @@ function OrderSuccessScreen() {
     </div>
   )
 }
-function PixPaymentScreen({ pixCode, expiresAt, orderId, shopSlug }: {
+
+function OrderSuccessScreen({ onComplete }: { onComplete: () => void }) {
+  return (
+    <SuccessScreen
+      iconColor="bg-[#7ED957]"
+      title="Pedido realizado!"
+      subtitle="Tudo certo, estamos cuidando de tudo pra você"
+      steps={[
+        { icon: Package, text: "Preparando seu pedido..." },
+        { icon: CheckCircle2, text: "Pedido confirmado!" },
+        { icon: Truck, text: "Acompanhe em tempo real" },
+      ]}
+      onComplete={onComplete}
+    />
+  )
+}
+
+function PixSuccessScreen({ onComplete }: { onComplete: () => void }) {
+  return (
+    <SuccessScreen
+      iconColor="bg-[#7ED957]"
+      title="Pagamento confirmado!"
+      subtitle="PIX recebido, seu pedido está sendo processado"
+      steps={[
+        { icon: QrCode, text: "Pagamento PIX recebido!" },
+        { icon: CheckCircle2, text: "Pedido confirmado!" },
+        { icon: Truck, text: "Acompanhe em tempo real" },
+      ]}
+      onComplete={onComplete}
+    />
+  )
+}
+function PixPaymentScreen({ pixCode, expiresAt, orderId, shopSlug, onPaymentConfirmed }: {
   pixCode: string
   expiresAt: string | null
   orderId: string
   shopSlug: string
+  onPaymentConfirmed: () => void
 }) {
   const router = useRouter()
   const [copied, setCopied] = useState(false)
@@ -178,8 +201,7 @@ function PixPaymentScreen({ pixCode, expiresAt, orderId, shopSlug }: {
         const attrs = (json?.data ?? json)?.attributes
         if (attrs?.paid_at) {
           try { sessionStorage.removeItem('pix_pending') } catch {}
-          toast.success('Pagamento PIX confirmado! Redirecionando...')
-          router.push(`/pedidos/${orderId}`)
+          onPaymentConfirmed()
         }
       } catch {}
     }
@@ -359,6 +381,7 @@ export default function CheckoutPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [orderCompleted, setOrderCompleted] = useState(false)
   const [pixData, setPixData] = useState<{ code: string; expiresAt: string | null; orderId: string } | null>(null)
+  const [pixPaidOrderId, setPixPaidOrderId] = useState<string | null>(null)
 
   // Restaurar pixData do sessionStorage em caso de refresh na tela de PIX
   useEffect(() => {
@@ -778,9 +801,8 @@ export default function CheckoutPage() {
         return
       }
 
-      toast.success("Pedido realizado com sucesso!")
       setOrderCompleted(true)
-      if (orderId) router.push(`/pedidos/${orderId}`)
+      if (orderId) setTimeout(() => router.push(`/pedidos/${orderId}`), 3500)
     } catch (error: any) {
       console.error('Erro ao enviar pedido:', error)
       const raw = error.response?.data?.error || ""
@@ -853,7 +875,11 @@ export default function CheckoutPage() {
   }
 
   if (orderCompleted) {
-    return <OrderSuccessScreen />
+    return <OrderSuccessScreen onComplete={() => {}} />
+  }
+
+  if (pixPaidOrderId) {
+    return <PixSuccessScreen onComplete={() => router.push(`/pedidos/${pixPaidOrderId}`)} />
   }
 
   if (pixData) {
@@ -863,6 +889,10 @@ export default function CheckoutPage() {
         expiresAt={pixData.expiresAt}
         orderId={pixData.orderId}
         shopSlug={storeSlug}
+        onPaymentConfirmed={() => {
+          setPixData(null)
+          setPixPaidOrderId(pixData.orderId)
+        }}
       />
     )
   }
@@ -899,7 +929,7 @@ export default function CheckoutPage() {
           <div className="flex items-center h-16">
             <button
               onClick={() => router.back()}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors mr-auto"
+              className="cursor-pointer flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors mr-auto"
             >
               <ChevronLeft className="h-5 w-5" />
               <span className="text-sm font-medium hidden sm:block">Voltar</span>

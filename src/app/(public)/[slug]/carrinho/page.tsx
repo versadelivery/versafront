@@ -177,8 +177,8 @@ export default function CartPage() {
         </h1>
 
         {items.length === 0 ? (
-          <div className="bg-white border border-[#E5E2DD] rounded-md p-12 sm:p-20 text-center">
-            <div className="w-20 h-20 bg-gray-100 rounded-md flex items-center justify-center mx-auto mb-5">
+          <div className="p-12 sm:p-20 text-center">
+            <div className="w-20 h-20 rounded-md flex items-center justify-center mx-auto mb-5">
               <ShoppingCart className="w-9 h-9 text-gray-300" />
             </div>
             <h2 className="font-tomato text-xl font-bold text-gray-900 mb-2">Seu carrinho está vazio</h2>
@@ -312,7 +312,7 @@ export default function CartPage() {
 
                         {/* Expanded details panel */}
                         {isExpanded && hasDetails && (
-                          <div className="mt-3 ml-[66px] sm:ml-[74px] bg-[#FAF9F7] border border-[#E5E2DD] rounded-md px-4 py-3 space-y-2.5">
+                          <div className="mt-3 sm:ml-[74px] bg-[#FAF9F7] border border-[#E5E2DD] rounded-md px-4 py-3 space-y-2.5">
                             <div className="flex items-center justify-between text-xs">
                               <span className="text-gray-500">Preço unitário</span>
                               <div className="flex items-center gap-1.5">
