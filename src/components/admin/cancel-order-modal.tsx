@@ -85,7 +85,7 @@ export default function CancelOrderModal({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-red-600">
+          <DialogTitle className="font-tomato flex items-center gap-2 text-red-600">
             <XCircle className="h-5 w-5" />
             Cancelar Pedido
           </DialogTitle>

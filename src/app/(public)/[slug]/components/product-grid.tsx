@@ -1,10 +1,11 @@
 "use client"
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Search, ChevronDown } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import ProductCard from './product-card';
 import { normalizeItems } from '../normalize-items';
+import { getTextColors } from '../theme-utils';
 import type { CatalogItem } from '../types';
 
 interface ProductGridProps {
@@ -12,6 +13,9 @@ interface ProductGridProps {
   activeCategory: string;
   searchQuery: string;
   onClearSearch: () => void;
+  catalogLayout?: string;
+  groupColor?: string | null;
+  backgroundColor?: string | null;
 }
 
 const DAY_KEYS = [
@@ -27,13 +31,14 @@ const DAY_KEYS = [
 function isItemActiveToday(item: CatalogItem): boolean {
   const attrs = item.attributes as any;
   const dayKey = DAY_KEYS[new Date().getDay()];
-  // Se o campo não existe (undefined), o item é exibido normalmente
   if (attrs[dayKey] === undefined) return true;
   return !!attrs[dayKey];
 }
 
-export default function ProductGrid({ categories, activeCategory, searchQuery, onClearSearch }: ProductGridProps) {
+export default function ProductGrid({ categories, activeCategory, searchQuery, onClearSearch, catalogLayout = 'list', groupColor, backgroundColor }: ProductGridProps) {
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+
+  const bgTheme = useMemo(() => getTextColors(backgroundColor), [backgroundColor]);
 
   const toggleGroup = (id: string) => {
     setCollapsedGroups(prev => {
@@ -58,11 +63,16 @@ export default function ProductGrid({ categories, activeCategory, searchQuery, o
     return (
       <div className="py-20 px-4 text-center">
         <div className="mx-auto max-w-sm">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Search className="h-7 w-7 text-muted-foreground" />
+          <div
+            className="w-16 h-16 flex items-center justify-center mx-auto mb-4 rounded-md"
+            style={{ backgroundColor: bgTheme.subtleBg }}
+          >
+            <Search className="h-7 w-7" style={{ color: bgTheme.textMuted }} />
           </div>
-          <h3 className="text-lg font-semibold text-foreground mb-2">Nenhum produto encontrado</h3>
-          <p className="text-sm text-muted-foreground mb-6">
+          <h3 className="font-tomato text-lg font-semibold mb-2" style={{ color: bgTheme.text }}>
+            Nenhum produto encontrado
+          </h3>
+          <p className="text-sm mb-6" style={{ color: bgTheme.textMuted }}>
             {searchQuery
               ? `Nenhum resultado para "${searchQuery}".`
               : 'Não há produtos disponíveis no momento.'}
@@ -70,7 +80,11 @@ export default function ProductGrid({ categories, activeCategory, searchQuery, o
           {searchQuery && (
             <button
               onClick={onClearSearch}
-              className="px-6 py-2 bg-primary text-white rounded-full text-sm font-semibold hover:bg-primary/90 transition-colors"
+              className="px-6 py-2.5 text-sm font-medium rounded-md transition-colors cursor-pointer"
+              style={{
+                backgroundColor: bgTheme.isDark ? '#F9FAFB' : '#111827',
+                color: bgTheme.isDark ? '#111827' : '#FFFFFF',
+              }}
             >
               Limpar busca
             </button>
@@ -89,21 +103,28 @@ export default function ProductGrid({ categories, activeCategory, searchQuery, o
           <section
             key={group.id}
             id={group.attributes.name.toLowerCase().replace(/\s+/g, '-')}
-            className="scroll-mt-48"
+            className="scroll-mt-40"
           >
             <div
-              className="flex items-center justify-between mb-5 px-0.5 cursor-pointer select-none"
+              className="flex items-center justify-between mb-5 cursor-pointer select-none"
               onClick={() => toggleGroup(group.id)}
             >
               <div className="flex items-center gap-2.5">
                 <ChevronDown
-                  className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`}
+                  className={`w-5 h-5 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`}
+                  style={{ color: bgTheme.textMuted }}
                 />
-                <h2 className="text-base font-bold text-foreground">
+                <h2 className="font-tomato text-lg font-bold" style={{ color: bgTheme.text }}>
                   {group.attributes.name}
                 </h2>
               </div>
-              <span className="text-xs text-muted-foreground bg-gray-100 px-2.5 py-1 rounded-full">
+              <span
+                className="text-sm rounded-md px-3 py-1"
+                style={{
+                  color: bgTheme.textMuted,
+                  border: `1px solid ${bgTheme.border}`,
+                }}
+              >
                 {group.items.length} {group.items.length === 1 ? 'item' : 'itens'}
               </span>
             </div>
@@ -118,19 +139,19 @@ export default function ProductGrid({ categories, activeCategory, searchQuery, o
                   transition={{ duration: 0.2, ease: 'easeInOut' }}
                   style={{ overflow: 'hidden' }}
                 >
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-                    {group.items.map((item: CatalogItem, index: number) => (
-                      <motion.div
-                        key={item.id}
-                        initial={{ opacity: 0, y: 8 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.25, delay: index * 0.04 }}
-                      >
-                        <ProductCard item={item} index={index} />
-                      </motion.div>
-                    ))}
-                  </div>
+                  {catalogLayout === 'list' ? (
+                    <div className="space-y-3">
+                      {group.items.map((item: CatalogItem, index: number) => (
+                        <ProductCard key={item.id} item={item} index={index} layout="list" groupColor={groupColor} />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+                      {group.items.map((item: CatalogItem, index: number) => (
+                        <ProductCard key={item.id} item={item} index={index} layout="grid" groupColor={groupColor} />
+                      ))}
+                    </div>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>

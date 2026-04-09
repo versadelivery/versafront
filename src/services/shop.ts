@@ -9,6 +9,23 @@ export interface ShopAttributes {
   email: string | null;
   image?: File | string | any;
   image_url?: string | any;
+  auto_accept_orders?: boolean;
+  auto_open_cash_register?: boolean;
+  auto_open_cash_register_time?: string | null;
+  welcome_message?: string | null;
+  banner_text?: string | null;
+  banner_active?: boolean;
+  header_color?: string | null;
+  background_color?: string | null;
+  group_color?: string | null;
+  catalog_layout?: string | null;
+  accent_color?: string | null;
+  estimated_prep_time?: number | null;
+  estimated_delivery_time?: number | null;
+  business_category?: string | null;
+  default_delivery_person_id?: number | string | null;
+  default_delivery_person_name?: string | null;
+  order_flow?: string[];
 }
 
 export interface ShopResponse {
@@ -29,12 +46,11 @@ export const shopService = {
     const formData = new FormData();
     
     Object.entries(data.shop).forEach(([key, value]) => {
-      if (value !== null && value !== undefined) {
-        if (key === 'image' && value instanceof File) {
-          formData.append('shop[image]', value);
-        } else {
-          formData.append(`shop[${key}]`, value);
-        }
+      if (value === undefined) return;
+      if (key === 'image' && value instanceof File) {
+        formData.append('shop[image]', value);
+      } else {
+        formData.append(`shop[${key}]`, value === null ? '' : value);
       }
     });
     const response = await api.put<ShopResponse>("/shops", formData, {

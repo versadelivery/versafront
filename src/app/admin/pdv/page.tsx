@@ -1,27 +1,30 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import {
   ShoppingCart, Plus, Minus, Trash2, Search,
   CreditCard, MapPin, User, Package, Settings2,
+  Tag, X, CheckCircle2, Loader2, UtensilsCrossed, ArrowLeft, AlertCircle,
 } from "lucide-react";
 import { useCatalogGroup } from "@/hooks/useCatalogGroup";
 import Image from "next/image";
 import { toast } from "sonner";
 import { formatPrice } from "@/utils/format-price";
 import { createPDVOrder } from "@/services/order-service";
+import { validateCoupon, ValidateCouponData } from "@/services/coupon-validate-service";
 import { useAdminActionCable } from "@/lib/admin-cable";
 import { useShop } from "@/hooks/use-shop";
+import { usePayment } from "@/app/admin/settings/payment/usePayment";
+import { useDelivery } from "@/hooks/use-delivery";
 import { ItemOptionsDialog } from "./item-options-dialog";
-import AdminHeader from "@/components/admin/catalog-header";
+import { tableService, Table, TableSession, CloseTableSessionPayload } from "@/app/admin/mesas/services/table-service";
+import CloseTableModal from "@/app/admin/mesas/components/close-table-modal";
 
 interface CartItem {
   id: string;
@@ -35,6 +38,8 @@ interface CartItem {
   selectedSharedComplements?: { id: string; name: string; price: number }[];
   totalPrice: number;
   observation?: string;
+  weight?: number;
+  itemType?: string;
 }
 
 interface CustomerInfo {
@@ -42,8 +47,6 @@ interface CustomerInfo {
   phone: string;
   address: string;
   neighborhood: string;
-  city: string;
-  zipCode: string;
   complement?: string;
   reference?: string;
 }
@@ -59,18 +62,28 @@ export default function PDVPage() {
     phone: "",
     address: "",
     neighborhood: "",
-    city: "",
-    zipCode: "",
     complement: "",
     reference: "",
   });
-  const [orderType, setOrderType] = useState<"delivery" | "pickup">("delivery");
-  const [paymentMethod, setPaymentMethod] = useState<"cash" | "card" | "pix">("card");
+  const [orderType, setOrderType] = useState<"delivery" | "pickup" | "table">("delivery");
+  const [paymentMethod, setPaymentMethod] = useState<"cash" | "credit" | "debit" | "pix">("credit");
   const [changeAmount, setChangeAmount] = useState("");
   const [notes, setNotes] = useState("");
   const [isProcessingOrder, setIsProcessingOrder] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<ValidateCouponData | null>(null);
+  const [couponError, setCouponError] = useState("");
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [tables, setTables] = useState<Table[]>([]);
+  const [openSessions, setOpenSessions] = useState<TableSession[]>([]);
+  const [selectedTableSessionId, setSelectedTableSessionId] = useState<string | null>(null);
+  const [selectedNeighborhoodId, setSelectedNeighborhoodId] = useState<string>("");
   const { shop } = useShop();
   const shopId = shop?.id;
+  const { paymentMethodsData } = usePayment();
+  const { deliveryConfig } = useDelivery();
 
   const { catalog, isLoading } = useCatalogGroup();
   const { subscribeToAdminOrders } = useAdminActionCable();
@@ -80,22 +93,40 @@ export default function PDVPage() {
     return () => { if (unsubscribe) unsubscribe(); };
   }, [subscribeToAdminOrders]);
 
-  // Filtrar catálogo
+  useEffect(() => {
+    const fetchTablesAndSessions = async () => {
+      try {
+        const [tablesRes, sessionsRes] = await Promise.all([
+          tableService.getTables(),
+          tableService.getTableSessions({ status: "open" }),
+        ]);
+        setTables(tablesRes.data);
+        setOpenSessions(sessionsRes.data);
+      } catch {
+        // silently fail — tables are optional
+      }
+    };
+    fetchTablesAndSessions();
+  }, []);
+
+  // Filtrar catálogo — somente itens e grupos ativos
   const filteredCatalog =
     catalog?.data
-      ?.map((group: any) => ({
+      ?.filter((group: any) => group.attributes.active !== false)
+      .map((group: any) => ({
         ...group,
         attributes: {
           ...group.attributes,
           items:
             group.attributes.items?.filter(
               (item: any) =>
-                item.attributes?.name
+                item.attributes?.active !== false &&
+                (item.attributes?.name
                   ?.toLowerCase()
                   .includes(searchTerm.toLowerCase()) ||
                 item.attributes?.description
                   ?.toLowerCase()
-                  .includes(searchTerm.toLowerCase())
+                  .includes(searchTerm.toLowerCase()))
             ) ?? [],
         },
       }))
@@ -104,7 +135,11 @@ export default function PDVPage() {
         return group.attributes.items.length > 0;
       }) ?? [];
 
-  const allGroups = catalog?.data ?? [];
+  const allGroups = (catalog?.data ?? []).filter(
+    (group: any) =>
+      group.attributes.active !== false &&
+      group.attributes.items?.some((item: any) => item.attributes?.active !== false)
+  );
 
   const formatPhone = (value: string) => {
     const n = value.replace(/\D/g, "");
@@ -113,22 +148,62 @@ export default function PDVPage() {
     return n.replace(/(\d{2})(\d{5})(\d{0,4})/, "($1) $2-$3").replace(/-$/, "");
   };
 
-  const formatCEP = (value: string) => {
-    const n = value.replace(/\D/g, "");
-    return n.replace(/(\d{5})(\d{0,3})/, "$1-$2").replace(/-$/, "");
-  };
-
   const cartTotal = cart.reduce((t, item) => t + item.totalPrice, 0);
 
-  // Clique no item — abre modal se tiver opções, senão adiciona direto
+  const isPerNeighborhood = deliveryConfig?.delivery_fee_kind === "per_neighborhood";
+  const neighborhoods = deliveryConfig?.neighborhoods ?? [];
+
+  const calculateDeliveryFee = (): number => {
+    if (orderType !== "delivery") return 0;
+    if (deliveryConfig?.delivery_fee_kind === "fixed") {
+      const minFree = deliveryConfig.min_value_free_delivery ?? 0;
+      if (minFree > 0 && cartTotal >= minFree) return 0;
+      return deliveryConfig.amount ?? 0;
+    }
+    if (isPerNeighborhood && selectedNeighborhoodId) {
+      const nb = neighborhoods.find((n) => n.id === selectedNeighborhoodId);
+      if (!nb) return 0;
+      const minFree = nb.min_value_free_delivery ?? 0;
+      if (minFree > 0 && cartTotal >= minFree) return 0;
+      return nb.amount ?? 0;
+    }
+    return 0;
+  };
+
+  const deliveryFee = calculateDeliveryFee();
+  const minimumOrderValue = deliveryConfig?.minimum_order_value ?? 0;
+
+  const pdvPaymentMethodToApi = (m: "cash" | "credit" | "debit" | "pix") =>
+    m === "cash" ? "cash" : m === "pix" ? "manual_pix" : m;
+
+  const calculatePdvPaymentAdjustment = (): number => {
+    const attrs = paymentMethodsData?.data?.attributes;
+    if (!attrs) return 0;
+    const attrKey = pdvPaymentMethodToApi(paymentMethod);
+    const adjType = attrs[`${attrKey}_adjustment_type` as keyof typeof attrs] as string;
+    if (!adjType || adjType === "none") return 0;
+    const adjValue = parseFloat(String(attrs[`${attrKey}_adjustment_value` as keyof typeof attrs] || "0"));
+    const valType = attrs[`${attrKey}_value_type` as keyof typeof attrs] as string;
+    if (adjValue <= 0) return 0;
+    const amount = valType === "percentage" ? cartTotal * (adjValue / 100) : adjValue;
+    return adjType === "discount" ? -amount : amount;
+  };
+
+  const paymentAdjustment = calculatePdvPaymentAdjustment();
+
+  const getPaymentMethodLabel = (m: "cash" | "credit" | "debit" | "pix") =>
+    m === "cash" ? "Dinheiro" : m === "credit" ? "Crédito" : m === "debit" ? "Débito" : "PIX";
+
+  // Clique no item — abre modal se tiver opções ou for peso, senão adiciona direto
   const handleItemClick = (item: any) => {
     const attrs = item.attributes;
     const hasExtras = (attrs.extra?.data?.length ?? 0) > 0;
     const hasMethods = (attrs.prepare_method?.data?.length ?? 0) > 0;
     const hasSteps = (attrs.steps?.data?.length ?? 0) > 0;
     const hasSharedComplements = (attrs.shared_complements?.data?.length ?? 0) > 0;
+    const isWeightBased = attrs.item_type === 'weight_per_kg' || attrs.item_type === 'weight_per_g';
 
-    if (hasExtras || hasMethods || hasSteps || hasSharedComplements) {
+    if (hasExtras || hasMethods || hasSteps || hasSharedComplements || isWeightBased) {
       setOptionsItem(item);
     } else {
       addToCart(item);
@@ -146,6 +221,7 @@ export default function PDVPage() {
       selectedMethods?: { id: string; name: string }[];
       selectedOptions?: Record<string, { optionId: string; optionName: string }>;
       selectedSharedComplements?: { id: string; name: string; price: number }[];
+      weight?: number;
     }
   ) => {
     const attrs = item.attributes;
@@ -154,7 +230,14 @@ export default function PDVPage() {
     const basePrice = hasDiscount
       ? parseFloat(attrs.price_with_discount)
       : parseFloat(attrs.price);
-    const unitPrice = basePrice + (options?.extrasPrice ?? 0) + (options?.complementsPrice ?? 0);
+    const extrasPrice = options?.extrasPrice ?? 0;
+    const complementsPrice = options?.complementsPrice ?? 0;
+    const isWeightBased = attrs.item_type === 'weight_per_kg' || attrs.item_type === 'weight_per_g';
+    const itemWeight = options?.weight;
+    const unitPrice = isWeightBased && itemWeight
+      ? basePrice * itemWeight + extrasPrice + complementsPrice
+      : basePrice + extrasPrice + complementsPrice;
+    const finalTotal = unitPrice;
 
     const cartItem: CartItem = {
       id: `${item.id}-${cartIdCounter}`,
@@ -162,12 +245,13 @@ export default function PDVPage() {
       price: unitPrice,
       quantity: 1,
       image_url: attrs.image_url,
-      totalPrice: unitPrice,
+      totalPrice: finalTotal,
       selectedExtras: options?.selectedExtras,
       selectedMethods: options?.selectedMethods,
       selectedStepOptions: options?.selectedOptions,
       selectedSharedComplements: options?.selectedSharedComplements,
       observation: options?.observation,
+      ...(isWeightBased && itemWeight && { weight: itemWeight, itemType: attrs.item_type }),
     };
 
     setCartIdCounter((prev) => prev + 1);
@@ -183,6 +267,7 @@ export default function PDVPage() {
     selectedMethods: { id: string; name: string }[];
     selectedOptions: Record<string, { optionId: string; optionName: string }>;
     selectedSharedComplements: { id: string; name: string; price: number }[];
+    weight?: number;
   }) => {
     if (optionsItem) addToCart(optionsItem, options);
     setOptionsItem(null);
@@ -203,16 +288,195 @@ export default function PDVPage() {
     setCart((prev) => prev.filter((item) => item.id !== itemId));
   };
 
-  const clearCart = () => setCart([]);
+  const [openingTableId, setOpeningTableId] = useState<string | null>(null);
+  const [showCloseModal, setShowCloseModal] = useState(false);
+
+  const handleSelectTableSession = (sessionId: string | null) => {
+    setSelectedTableSessionId(sessionId);
+    if (sessionId) {
+      const session = openSessions.find((s) => s.id === sessionId);
+      if (session?.attributes.customer_name) {
+        setCustomerInfo((prev) => ({ ...prev, name: session.attributes.customer_name || "" }));
+      }
+    } else {
+      setCustomerInfo((prev) => ({ ...prev, name: "" }));
+    }
+  };
+
+  const handleOpenSession = async (tableId: string) => {
+    setOpeningTableId(tableId);
+    try {
+      const result = await tableService.openTableSession({ table_id: tableId });
+      const newSession = result.data;
+      setOpenSessions((prev) => [...prev, newSession]);
+      setSelectedTableSessionId(newSession.id);
+      toast.success(`Comanda aberta para Mesa ${newSession.attributes.table_number}`);
+    } catch {
+      toast.error("Erro ao abrir comanda");
+    } finally {
+      setOpeningTableId(null);
+    }
+  };
+
+  const handleCloseSession = async (id: string, data: CloseTableSessionPayload) => {
+    await tableService.closeTableSession(id, data);
+    setSelectedTableSessionId(null);
+    toast.success("Comanda fechada com sucesso!");
+    const [t, s] = await Promise.all([
+      tableService.getTables(),
+      tableService.getTableSessions({ status: "open" }),
+    ]);
+    setTables(t.data);
+    setOpenSessions(s.data);
+  };
+
+  const isTableOrder = orderType === "table" && !!selectedTableSessionId;
+  const isBelowMinOrder = orderType === "delivery" && !isTableOrder && minimumOrderValue > 0 && cartTotal < minimumOrderValue;
+  const selectedSession = isTableOrder ? openSessions.find((s) => s.id === selectedTableSessionId) : null;
+  const selectedTable = selectedSession
+    ? tables.find((t) => t.attributes.number === selectedSession.attributes.table_number)
+    : null;
+
+  const clearCart = () => {
+    setCart([]);
+    handleRemoveCoupon();
+  };
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim() || !shopId) return;
+    setCouponLoading(true);
+    setCouponError("");
+    try {
+      const response = await validateCoupon(couponCode.trim(), Number(shopId));
+      const couponData = response.data.attributes;
+      setAppliedCoupon(couponData);
+      toast.success("Cupom aplicado!");
+    } catch (error: any) {
+      const msg = error.response?.data?.error || "Cupom inválido";
+      setCouponError(msg);
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponDiscount(0);
+    setCouponCode("");
+    setCouponError("");
+  };
+
+  // Recalcular desconto do cupom quando o carrinho muda
+  useEffect(() => {
+    if (!appliedCoupon) { setCouponDiscount(0); return; }
+    const minOrder = parseFloat(appliedCoupon.minimum_order_value) || 0;
+    if (minOrder > 0 && cartTotal < minOrder) {
+      setCouponDiscount(0);
+      return;
+    }
+    let discount = 0;
+    if (appliedCoupon.discount_type === "fixed_value") {
+      discount = Math.min(parseFloat(appliedCoupon.value), cartTotal);
+    } else {
+      discount = cartTotal * (parseFloat(appliedCoupon.value) / 100);
+    }
+    setCouponDiscount(discount);
+  }, [cartTotal, appliedCoupon]);
+
+  const orderTotal = Math.max(cartTotal - couponDiscount + paymentAdjustment + deliveryFee, 0);
+
+  // Métodos de pagamento disponíveis (dinâmico baseado na config da loja)
+  const availablePaymentMethods = (() => {
+    const attrs = paymentMethodsData?.data?.attributes;
+    const methods: { value: "cash" | "credit" | "debit" | "pix"; label: string }[] = [];
+    if (!attrs) return [{ value: "credit" as const, label: "Crédito" }, { value: "debit" as const, label: "Débito" }, { value: "cash" as const, label: "Dinheiro" }, { value: "pix" as const, label: "PIX" }];
+    if (attrs.credit) methods.push({ value: "credit", label: "Crédito" });
+    if (attrs.debit) methods.push({ value: "debit", label: "Débito" });
+    if (attrs.cash) methods.push({ value: "cash", label: "Dinheiro" });
+    if (attrs.manual_pix) methods.push({ value: "pix", label: "PIX" });
+    return methods;
+  })();
+
+  // Garantir que o método de pagamento selecionado está disponível
+  useEffect(() => {
+    if (availablePaymentMethods.length > 0 && !availablePaymentMethods.some(m => m.value === paymentMethod)) {
+      setPaymentMethod(availablePaymentMethods[0].value);
+    }
+  }, [paymentMethodsData]);
+
+  const getAdjustmentLabel = (m: "cash" | "credit" | "debit" | "pix"): string => {
+    const attrs = paymentMethodsData?.data?.attributes;
+    if (!attrs) return "";
+    const attrKey = pdvPaymentMethodToApi(m);
+    const adjType = attrs[`${attrKey}_adjustment_type` as keyof typeof attrs] as string;
+    if (!adjType || adjType === "none") return "";
+    const adjValue = parseFloat(String(attrs[`${attrKey}_adjustment_value` as keyof typeof attrs] || "0"));
+    const valType = attrs[`${attrKey}_value_type` as keyof typeof attrs] as string;
+    if (adjValue <= 0) return "";
+    const sign = adjType === "discount" ? "-" : "+";
+    if (valType === "percentage") return ` (${sign}${adjValue}%)`;
+    return ` (${sign}R$ ${adjValue.toFixed(2).replace(".", ",")})`;
+  };
+
+  const phoneValidationRegex = /^\(\d{2}\) \d{4,5}-\d{4}$/;
 
   const processOrder = async () => {
     if (cart.length === 0) { toast.error("Adicione itens ao carrinho"); return; }
 
-    if (orderType === "delivery" && (!customerInfo.name || !customerInfo.phone || !customerInfo.address)) {
-      toast.error("Preencha as informações de entrega"); return;
+    if (availablePaymentMethods.length === 0) {
+      toast.error("Configure pelo menos um método de pagamento nas configurações");
+      return;
     }
-    if (orderType === "pickup" && (!customerInfo.name || !customerInfo.phone)) {
-      toast.error("Preencha o nome e telefone do cliente"); return;
+
+    if (!isTableOrder) {
+      const errors: Record<string, string> = {};
+      const trimmedName = customerInfo.name.trim();
+
+      if (!trimmedName) {
+        errors.name = "Nome é obrigatório";
+      }
+
+      if (!customerInfo.phone) {
+        errors.phone = "Telefone é obrigatório";
+      } else if (!phoneValidationRegex.test(customerInfo.phone)) {
+        errors.phone = "Telefone inválido. Use o formato (XX) XXXXX-XXXX";
+      }
+
+      if (orderType === "delivery") {
+        if (!customerInfo.address.trim()) {
+          errors.address = "Endereço é obrigatório";
+        }
+        if (isPerNeighborhood) {
+          if (!selectedNeighborhoodId) {
+            errors.neighborhood = "Selecione um bairro";
+          }
+        } else {
+          if (!customerInfo.neighborhood.trim()) {
+            errors.neighborhood = "Bairro é obrigatório";
+          }
+        }
+      }
+
+      if (Object.keys(errors).length > 0) {
+        setFormErrors(errors);
+        toast.error("Preencha os campos obrigatórios");
+        return;
+      }
+
+      setCustomerInfo((p) => ({ ...p, name: trimmedName }));
+    }
+
+    if (isBelowMinOrder) {
+      toast.error(`Valor mínimo para entrega: ${formatPrice(minimumOrderValue)}`);
+      return;
+    }
+
+    if (appliedCoupon) {
+      const minOrder = parseFloat(appliedCoupon.minimum_order_value) || 0;
+      if (minOrder > 0 && cartTotal < minOrder) {
+        toast.error(`Valor mínimo do pedido para o cupom: ${formatPrice(minOrder)}`);
+        return;
+      }
     }
 
     if (paymentMethod === "cash" && changeAmount) {
@@ -225,27 +489,34 @@ export default function PDVPage() {
 
     setIsProcessingOrder(true);
     try {
+      const selectedSession = openSessions.find((s) => s.id === selectedTableSessionId);
       const orderData = {
         order: {
           shop_id: Number(shopId) || 0,
-          withdrawal: orderType === "pickup",
+          withdrawal: isTableOrder ? true : orderType === "pickup",
           payment_method:
-            paymentMethod === "cash"
-              ? ("cash" as const)
-              : paymentMethod === "card"
-              ? ("credit" as const)
-              : ("manual_pix" as const),
-          customer_name: customerInfo.name,
-          customer_phone: customerInfo.phone.replace(/\D/g, ""),
+            paymentMethod === "pix" ? ("manual_pix" as const) : (paymentMethod as "cash" | "credit" | "debit"),
+          customer_name: isTableOrder
+            ? (selectedSession?.attributes.customer_name || `Mesa ${selectedSession?.attributes.table_number}`)
+            : customerInfo.name.trim(),
+          customer_phone: isTableOrder ? undefined : customerInfo.phone.replace(/\D/g, "") || undefined,
+          ...(appliedCoupon && { coupon_code: appliedCoupon.code }),
+          ...(selectedTableSessionId && { table_session_id: Number(selectedTableSessionId) }),
           address: {
-            address: customerInfo.address,
-            neighborhood: customerInfo.neighborhood,
-            complement: customerInfo.complement,
-            reference: customerInfo.reference,
+            address: isTableOrder ? "" : customerInfo.address,
+            neighborhood: isTableOrder ? "" : (isPerNeighborhood
+              ? (neighborhoods.find((n) => n.id === selectedNeighborhoodId)?.name ?? "")
+              : customerInfo.neighborhood),
+            complement: isTableOrder ? "" : customerInfo.complement,
+            reference: isTableOrder ? "" : customerInfo.reference,
+            ...(isPerNeighborhood && selectedNeighborhoodId && !isTableOrder && {
+              shop_delivery_neighborhood_id: Number(selectedNeighborhoodId),
+            }),
           },
           items: cart.map((item) => ({
             catalog_item_id: parseInt(item.id.split("-")[0]),
             quantity: item.quantity,
+            ...(item.weight && { weight: item.weight }),
             observation: item.observation || notes || undefined,
             extras_ids: item.selectedExtras?.map((e) => e.id) || [],
             prepare_methods_ids: item.selectedMethods?.map((m) => m.id) || [],
@@ -264,9 +535,20 @@ export default function PDVPage() {
       if (result) {
         toast.success("Pedido criado com sucesso!");
         clearCart();
-        setCustomerInfo({ name: "", phone: "", address: "", neighborhood: "", city: "", zipCode: "", complement: "", reference: "" });
         setNotes("");
         setChangeAmount("");
+        handleRemoveCoupon();
+        setFormErrors({});
+        if (!isTableOrder) {
+          setCustomerInfo({ name: "", phone: "", address: "", neighborhood: "", complement: "", reference: "" });
+          setSelectedNeighborhoodId("");
+          setSelectedTableSessionId(null);
+        }
+        // Refresh tables and sessions after order creation
+        Promise.all([
+          tableService.getTables(),
+          tableService.getTableSessions({ status: "open" }),
+        ]).then(([t, s]) => { setTables(t.data); setOpenSessions(s.data); }).catch(() => {});
       }
     } catch (error: any) {
       const errorMessage = error.response?.data?.error || "Erro ao processar pedido";
@@ -277,19 +559,38 @@ export default function PDVPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto">
-      <AdminHeader title="Ponto de Venda (PDV)" description="Gerencie seus pedidos e vendas" className="!px-2" />
+    <div className="min-h-screen bg-[#FAF9F7]">
+      <div className="bg-white border-b border-[#E5E2DD]">
+        <div className="max-w-[1920px] mx-auto px-4 sm:px-6">
+          <div className="flex items-center h-16">
+            <div className="flex items-center gap-4">
+              <a
+                href="/admin/pedidos"
+                className="flex items-center gap-1.5 text-muted-foreground hover:text-gray-900 transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                <span className="text-sm font-medium hidden sm:block">Voltar</span>
+              </a>
+              <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
+              <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900">
+                Ponto de Venda (PDV)
+              </h1>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="max-w-[1920px] mx-auto px-4 sm:px-6 py-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
         {/* ── Catálogo ─────────────────────────────────── */}
         <div className="lg:col-span-2 space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Package className="h-5 w-5" />
+          <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+            <div className="px-5 py-4 border-b border-[#E5E2DD]">
+              <h2 className="font-tomato flex items-center gap-2 text-base font-semibold text-gray-900 mb-3">
+                <Package className="h-5 w-5 text-primary" />
                 Catálogo de Produtos
-              </CardTitle>
+              </h2>
 
               {/* Busca e filtros */}
               <div className="space-y-3">
@@ -333,7 +634,7 @@ export default function PDVPage() {
                         variant={selectedGroupId === null ? "default" : "outline"}
                         size="sm"
                         onClick={() => setSelectedGroupId(null)}
-                        className="h-8"
+                        className="h-8 border border-gray-300 cursor-pointer"
                       >
                         Todas as categorias
                         <Badge variant="secondary" className="ml-2">
@@ -349,7 +650,7 @@ export default function PDVPage() {
                           variant={selectedGroupId === group.id ? "default" : "outline"}
                           size="sm"
                           onClick={() => setSelectedGroupId(group.id)}
-                          className="h-8"
+                          className="h-8 border border-gray-300 cursor-pointer"
                         >
                           {group.attributes.name}
                           <Badge variant="secondary" className="ml-2">
@@ -379,9 +680,9 @@ export default function PDVPage() {
                   </div>
                 )}
               </div>
-            </CardHeader>
+            </div>
 
-            <CardContent>
+            <div className="px-5 py-4">
               {isLoading ? (
                 <div className="text-center py-12">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
@@ -406,7 +707,7 @@ export default function PDVPage() {
                       {/* Cabeçalho do grupo */}
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                          <h3 className="text-lg sm:text-xl font-semibold text-primary">
+                          <h3 className="font-tomato text-lg sm:text-xl font-semibold text-primary">
                             {group.attributes.name}
                           </h3>
                           <Badge variant="outline" className="text-xs">
@@ -435,11 +736,11 @@ export default function PDVPage() {
                             (attrs.shared_complements?.data?.length ?? 0) > 0;
 
                           return (
-                            <Card
+                            <div
                               key={item.id}
-                              className="overflow-hidden hover:shadow-lg transition-all duration-200 group"
+                              className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden transition-all duration-200 group"
                             >
-                              <div className="aspect-video relative bg-gray-100">
+                              <div className="aspect-video relative bg-[#F0EFEB]">
                                 {attrs.image_url ? (
                                   <Image
                                     src={attrs.image_url}
@@ -457,22 +758,22 @@ export default function PDVPage() {
                                 {/* Tags */}
                                 <div className="absolute top-2 left-2 flex flex-col gap-0.5">
                                   {attrs.new_tag && (
-                                    <span className="bg-green-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm whitespace-nowrap">
+                                    <span className="bg-green-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap">
                                       NOVO!
                                     </span>
                                   )}
                                   {attrs.best_seller_tag && (
-                                    <span className="bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm whitespace-nowrap">
+                                    <span className="bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap">
                                       + VENDIDO
                                     </span>
                                   )}
                                   {attrs.highlight && (
-                                    <span className="bg-blue-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm whitespace-nowrap">
+                                    <span className="bg-blue-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap">
                                       DESTAQUE
                                     </span>
                                   )}
                                   {attrs.promotion_tag && !attrs.price_with_discount && (
-                                    <span className="bg-primary text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm whitespace-nowrap">
+                                    <span className="bg-primary text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap">
                                       PROMOÇÃO
                                     </span>
                                   )}
@@ -487,7 +788,7 @@ export default function PDVPage() {
                                 {/* Indicador de opções */}
                                 {hasOptions && (
                                   <div className="absolute bottom-2 right-2">
-                                    <span className="bg-black/60 text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-full flex items-center gap-1">
+                                    <span className="bg-black/60 text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-md flex items-center gap-1">
                                       <Settings2 className="h-2.5 w-2.5" />
                                       Personalizável
                                     </span>
@@ -525,7 +826,7 @@ export default function PDVPage() {
 
                                   <Button
                                     onClick={() => handleItemClick(item)}
-                                    className="h-9 px-3 gap-1.5 shrink-0"
+                                    className="h-9 px-3 gap-1.5 shrink-0 border border-gray-300 cursor-pointer"
                                     size="sm"
                                   >
                                     {hasOptions ? (
@@ -542,7 +843,7 @@ export default function PDVPage() {
                                   </Button>
                                 </div>
                               </div>
-                            </Card>
+                            </div>
                           );
                         })}
                       </div>
@@ -550,36 +851,34 @@ export default function PDVPage() {
                   ))}
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
 
         {/* ── Carrinho e Pedido ────────────────────────── */}
         <div className="space-y-6">
           {/* Carrinho */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <ShoppingCart className="h-5 w-5" />
-                  Carrinho
-                  {cart.length > 0 && (
-                    <Badge variant="secondary">{cart.reduce((t, i) => t + i.quantity, 0)}</Badge>
-                  )}
-                </div>
+          <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+            <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center justify-between">
+              <h2 className="font-tomato flex items-center gap-2 text-base font-semibold text-gray-900">
+                <ShoppingCart className="h-5 w-5 text-primary" />
+                Carrinho
                 {cart.length > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={clearCart}
-                    className="h-8 px-2 text-red-500 hover:text-red-700 hover:bg-red-50"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <Badge variant="secondary">{cart.reduce((t, i) => t + i.quantity, 0)}</Badge>
                 )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+              </h2>
+              {cart.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearCart}
+                  className="h-8 px-2 text-red-500 hover:text-red-700 hover:bg-[#FAF9F7] cursor-pointer"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+            <div className="px-5 py-4">
               {cart.length === 0 ? (
                 <div className="text-center py-8">
                   <ShoppingCart className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
@@ -592,7 +891,7 @@ export default function PDVPage() {
                     {cart.map((item) => (
                       <div
                         key={item.id}
-                        className="flex items-start gap-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors"
+                        className="flex items-start gap-3 p-3 border border-[#E5E2DD] rounded-md hover:bg-[#FAF9F7] transition-colors"
                       >
                         {item.image_url && (
                           <div className="w-11 h-11 relative flex-shrink-0 rounded-md overflow-hidden">
@@ -661,77 +960,209 @@ export default function PDVPage() {
                             </p>
                           )}
 
-                          <div className="flex items-center justify-between mt-2">
-                            <span className="text-xs text-muted-foreground">
-                              {formatPrice(item.price)} × {item.quantity}
-                            </span>
-                            <span className="font-semibold text-sm text-primary">
-                              {formatPrice(item.totalPrice)}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1 flex-shrink-0">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                            className="h-7 w-7 p-0"
-                          >
-                            <Minus className="h-3 w-3" />
-                          </Button>
-                          <span className="text-sm font-medium w-5 text-center">
-                            {item.quantity}
+                          {/* Peso (itens por kg/g) */}
+                          {item.weight && item.itemType && (
+                            <p className="text-[11px] text-muted-foreground mt-1">
+                              {item.weight} {item.itemType === 'weight_per_g' ? 'g' : 'kg'} × {formatPrice(item.price)}/{item.itemType === 'weight_per_g' ? 'g' : 'kg'}
+                            </p>
+                          )}
+
+                          <span className="text-xs text-muted-foreground mt-1">
+                            {item.weight && item.itemType
+                              ? `${item.weight} ${item.itemType === 'weight_per_g' ? 'g' : 'kg'}`
+                              : `${formatPrice(item.price)} × ${item.quantity}`}
                           </span>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                            className="h-7 w-7 p-0"
-                          >
-                            <Plus className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => removeFromCart(item.id)}
-                            className="h-7 w-7 p-0 text-red-500 hover:text-red-700"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
+                        </div>
+                        <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                          <div className="flex items-center gap-1">
+                          {item.weight && item.itemType ? (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => removeFromCart(item.id)}
+                              className="h-7 w-7 p-0 text-red-500 hover:text-red-700"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          ) : (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                className="h-7 w-7 p-0"
+                              >
+                                <Minus className="h-3 w-3" />
+                              </Button>
+                              <span className="text-sm font-medium w-5 text-center">
+                                {item.quantity}
+                              </span>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                className="h-7 w-7 p-0"
+                              >
+                                <Plus className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => removeFromCart(item.id)}
+                                className="h-7 w-7 p-0 text-red-500 hover:text-red-700"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </>
+                          )}
+                          </div>
+                          <span className="font-semibold text-sm text-primary">
+                            {formatPrice(item.totalPrice)}
+                          </span>
                         </div>
                       </div>
                     ))}
                   </div>
 
-                  <Separator />
+                  <hr className="border-[#E5E2DD]" />
 
-                  <div className="bg-gray-50 p-3 rounded-lg space-y-1.5">
+                  <div className="bg-[#FAF9F7] p-3 rounded-md space-y-1.5">
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-muted-foreground">Subtotal:</span>
                       <span className="font-medium">{formatPrice(cartTotal)}</span>
                     </div>
+                    {couponDiscount > 0 && appliedCoupon && (
+                      <div className="flex justify-between items-center text-sm text-green-600">
+                        <span>Cupom ({appliedCoupon.code}):</span>
+                        <span>- {formatPrice(couponDiscount)}</span>
+                      </div>
+                    )}
+                    {deliveryFee > 0 && (
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground">Taxa de entrega:</span>
+                        <span className="font-medium">+ {formatPrice(deliveryFee)}</span>
+                      </div>
+                    )}
+                    {orderType === "delivery" && deliveryFee === 0 && selectedNeighborhoodId && isPerNeighborhood && (
+                      <div className="flex justify-between items-center text-sm text-green-600">
+                        <span>Taxa de entrega:</span>
+                        <span className="font-medium">Grátis</span>
+                      </div>
+                    )}
+                    {paymentAdjustment !== 0 && (
+                      <div className={`flex justify-between items-center text-sm ${paymentAdjustment < 0 ? "text-green-600" : "text-orange-600"}`}>
+                        <span>{paymentAdjustment < 0 ? "Desc." : "Acresc."} {getPaymentMethodLabel(paymentMethod)}:</span>
+                        <span>{paymentAdjustment < 0 ? "- " : "+ "}{formatPrice(Math.abs(paymentAdjustment))}</span>
+                      </div>
+                    )}
+                    {isBelowMinOrder && (
+                      <div className="flex justify-between items-center text-sm text-red-500">
+                        <span>Pedido mínimo:</span>
+                        <span className="font-medium">{formatPrice(minimumOrderValue)}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between items-center">
                       <span className="font-semibold">Total:</span>
-                      <span className="font-bold text-lg text-primary">{formatPrice(cartTotal)}</span>
+                      <span className="font-bold text-lg text-primary">{formatPrice(orderTotal)}</span>
                     </div>
                   </div>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
+
+          {/* Cupom de Desconto */}
+          <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+            <div className="px-5 py-4 border-b border-[#E5E2DD]">
+              <h2 className="font-tomato flex items-center gap-2 text-base font-semibold text-gray-900">
+                <Tag className="h-5 w-5 text-primary" />
+                Cupom de Desconto
+              </h2>
+            </div>
+            <div className="px-5 py-4">
+              {appliedCoupon ? (
+                <div className="space-y-2">
+                  {(() => {
+                    const minOrder = parseFloat(appliedCoupon.minimum_order_value) || 0;
+                    const belowMin = minOrder > 0 && cartTotal < minOrder;
+                    return (
+                      <>
+                        <div className={`flex items-center justify-between bg-white border rounded-md px-4 py-3 ${belowMin ? "border-amber-400" : "border-green-400"}`}>
+                          <div className="flex items-center gap-2">
+                            {belowMin
+                              ? <AlertCircle className="h-4 w-4 text-amber-500" />
+                              : <CheckCircle2 className="h-4 w-4 text-green-600" />}
+                            <div>
+                              <span className={`text-sm font-semibold ${belowMin ? "text-amber-700" : "text-green-700"}`}>{appliedCoupon.code}</span>
+                              <p className={`text-xs ${belowMin ? "text-amber-600" : "text-green-600"}`}>
+                                {appliedCoupon.discount_type === "percentage"
+                                  ? `${parseFloat(appliedCoupon.value)}% de desconto`
+                                  : `${formatPrice(parseFloat(appliedCoupon.value))} de desconto`}
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleRemoveCoupon}
+                            className={`h-7 w-7 p-0 hover:text-red-500 ${belowMin ? "text-amber-500" : "text-green-600"}`}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        {belowMin && (
+                          <p className="text-xs text-amber-600">
+                            Pedido mínimo de {formatPrice(minOrder)} para usar este cupom (faltam {formatPrice(minOrder - cartTotal)})
+                          </p>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Código do cupom"
+                      value={couponCode}
+                      onChange={(e: any) => { setCouponCode(e.target.value.toUpperCase()); setCouponError(""); }}
+                      className="uppercase"
+                      onKeyDown={(e: any) => { if (e.key === "Enter") handleApplyCoupon(); }}
+                    />
+                    <Button
+                      onClick={handleApplyCoupon}
+                      disabled={couponLoading || !couponCode.trim()}
+                      variant="outline"
+                      size="sm"
+                      className="px-4 shrink-0 border border-gray-300 cursor-pointer"
+                    >
+                      {couponLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Aplicar"}
+                    </Button>
+                  </div>
+                  {couponError && (
+                    <p className="text-xs text-red-500">{couponError}</p>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
 
           {/* Tipo de Pedido */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5" />
+          <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+            <div className="px-5 py-4 border-b border-[#E5E2DD]">
+              <h2 className="font-tomato flex items-center gap-2 text-base font-semibold text-gray-900">
+                <MapPin className="h-5 w-5 text-primary" />
                 Tipo de Pedido
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+              </h2>
+            </div>
+            <div className="px-5 py-4 space-y-4">
               <Select
                 value={orderType}
-                onValueChange={(v: "delivery" | "pickup") => setOrderType(v)}
+                onValueChange={(v: "delivery" | "pickup" | "table") => {
+                  setOrderType(v);
+                  setFormErrors({});
+                  if (v !== "table") setSelectedTableSessionId(null);
+                }}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -739,87 +1170,181 @@ export default function PDVPage() {
                 <SelectContent>
                   <SelectItem value="delivery">Entrega</SelectItem>
                   <SelectItem value="pickup">Retirada</SelectItem>
+                  {tables.length > 0 && <SelectItem value="table">Mesa</SelectItem>}
                 </SelectContent>
               </Select>
-            </CardContent>
-          </Card>
 
-          {/* Dados do cliente */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
+              {/* Grid de mesas — visível apenas quando tipo = mesa */}
+              {orderType === "table" && tables.length > 0 && (
+                <>
+                  <div className="grid grid-cols-3 gap-2">
+                    {tables
+                      .sort((a, b) => a.attributes.number - b.attributes.number)
+                      .map((table) => {
+                        const session = openSessions.find(
+                          (s) => s.attributes.table_number === table.attributes.number
+                        );
+                        const hasSession = !!session;
+                        const isSelected = hasSession && selectedTableSessionId === session.id;
+                        const isOpening = openingTableId === table.id;
+
+                        return (
+                          <button
+                            key={table.id}
+                            type="button"
+                            disabled={isOpening}
+                            onClick={() => {
+                              if (hasSession) {
+                                handleSelectTableSession(isSelected ? null : session.id);
+                              } else {
+                                handleOpenSession(table.id);
+                              }
+                            }}
+                            className={`flex flex-col items-center justify-center rounded-md border-2 p-3 text-center transition-all cursor-pointer ${
+                              isSelected
+                                ? "border-primary bg-white ring-2 ring-primary/20"
+                                : hasSession
+                                ? "border-amber-400 bg-white hover:border-amber-500"
+                                : "border-dashed border-[#E5E2DD] bg-[#FAF9F7] hover:border-gray-400 hover:bg-[#F0EFEB]"
+                            }`}
+                          >
+                            <span className={`text-sm font-bold ${
+                              isSelected ? "text-primary" : hasSession ? "text-amber-700" : "text-gray-500"
+                            }`}>
+                              {table.attributes.number}
+                            </span>
+                            <span className={`text-[10px] mt-0.5 ${
+                              isSelected ? "text-primary/80" : hasSession ? "text-amber-600" : "text-gray-400"
+                            }`}>
+                              {isOpening
+                                ? "Abrindo..."
+                                : isSelected
+                                ? "Selecionada"
+                                : hasSession
+                                ? session.attributes.customer_name || "Ocupada"
+                                : "Abrir"}
+                            </span>
+                          </button>
+                        );
+                      })}
+                  </div>
+                  {isTableOrder && (() => {
+                    const session = openSessions.find((s) => s.id === selectedTableSessionId);
+                    return (
+                      <div className="border border-primary/30 rounded-md px-3 py-2.5 space-y-1">
+                        <p className="text-xs text-primary font-medium">
+                          Pedido para Mesa {session?.attributes.table_number}
+                          {session?.attributes.customer_name ? ` — ${session.attributes.customer_name}` : ""}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Dados de cliente e entrega não são necessários
+                        </p>
+                      </div>
+                    );
+                  })()}
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Dados do cliente — esconde quando tipo = mesa */}
+          {orderType !== "table" && <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+            <div className="px-5 py-4 border-b border-[#E5E2DD]">
+              <h2 className="font-tomato flex items-center gap-2 text-base font-semibold text-gray-900">
+                <User className="h-5 w-5 text-primary" />
                 {orderType === "delivery" ? "Dados de Entrega" : "Dados do Cliente"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+              </h2>
+            </div>
+            <div className="px-5 py-4 space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="name" className="text-sm">Nome</Label>
+                  <Label htmlFor="name" className="text-sm">Nome <span className="text-red-500">*</span></Label>
                   <Input
                     id="name"
                     value={customerInfo.name}
-                    onChange={(e: any) => setCustomerInfo((p) => ({ ...p, name: e.target.value }))}
+                    onChange={(e: any) => {
+                      setCustomerInfo((p) => ({ ...p, name: e.target.value }));
+                      if (formErrors.name) setFormErrors((p) => ({ ...p, name: "" }));
+                    }}
                     placeholder="Nome do cliente"
+                    className={formErrors.name ? "border-red-500 focus-visible:ring-red-500" : ""}
                   />
+                  {formErrors.name && <p className="text-xs text-red-500">{formErrors.name}</p>}
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="phone" className="text-sm">Telefone</Label>
+                  <Label htmlFor="phone" className="text-sm">Telefone <span className="text-red-500">*</span></Label>
                   <Input
                     id="phone"
                     value={customerInfo.phone}
-                    onChange={(e: any) =>
-                      setCustomerInfo((p) => ({ ...p, phone: formatPhone(e.target.value) }))
-                    }
+                    onChange={(e: any) => {
+                      setCustomerInfo((p) => ({ ...p, phone: formatPhone(e.target.value) }));
+                      if (formErrors.phone) setFormErrors((p) => ({ ...p, phone: "" }));
+                    }}
                     placeholder="(11) 99999-9999"
                     maxLength={15}
+                    className={formErrors.phone ? "border-red-500 focus-visible:ring-red-500" : ""}
                   />
+                  {formErrors.phone && <p className="text-xs text-red-500">{formErrors.phone}</p>}
                 </div>
               </div>
 
               {orderType === "delivery" && (
                 <>
                   <div className="space-y-1.5">
-                    <Label htmlFor="address" className="text-sm">Endereço</Label>
+                    <Label htmlFor="address" className="text-sm">Endereço <span className="text-red-500">*</span></Label>
                     <Input
                       id="address"
                       value={customerInfo.address}
-                      onChange={(e: any) => setCustomerInfo((p) => ({ ...p, address: e.target.value }))}
+                      onChange={(e: any) => {
+                        setCustomerInfo((p) => ({ ...p, address: e.target.value }));
+                        if (formErrors.address) setFormErrors((p) => ({ ...p, address: "" }));
+                      }}
                       placeholder="Rua, número"
+                      maxLength={70}
+                      className={formErrors.address ? "border-red-500 focus-visible:ring-red-500" : ""}
                     />
+                    {formErrors.address && <p className="text-xs text-red-500">{formErrors.address}</p>}
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
-                      <Label htmlFor="neighborhood" className="text-sm">Bairro</Label>
-                      <Input
-                        id="neighborhood"
-                        value={customerInfo.neighborhood}
-                        onChange={(e: any) => setCustomerInfo((p) => ({ ...p, neighborhood: e.target.value }))}
-                        placeholder="Bairro"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="city" className="text-sm">Cidade</Label>
-                      <Input
-                        id="city"
-                        value={customerInfo.city}
-                        onChange={(e: any) => setCustomerInfo((p) => ({ ...p, city: e.target.value }))}
-                        placeholder="Cidade"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="zipCode" className="text-sm">CEP</Label>
-                      <Input
-                        id="zipCode"
-                        value={customerInfo.zipCode}
-                        onChange={(e: any) =>
-                          setCustomerInfo((p) => ({ ...p, zipCode: formatCEP(e.target.value) }))
-                        }
-                        placeholder="00000-000"
-                        maxLength={9}
-                      />
+                      <Label htmlFor="neighborhood" className="text-sm">Bairro <span className="text-red-500">*</span></Label>
+                      {isPerNeighborhood ? (
+                        <>
+                          <Select
+                            value={selectedNeighborhoodId}
+                            onValueChange={(v) => {
+                              setSelectedNeighborhoodId(v);
+                              if (formErrors.neighborhood) setFormErrors((p) => ({ ...p, neighborhood: "" }));
+                            }}
+                          >
+                            <SelectTrigger className={formErrors.neighborhood ? "border-red-500 focus-visible:ring-red-500" : ""}>
+                              <SelectValue placeholder="Selecione o bairro" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {neighborhoods.map((nb) => (
+                                <SelectItem key={nb.id} value={nb.id}>
+                                  {nb.name} · {formatPrice(nb.amount)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {formErrors.neighborhood && <p className="text-xs text-red-500">{formErrors.neighborhood}</p>}
+                        </>
+                      ) : (
+                        <>
+                          <Input
+                            id="neighborhood"
+                            value={customerInfo.neighborhood}
+                            onChange={(e: any) => {
+                              setCustomerInfo((p) => ({ ...p, neighborhood: e.target.value }));
+                              if (formErrors.neighborhood) setFormErrors((p) => ({ ...p, neighborhood: "" }));
+                            }}
+                            placeholder="Bairro"
+                            className={formErrors.neighborhood ? "border-red-500 focus-visible:ring-red-500" : ""}
+                          />
+                          {formErrors.neighborhood && <p className="text-xs text-red-500">{formErrors.neighborhood}</p>}
+                        </>
+                      )}
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="complement" className="text-sm">Complemento</Label>
@@ -842,34 +1367,43 @@ export default function PDVPage() {
                   </div>
                 </>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>}
 
           {/* Pagamento */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5" />
+          <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+            <div className="px-5 py-4 border-b border-[#E5E2DD]">
+              <h2 className="font-tomato flex items-center gap-2 text-base font-semibold text-gray-900">
+                <CreditCard className="h-5 w-5 text-primary" />
                 Pagamento
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+              </h2>
+            </div>
+            <div className="px-5 py-4 space-y-4">
+              {availablePaymentMethods.length === 0 ? (
+                <div className="bg-white border border-red-400 rounded-md px-4 py-3">
+                  <p className="text-sm text-red-600 font-medium">Nenhum método de pagamento configurado</p>
+                  <p className="text-xs text-red-500 mt-1">Configure os métodos de pagamento nas configurações da loja.</p>
+                </div>
+              ) : (
               <div className="space-y-1.5">
                 <Label className="text-sm">Método de Pagamento</Label>
                 <Select
                   value={paymentMethod}
-                  onValueChange={(v: "cash" | "card" | "pix") => setPaymentMethod(v)}
+                  onValueChange={(v: "cash" | "credit" | "debit" | "pix") => setPaymentMethod(v)}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="card">Cartão</SelectItem>
-                    <SelectItem value="cash">Dinheiro</SelectItem>
-                    <SelectItem value="pix">PIX</SelectItem>
+                    {availablePaymentMethods.map((m) => (
+                      <SelectItem key={m.value} value={m.value}>
+                        {m.label}{getAdjustmentLabel(m.value)}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
+              )}
 
               {paymentMethod === "cash" && (() => {
                 const changeValue = changeAmount ? parseFloat(changeAmount) : 0;
@@ -910,21 +1444,47 @@ export default function PDVPage() {
                   rows={3}
                 />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Finalizar */}
-          <Button
-            onClick={processOrder}
-            disabled={cart.length === 0 || isProcessingOrder}
-            className="w-full h-12 text-base font-semibold gap-2"
-            size="lg"
-          >
-            <ShoppingCart className="h-5 w-5" />
-            {isProcessingOrder
-              ? "Processando..."
-              : `Finalizar Pedido — ${formatPrice(cartTotal)}`}
-          </Button>
+          {isTableOrder ? (
+            <div className="space-y-2">
+              <Button
+                onClick={processOrder}
+                disabled={cart.length === 0 || isProcessingOrder}
+                className="w-full h-12 text-base font-semibold gap-2 border border-gray-300 cursor-pointer"
+                size="lg"
+              >
+                <Plus className="h-5 w-5" />
+                {isProcessingOrder
+                  ? "Enviando..."
+                  : `Enviar Pedido — ${formatPrice(orderTotal)}`}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setShowCloseModal(true)}
+                disabled={isProcessingOrder}
+                className="w-full h-10 text-sm font-medium gap-2 border border-red-400 text-red-600 hover:bg-[#FAF9F7] hover:text-red-700 cursor-pointer"
+              >
+                <UtensilsCrossed className="h-4 w-4" />
+                Fechar Comanda — Mesa {selectedSession?.attributes.table_number}
+              </Button>
+            </div>
+          ) : (
+            <Button
+              onClick={processOrder}
+              disabled={cart.length === 0 || isProcessingOrder || isBelowMinOrder}
+              className="w-full h-12 text-base font-semibold gap-2 border border-gray-300 cursor-pointer"
+              size="lg"
+            >
+              <ShoppingCart className="h-5 w-5" />
+              {isProcessingOrder
+                ? "Processando..."
+                : `Finalizar Pedido — ${formatPrice(orderTotal)}`}
+            </Button>
+          )}
+        </div>
         </div>
       </div>
 
@@ -934,6 +1494,15 @@ export default function PDVPage() {
         open={optionsItem !== null}
         onClose={() => setOptionsItem(null)}
         onAddToCart={handleOptionsAddToCart}
+      />
+
+      {/* Modal de fechar comanda */}
+      <CloseTableModal
+        isOpen={showCloseModal}
+        onClose={() => setShowCloseModal(false)}
+        onSubmit={handleCloseSession}
+        table={selectedTable || null}
+        session={selectedSession || null}
       />
     </div>
   );

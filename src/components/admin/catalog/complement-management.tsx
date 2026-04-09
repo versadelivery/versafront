@@ -50,25 +50,25 @@ export function ComplementManagement() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold">Adicionais Compartilhados</h2>
+          <h2 className="font-tomato text-lg font-semibold">Adicionais Compartilhados</h2>
           <p className="text-sm text-muted-foreground">
             Gerencie listas de adicionais que podem ser vinculadas a múltiplos itens.
           </p>
         </div>
-        <Button onClick={handleCreate} className="gap-2">
+        <Button onClick={handleCreate} className="gap-2 border border-gray-300 cursor-pointer">
           <Plus className="h-4 w-4" />
           Nova Lista
         </Button>
       </div>
 
       {complementGroups.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 gap-4 bg-white rounded-xl border border-dashed border-gray-300">
+        <div className="flex flex-col items-center justify-center py-16 gap-4 bg-white rounded-md border border-dashed border-[#E5E2DD]">
           <ListChecks className="h-10 w-10 text-muted-foreground" />
-          <h3 className="text-base font-semibold">Nenhuma lista encontrada</h3>
+          <h3 className="font-tomato text-base font-semibold">Nenhuma lista encontrada</h3>
           <p className="text-sm text-muted-foreground text-center max-w-xs">
             Crie sua primeira lista de adicionais (ex: Adicionais de Hambúrguer) para começar.
           </p>
-          <Button onClick={handleCreate} variant="outline" className="gap-2">
+          <Button onClick={handleCreate} variant="outline" className="gap-2 border border-gray-300 cursor-pointer">
             <Plus className="h-4 w-4" />
             Criar Primeira Lista
           </Button>
@@ -76,9 +76,9 @@ export function ComplementManagement() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {complementGroups.map((group: any) => (
-            <div key={group.id} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+            <div key={group.id} className="bg-white p-4 rounded-md border border-[#E5E2DD] hover:border-primary/40 transition-colors">
               <div className="flex justify-between items-start mb-3">
-                <h3 className="font-semibold text-base truncate pr-2">{group.attributes.name}</h3>
+                <h3 className="font-tomato font-semibold text-base truncate pr-2">{group.attributes.name}</h3>
                 <div className="flex gap-1">
                   <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => handleEdit(group.id)}>
                     <Edit2 className="h-4 w-4" />

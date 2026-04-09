@@ -2,19 +2,18 @@ import { useState } from 'react';
 
 export function usePhoneMask() {
   const formatPhone = (value: string) => {
-    // Remove todos os caracteres não numéricos
-    const numbers = value.replace(/\D/g, '');
-    
-    // Aplica a máscara baseada na quantidade de dígitos
+    const numbers = value.replace(/\D/g, '').slice(0, 11);
+
     if (numbers.length <= 2) {
       return `(${numbers}`;
-    } else if (numbers.length <= 7) {
+    } else if (numbers.length <= 6) {
       return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
-    } else if (numbers.length <= 11) {
-      return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7)}`;
+    } else if (numbers.length <= 10) {
+      // Fixo: (XX) XXXX-XXXX
+      return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 6)}-${numbers.slice(6)}`;
     } else {
-      // Limita a 11 dígitos
-      return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`;
+      // Celular: (XX) XXXXX-XXXX
+      return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7)}`;
     }
   };
 

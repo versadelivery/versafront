@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 import { fetchShopBySlugServer } from './server-service';
@@ -66,10 +67,15 @@ export default async function StoreCatalog({ params }: Props) {
     notFound();
   }
 
+  const shopAttrs = result.data.data.attributes;
+  const bgColor = shopAttrs.background_color || undefined;
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen" style={bgColor ? { backgroundColor: bgColor } : { backgroundColor: 'var(--background)' }}>
       <StoreHeader shop={result.data.data} />
-      <ClientStoreContent shop={result.data} />
+      <Suspense>
+        <ClientStoreContent shop={result.data} />
+      </Suspense>
     </div>
   );
 }

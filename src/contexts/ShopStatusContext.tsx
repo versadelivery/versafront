@@ -1,6 +1,7 @@
 "use client"
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { fetchShopBySlug } from '@/app/(public)/[slug]/slug-service';
 
 interface ShopStatusContextType {
   isOpen: boolean;
@@ -26,7 +27,7 @@ interface ShopStatusProviderProps {
   children: React.ReactNode;
 }
 
-export const ShopStatusProvider: React.FC<ShopStatusProviderProps> = ({ 
+export const ShopStatusProvider: React.FC<ShopStatusProviderProps> = ({
   children
 }) => {
   const [isOpen, setIsOpen] = useState(true);
@@ -34,19 +35,31 @@ export const ShopStatusProvider: React.FC<ShopStatusProviderProps> = ({
 
   const checkStatus = async () => {
     try {
-      // Buscar dados do shop do localStorage (salvos pelo ClientStoreContent)
+      // Buscar slug do localStorage para poder buscar dados frescos da API
       const shopData = localStorage.getItem("shop");
-      if (shopData) {
-        const shop = JSON.parse(shopData);
-        if (shop?.data?.attributes?.shop_status) {
-          setIsOpen(shop.data.attributes.shop_status.is_open);
+      const cachedShop = shopData ? JSON.parse(shopData) : null;
+      const slug = cachedShop?.data?.attributes?.slug;
+
+      if (slug) {
+        // Buscar status atualizado diretamente da API (evita dado stale do localStorage)
+        const freshShop = await fetchShopBySlug(slug);
+        if (freshShop?.data?.attributes?.shop_status) {
+          setIsOpen(freshShop.data.attributes.shop_status.is_open);
+          // Atualizar localStorage com dado fresco (sem disparar shop-updated para evitar loop)
+          localStorage.setItem("shop", JSON.stringify(freshShop));
           setLoading(false);
           return;
         }
       }
 
-      // Se não temos dados, assumir que está aberta para não bloquear vendas
-      // (não fazer chamadas autenticadas em páginas públicas)
+      // Fallback: usar dado em cache do localStorage
+      if (cachedShop?.data?.attributes?.shop_status) {
+        setIsOpen(cachedShop.data.attributes.shop_status.is_open);
+        setLoading(false);
+        return;
+      }
+
+      // Sem dados: assumir aberta para não bloquear vendas
       setIsOpen(true);
       setLoading(false);
     } catch (error) {
@@ -65,19 +78,18 @@ export const ShopStatusProvider: React.FC<ShopStatusProviderProps> = ({
     return () => clearInterval(interval);
   }, []);
 
-  // Escutar mudanças no localStorage para atualizar quando o shop for carregado
+  // Escutar mudanças no localStorage (cross-tab) e custom event (same-tab)
   useEffect(() => {
     const handleStorageChange = () => {
       checkStatus();
     };
 
     window.addEventListener('storage', handleStorageChange);
-    // Também verificar quando o componente monta (para mudanças na mesma aba)
-    const interval = setInterval(checkStatus, 1000);
-    
+    window.addEventListener('shop-updated', handleStorageChange);
+
     return () => {
       window.removeEventListener('storage', handleStorageChange);
-      clearInterval(interval);
+      window.removeEventListener('shop-updated', handleStorageChange);
     };
   }, []);
 

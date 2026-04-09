@@ -73,6 +73,12 @@ export interface Item {
   shared_complements: {
     data: any[];
   };
+  has_out_of_stock_ingredient?: boolean;
+  ingredients?: Array<{
+    id: number;
+    name: string;
+    in_stock: boolean;
+  }>;
 }
 
 export interface CatalogItemAttributes {
@@ -117,6 +123,12 @@ export interface CatalogItemAttributes {
   shared_complements: {
     data: any[];
   };
+  has_out_of_stock_ingredient?: boolean;
+  ingredients?: Array<{
+    id: number;
+    name: string;
+    in_stock: boolean;
+  }>;
 }
 
 

@@ -7,6 +7,15 @@ export interface ShopResponse {
       name: string
       slug: string
       image_url?: string | null
+      welcome_message?: string | null
+      banner_text?: string | null
+      banner_active?: boolean
+      header_color?: string | null
+      background_color?: string | null
+      group_color?: string | null
+      catalog_layout?: string | null
+      accent_color?: string | null
+      business_category?: string | null
       shop_delivery_config: {
         data: {
           id: string
@@ -39,6 +48,18 @@ export interface ShopResponse {
             debit: boolean
             credit: boolean
             manual_pix: boolean
+            cash_adjustment_type: string
+            cash_adjustment_value: string
+            cash_value_type: string
+            debit_adjustment_type: string
+            debit_adjustment_value: string
+            debit_value_type: string
+            credit_adjustment_type: string
+            credit_adjustment_value: string
+            credit_value_type: string
+            manual_pix_adjustment_type: string
+            manual_pix_adjustment_value: string
+            manual_pix_value_type: string
           }
         }
       }

@@ -68,7 +68,7 @@ export default function PaymentModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="font-tomato flex items-center gap-2">
             Pagamento - {attributes.reference_period}
             <Badge
               variant={
@@ -110,7 +110,7 @@ export default function PaymentModal({
 
           {/* Se já pago */}
           {attributes.status === "paid" && (
-            <Card className="border-green-200 bg-green-50">
+            <Card className="border-green-200">
               <CardContent className="pt-4">
                 <div className="flex items-center gap-2 text-green-700">
                   <Check className="h-5 w-5" />
@@ -208,7 +208,7 @@ export default function PaymentModal({
 
           {/* Tier gratuito */}
           {chargeAmount === 0 && attributes.status !== "paid" && (
-            <Card className="border-blue-200 bg-blue-50">
+            <Card className="border-blue-200">
               <CardContent className="pt-4">
                 <div className="flex items-center gap-2 text-blue-700">
                   <Check className="h-5 w-5" />

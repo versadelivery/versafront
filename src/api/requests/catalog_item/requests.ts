@@ -140,3 +140,11 @@ export async function destroyStepOption(id: string, stepId: string, optionId: st
   });
   return response.data;
 }
+
+export async function reorderCatalogItems(catalogGroupId: string, orderedIds: string[]) {
+  const response = await api.patch('/catalog_items/reorder', {
+    catalog_group_id: catalogGroupId,
+    ordered_ids: orderedIds,
+  });
+  return response.data;
+}

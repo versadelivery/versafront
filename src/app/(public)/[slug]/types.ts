@@ -117,6 +117,12 @@ export interface CatalogItem {
         };
       }>;
     };
+    has_out_of_stock_ingredient?: boolean;
+    ingredients?: Array<{
+      id: number;
+      name: string;
+      in_stock: boolean;
+    }>;
   };
 }
 
@@ -153,6 +159,7 @@ export interface CatalogItemStepOption {
   type: string;
   attributes: {
     name: string;
+    price?: string;
   };
 }
 

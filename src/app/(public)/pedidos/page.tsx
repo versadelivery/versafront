@@ -2,8 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from "next/navigation";
-import { getClientToken } from "@/lib/auth";
-import { getCustomerOrders, getOrdersByPhone } from "@/services/order-service";
+import { getOrdersByPhone } from "@/services/order-service";
 import { CustomerOrder } from "@/types/order";
 import { useCustomerOrdersWebSocket } from "@/hooks/use-customer-orders-websocket";
 import { formatCurrency } from "@/lib/utils";
@@ -15,6 +14,7 @@ import {
   MapPin,
   ShoppingBag,
 } from "lucide-react";
+import PublicLoading from "@/components/public-loading";
 import { Button } from "@/components/ui/button";
 import PedidosHeader from "./pedidos-header";
 import Link from "next/link";
@@ -37,20 +37,21 @@ const formatDate = (dateString: string) => {
   };
 };
 
-const statusConfig: Record<string, { label: string; dot: string; bg: string; text: string }> = {
-  received:       { label: "Recebido",    dot: "bg-amber-400",   bg: "bg-amber-50",   text: "text-amber-700"  },
-  accepted:       { label: "Aceito",      dot: "bg-blue-500",    bg: "bg-blue-50",    text: "text-blue-700"   },
-  in_analysis:    { label: "Em análise",  dot: "bg-orange-400",  bg: "bg-orange-50",  text: "text-orange-700" },
-  in_preparation: { label: "Preparando",  dot: "bg-orange-500",  bg: "bg-orange-50",  text: "text-orange-700" },
-  ready:          { label: "Pronto",      dot: "bg-emerald-500", bg: "bg-emerald-50", text: "text-emerald-700"},
-  delivered:      { label: "Entregue",    dot: "bg-green-500",   bg: "bg-green-50",   text: "text-green-700"  },
-  cancelled:      { label: "Cancelado",   dot: "bg-red-400",     bg: "bg-red-50",     text: "text-red-700"    },
+const statusConfig: Record<string, { label: string; dot: string; border: string; text: string }> = {
+  received:       { label: "Recebido",    dot: "bg-amber-400",   border: "border-amber-300",   text: "text-amber-700"  },
+  accepted:       { label: "Aceito",      dot: "bg-blue-500",    border: "border-blue-300",    text: "text-blue-700"   },
+  in_analysis:    { label: "Em análise",  dot: "bg-orange-400",  border: "border-orange-300",  text: "text-orange-700" },
+  in_preparation: { label: "Preparando",  dot: "bg-orange-500",  border: "border-orange-300",  text: "text-orange-700" },
+  ready:              { label: "Pronto",          dot: "bg-emerald-500", border: "border-emerald-300", text: "text-emerald-700"},
+  left_for_delivery:  { label: "Saiu p/ entrega", dot: "bg-purple-500",  border: "border-purple-300",  text: "text-purple-700" },
+  delivered:          { label: "Entregue",        dot: "bg-green-500",   border: "border-green-300",   text: "text-green-700"  },
+  cancelled:      { label: "Cancelado",   dot: "bg-red-400",     border: "border-red-300",     text: "text-red-700"    },
 };
 
 function StatusBadge({ status }: { status: string }) {
-  const cfg = statusConfig[status] ?? { label: status, dot: "bg-gray-400", bg: "bg-gray-100", text: "text-gray-600" };
+  const cfg = statusConfig[status] ?? { label: status, dot: "bg-gray-400", border: "border-gray-300", text: "text-gray-600" };
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${cfg.bg} ${cfg.text}`}>
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border bg-white text-sm font-semibold ${cfg.border} ${cfg.text}`}>
       <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${cfg.dot}`} />
       {cfg.label}
     </span>
@@ -62,18 +63,20 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<CustomerOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [unauthorized, setUnauthorized] = useState(false);
-  const [guestPhone, setGuestPhone] = useState<string | null>(null);
   const { subscribeToOrders, isLoading: wsLoading } = useCustomerOrdersWebSocket();
 
   useEffect(() => {
-    const token = getClientToken();
-    const storedGuestPhone = localStorage.getItem('guest_phone');
-    
-    if (storedGuestPhone) {
-      setGuestPhone(storedGuestPhone);
-    }
+    let phone: string | null = null;
+    try {
+      const stored = localStorage.getItem('customer_info');
+      if (stored) {
+        const info = JSON.parse(stored);
+        if (info.phone) phone = info.phone.replace(/\D/g, '');
+      }
+    } catch {}
+    if (!phone) phone = localStorage.getItem('guest_phone');
 
-    if (!token && !storedGuestPhone) {
+    if (!phone) {
       setUnauthorized(true);
       setLoading(false);
       return;
@@ -81,13 +84,7 @@ export default function OrdersPage() {
 
     const fetchOrders = async () => {
       try {
-        let response;
-        if (token) {
-          response = await getCustomerOrders();
-        } else if (storedGuestPhone) {
-          response = await getOrdersByPhone(storedGuestPhone);
-        }
-        
+        const response = await getOrdersByPhone(phone!);
         if (response) {
           setOrders(response.data);
           setUnauthorized(false);
@@ -128,57 +125,39 @@ export default function OrdersPage() {
     return (
       <>
         {nav}
-        <div className="h-[calc(100vh-4rem)] bg-gray-50/40 flex items-center justify-center px-4 py-12">
+        <div className="h-[calc(100vh-4rem)] bg-[#FAF9F7] flex items-center justify-center px-4 py-12">
           <div className="text-center w-full max-w-sm">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-[#F0EFEB] rounded-md flex items-center justify-center mx-auto mb-4">
               <ShoppingBag className="w-7 h-7 text-muted-foreground" />
             </div>
-            <h2 className="text-lg font-bold text-foreground mb-2">Acompanhe seus pedidos</h2>
-            <p className="text-sm text-muted-foreground mb-6">Entre na sua conta ou informe seu telefone usado na compra.</p>
-            
-            <div className="space-y-4">
-              <div className="p-4 bg-white border border-gray-100 rounded-2xl shadow-sm">
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 text-left">Consultar por Telefone</p>
-                <form 
-                  className="flex flex-col gap-2"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    const phone = (e.currentTarget.elements.namedItem('phone') as HTMLInputElement).value.replace(/\D/g, '');
-                    if (phone.length >= 10) {
-                      localStorage.setItem('guest_phone', phone);
-                      window.location.reload();
-                    }
-                  }}
-                >
-                  <input 
-                    name="phone"
-                    type="tel" 
-                    placeholder="(00) 00000-0000"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    required
-                  />
-                  <Button type="submit" className="w-full">
-                    Buscar Pedidos
-                  </Button>
-                </form>
-              </div>
+            <h2 className="font-tomato text-lg font-bold text-foreground mb-2">Acompanhe seus pedidos</h2>
+            <p className="text-sm text-muted-foreground mb-6">Informe seu telefone usado na compra para consultar seus pedidos.</p>
 
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-gray-200" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-gray-50/40 px-2 text-muted-foreground">Ou acesse sua conta</span>
-                </div>
-              </div>
-
-              <Button 
-                variant="outline"
-                onClick={() => router.push(`/auth/login?redirect=/pedidos`)} 
-                className="w-full rounded-md"
+            <div className="p-4 bg-white border border-[#E5E2DD] rounded-md">
+              <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 text-left">Consultar por Telefone</p>
+              <form
+                className="flex flex-col gap-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const phone = (e.currentTarget.elements.namedItem('phone') as HTMLInputElement).value.replace(/\D/g, '');
+                  if (phone.length >= 10) {
+                    localStorage.setItem('guest_phone', phone);
+                    localStorage.setItem('customer_info', JSON.stringify({ phone }));
+                    window.location.reload();
+                  }
+                }}
               >
-                Entrar na conta
-              </Button>
+                <input
+                  name="phone"
+                  type="tel"
+                  placeholder="(00) 00000-0000"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  required
+                />
+                <Button type="submit" className="w-full">
+                  Buscar Pedidos
+                </Button>
+              </form>
             </div>
           </div>
         </div>
@@ -190,12 +169,7 @@ export default function OrdersPage() {
     return (
       <>
         {nav}
-        <div className="h-[calc(100vh-4rem)] bg-gray-50/40 flex items-center justify-center">
-          <div className="flex flex-col items-center gap-3">
-            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            <p className="text-sm text-muted-foreground">Carregando pedidos...</p>
-          </div>
-        </div>
+        <PublicLoading />
       </>
     );
   }
@@ -204,15 +178,15 @@ export default function OrdersPage() {
     return (
       <>
         {nav}
-        <div className="h-[calc(100vh-4rem)] bg-gray-50/40 flex items-center justify-center px-4">
+        <div className="h-[calc(100vh-4rem)] bg-[#FAF9F7] flex items-center justify-center px-4">
           <div className="text-center max-w-sm">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-[#F0EFEB] rounded-md flex items-center justify-center mx-auto mb-4">
               <ShoppingBag className="w-7 h-7 text-muted-foreground" />
             </div>
-            <h2 className="text-lg font-bold text-foreground mb-2">Nenhum pedido ainda</h2>
+            <h2 className="font-tomato text-lg font-bold text-foreground mb-2">Nenhum pedido ainda</h2>
             <p className="text-sm text-muted-foreground mb-6">Seus pedidos aparecerão aqui após a primeira compra.</p>
             {shopSlug && (
-              <Button asChild className="rounded-full">
+              <Button asChild className="rounded-md">
                 <Link href={`/${shopSlug}`}>Ver cardápio</Link>
               </Button>
             )}
@@ -225,11 +199,11 @@ export default function OrdersPage() {
   return (
     <>
       {nav}
-      <div className="min-h-screen bg-gray-50/40">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl py-8">
+      <div className="min-h-screen bg-[#FAF9F7]">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-[1400px] py-8">
           <div className="mb-6">
-            <h1 className="text-xl font-bold text-foreground">Meus Pedidos</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">{orders.length} {orders.length === 1 ? 'pedido' : 'pedidos'} encontrado{orders.length !== 1 ? 's' : ''}</p>
+            <h1 className="font-tomato text-2xl font-bold text-foreground">Meus Pedidos</h1>
+            <p className="text-base text-muted-foreground mt-0.5">{orders.length} {orders.length === 1 ? 'pedido' : 'pedidos'} encontrado{orders.length !== 1 ? 's' : ''}</p>
           </div>
 
           <div className="space-y-3">
@@ -242,39 +216,39 @@ export default function OrdersPage() {
               return (
                 <div
                   key={order.id}
-                  className="bg-white border border-gray-100 rounded-2xl overflow-hidden hover:border-gray-200 hover:shadow-sm transition-all duration-200"
+                  className="bg-white border border-[#E5E2DD] rounded-md overflow-hidden hover:border-gray-400 transition-all duration-200"
                 >
                   <div className="flex items-start justify-between px-5 pt-4 pb-3 gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-bold text-foreground">#{order.attributes.id}</span>
+                        <span className="text-base font-bold text-foreground">#{order.attributes.id}</span>
                         <StatusBadge status={order.attributes.status} />
                       </div>
-                      <p className="text-sm font-medium text-foreground mt-0.5 truncate">{shopName}</p>
-                      <p className="text-xs text-muted-foreground">{date.date} às {date.time}</p>
+                      <p className="text-base font-medium text-foreground mt-0.5 truncate">{shopName}</p>
+                      <p className="text-sm text-muted-foreground">{date.date} às {date.time}</p>
                     </div>
                     <div className="text-right flex-shrink-0">
-                      <p className="text-base font-bold text-foreground">{formatCurrency(total)}</p>
-                      <p className="text-xs text-muted-foreground">{itemCount} {itemCount === 1 ? 'item' : 'itens'}</p>
+                      <p className="text-lg font-bold text-foreground">{formatCurrency(total)}</p>
+                      <p className="text-sm text-muted-foreground">{itemCount} {itemCount === 1 ? 'item' : 'itens'}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between px-5 py-3 bg-gray-50/70 border-t border-gray-100 gap-3">
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground overflow-hidden">
-                      <span className="flex items-center gap-1 flex-shrink-0">
+                  <div className="flex items-center justify-between px-5 py-3 bg-[#FAF9F7] border-t border-[#E5E2DD] gap-3">
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground overflow-hidden">
+                      <span className="flex items-center gap-1.5 flex-shrink-0">
                         {order.attributes.withdrawal
-                          ? <Store className="w-3.5 h-3.5" />
-                          : <Truck className="w-3.5 h-3.5" />
+                          ? <Store className="w-4 h-4" />
+                          : <Truck className="w-4 h-4" />
                         }
                         {order.attributes.withdrawal ? 'Retirada' : 'Entrega'}
                       </span>
-                      <span className="flex items-center gap-1 flex-shrink-0">
-                        <CreditCard className="w-3.5 h-3.5" />
+                      <span className="flex items-center gap-1.5 flex-shrink-0">
+                        <CreditCard className="w-4 h-4" />
                         {getPaymentMethodLabel(order.attributes.payment_method)}
                       </span>
                       {!order.attributes.withdrawal && order.attributes.address?.data?.attributes?.neighborhood && (
-                        <span className="flex items-center gap-1 truncate hidden sm:flex">
-                          <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+                        <span className="flex items-center gap-1.5 truncate hidden sm:flex">
+                          <MapPin className="w-4 h-4 flex-shrink-0" />
                           <span className="truncate">{order.attributes.address.data.attributes.neighborhood}</span>
                         </span>
                       )}
@@ -282,11 +256,11 @@ export default function OrdersPage() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="text-xs font-semibold text-primary hover:text-primary hover:bg-primary/5 flex-shrink-0 px-3 h-8"
+                      className="text-sm font-semibold text-primary hover:text-primary hover:bg-primary/5 flex-shrink-0 px-3 h-9"
                       onClick={() => router.push(`/pedidos/${order.id}`)}
                     >
                       Detalhes
-                      <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                      <ArrowRight className="w-4 h-4 ml-1" />
                     </Button>
                   </div>
                 </div>

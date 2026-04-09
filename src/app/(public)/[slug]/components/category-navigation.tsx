@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from 'react';
+import { memo, useMemo } from 'react';
+import { isDarkColor } from '../theme-utils';
 
 interface Category {
   id: string;
@@ -14,22 +15,20 @@ interface CategoryNavigationProps {
   categories: Category[];
   activeCategory: string;
   onChange: (category: string) => void;
+  accentColor?: string | null;
 }
 
-export default function CategoryNavigation({ categories, activeCategory, onChange }: CategoryNavigationProps) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) return null;
+const CategoryNavigation = memo(function CategoryNavigation({ categories, activeCategory, onChange, accentColor }: CategoryNavigationProps) {
+  const accentText = useMemo(() => {
+    if (!accentColor) return '#FFFFFF';
+    return isDarkColor(accentColor) ? '#FFFFFF' : '#111827';
+  }, [accentColor]);
 
   const scrollToCategory = (categoryName: string) => {
     onChange(categoryName);
     const element = document.getElementById(categoryName.toLowerCase().replace(/\s+/g, '-'));
     if (element) {
-      const offset = 130; // header (64px) + sticky bar (~66px)
+      const offset = 140;
       const bodyRect = document.body.getBoundingClientRect().top;
       const elementRect = element.getBoundingClientRect().top;
       const elementPosition = elementRect - bodyRect;
@@ -42,17 +41,22 @@ export default function CategoryNavigation({ categories, activeCategory, onChang
     }
   };
 
+  const activeStyle = accentColor
+    ? { backgroundColor: accentColor, color: accentText, borderColor: accentColor }
+    : undefined;
+
   return (
     <div className="w-full overflow-hidden">
       <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
         <button
           onClick={() => scrollToCategory('all')}
           className={`
-            whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 flex-shrink-0
+            whitespace-nowrap px-5 py-2 text-sm font-semibold transition-all duration-150 flex-shrink-0 border rounded-md cursor-pointer
             ${activeCategory === 'all'
-              ? 'bg-primary text-white shadow-sm'
-              : 'bg-gray-100 text-muted-foreground hover:bg-gray-200 hover:text-foreground'}
+              ? (accentColor ? '' : 'bg-primary text-white border-primary')
+              : 'bg-white text-gray-600 border-[#E5E2DD] hover:border-gray-400 hover:text-gray-900'}
           `}
+          style={activeCategory === 'all' ? activeStyle : undefined}
         >
           Tudo
         </button>
@@ -62,11 +66,12 @@ export default function CategoryNavigation({ categories, activeCategory, onChang
             key={category.id}
             onClick={() => scrollToCategory(category.attributes.name)}
             className={`
-              whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 flex-shrink-0
+              whitespace-nowrap px-5 py-2 text-sm font-semibold transition-all duration-150 flex-shrink-0 border rounded-md cursor-pointer
               ${activeCategory === category.attributes.name
-                ? 'bg-primary text-white shadow-sm'
-                : 'bg-gray-100 text-muted-foreground hover:bg-gray-200 hover:text-foreground'}
+                ? (accentColor ? '' : 'bg-primary text-white border-primary')
+                : 'bg-white text-gray-600 border-[#E5E2DD] hover:border-gray-400 hover:text-gray-900'}
             `}
+            style={activeCategory === category.attributes.name ? activeStyle : undefined}
           >
             {category.attributes.name}
           </button>
@@ -79,4 +84,6 @@ export default function CategoryNavigation({ categories, activeCategory, onChang
       `}</style>
     </div>
   );
-}
+});
+
+export default CategoryNavigation;

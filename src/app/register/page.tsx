@@ -2,12 +2,10 @@
 
 import { AuthLayout } from "@/components/auth/auth-layout";
 import { AuthFormInput } from "@/components/auth/auth-form-input";
-import cesta from "../../../public/img/breads.png";
 import { useState } from "react";
-import { registerSchema, RegisterFormData } from "@/schemas/auth-schemas";
-import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { registerSchema, registerStep1Schema, RegisterFormData } from "@/schemas/auth-schemas";
 import Link from "next/link";
+import { Loader2 } from "lucide-react";
 import { z } from "zod";
 import { formatPhone } from "@/utils/format-phone";
 import { useAuth } from "@/hooks/use-auth";
@@ -141,7 +139,7 @@ export default function Register() {
       confirmPassword: ""
     }
   });
-  const [errors, setErrors] = useState<Partial<RegisterFormData>>({});
+  const [errors, setErrors] = useState<RegisterStateErrors>({});
 
   const applyBackendErrors = (fieldErrors: RegisterStateErrors) => {
     if (!fieldErrors.shop && !fieldErrors.shop_user) {
@@ -161,15 +159,48 @@ export default function Register() {
     return true;
   };
 
+  const validateStep1 = (): boolean => {
+    try {
+      registerStep1Schema.parse({
+        storeName: formData.shop.name,
+        storePhone: formData.shop.cellphone
+      });
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const fieldErrors: Partial<RegisterFormData> = {};
+        error.errors.forEach((err) => {
+          const field = err.path[0];
+          if (field === "storeName") {
+            fieldErrors.shop = { ...fieldErrors.shop, name: err.message } as any;
+          } else if (field === "storePhone") {
+            fieldErrors.shop = { ...fieldErrors.shop, cellphone: err.message } as any;
+          }
+        });
+        setErrors(fieldErrors);
+      }
+      return false;
+    }
+  };
+
+  const handleNextStep = () => {
+    setErrors({});
+    if (validateStep1()) {
+      setStep(2);
+    }
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     const [section, field] = name.split(".");
-    
+
+    const processedValue = field === "cellphone" ? formatPhone(value) : value;
+
     setFormData(prev => ({
       ...prev,
       [section]: {
         ...prev[section as keyof RegisterFormData],
-        [field]: value
+        [field]: processedValue
       }
     }));
 
@@ -229,129 +260,118 @@ export default function Register() {
   const renderStep = () => {
     if (step === 1) {
       return (
-        <>
-          <div className="w-full flex flex-col justify-center mb-4">
-            <AuthFormInput
-              type="text"
-              name="shop.name"
-              placeholder="Nome do estabelecimento"
-              value={formData.shop.name}
-              onChange={handleChange}
-              disabled={isLoading}
-              label="Nome do estabelecimento"
-              error={errors.shop?.name}
-            />
-          </div>
-          <div className="w-full flex flex-col justify-center mb-4">
-            <AuthFormInput
-              type="tel"
-              name="shop.cellphone"
-              placeholder="Telefone"
-              value={formatPhone(formData.shop.cellphone)}
-              onChange={handleChange}
-              disabled={isLoading}
-              label="Telefone"
-              error={errors.shop?.cellphone}
-            />
-          </div>
-          <Button
+        <div className="space-y-4">
+          <AuthFormInput
+            type="text"
+            name="shop.name"
+            placeholder="Nome do estabelecimento"
+            value={formData.shop.name}
+            onChange={handleChange}
+            disabled={isLoading}
+            label="Nome do estabelecimento"
+            error={errors.shop?.name}
+          />
+          <AuthFormInput
+            type="tel"
+            name="shop.cellphone"
+            placeholder="(00) 00000-0000"
+            value={formData.shop.cellphone}
+            onChange={handleChange}
+            disabled={isLoading}
+            label="Telefone"
+            error={errors.shop?.cellphone}
+          />
+          <button
             type="button"
-            className="w-full mt-4 mb-4 text-lg font-bold py-8"
-            onClick={() => setStep(2)}
+            className="w-full bg-[#1B1B1B] hover:bg-black text-white text-base font-medium py-4 rounded-2xl transition-colors cursor-pointer disabled:opacity-50 mt-2"
+            onClick={handleNextStep}
             disabled={isLoading}
           >
             Próximo
-          </Button>
-        </>
+          </button>
+        </div>
       );
     }
 
     return (
-      <>
-        <div className="w-full flex flex-col justify-center mb-4">
-          <AuthFormInput
-            type="text"
-            name="shop_user.name"
-            placeholder="Nome"
-            value={formData.shop_user.name}
-            onChange={handleChange}
-            disabled={isLoading}
-            label="Nome"
-            error={errors.shop_user?.name}
-          />
-        </div>
-        <div className="w-full flex flex-col justify-center mb-4">
-          <AuthFormInput
-            type="email"
-            name="shop_user.email"
-            placeholder="Email"
-            value={formData.shop_user.email}
-            onChange={handleChange}
-            disabled={isLoading}
-            label="Email"
-            error={errors.shop_user?.email}
-          />
-        </div>
-        <div className="w-full flex flex-col justify-center mb-4">
-          <AuthFormInput
-            type="password"
-            name="shop_user.password"
-            placeholder="Senha"
-            value={formData.shop_user.password}
-            onChange={handleChange}
-            disabled={isLoading}
-            label="Senha"
-            error={errors.shop_user?.password}
-            showPasswordToggle
-          />
-        </div>
-        <div className="w-full flex flex-col justify-center mb-4">
-          <AuthFormInput
-            type="password"
-            name="shop_user.confirmPassword"
-            placeholder="Confirmar senha"
-            value={formData.shop_user.confirmPassword}
-            onChange={handleChange}
-            disabled={isLoading}
-            label="Confirmar senha"
-            error={errors.shop_user?.confirmPassword}
-            showPasswordToggle
-          />
-        </div>
-        <div className="flex gap-4 flex-col">
-          <Button
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <AuthFormInput
+          type="text"
+          name="shop_user.name"
+          placeholder="Seu nome"
+          value={formData.shop_user.name}
+          onChange={handleChange}
+          disabled={isLoading}
+          label="Nome"
+          error={errors.shop_user?.name}
+        />
+        <AuthFormInput
+          type="email"
+          name="shop_user.email"
+          placeholder="seu@email.com"
+          value={formData.shop_user.email}
+          onChange={handleChange}
+          disabled={isLoading}
+          label="Email"
+          error={errors.shop_user?.email}
+        />
+        <AuthFormInput
+          type="password"
+          name="shop_user.password"
+          placeholder="Sua senha"
+          value={formData.shop_user.password}
+          onChange={handleChange}
+          disabled={isLoading}
+          label="Senha"
+          error={errors.shop_user?.password}
+          showPasswordToggle
+        />
+        <AuthFormInput
+          type="password"
+          name="shop_user.confirmPassword"
+          placeholder="Confirme sua senha"
+          value={formData.shop_user.confirmPassword}
+          onChange={handleChange}
+          disabled={isLoading}
+          label="Confirmar senha"
+          error={errors.shop_user?.confirmPassword}
+          showPasswordToggle
+        />
+        <div className="flex gap-3 mt-2">
+          <button
             type="button"
-            variant="outline"
-            className="w-full mt-4 mb-4 text-lg font-bold py-8"
+            className="flex-1 border border-[#E8E4DF] text-[#1B1B1B] text-base font-medium py-4 rounded-2xl transition-colors cursor-pointer hover:bg-[#f5f5f5]"
             onClick={() => setStep(1)}
             disabled={isLoading}
           >
             Voltar
-          </Button>
-          <Button
+          </button>
+          <button
             type="submit"
-            className="w-full mt-4 mb-4 text-lg font-bold py-8"
-            onClick={handleSubmit}
             disabled={isLoading}
+            className="flex-1 bg-[#1B1B1B] hover:bg-black text-white text-base font-medium py-4 rounded-2xl transition-colors cursor-pointer disabled:opacity-50"
           >
-            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Cadastrar"}
-          </Button>
+            {isLoading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "Cadastrar"}
+          </button>
         </div>
-      </>
+      </form>
     );
   };
 
   return (
-    <AuthLayout title="Cadastre-se na plataforma" imageSrc={cesta}>
-      <div className="flex justify-center mb-6">
+    <AuthLayout title="Cadastre-se na plataforma">
+      <div className="flex justify-center mb-8">
         <div className="flex gap-2">
-          <div className={`w-3 h-3 rounded-full ${step === 1 ? 'bg-primary' : 'bg-gray-300'}`} />
-          <div className={`w-3 h-3 rounded-full ${step === 2 ? 'bg-primary' : 'bg-gray-300'}`} />
+          <div className={`w-2.5 h-2.5 rounded-full transition-colors ${step === 1 ? 'bg-[#009246]' : 'bg-[#E8E4DF]'}`} />
+          <div className={`w-2.5 h-2.5 rounded-full transition-colors ${step === 2 ? 'bg-[#009246]' : 'bg-[#E8E4DF]'}`} />
         </div>
       </div>
       {renderStep()}
-      <p className="text-md text-center mt-4">
-        Já tem uma conta? <Link href="/login" className="text-primary">Faça login</Link>
+      <p className="text-sm text-[#858585] text-center mt-6">
+        Já tem uma conta?{" "}
+        <Link href="/login" className="text-[#009246] font-medium hover:underline">
+          Faça login
+        </Link>
       </p>
     </AuthLayout>
   );

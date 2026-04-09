@@ -71,9 +71,9 @@ export function ItemDetailsModal({ id, isOpen, onClose }: ItemDetailsModalProps)
   if (isLoadingCatalogItem) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="rounded-lg sm:max-w-[640px] p-0 bg-white">
+        <DialogContent className="rounded-md sm:max-w-[640px] p-0 bg-white">
           <DialogHeader className="px-6 pt-6 pb-4">
-            <DialogTitle>Carregando...</DialogTitle>
+            <DialogTitle className="font-tomato">Carregando...</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col items-center justify-center h-40 gap-3">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -91,9 +91,9 @@ export function ItemDetailsModal({ id, isOpen, onClose }: ItemDetailsModalProps)
   if (!catalogItem) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="rounded-lg sm:max-w-[640px] p-0 bg-white">
+        <DialogContent className="rounded-md sm:max-w-[640px] p-0 bg-white">
           <DialogHeader className="px-6 pt-6 pb-4">
-            <DialogTitle>Erro</DialogTitle>
+            <DialogTitle className="font-tomato">Erro</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col items-center justify-center h-40 gap-3">
             <p className="text-sm text-muted-foreground">Não foi possível carregar os detalhes do item</p>
@@ -123,20 +123,20 @@ export function ItemDetailsModal({ id, isOpen, onClose }: ItemDetailsModalProps)
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="rounded-lg sm:max-w-[640px] p-0 bg-white max-h-[90vh] flex flex-col overflow-hidden">
+      <DialogContent className="rounded-md sm:max-w-[640px] p-0 bg-white max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
-        <DialogHeader className="px-6 pt-6 pb-4 border-b border-gray-100">
-          <DialogTitle className="flex items-center gap-2 text-lg font-semibold">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b border-[#E5E2DD]">
+          <DialogTitle className="font-tomato flex items-center gap-2 text-lg font-semibold">
             <Package className="h-5 w-5" />
             Detalhes do Item
           </DialogTitle>
         </DialogHeader>
 
         {/* Conteúdo */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto bg-[#FAF9F7]">
           {/* Imagem */}
           {hasImage && (
-            <div className="relative h-48 w-full bg-gray-50">
+            <div className="relative h-48 w-full bg-[#F0EFEB]">
               <Image
                 src={fixImageUrl(attrs.image_url) || ''}
                 alt={attrs.name}
@@ -151,14 +151,14 @@ export function ItemDetailsModal({ id, isOpen, onClose }: ItemDetailsModalProps)
           <div className="px-6 py-5 space-y-5">
             {/* Nome e Descrição */}
             <div>
-              <h2 className="text-xl font-bold text-foreground">{attrs.name}</h2>
+              <h2 className="font-tomato text-xl font-bold text-foreground">{attrs.name}</h2>
               {attrs.description && (
                 <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{attrs.description}</p>
               )}
             </div>
 
             {/* Preço */}
-            <div className="rounded-lg p-4 border border-gray-100 bg-white">
+            <div className="rounded-md p-4 border border-[#E5E2DD] bg-white">
               <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-1">Preço</p>
               <div className="flex items-baseline gap-2">
                 <span className="text-2xl font-bold">
@@ -177,23 +177,23 @@ export function ItemDetailsModal({ id, isOpen, onClose }: ItemDetailsModalProps)
             {((attrs as any).new_tag || (attrs as any).best_seller_tag || (attrs as any).highlight || (attrs as any).promotion_tag) && (
               <div className="flex flex-wrap gap-2">
                 {(attrs as any).new_tag && (
-                  <span className="bg-green-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">NOVO!</span>
+                  <span className="bg-green-500 text-white text-xs font-bold px-2.5 py-1 rounded-md">NOVO!</span>
                 )}
                 {(attrs as any).best_seller_tag && (
-                  <span className="bg-amber-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">+ VENDIDO</span>
+                  <span className="bg-amber-500 text-white text-xs font-bold px-2.5 py-1 rounded-md">+ VENDIDO</span>
                 )}
                 {(attrs as any).highlight && (
-                  <span className="bg-blue-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">DESTAQUE</span>
+                  <span className="bg-blue-500 text-white text-xs font-bold px-2.5 py-1 rounded-md">DESTAQUE</span>
                 )}
                 {(attrs as any).promotion_tag && (
-                  <span className="bg-primary text-white text-xs font-bold px-2.5 py-1 rounded-full">PROMOÇÃO</span>
+                  <span className="bg-primary text-white text-xs font-bold px-2.5 py-1 rounded-md">PROMOÇÃO</span>
                 )}
               </div>
             )}
 
             {/* Peso */}
             {isWeightBased && (attrs.min_weight || attrs.max_weight) && (
-              <div className="rounded-lg p-4 border border-gray-100 bg-white">
+              <div className="rounded-md p-4 border border-[#E5E2DD] bg-white">
                 <div className="flex items-center gap-2 mb-2">
                   <Scale className="h-4 w-4 text-primary" />
                   <span className="text-sm font-semibold">Peso</span>
@@ -219,10 +219,10 @@ export function ItemDetailsModal({ id, isOpen, onClose }: ItemDetailsModalProps)
                   return (
                     <div
                       key={key}
-                      className={`flex flex-col items-center justify-center py-3 rounded-xl border-2 transition-all duration-200 ${
-                        isActive 
-                          ? 'bg-primary border-primary shadow-sm' 
-                          : 'bg-gray-50/50 border-gray-100 text-gray-400 border-dashed opacity-60'
+                      className={`flex flex-col items-center justify-center py-3 rounded-md border transition-all duration-200 ${
+                        isActive
+                          ? 'bg-primary border-primary'
+                          : 'bg-white border-[#E5E2DD] text-gray-400 border-dashed opacity-60'
                       }`}
                     >
                       <span className={`text-[10px] font-bold uppercase mb-0.5 ${isActive ? 'text-white' : 'text-gray-400'}`}>
@@ -243,7 +243,7 @@ export function ItemDetailsModal({ id, isOpen, onClose }: ItemDetailsModalProps)
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {attrs.shared_complements!.data.map((group: any) => (
-                    <div key={group.id} className="p-3 rounded-xl border border-gray-100 bg-white space-y-2">
+                    <div key={group.id} className="p-3 rounded-md border border-[#E5E2DD] bg-white space-y-2">
                       <p className="text-sm font-bold text-foreground underline decoration-primary/30 underline-offset-4">
                         {group.attributes.name}
                       </p>
@@ -274,7 +274,7 @@ export function ItemDetailsModal({ id, isOpen, onClose }: ItemDetailsModalProps)
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {attrs.extra!.data.map((extra: any, index: number) => (
-                    <div key={extra.id || index} className="px-3 py-2 rounded-full border border-gray-100 bg-white">
+                    <div key={extra.id || index} className="px-3 py-2 rounded-md border border-[#E5E2DD] bg-white">
                       <span className="text-sm font-medium">{extra.attributes.name}</span>
                       {Number(extra.attributes.price) > 0 && (
                         <span className="text-xs text-primary ml-1.5">+ {formatPrice(parseFloat(extra.attributes.price))}</span>
@@ -294,7 +294,7 @@ export function ItemDetailsModal({ id, isOpen, onClose }: ItemDetailsModalProps)
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {attrs.prepare_method!.data.map((method: any, index: number) => (
-                    <div key={method.id || index} className="px-3 py-2 rounded-full border border-gray-100 bg-white">
+                    <div key={method.id || index} className="px-3 py-2 rounded-md border border-[#E5E2DD] bg-white">
                       <span className="text-sm font-medium">{method.attributes.name}</span>
                     </div>
                   ))}
@@ -311,7 +311,7 @@ export function ItemDetailsModal({ id, isOpen, onClose }: ItemDetailsModalProps)
                 </div>
                 <div className="space-y-2">
                   {attrs.steps!.data.map((step: any, index: number) => (
-                    <div key={step.id || index} className="flex gap-3 p-3 rounded-lg border border-gray-100 bg-white">
+                    <div key={step.id || index} className="flex gap-3 p-3 rounded-md border border-[#E5E2DD] bg-white">
                       <div className="w-6 h-6 rounded-full bg-foreground text-white flex items-center justify-center text-xs font-bold shrink-0">
                         {index + 1}
                       </div>
@@ -336,8 +336,8 @@ export function ItemDetailsModal({ id, isOpen, onClose }: ItemDetailsModalProps)
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-100">
-          <Button variant="outline" className="w-full" onClick={onClose}>
+        <div className="px-6 py-4 border-t border-[#E5E2DD]">
+          <Button variant="outline" className="w-full border border-gray-300 cursor-pointer" onClick={onClose}>
             Fechar
           </Button>
         </div>

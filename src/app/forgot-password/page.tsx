@@ -2,10 +2,8 @@
 
 import { useState } from "react";
 import { AuthLayout } from "@/components/auth/auth-layout";
-import cesta from "../../../public/img/cesta.png";
 import { forgotPasswordSchema, ForgotPasswordFormData } from "@/schemas/auth-schemas";
 import { z } from "zod";
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Loader2, ArrowLeft, CheckCircle } from "lucide-react";
 import { AuthFormInput } from "@/components/auth/auth-form-input";
@@ -61,24 +59,20 @@ export default function ForgotPassword() {
 
   if (isSuccess) {
     return (
-      <AuthLayout
-        title="E-mail Enviado"
-        imageSrc={cesta}
-        imagePosition="left"
-      >
+      <AuthLayout title="E-mail Enviado">
         <div className="flex flex-col items-center text-center">
-          <CheckCircle className="w-16 h-16 text-green-500 mb-4" />
-          <p className="text-gray-600 mb-6">
+          <CheckCircle className="w-16 h-16 text-[#009246] mb-4" />
+          <p className="text-[#474747] mb-6">
             Se o e-mail estiver cadastrado, você receberá instruções para redefinir sua senha.
           </p>
-          <p className="text-gray-500 text-sm mb-6">
+          <p className="text-[#858585] text-sm mb-6">
             Verifique sua caixa de entrada e spam.
           </p>
           <Link href="/login">
-            <Button className="w-full">
-              <ArrowLeft className="w-4 h-4 mr-2" />
+            <button className="bg-[#1B1B1B] hover:bg-black text-white text-base font-medium px-8 py-4 rounded-2xl transition-colors cursor-pointer flex items-center gap-2">
+              <ArrowLeft className="w-4 h-4" />
               Voltar para o Login
-            </Button>
+            </button>
           </Link>
         </div>
       </AuthLayout>
@@ -86,36 +80,31 @@ export default function ForgotPassword() {
   }
 
   return (
-    <AuthLayout
-      title="Esqueceu sua senha?"
-      imageSrc={cesta}
-      imagePosition="left"
-    >
-      <p className="text-gray-600 text-center mb-6">
+    <AuthLayout title="Esqueceu sua senha?">
+      <p className="text-[#858585] text-center mb-6 -mt-4">
         Digite seu e-mail e enviaremos instruções para redefinir sua senha.
       </p>
-      <div className="w-full flex flex-col justify-center mb-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
         <AuthFormInput
           type="email"
           name="email"
-          placeholder="Digite seu e-mail"
+          placeholder="seu@email.com"
           value={formData.email}
           onChange={handleChange}
           disabled={isLoading}
           label="Email"
           error={errors.email}
         />
-      </div>
-      <Button
-        type="submit"
-        className="w-full mt-4 mb-4 text-lg font-bold py-8"
-        onClick={handleSubmit}
-        disabled={isLoading}
-      >
-        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Enviar"}
-      </Button>
-      <p className="text-md text-center mt-4">
-        <Link href="/login" className="text-primary flex items-center justify-center gap-2">
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="w-full bg-[#1B1B1B] hover:bg-black text-white text-base font-medium py-4 rounded-2xl transition-colors cursor-pointer disabled:opacity-50"
+        >
+          {isLoading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "Enviar"}
+        </button>
+      </form>
+      <p className="text-sm text-[#858585] text-center mt-6">
+        <Link href="/login" className="text-[#009246] font-medium hover:underline inline-flex items-center gap-1.5">
           <ArrowLeft className="w-4 h-4" />
           Voltar para o Login
         </Link>

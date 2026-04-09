@@ -50,14 +50,14 @@ export default function PedidosHeader({
   const logoHref = shopSlug ? `/${shopSlug}` : "/";
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-white border-b border-gray-100">
-      <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-50 w-full bg-white border-b border-[#E5E2DD]">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
-            <Link href={logoHref} className="md:hidden">
+            <Link href={logoHref} className="md:hidden cursor-pointer">
               <Image src={favicon} alt="Versa" width={100} height={100} priority />
             </Link>
-            <Link href={logoHref} className="hidden md:block">
+            <Link href={logoHref} className="hidden md:block cursor-pointer">
               <Image
                 src={logoInlineBlack}
                 alt="Versa"
@@ -112,7 +112,7 @@ export default function PedidosHeader({
               variant="ghost"
               size="sm"
               asChild
-              className="text-sm font-medium text-muted-foreground hover:text-foreground"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground cursor-pointer"
             >
               <Link href={backHref}>
                 <ChevronLeft className="w-4 h-4 mr-0.5" />

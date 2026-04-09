@@ -1,61 +1,25 @@
-import { ShoppingCart, Settings, Target, BarChart3, Headset, BookOpen, DollarSign, CreditCard } from "lucide-react";
+import { adminSections } from "@/lib/admin-sections"
 
-export const dashboardCards = [
-  {
-    href: "/admin/pedidos",
-    icon: ShoppingCart,
-    title: "Pedidos",
-    description: "Gerencie os pedidos da sua loja",
-    iconBgColor: "bg-blue-500"
-  },
-  {
-    href: "/admin/catalog",
-    icon: BookOpen,
-    title: "Catálogo",
-    description: "Gerencie seu catálogo",
-    iconBgColor: "bg-emerald-600"
-  },
-  {
-    href: "/admin/financeiro",
-    icon: CreditCard,
-    title: "Financeiro",
-    description: "Gerencie suas mensalidades",
-    iconBgColor: "bg-amber-500"
-  },
-  {
-    href: "/admin/settings",
-    icon: Settings,
-    title: "Configurações",
-    description: "Configure sua loja",
-    iconBgColor: "bg-gray-600"
-  },
-  {
-    href: "#marketing",
-    icon: Target,
-    title: "Marketing",
-    description: "Estamos trabalhando nisso",
-    
-    iconBgColor: "bg-red-500"
-  },
-  {
-    href: "#relatorios",
-    icon: BarChart3,
-    title: "Relatórios",
-    description: "Acompanhe suas métricas",
-    iconBgColor: "bg-purple-500"
-  },
-  {
-    href: "/admin/suporte",
-    icon: Headset,
-    title: "Suporte",
-    description: "Área de atendimento e auxílio ao lojista",
-    iconBgColor: "bg-yellow-500"
-  },
-  {
-    href: "/admin/caixa",
-    icon: DollarSign,
-    title: "Controle de Caixa",
-    description: "Gerencie o fluxo de caixa da sua loja",
-    iconBgColor: "bg-green-600"
-  }
-];
+const dashboardSectionIds = [
+  "pedidos",
+  "catalogo",
+  "clientes",
+  "financeiro",
+  "settings",
+  "marketing",
+  "relatorios",
+  "suporte",
+  "caixa",
+  "mesas",
+]
+
+export const dashboardCards = dashboardSectionIds
+  .map((id) => adminSections.find((s) => s.id === id))
+  .filter(Boolean)
+  .map((s) => ({
+    href: s!.href,
+    icon: s!.icon,
+    title: s!.title,
+    description: s!.description,
+    iconBgColor: s!.iconBgColor,
+  }))

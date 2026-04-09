@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -59,7 +58,7 @@ function ScheduleRow({
     <div className="grid grid-cols-12 gap-4 items-center py-3">
       {/* Dia da semana */}
       <div className="col-span-2">
-        <span className="text-sm font-medium text-gray-700">{dayLabel}</span>
+        <span className="text-sm font-medium text-gray-900">{dayLabel}</span>
       </div>
 
       {/* Switch Aberto/Fechado */}
@@ -67,10 +66,9 @@ function ScheduleRow({
         <Switch
           checked={daySchedule.active}
           onCheckedChange={(checked) => onToggleActive(dayKey, checked)}
-          className="data-[state=checked]:bg-green-500"
         />
         <span
-          className={`text-sm ${daySchedule.active ? "text-green-600" : "text-gray-500"}`}
+          className={`text-sm ${daySchedule.active ? "text-green-600 font-medium" : "text-muted-foreground"}`}
         >
           {daySchedule.active ? "Aberto" : "Fechado"}
         </span>
@@ -87,7 +85,7 @@ function ScheduleRow({
           value={daySchedule.open}
           onChange={(e) => onChangeTime(dayKey, "open", e.target.value)}
           disabled={!daySchedule.active}
-          className="h-9 text-sm"
+          className="h-9 text-sm rounded-md border-[#E5E2DD]"
         />
       </div>
 
@@ -102,7 +100,7 @@ function ScheduleRow({
           value={daySchedule.close}
           onChange={(e) => onChangeTime(dayKey, "close", e.target.value)}
           disabled={!daySchedule.active}
-          className="h-9 text-sm"
+          className="h-9 text-sm rounded-md border-[#E5E2DD]"
         />
       </div>
 
@@ -114,7 +112,7 @@ function ScheduleRow({
             variant="outline"
             size="sm"
             onClick={() => onCopyToAll(dayKey)}
-            className="h-8 px-3 text-xs bg-slate-500 text-white border-slate-500 hover:bg-slate-600"
+            className="h-8 px-3 text-xs rounded-md border border-gray-300 cursor-pointer"
             title="Copiar este horário para todos os dias"
           >
             <CopyCheck className="h-3 w-3 mr-1" />
@@ -128,7 +126,7 @@ function ScheduleRow({
             variant="outline"
             size="sm"
             onClick={() => onCopyDown(dayKey)}
-            className="h-8 px-3 text-xs bg-slate-400 text-white border-slate-400 hover:bg-slate-500"
+            className="h-8 px-3 text-xs rounded-md border border-gray-300 cursor-pointer"
             title="Copiar este horário para os dias abaixo"
           >
             <ArrowDown className="h-3 w-3 mr-1" />
@@ -254,132 +252,119 @@ export default function ScheduleSettings() {
   // Loading state
   if (!localSchedule) {
     return (
-      <Card className="p-6 shadow-none border rounded-lg">
-        <div className="space-y-4">
-          <div className="grid grid-cols-12 gap-4 items-center py-2 border-b border-gray-200">
-            <Skeleton className="h-4 col-span-2" />
-            <Skeleton className="h-4 col-span-2" />
-            <Skeleton className="h-4 col-span-2" />
-            <Skeleton className="h-4 col-span-2" />
-            <Skeleton className="h-4 col-span-4" />
-          </div>
-          {DAYS_ORDER.map((day) => (
-            <div key={day} className="grid grid-cols-12 gap-4 items-center py-3">
-              <Skeleton className="h-4 col-span-2" />
-              <div className="col-span-2 flex items-center gap-2">
-                <Skeleton className="h-6 w-10 rounded-full" />
-                <Skeleton className="h-4 w-12" />
-              </div>
-              <Skeleton className="h-9 col-span-2 rounded-md" />
-              <Skeleton className="h-9 col-span-2 rounded-md" />
-              <div className="col-span-4 flex gap-2">
-                <Skeleton className="h-8 w-24 rounded-md" />
-              </div>
-            </div>
-          ))}
+      <div className="space-y-4">
+        <div className="grid grid-cols-12 gap-4 items-center py-2 border-b border-[#E5E2DD]">
+          <Skeleton className="h-4 col-span-2" />
+          <Skeleton className="h-4 col-span-2" />
+          <Skeleton className="h-4 col-span-2" />
+          <Skeleton className="h-4 col-span-2" />
+          <Skeleton className="h-4 col-span-4" />
         </div>
-      </Card>
+        {DAYS_ORDER.map((day) => (
+          <div key={day} className="grid grid-cols-12 gap-4 items-center py-3">
+            <Skeleton className="h-4 col-span-2" />
+            <div className="col-span-2 flex items-center gap-2">
+              <Skeleton className="h-6 w-10 rounded-full" />
+              <Skeleton className="h-4 w-12" />
+            </div>
+            <Skeleton className="h-9 col-span-2 rounded-md" />
+            <Skeleton className="h-9 col-span-2 rounded-md" />
+            <div className="col-span-4 flex gap-2">
+              <Skeleton className="h-8 w-24 rounded-md" />
+            </div>
+          </div>
+        ))}
+      </div>
     );
   }
 
   return (
-    <Card className="p-6 shadow-none border rounded-lg">
-      <div className="space-y-4">
-        {/* Feedback de sucesso */}
-        {saveSuccess && (
-          <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-md text-green-800">
-            <CheckCircle className="h-4 w-4" />
-            <span className="text-sm font-medium">Horários salvos com sucesso!</span>
-          </div>
-        )}
-
-        {/* Feedback de erro */}
-        {saveError && (
-          <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-md text-red-800">
-            <XCircle className="h-4 w-4" />
-            <span className="text-sm font-medium">{saveError}</span>
-          </div>
-        )}
-
-        {/* Cabeçalho da tabela */}
-        <div className="grid grid-cols-12 gap-4 items-center py-2 border-b border-gray-200">
-          <div className="col-span-2">
-            <span className="text-sm font-medium text-gray-600">Dia</span>
-          </div>
-          <div className="col-span-2">
-            <span className="text-sm font-medium text-gray-600">Status</span>
-          </div>
-          <div className="col-span-2">
-            <span className="text-sm font-medium text-gray-600">Abertura</span>
-          </div>
-          <div className="col-span-2">
-            <span className="text-sm font-medium text-gray-600">Fechamento</span>
-          </div>
-          <div className="col-span-4">
-            <span className="text-sm font-medium text-gray-600">Ações</span>
-          </div>
+    <div className="space-y-4">
+      {/* Feedback de sucesso */}
+      {saveSuccess && (
+        <div className="flex items-center gap-2 p-3 bg-white border border-green-400 rounded-md text-green-700">
+          <CheckCircle className="h-4 w-4" />
+          <span className="text-sm font-medium">Horários salvos com sucesso!</span>
         </div>
+      )}
 
-        {/* Linhas dos dias */}
-        <div className="space-y-1">
-          {DAYS_ORDER.map((day, index) => (
-            <ScheduleRow
-              key={day}
-              dayKey={day}
-              schedule={localSchedule}
-              onToggleActive={handleToggleActive}
-              onChangeTime={handleChangeTime}
-              onCopyToAll={handleCopyToAll}
-              onCopyDown={handleCopyDown}
-              isFirstDay={index === 0}
-              isLastDay={index === DAYS_ORDER.length - 1}
-            />
-          ))}
+      {/* Feedback de erro */}
+      {saveError && (
+        <div className="flex items-center gap-2 p-3 bg-white border border-red-400 rounded-md text-red-700">
+          <XCircle className="h-4 w-4" />
+          <span className="text-sm font-medium">{saveError}</span>
         </div>
+      )}
 
-        {/* Informação de timezone */}
-        <div className="text-xs text-gray-500 pt-2">
-          Os horários são configurados no fuso horário de Brasília (GMT-3).
+      {/* Cabeçalho da tabela */}
+      <div className="grid grid-cols-12 gap-4 items-center py-2 border-b border-[#E5E2DD]">
+        <div className="col-span-2">
+          <span className="text-sm font-medium text-muted-foreground">Dia</span>
         </div>
-
-        {/* Botão de salvar */}
-        <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="outline"
-              onClick={handleSave}
-              disabled={!hasChanges || isUpdating}
-              className={`${
-                saveSuccess
-                  ? "bg-green-600 text-white border-green-600 hover:bg-green-700"
-                  : hasChanges
-                    ? "bg-slate-700 text-white border-slate-700 hover:bg-slate-800"
-                    : "bg-gray-100 text-gray-400 border-gray-200"
-              } flex items-center gap-2`}
-            >
-              {isUpdating ? (
-                <>
-                  <AlertCircle className="h-4 w-4 animate-spin" />
-                  Salvando...
-                </>
-              ) : saveSuccess ? (
-                <>
-                  <CheckCircle className="h-4 w-4" />
-                  Salvo!
-                </>
-              ) : (
-                "Salvar Horários"
-              )}
-            </Button>
-
-            {hasChanges && !isUpdating && (
-              <span className="text-xs text-amber-600">
-                Você tem alterações não salvas
-              </span>
-            )}
-          </div>
+        <div className="col-span-2">
+          <span className="text-sm font-medium text-muted-foreground">Status</span>
+        </div>
+        <div className="col-span-2">
+          <span className="text-sm font-medium text-muted-foreground">Abertura</span>
+        </div>
+        <div className="col-span-2">
+          <span className="text-sm font-medium text-muted-foreground">Fechamento</span>
+        </div>
+        <div className="col-span-4">
+          <span className="text-sm font-medium text-muted-foreground">Ações</span>
         </div>
       </div>
-    </Card>
+
+      {/* Linhas dos dias */}
+      <div className="divide-y divide-[#E5E2DD]">
+        {DAYS_ORDER.map((day, index) => (
+          <ScheduleRow
+            key={day}
+            dayKey={day}
+            schedule={localSchedule}
+            onToggleActive={handleToggleActive}
+            onChangeTime={handleChangeTime}
+            onCopyToAll={handleCopyToAll}
+            onCopyDown={handleCopyDown}
+            isFirstDay={index === 0}
+            isLastDay={index === DAYS_ORDER.length - 1}
+          />
+        ))}
+      </div>
+
+      {/* Informação de timezone */}
+      <div className="text-sm text-muted-foreground pt-2">
+        Os horários são configurados no fuso horário de Brasília (GMT-3).
+      </div>
+
+      {/* Botão de salvar */}
+      <div className="flex items-center gap-4 pt-4 border-t border-[#E5E2DD]">
+        <Button
+          onClick={handleSave}
+          disabled={!hasChanges || isUpdating}
+          className="rounded-md border border-gray-300 cursor-pointer bg-primary text-white hover:bg-primary/90"
+        >
+          {isUpdating ? (
+            <>
+              <AlertCircle className="h-4 w-4 animate-spin mr-1.5" />
+              Salvando...
+            </>
+          ) : saveSuccess ? (
+            <>
+              <CheckCircle className="h-4 w-4 mr-1.5" />
+              Salvo!
+            </>
+          ) : (
+            "Salvar Horários"
+          )}
+        </Button>
+
+        {hasChanges && !isUpdating && (
+          <span className="text-sm text-amber-600 font-medium">
+            Você tem alterações não salvas
+          </span>
+        )}
+      </div>
+    </div>
   );
 }

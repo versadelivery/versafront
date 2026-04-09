@@ -9,6 +9,7 @@ export interface OrderAddress {
 export interface OrderItem {
   catalog_item_id: number;
   quantity: number;
+  weight?: number;
   observation?: string;
   selected_extras?: string[];
   selected_methods?: string[];
@@ -28,9 +29,11 @@ export interface CreateOrderRequest {
   order: {
     shop_id: number;
     withdrawal: boolean;
-    payment_method: 'manual_pix' | 'credit' | 'debit' | 'cash';
+    payment_method: 'manual_pix' | 'asaas_pix' | 'credit' | 'debit' | 'cash';
     customer_name?: string;
     customer_phone?: string;
+    coupon_code?: string;
+    table_session_id?: number;
     address: {
       address: string;
       neighborhood: string;
@@ -99,6 +102,9 @@ export interface ActionCableOrderData {
     total_price: string
     total_items_price: string
     delivery_fee: string
+    discount_amount: string
+    payment_adjustment_amount: string
+    coupon_code: string | null
     withdrawal: boolean
     payment_method: string
     created_at: string
@@ -266,6 +272,9 @@ export interface CustomerOrder {
     total_price: string | null;
     total_items_price: string | null;
     delivery_fee: string | null;
+    discount_amount: string | null;
+    payment_adjustment_amount: string | null;
+    coupon_code: string | null;
     withdrawal: boolean;
     payment_method: string;
     created_at: string;
