@@ -209,7 +209,7 @@ export default function SuperAdminDashboard() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#FFFDF6] flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-[#0B996E]" />
       </div>
     );
@@ -230,7 +230,7 @@ export default function SuperAdminDashboard() {
   );
 
   return (
-    <div className="min-h-screen bg-[#FFFDF6] p-6">
+    <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-[1440px] mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">

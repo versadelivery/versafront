@@ -53,7 +53,12 @@ export function useAuth() {
       setUser(response.user)
       localStorage.setItem('auth_user', JSON.stringify(response.user))
       toast.success('Login realizado com sucesso')
-      router.push('/admin')
+
+      if (response.user?.role === 'delivery_man') {
+        router.push('/delivery')
+      } else {
+        router.push('/admin')
+      }
 
       return response
     } catch (error: unknown) {

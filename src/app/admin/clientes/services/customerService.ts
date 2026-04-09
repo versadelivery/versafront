@@ -83,4 +83,9 @@ export const customerService = {
     const response = await api.patch(`${API_ENDPOINTS.ADMIN_CUSTOMERS}/${id}/toggle_block`, { blocked });
     return response.data;
   },
+
+  getOrder: async (orderId: string): Promise<{ data: any }> => {
+    const response = await api.get(`${API_ENDPOINTS.ORDERS}/${orderId}`);
+    return response.data;
+  },
 };

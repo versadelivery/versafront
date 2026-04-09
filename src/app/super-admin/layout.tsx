@@ -19,7 +19,7 @@ export default function SuperAdminLayout({
 
   return (
     <ProtectedSuperAdminRoute>
-      <div className="flex flex-col min-h-screen bg-[#FFFDF6]">
+      <div className="flex flex-col min-h-screen bg-gray-50">
         <SuperAdminHeader />
         <main className="flex-1">
           {children}

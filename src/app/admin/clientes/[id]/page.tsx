@@ -32,8 +32,11 @@ import {
   Ban,
   CheckCircle,
   ClipboardList,
+  Eye,
+  Loader2,
 } from "lucide-react";
 import CustomerModal from "../components/customer-modal";
+import OrderDetailDialog from "../components/order-detail-dialog";
 import { useCustomerDetail } from "../hooks/useCustomerDetail";
 import { customerService } from "../services/customerService";
 
@@ -100,6 +103,9 @@ export default function CustomerDetailPage() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showBlockConfirm, setShowBlockConfirm] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [orderDetails, setOrderDetails] = useState<any | null>(null);
+  const [isLoadingOrder, setIsLoadingOrder] = useState(false);
 
   const handleToggleBlock = () => {
     if (!customer) return;
@@ -115,6 +121,20 @@ export default function CustomerDetailPage() {
   const handleSave = async (data: any) => {
     await customerService.updateCustomer(id, { customer: data });
     await refetch();
+  };
+
+  const handleOpenOrder = async (orderId: string) => {
+    setSelectedOrderId(orderId);
+    setOrderDetails(null);
+    setIsLoadingOrder(true);
+    try {
+      const response = await customerService.getOrder(orderId);
+      setOrderDetails(response.data);
+    } catch {
+      // silently fail — dialog will show nothing
+    } finally {
+      setIsLoadingOrder(false);
+    }
   };
 
   if (loading) {
@@ -318,6 +338,7 @@ export default function CustomerDetailPage() {
                   <TableHead className="font-semibold text-foreground py-3 text-sm">Status</TableHead>
                   <TableHead className="font-semibold text-foreground py-3 text-sm hidden sm:table-cell">Pagamento</TableHead>
                   <TableHead className="font-semibold text-foreground py-3 text-sm text-right">Total</TableHead>
+                  <TableHead className="font-semibold text-foreground py-3 text-sm text-right w-16"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -349,6 +370,19 @@ export default function CustomerDetailPage() {
                     <TableCell className="py-3 text-sm text-right font-medium">
                       {formatCurrency(order.attributes.total_price)}
                     </TableCell>
+                    <TableCell className="py-3 text-right">
+                      <button
+                        onClick={() => handleOpenOrder(order.id)}
+                        className="inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-[#F0EFEB] transition-colors cursor-pointer"
+                        title="Ver detalhes"
+                      >
+                        {isLoadingOrder && selectedOrderId === order.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -356,6 +390,14 @@ export default function CustomerDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Modal de detalhes do pedido */}
+      <OrderDetailDialog
+        open={selectedOrderId !== null}
+        onOpenChange={(open) => !open && setSelectedOrderId(null)}
+        orderData={orderDetails}
+        isLoading={isLoadingOrder}
+      />
 
       {/* Modal de edição */}
       <CustomerModal

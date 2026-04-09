@@ -17,6 +17,9 @@ export const API_ENDPOINTS = {
   // Orders
   ORDERS: "/orders",
   ADMIN_ORDERS: "/orders",
+
+  // Delivery person
+  DELIVERY_ORDERS: "/delivery/orders",
   
   // Order Flow Config
   ORDER_FLOW_CONFIG: "/shop_order_flow_configs",
