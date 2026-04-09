@@ -14,7 +14,6 @@ export function useUsers() {
       setError(null);
       const response = await userService.getUsers();
       setUsers(response.data);
-      console.log('Usuários carregados:', response.data);
     } catch (err: any) {
       setError(err.message || 'Erro ao carregar usuários');
       console.error('Erro ao buscar usuários:', err);
