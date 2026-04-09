@@ -36,6 +36,17 @@ export const registerStep2Schema = baseStep2Schema.refine(
   }
 );
 
+const documentRegex = /^(\d{3}\.\d{3}\.\d{3}-\d{2}|\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2})$/;
+
+export const registerStep3Schema = z.object({
+  document: z.string()
+    .regex(documentRegex, "Documento inválido. Use CPF (000.000.000-00) ou CNPJ (00.000.000/0000-00)"),
+  billingEmail: z.string()
+    .min(1, "Email de cobrança é obrigatório")
+    .email("Email inválido")
+    .max(100, "Email não pode ter mais de 100 caracteres")
+});
+
 export const registerSchema = z.object({
   shop: z.object({
     name: z.string()
@@ -58,6 +69,14 @@ export const registerSchema = z.object({
       .min(6, "Senha deve ter no mínimo 6 caracteres")
       .max(50, "Senha não pode ter mais de 50 caracteres"),
     confirmPassword: z.string()
+  }),
+  shop_billing_config: z.object({
+    document: z.string()
+      .regex(documentRegex, "Documento inválido. Use CPF (000.000.000-00) ou CNPJ (00.000.000/0000-00)"),
+    billing_email: z.string()
+      .min(1, "Email de cobrança é obrigatório")
+      .email("Email inválido")
+      .max(100, "Email não pode ter mais de 100 caracteres")
   })
 }).refine((data) => data.shop_user.password === data.shop_user.confirmPassword, {
   message: "As senhas não coincidem",

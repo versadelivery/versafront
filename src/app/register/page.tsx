@@ -3,11 +3,12 @@
 import { AuthLayout } from "@/components/auth/auth-layout";
 import { AuthFormInput } from "@/components/auth/auth-form-input";
 import { useState } from "react";
-import { registerSchema, registerStep1Schema, RegisterFormData } from "@/schemas/auth-schemas";
+import { registerSchema, registerStep1Schema, registerStep3Schema, RegisterFormData } from "@/schemas/auth-schemas";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { z } from "zod";
 import { formatPhone } from "@/utils/format-phone";
+import { formatDocument } from "@/utils/format-document";
 import { useAuth } from "@/hooks/use-auth";
 import { isAxiosError } from "axios";
 import { toast } from "sonner";
@@ -15,6 +16,7 @@ import { toast } from "sonner";
 type RegisterStateErrors = {
   shop?: Partial<RegisterFormData["shop"]>;
   shop_user?: Partial<RegisterFormData["shop_user"]>;
+  shop_billing_config?: Partial<RegisterFormData["shop_billing_config"]>;
 };
 
 type BackendErrorDescriptor =
@@ -137,6 +139,10 @@ export default function Register() {
       email: "",
       password: "",
       confirmPassword: ""
+    },
+    shop_billing_config: {
+      document: "",
+      billing_email: ""
     }
   });
   const [errors, setErrors] = useState<RegisterStateErrors>({});
@@ -183,10 +189,33 @@ export default function Register() {
     }
   };
 
+  const validateStep3 = (): boolean => {
+    try {
+      registerStep3Schema.parse({
+        document: formData.shop_billing_config.document,
+        billingEmail: formData.shop_billing_config.billing_email
+      });
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const fieldErrors: Partial<RegisterFormData["shop_billing_config"]> = {};
+        error.errors.forEach((err) => {
+          const field = err.path[0];
+          if (field === "document") fieldErrors.document = err.message;
+          if (field === "billingEmail") fieldErrors.billing_email = err.message;
+        });
+        setErrors(prev => ({ ...prev, shop_billing_config: fieldErrors }));
+      }
+      return false;
+    }
+  };
+
   const handleNextStep = () => {
     setErrors({});
-    if (validateStep1()) {
+    if (step === 1 && validateStep1()) {
       setStep(2);
+    } else if (step === 2) {
+      setStep(3);
     }
   };
 
@@ -194,7 +223,10 @@ export default function Register() {
     const { name, value } = e.target;
     const [section, field] = name.split(".");
 
-    const processedValue = field === "cellphone" ? formatPhone(value) : value;
+    const processedValue =
+      field === "cellphone" ? formatPhone(value) :
+      field === "document" ? formatDocument(value) :
+      value;
 
     setFormData(prev => ({
       ...prev,
@@ -217,6 +249,7 @@ export default function Register() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateStep3()) return;
     setIsLoading(true);
     setErrors({});
     try {
@@ -293,55 +326,100 @@ export default function Register() {
       );
     }
 
+    if (step === 2) {
+      return (
+        <div className="space-y-4">
+          <AuthFormInput
+            type="text"
+            name="shop_user.name"
+            placeholder="Seu nome"
+            value={formData.shop_user.name}
+            onChange={handleChange}
+            disabled={isLoading}
+            label="Nome"
+            error={errors.shop_user?.name}
+          />
+          <AuthFormInput
+            type="email"
+            name="shop_user.email"
+            placeholder="seu@email.com"
+            value={formData.shop_user.email}
+            onChange={handleChange}
+            disabled={isLoading}
+            label="Email"
+            error={errors.shop_user?.email}
+          />
+          <AuthFormInput
+            type="password"
+            name="shop_user.password"
+            placeholder="Sua senha"
+            value={formData.shop_user.password}
+            onChange={handleChange}
+            disabled={isLoading}
+            label="Senha"
+            error={errors.shop_user?.password}
+            showPasswordToggle
+          />
+          <AuthFormInput
+            type="password"
+            name="shop_user.confirmPassword"
+            placeholder="Confirme sua senha"
+            value={formData.shop_user.confirmPassword}
+            onChange={handleChange}
+            disabled={isLoading}
+            label="Confirmar senha"
+            error={errors.shop_user?.confirmPassword}
+            showPasswordToggle
+          />
+          <div className="flex gap-3 mt-2">
+            <button
+              type="button"
+              className="flex-1 border border-[#E8E4DF] text-[#1B1B1B] text-base font-medium py-4 rounded-2xl transition-colors cursor-pointer hover:bg-[#f5f5f5]"
+              onClick={() => setStep(1)}
+              disabled={isLoading}
+            >
+              Voltar
+            </button>
+            <button
+              type="button"
+              className="flex-1 bg-[#1B1B1B] hover:bg-black text-white text-base font-medium py-4 rounded-2xl transition-colors cursor-pointer disabled:opacity-50"
+              onClick={handleNextStep}
+              disabled={isLoading}
+            >
+              Próximo
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <form onSubmit={handleSubmit} className="space-y-4">
         <AuthFormInput
           type="text"
-          name="shop_user.name"
-          placeholder="Seu nome"
-          value={formData.shop_user.name}
+          name="shop_billing_config.document"
+          placeholder="000.000.000-00 ou 00.000.000/0000-00"
+          value={formData.shop_billing_config.document}
           onChange={handleChange}
           disabled={isLoading}
-          label="Nome"
-          error={errors.shop_user?.name}
+          label="CPF ou CNPJ"
+          error={errors.shop_billing_config?.document}
         />
         <AuthFormInput
           type="email"
-          name="shop_user.email"
-          placeholder="seu@email.com"
-          value={formData.shop_user.email}
+          name="shop_billing_config.billing_email"
+          placeholder="cobranca@seunegocio.com"
+          value={formData.shop_billing_config.billing_email}
           onChange={handleChange}
           disabled={isLoading}
-          label="Email"
-          error={errors.shop_user?.email}
-        />
-        <AuthFormInput
-          type="password"
-          name="shop_user.password"
-          placeholder="Sua senha"
-          value={formData.shop_user.password}
-          onChange={handleChange}
-          disabled={isLoading}
-          label="Senha"
-          error={errors.shop_user?.password}
-          showPasswordToggle
-        />
-        <AuthFormInput
-          type="password"
-          name="shop_user.confirmPassword"
-          placeholder="Confirme sua senha"
-          value={formData.shop_user.confirmPassword}
-          onChange={handleChange}
-          disabled={isLoading}
-          label="Confirmar senha"
-          error={errors.shop_user?.confirmPassword}
-          showPasswordToggle
+          label="Email de cobrança"
+          error={errors.shop_billing_config?.billing_email}
         />
         <div className="flex gap-3 mt-2">
           <button
             type="button"
             className="flex-1 border border-[#E8E4DF] text-[#1B1B1B] text-base font-medium py-4 rounded-2xl transition-colors cursor-pointer hover:bg-[#f5f5f5]"
-            onClick={() => setStep(1)}
+            onClick={() => setStep(2)}
             disabled={isLoading}
           >
             Voltar
@@ -364,6 +442,7 @@ export default function Register() {
         <div className="flex gap-2">
           <div className={`w-2.5 h-2.5 rounded-full transition-colors ${step === 1 ? 'bg-[#009246]' : 'bg-[#E8E4DF]'}`} />
           <div className={`w-2.5 h-2.5 rounded-full transition-colors ${step === 2 ? 'bg-[#009246]' : 'bg-[#E8E4DF]'}`} />
+          <div className={`w-2.5 h-2.5 rounded-full transition-colors ${step === 3 ? 'bg-[#009246]' : 'bg-[#E8E4DF]'}`} />
         </div>
       </div>
       {renderStep()}

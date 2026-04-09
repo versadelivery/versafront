@@ -20,11 +20,11 @@ export const loginUser = async (data: LoginData) => {
 }
 
 export const registerShop = async (data: any) => {
-  // Remove confirmPassword antes de enviar para a API (campo usado apenas para validação no frontend)
   const { confirmPassword, ...shopUserData } = data.shop_user || {}
   const payload: RegisterData = {
     shop: data.shop,
-    shop_user: shopUserData
+    shop_user: shopUserData,
+    shop_billing_config: data.shop_billing_config
   }
   const response = await api.post(API_ENDPOINTS.SHOPS, payload)
   return response.data

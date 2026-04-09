@@ -88,6 +88,10 @@ export interface RegisterData {
     email: string;
     password: string;
   };
+  shop_billing_config: {
+    document: string;
+    billing_email: string;
+  };
 }
 
 
