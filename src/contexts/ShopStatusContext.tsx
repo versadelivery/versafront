@@ -45,9 +45,8 @@ export const ShopStatusProvider: React.FC<ShopStatusProviderProps> = ({
         const freshShop = await fetchShopBySlug(slug);
         if (freshShop?.data?.attributes?.shop_status) {
           setIsOpen(freshShop.data.attributes.shop_status.is_open);
-          // Atualizar localStorage com dado fresco
+          // Atualizar localStorage com dado fresco (sem disparar shop-updated para evitar loop)
           localStorage.setItem("shop", JSON.stringify(freshShop));
-          window.dispatchEvent(new Event('shop-updated'));
           setLoading(false);
           return;
         }

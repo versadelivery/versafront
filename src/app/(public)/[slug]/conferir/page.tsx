@@ -805,8 +805,23 @@ export default function CheckoutPage() {
       if (orderId) setTimeout(() => router.push(`/pedidos/${orderId}`), 3500)
     } catch (error: any) {
       console.error('Erro ao enviar pedido:', error)
-      const raw = error.response?.data?.error || ""
-      let message = "Erro ao enviar pedido. Tente novamente."
+      const data = error.response?.data
+      // Backend retornou HTML (exception não tratada no servidor)
+      const isHtmlResponse = typeof data === 'string' && data.trimStart().startsWith('<')
+      const raw: string = (() => {
+        if (!data || isHtmlResponse) return ""
+        if (typeof data.error === 'string') return data.error
+        if (typeof data.message === 'string') return data.message
+        if (Array.isArray(data.errors)) return data.errors.join(', ')
+        if (typeof data.errors === 'string') return data.errors
+        if (typeof data.errors === 'object' && data.errors !== null) {
+          return Object.values(data.errors).flat().join(', ')
+        }
+        return ""
+      })()
+      let message = isHtmlResponse
+        ? "Erro interno no servidor ao processar o pedido. Verifique os logs do backend."
+        : "Erro ao enviar pedido. Tente novamente."
 
       const isItemUnavailable =
         raw.includes("Couldn't find CatalogItem") ||

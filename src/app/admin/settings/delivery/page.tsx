@@ -55,10 +55,24 @@ type Neighborhood = {
   freeDeliveryThreshold: number;
 };
 
+const formatCurrencyInput = (value: string): string => {
+  const digits = value.replace(/\D/g, '');
+  if (!digits) return '';
+  const number = parseInt(digits, 10) / 100;
+  return number.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
+const formatApiValue = (value: number): string => {
+  return value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
+const parseCurrencyInput = (value: string): number => {
+  if (!value) return 0;
+  return parseFloat(value.replace(/\./g, '').replace(',', '.')) || 0;
+};
+
 const blockInvalidChars = (e: React.KeyboardEvent<HTMLInputElement>) => {
-  if (['-', '+', '=', '*', '&', '/', 'e', 'E'].includes(e.key)) {
-    e.preventDefault();
-  }
+  if (['-', '+', 'e', 'E'].includes(e.key)) e.preventDefault();
 };
 
 export default function DeliverySettingsPage() {
@@ -100,15 +114,15 @@ export default function DeliverySettingsPage() {
       const kind = deliveryConfig.delivery_fee_kind;
       setDeliveryType(kind);
       setSavedDeliveryType(kind);
-      setFixedFee(deliveryConfig.amount?.toString() || "");
+      setFixedFee(deliveryConfig.amount ? formatApiValue(deliveryConfig.amount) : "");
       setHasFreeDelivery(deliveryConfig.min_value_free_delivery !== null);
-      setFreeDeliveryThreshold(deliveryConfig.min_value_free_delivery?.toString() || "");
-      setMinOrderValue(deliveryConfig.minimum_order_value?.toString() || "");
+      setFreeDeliveryThreshold(deliveryConfig.min_value_free_delivery ? formatApiValue(deliveryConfig.min_value_free_delivery) : "");
+      setMinOrderValue(deliveryConfig.minimum_order_value ? formatApiValue(deliveryConfig.minimum_order_value) : "");
     }
   }, [deliveryConfig]);
 
   const handleBulkAdjust = async (type: "increase" | "decrease") => {
-    const adjustValue = parseFloat(bulkAdjustValue) || 0;
+    const adjustValue = parseCurrencyInput(bulkAdjustValue);
     if (adjustValue <= 0 || !neighborhoods?.length) return;
 
     setIsBulkUpdating(true);
@@ -231,19 +245,12 @@ export default function DeliverySettingsPage() {
   const handleSaveDeliveryConfig = () => {
     const newErrors: typeof errors = {};
 
-    const minVal = parseFloat(minOrderValue);
+    const minVal = parseCurrencyInput(minOrderValue);
     if (minOrderValue && minVal < 0) {
       newErrors.minOrderValue = "Valor mínimo não pode ser negativo";
     }
 
-    if (deliveryType === "fixed") {
-      const feeVal = parseFloat(fixedFee);
-      if (fixedFee && feeVal < 0) {
-        newErrors.fixedFee = "Taxa não pode ser negativa";
-      }
-    }
-
-    if (hasFreeDelivery && parseFloat(freeDeliveryThreshold) <= parseFloat(fixedFee)) {
+    if (hasFreeDelivery && parseCurrencyInput(freeDeliveryThreshold) <= parseCurrencyInput(fixedFee)) {
       newErrors.freeDeliveryThreshold = "O valor mínimo para frete grátis deve ser maior que o valor da taxa";
     }
 
@@ -254,19 +261,19 @@ export default function DeliverySettingsPage() {
 
     updateDeliveryConfig({
       delivery_fee_kind: deliveryType as "to_be_agreed" | "fixed" | "per_neighborhood",
-      amount: parseFloat(fixedFee) || 0,
-      min_value_free_delivery: hasFreeDelivery ? parseFloat(freeDeliveryThreshold) : null,
-      minimum_order_value: parseFloat(minOrderValue) || 0
+      amount: parseCurrencyInput(fixedFee),
+      min_value_free_delivery: hasFreeDelivery ? parseCurrencyInput(freeDeliveryThreshold) : null,
+      minimum_order_value: parseCurrencyInput(minOrderValue)
     });
   };
 
   const handleCancelConfig = () => {
     if (deliveryConfig) {
       setDeliveryType(savedDeliveryType);
-      setFixedFee(deliveryConfig.amount?.toString() || "");
+      setFixedFee(deliveryConfig.amount ? formatApiValue(deliveryConfig.amount) : "");
       setHasFreeDelivery(deliveryConfig.min_value_free_delivery !== null);
-      setFreeDeliveryThreshold(deliveryConfig.min_value_free_delivery?.toString() || "");
-      setMinOrderValue(deliveryConfig.minimum_order_value?.toString() || "");
+      setFreeDeliveryThreshold(deliveryConfig.min_value_free_delivery ? formatApiValue(deliveryConfig.min_value_free_delivery) : "");
+      setMinOrderValue(deliveryConfig.minimum_order_value ? formatApiValue(deliveryConfig.minimum_order_value) : "");
     }
     setErrors({});
   };
@@ -320,15 +327,13 @@ export default function DeliverySettingsPage() {
                 </span>
                 <Input
                   id="minOrderValue"
-                  type="number"
-                  step="0.01"
-                  min="0"
+                  type="text"
+                  inputMode="decimal"
                   value={minOrderValue}
                   onChange={(e) => {
-                    setMinOrderValue(e.target.value);
+                    setMinOrderValue(formatCurrencyInput(e.target.value));
                     if (errors.minOrderValue) setErrors(prev => ({ ...prev, minOrderValue: "" }));
                   }}
-                  onKeyDown={blockInvalidChars}
                   placeholder="0,00"
                   className={`h-10 text-sm border-[#E5E2DD] rounded-md bg-white pl-10 font-semibold ${errors.minOrderValue ? "border-red-400" : ""}`}
                 />
@@ -395,15 +400,13 @@ export default function DeliverySettingsPage() {
                     </span>
                     <Input
                       id="fixedFee"
-                      type="number"
-                      step="0.01"
-                      min="0"
+                      type="text"
+                      inputMode="decimal"
                       value={fixedFee}
                       onChange={(e) => {
-                        setFixedFee(e.target.value);
+                        setFixedFee(formatCurrencyInput(e.target.value));
                         if (errors.fixedFee) setErrors(prev => ({ ...prev, fixedFee: "" }));
                       }}
-                      onKeyDown={blockInvalidChars}
                       placeholder="0,00"
                       className={`h-10 text-sm border-[#E5E2DD] rounded-md bg-white pl-10 ${errors.fixedFee ? "border-red-400" : ""}`}
                     />
@@ -447,15 +450,13 @@ export default function DeliverySettingsPage() {
                           </span>
                           <Input
                             id="freeDeliveryThreshold"
-                            type="number"
-                            step="0.01"
-                            min="0"
+                            type="text"
+                            inputMode="decimal"
                             value={freeDeliveryThreshold}
                             onChange={(e) => {
-                              setFreeDeliveryThreshold(e.target.value);
+                              setFreeDeliveryThreshold(formatCurrencyInput(e.target.value));
                               if (errors.freeDeliveryThreshold) setErrors(prev => ({ ...prev, freeDeliveryThreshold: "" }));
                             }}
-                            onKeyDown={blockInvalidChars}
                             placeholder="Ex: 50,00"
                             className={`h-10 text-sm border-[#E5E2DD] rounded-md bg-white pl-10 ${errors.freeDeliveryThreshold ? "border-red-400" : ""}`}
                           />
@@ -498,12 +499,10 @@ export default function DeliverySettingsPage() {
                       Aumentar/Diminuir todos os bairros em R$
                     </Label>
                     <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
+                      type="text"
+                      inputMode="decimal"
                       value={bulkAdjustValue}
-                      onChange={(e) => setBulkAdjustValue(e.target.value)}
-                      onKeyDown={blockInvalidChars}
+                      onChange={(e) => setBulkAdjustValue(formatCurrencyInput(e.target.value))}
                       placeholder="0,00"
                       className="h-10 text-sm border-[#E5E2DD] rounded-md bg-white"
                     />
@@ -707,18 +706,17 @@ export default function DeliverySettingsPage() {
                 </span>
                 <Input
                   id="neighborhoodValue"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={currentNeighborhood?.hasFreeDelivery ? "0" : (currentNeighborhood?.value || "")}
+                  type="text"
+                  inputMode="decimal"
+                  value={currentNeighborhood?.hasFreeDelivery ? "0,00" : (currentNeighborhood?.value ? formatApiValue(currentNeighborhood.value) : "")}
                   onChange={(e) => {
+                    const formatted = formatCurrencyInput(e.target.value);
                     setCurrentNeighborhood({
                       ...currentNeighborhood!,
-                      value: parseFloat(e.target.value) || 0,
+                      value: parseCurrencyInput(formatted),
                     });
                     if (errors.neighborhoodValue) setErrors(prev => ({ ...prev, neighborhoodValue: "" }));
                   }}
-                  onKeyDown={blockInvalidChars}
                   disabled={currentNeighborhood?.hasFreeDelivery}
                   placeholder="Ex: 10,00"
                   className={`h-10 text-sm pl-10 rounded-md border-[#E5E2DD] bg-white ${errors.neighborhoodValue ? "border-red-400" : ""} ${currentNeighborhood?.hasFreeDelivery ? "opacity-50 cursor-not-allowed" : ""}`}
@@ -773,18 +771,17 @@ export default function DeliverySettingsPage() {
                       </span>
                       <Input
                         id="freeDeliveryThreshold"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={currentNeighborhood?.freeDeliveryThreshold || ""}
+                        type="text"
+                        inputMode="decimal"
+                        value={currentNeighborhood?.freeDeliveryThreshold ? formatApiValue(currentNeighborhood.freeDeliveryThreshold) : ""}
                         onChange={(e) => {
+                          const formatted = formatCurrencyInput(e.target.value);
                           setCurrentNeighborhood({
                             ...currentNeighborhood!,
-                            freeDeliveryThreshold: parseFloat(e.target.value) || 0,
+                            freeDeliveryThreshold: parseCurrencyInput(formatted),
                           });
                           if (errors.neighborhoodFreeDeliveryThreshold) setErrors(prev => ({ ...prev, neighborhoodFreeDeliveryThreshold: "" }));
                         }}
-                        onKeyDown={blockInvalidChars}
                         placeholder="Ex: 50,00"
                         className={`h-10 text-sm pl-10 rounded-md border-[#E5E2DD] bg-white ${errors.neighborhoodFreeDeliveryThreshold ? "border-red-400" : ""}`}
                       />
