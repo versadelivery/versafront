@@ -48,7 +48,7 @@ const paymentConfig: Record<string, { label: string; icon: React.ElementType }> 
 function StatusBadge({ status }: { status: string }) {
   const cfg = statusConfig[status] ?? { label: status, dot: "bg-gray-400", border: "border-gray-300", text: "text-gray-600" };
   return (
-    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md border bg-white text-sm font-semibold ${cfg.border} ${cfg.text}`}>
+    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md underline bg-white text-sm font-semibold ${cfg.border} ${cfg.text}`}>
       <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${cfg.dot}`} />
       {cfg.label}
     </span>
@@ -197,9 +197,11 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
   const paymentAdjustment = order.payment_adjustment_amount ?? 0;
   const total = Math.max(subtotal + deliveryFee - discountAmount + paymentAdjustment, 0);
 
-  const handleWhatsApp = () => {
+  const handleWhatsApp = (context?: 'pix') => {
     if (!order.shop.phone) return;
-    const msg = encodeURIComponent(`Olá! Tenho uma dúvida sobre o pedido #${order.id}.`);
+    const msg = context === 'pix'
+      ? encodeURIComponent(`Olá! Fiz um pedido #${order.id} via PIX mas não recebi o código para pagamento. Pode me ajudar?`)
+      : encodeURIComponent(`Olá! Tenho uma dúvida sobre o pedido #${order.id}.`);
     window.open(`https://wa.me/${order.shop.phone.replace(/\D/g, '')}?text=${msg}`, '_blank');
   };
 
@@ -374,7 +376,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                   </p>
                   {order.shop.phone && (
                     <Button
-                      onClick={handleWhatsApp}
+                      onClick={() => handleWhatsApp()}
                       size="sm"
                       className="w-full rounded-md bg-green-600 hover:bg-green-700 text-white gap-2"
                     >
@@ -385,12 +387,25 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                 </InfoCard>
               )}
 
-              {/* PIX Automatico (ASAAS) */}
+              {/* PIX Automatico (ASAAS) — pago */}
+              {order.payment_method === 'asaas_pix' && order.paid_at && (
+                <InfoCard title="Pagamento PIX">
+                  <div className="flex items-center gap-2 text-green-600">
+                    <CheckCircle2 className="w-4 h-4 shrink-0" />
+                    <span className="text-sm font-semibold">Pagamento confirmado!</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1.5">
+                    Pago em {new Date(order.paid_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
+                  </p>
+                </InfoCard>
+              )}
+
+              {/* PIX Automatico (ASAAS) — aguardando pagamento */}
               {order.payment_method === 'asaas_pix' && order.asaas_pix_code && !order.paid_at && (
                 <InfoCard title="Pague via PIX">
                   <div className="space-y-3">
                     {order.asaas_pix_expires_at && (
-                      <div className="flex items-center gap-1.5 text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-md px-2.5 py-1.5">
+                      <div className="flex items-center gap-1.5 text-xs text-amber-600 border-amber-200 rounded-md px-2.5 py-1.5">
                         <Clock className="w-3.5 h-3.5 shrink-0" />
                         <span>
                           Expira às {new Date(order.asaas_pix_expires_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
@@ -427,6 +442,36 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                     <p className="text-xs text-muted-foreground text-center">
                       Use <strong>PIX Copia e Cola</strong> no app do seu banco. Confirmação automática.
                     </p>
+                  </div>
+                </InfoCard>
+              )}
+
+              {/* PIX Automatico (ASAAS) — código não gerado */}
+              {order.payment_method === 'asaas_pix' && !order.asaas_pix_code && !order.paid_at && order.status !== 'cancelled' && (
+                <InfoCard title="Pagamento PIX">
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Houve um problema ao gerar o código PIX. Entre em contato com a loja para combinar o pagamento.
+                  </p>
+                  <div className="space-y-2">
+                    {order.shop.phone && (
+                      <Button
+                        onClick={() => handleWhatsApp('pix')}
+                        size="sm"
+                        className="w-full rounded-md bg-green-600 hover:bg-green-700 text-white gap-2"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        Falar com a loja (WhatsApp)
+                      </Button>
+                    )}
+                    <Button
+                      onClick={() => router.push(`/pedidos/${order.id}`)}
+                      size="sm"
+                      variant="outline"
+                      className="w-full rounded-md gap-2 border-[#E5E2DD]"
+                    >
+                      <Package className="w-3.5 h-3.5" />
+                      Acompanhar pedido
+                    </Button>
                   </div>
                 </InfoCard>
               )}

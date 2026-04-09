@@ -85,7 +85,7 @@ export default function ReviewsPage() {
               <div>
                 <p className="text-2xl font-bold">{reviews.length}</p>
                 <p className="text-sm text-muted-foreground">
-                  Total de avaliacoes
+                  Total de avaliações
                 </p>
               </div>
             </div>
@@ -179,8 +179,8 @@ export default function ReviewsPage() {
                         <Star className="h-8 w-8 text-muted-foreground" />
                         <p>
                           {loading
-                            ? "Carregando avaliacoes..."
-                            : "Nenhuma avaliacao encontrada"}
+                            ? "Carregando avaliações..."
+                            : "Nenhuma avaliação encontrada"}
                         </p>
                       </div>
                     </TableCell>
@@ -221,7 +221,7 @@ export default function ReviewsPage() {
             <div className="flex items-center justify-between pt-4 text-sm text-muted-foreground">
               <div>
                 Mostrando {filteredReviews.length} de {reviews.length}{" "}
-                avaliacoes
+                avaliações
               </div>
             </div>
           )}

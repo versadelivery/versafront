@@ -13,8 +13,8 @@ export function useReviews() {
       const response = await reviewService.getReviews();
       setReviews(response.data);
     } catch (err: any) {
-      setError(err.message || "Erro ao carregar avaliacoes");
-      console.error("Erro ao buscar avaliacoes:", err);
+      setError(err.message || "Erro ao carregar avaliações");
+      console.error("Erro ao buscar avaliações:", err);
     } finally {
       setLoading(false);
     }
