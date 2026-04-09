@@ -10,7 +10,7 @@ export interface MonthlyCharge {
     reference_period: string;
     monthly_revenue: string;
     charge_amount: string;
-    billing_tier: "free" | "tier_64" | "tier_128" | "tier_192";
+    billing_tier: "free" | "tier_39" | "tier_79" | "tier_129" | "tier_199" | "tier_279" | "tier_349";
     status: "pending" | "paid" | "cancelled" | "overdue";
     status_description: string;
     tier_description: string;
