@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { QRCodeSVG } from "qrcode.react";
 import {
   Dialog,
   DialogContent,
@@ -140,11 +141,11 @@ export default function PaymentModal({
                 {attributes.asaas_pix_code ? (
                   <>
                     <div className="flex justify-center p-4 bg-white rounded-lg border">
-                      {/* <QRCodeSVG
+                      <QRCodeSVG
                         value={attributes.asaas_pix_code}
                         size={200}
                         level="M"
-                      /> */}
+                      />
                     </div>
                     <Button
                       onClick={handleCopyPix}

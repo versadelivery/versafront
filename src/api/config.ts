@@ -55,7 +55,9 @@ api.interceptors.response.use(
     }
 
     if (error.response?.status === 403 && error.response?.data?.code === "SHOP_UNAUTHORIZED") {
-      window.location.href = "/pending-approval";
+      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/pending-approval')) {
+        window.location.href = "/pending-approval";
+      }
     }
 
     return Promise.reject(error);
