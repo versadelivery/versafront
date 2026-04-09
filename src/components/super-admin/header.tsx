@@ -21,8 +21,8 @@ export function SuperAdminHeader() {
 
   const navItems = [
     { href: "/super-admin", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/super-admin/merchants", label: "Merchants", icon: Store },
-    { href: "/super-admin/billing", label: "Billing", icon: DollarSign },
+    { href: "/super-admin/merchants", label: "Lojas", icon: Store },
+    { href: "/super-admin/billing", label: "Cobranças", icon: DollarSign },
   ];
 
   return (
