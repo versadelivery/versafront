@@ -364,6 +364,8 @@ export default function OrderManagement() {
 
     const interval = setInterval(() => {
       const now = Date.now();
+      let hasNewOverdue = false;
+
       orders.forEach((order) => {
         if (overdueAlertedRef.current.has(order.id)) return;
 
@@ -374,7 +376,7 @@ export default function OrderManagement() {
           const t = new Date(acceptedAt).getTime();
           if (!isNaN(t) && now > t + estimatedPrepTime * 60 * 1000) {
             overdueAlertedRef.current.add(order.id);
-            orderOverdue();
+            hasNewOverdue = true;
           }
         }
 
@@ -385,10 +387,14 @@ export default function OrderManagement() {
           const t = new Date(readyAt).getTime();
           if (!isNaN(t) && now > t + estimatedDeliveryTime * 60 * 1000) {
             overdueAlertedRef.current.add(order.id);
-            orderOverdue();
+            hasNewOverdue = true;
           }
         }
       });
+
+      if (hasNewOverdue) {
+        orderOverdue();
+      }
     }, 10000);
 
     return () => clearInterval(interval);
@@ -1109,12 +1115,19 @@ export default function OrderManagement() {
             withdrawal: selectedOrder.deliveryType === 'pickup',
             payment_method: selectedOrder.socketData.attributes.payment_method,
             delivery_fee: parseFloat(selectedOrder.socketData.attributes.delivery_fee || '0'),
-            address: selectedOrder.socketData.attributes.address.data ? {
-              address: selectedOrder.socketData.attributes.address.data.attributes.address,
-              neighborhood: selectedOrder.socketData.attributes.address.data.attributes.neighborhood,
-              complement: selectedOrder.socketData.attributes.address.data.attributes.complement,
-              reference: selectedOrder.socketData.attributes.address.data.attributes.reference
-            } : undefined,
+            address: selectedOrder.socketData.attributes.address.data ? (() => {
+              const addrAttrs = selectedOrder.socketData.attributes.address.data.attributes;
+              const rawNeighborhood = addrAttrs.shop_delivery_neighborhood;
+              const neighborhoodFallback = typeof rawNeighborhood === 'string'
+                ? rawNeighborhood
+                : (rawNeighborhood as any)?.data?.attributes?.name || '';
+              return {
+                address: addrAttrs.address,
+                neighborhood: addrAttrs.neighborhood || neighborhoodFallback,
+                complement: addrAttrs.complement,
+                reference: addrAttrs.reference,
+              };
+            })() : undefined,
             items: selectedOrder.socketData.attributes.items.data.map(item => ({
               id: item.id,
               catalog_item_id: item.attributes.catalog_item?.data?.id ? parseInt(item.attributes.catalog_item.data.id) : null,
