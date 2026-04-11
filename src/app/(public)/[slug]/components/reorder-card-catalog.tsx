@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { RotateCcw, AlertTriangle, ArrowRight } from "lucide-react"
+import { RotateCcw, AlertTriangle, ArrowRight, Clock } from "lucide-react"
 import { getOrdersByPhone } from "@/services/order-service"
 import { useClient } from "../client-context"
 import { formatPrice } from "../format-price"
@@ -59,6 +59,9 @@ export default function ReorderCardCatalog({ accentColor }: ReorderCardCatalogPr
     )[0]
   }, [ordersData, shopId])
 
+  // Status de abertura da loja — reativo via React Query → contexto
+  const shopIsOpen = shop?.data?.attributes?.shop_status?.is_open ?? true
+
   // Validação reativa: recomputa sempre que o shop (React Query) ou o pedido mudar
   const validation = useMemo(() => {
     if (!lastOrder) return null
@@ -68,6 +71,7 @@ export default function ReorderCardCatalog({ accentColor }: ReorderCardCatalogPr
   if (!lastOrder || !validation || !shopSlug) return null
 
   const { allAvailable, unavailableNames, validatedItems } = validation
+  const canReorder = allAvailable && shopIsOpen
   const orderItems = lastOrder.attributes.items?.data ?? []
   const total = parseFloat(lastOrder.attributes.total_items_price ?? "0")
   const itemCount = orderItems.length
@@ -84,14 +88,14 @@ export default function ReorderCardCatalog({ accentColor }: ReorderCardCatalogPr
   return (
     <>
       <div
-        role={allAvailable ? "button" : undefined}
-        tabIndex={allAvailable ? 0 : undefined}
-        onClick={() => allAvailable && setModalOpen(true)}
-        onKeyDown={(e) => e.key === "Enter" && allAvailable && setModalOpen(true)}
+        role={canReorder ? "button" : undefined}
+        tabIndex={canReorder ? 0 : undefined}
+        onClick={() => canReorder && setModalOpen(true)}
+        onKeyDown={(e) => e.key === "Enter" && canReorder && setModalOpen(true)}
         className={[
           "relative flex flex-row rounded-md overflow-hidden mb-0 transition-all duration-200",
           "h-[96px] sm:h-[112px]",
-          allAvailable
+          canReorder
             ? "cursor-pointer hover:shadow-md hover:brightness-95 active:scale-[0.99]"
             : "cursor-not-allowed opacity-70",
         ].join(" ")}
@@ -115,10 +119,15 @@ export default function ReorderCardCatalog({ accentColor }: ReorderCardCatalogPr
 
           {/* Rodapé */}
           <div className="flex items-center justify-between gap-2">
-            {allAvailable ? (
+            {canReorder ? (
               <span className="text-xs sm:text-sm font-bold flex items-center gap-1" style={{ color: theme.text }}>
                 Ver e pedir novamente
                 <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+              </span>
+            ) : !shopIsOpen ? (
+              <span className="text-[10px] sm:text-xs font-semibold flex items-center gap-1 text-amber-300">
+                <Clock className="w-3 h-3 flex-shrink-0" />
+                Loja fechada no momento
               </span>
             ) : (
               <span className="text-[10px] sm:text-xs font-semibold flex items-center gap-1 text-amber-300">
@@ -144,11 +153,14 @@ export default function ReorderCardCatalog({ accentColor }: ReorderCardCatalogPr
               <RotateCcw className="w-8 h-8 opacity-20" style={{ color: theme.text }} />
             </div>
           )}
-          {!allAvailable && (
+          {!canReorder && (
             <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-1">
-              <AlertTriangle className="w-4 h-4 text-amber-300" />
+              {!shopIsOpen
+                ? <Clock className="w-4 h-4 text-amber-300" />
+                : <AlertTriangle className="w-4 h-4 text-amber-300" />
+              }
               <span className="text-[9px] sm:text-[10px] text-white font-semibold text-center leading-tight px-1">
-                Indisponível
+                {!shopIsOpen ? "Fechada" : "Indisponível"}
               </span>
             </div>
           )}
