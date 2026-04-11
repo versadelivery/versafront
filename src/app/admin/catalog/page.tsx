@@ -296,6 +296,8 @@ function CatalogPage() {
                 </a>
                 <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
                 <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900">Catálogo</h1>
+              </div>
+              <div className="flex items-center gap-3">
                 {tab === "catalog" && (
                   <div className="hidden sm:flex items-center bg-[#F0EFEB] p-0.5 rounded-md border border-[#E5E2DD]">
                     <button
@@ -314,8 +316,7 @@ function CatalogPage() {
                     </button>
                   </div>
                 )}
-              </div>
-              <div className="flex items-center gap-1 bg-[#F0EFEB] p-1 rounded-md">
+                <div className="flex items-center gap-1 bg-[#F0EFEB] p-1 rounded-md">
                 <button
                   onClick={() => setTab("catalog")}
                   className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all cursor-pointer ${
@@ -346,6 +347,7 @@ function CatalogPage() {
                 >
                   Ingredientes
                 </button>
+                </div>
               </div>
             </div>
           </div>
