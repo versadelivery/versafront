@@ -1,10 +1,12 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { RotateCcw, AlertTriangle, ShoppingCart, Truck, Store } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
 import { validateOrder } from "@/lib/reorder-utils"
 import { ReorderModal } from "@/components/reorder/reorder-modal"
+import { fetchShopBySlug } from "@/app/(public)/[slug]/slug-service"
 import type { CustomerOrder } from "@/types/order"
 import type { OrderValidation } from "@/lib/reorder-utils"
 
@@ -12,37 +14,39 @@ interface ReorderCardOrdersProps {
   order: CustomerOrder
 }
 
-function getShopSlugFromStorage(): string | null {
-  try {
-    return JSON.parse(localStorage.getItem("shop") || "{}")?.data?.attributes?.slug ?? null
-  } catch {
-    return null
-  }
-}
-
 export default function ReorderCardOrders({ order }: ReorderCardOrdersProps) {
   const [modalOpen, setModalOpen] = useState(false)
 
-  const validation: OrderValidation = useMemo(() => validateOrder(order), [order])
+  const shopSlug = order.attributes.shop.data.attributes.slug
+
+  // Busca dados frescos do catálogo da loja — garante disponibilidade em tempo real
+  const { data: shopData } = useQuery({
+    queryKey: ["shop", shopSlug],
+    queryFn: () => fetchShopBySlug(shopSlug),
+    staleTime: 60 * 1000,
+    refetchInterval: 60 * 1000,
+    refetchOnWindowFocus: true,
+  })
+
+  // Recomputa disponibilidade toda vez que o catálogo ou o pedido mudar
+  const validation: OrderValidation = useMemo(
+    () => validateOrder(order, shopData),
+    [order, shopData],
+  )
+
   const { allAvailable, unavailableNames, validatedItems } = validation
 
   const shopName = order.attributes.shop.data.attributes.name
-  const shopSlug = order.attributes.shop.data.attributes.slug
   const total = parseFloat(order.attributes.total_price ?? "0")
   const itemCount = order.attributes.items.data.length
   const orderItems = order.attributes.items.data
+
+  const accentColor = shopData?.data?.attributes?.accent_color ?? null
 
   const handleClick = () => {
     if (!allAvailable) return
     setModalOpen(true)
   }
-
-  // Primary color for the card accent (first color of order)
-  const accentColor = typeof window !== "undefined"
-    ? (() => { try { return JSON.parse(localStorage.getItem("shop") || "{}")?.data?.attributes?.accent_color ?? null } catch { return null } })()
-    : null
-
-  const isDisabled = !allAvailable
 
   return (
     <>

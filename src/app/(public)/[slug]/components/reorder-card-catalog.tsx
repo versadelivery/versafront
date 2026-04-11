@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useMemo } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { RotateCcw, AlertTriangle, ArrowRight } from "lucide-react"
 import { getOrdersByPhone } from "@/services/order-service"
 import { useClient } from "../client-context"
@@ -9,16 +10,24 @@ import { getTextColors } from "../theme-utils"
 import { validateOrder } from "@/lib/reorder-utils"
 import { ReorderModal } from "@/components/reorder/reorder-modal"
 import type { CustomerOrder } from "@/types/order"
-import type { OrderValidation } from "@/lib/reorder-utils"
 
 interface ReorderCardCatalogProps {
   accentColor?: string | null
 }
 
+function getPhone(): string | null {
+  try {
+    const stored = localStorage.getItem("customer_info")
+    if (stored) {
+      const info = JSON.parse(stored)
+      return info.phone?.replace(/\D/g, "") || null
+    }
+  } catch {}
+  return localStorage.getItem("guest_phone")
+}
+
 export default function ReorderCardCatalog({ accentColor }: ReorderCardCatalogProps) {
   const { shop } = useClient()
-  const [lastOrder, setLastOrder] = useState<CustomerOrder | null>(null)
-  const [validation, setValidation] = useState<OrderValidation | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
 
   const shopId = shop?.data?.id
@@ -26,33 +35,35 @@ export default function ReorderCardCatalog({ accentColor }: ReorderCardCatalogPr
   const cardColor = accentColor || "#1B1B1B"
   const theme = useMemo(() => getTextColors(cardColor), [cardColor])
 
-  useEffect(() => {
-    if (!shopId) return
-    const phone = (() => {
-      try {
-        const stored = localStorage.getItem("customer_info")
-        if (stored) {
-          const info = JSON.parse(stored)
-          return info.phone?.replace(/\D/g, "") || null
-        }
-      } catch {}
-      return localStorage.getItem("guest_phone")
-    })()
-    if (!phone) return
+  // Busca pedidos do cliente — atualiza a cada 60s e ao focar a janela
+  const phone = typeof window !== "undefined" ? getPhone() : null
 
-    getOrdersByPhone(phone).then((res) => {
-      if (!res?.data) return
-      const shopOrders = res.data.filter(
-        (o) => o.attributes.shop.data.id === shopId && o.attributes.status !== "cancelled",
-      )
-      if (shopOrders.length === 0) return
-      const latest = shopOrders.sort(
-        (a, b) => new Date(b.attributes.created_at).getTime() - new Date(a.attributes.created_at).getTime(),
-      )[0]
-      setLastOrder(latest)
-      setValidation(validateOrder(latest))
-    })
-  }, [shopId])
+  const { data: ordersData } = useQuery({
+    queryKey: ["customer-orders", phone],
+    queryFn: () => getOrdersByPhone(phone!),
+    enabled: !!phone && !!shopId,
+    staleTime: 60 * 1000,
+    refetchInterval: 60 * 1000,
+    refetchOnWindowFocus: true,
+  })
+
+  // Último pedido não cancelado desta loja
+  const lastOrder: CustomerOrder | null = useMemo(() => {
+    if (!ordersData?.data || !shopId) return null
+    const shopOrders = ordersData.data.filter(
+      (o) => o.attributes.shop.data.id === shopId && o.attributes.status !== "cancelled",
+    )
+    if (shopOrders.length === 0) return null
+    return shopOrders.sort(
+      (a, b) => new Date(b.attributes.created_at).getTime() - new Date(a.attributes.created_at).getTime(),
+    )[0]
+  }, [ordersData, shopId])
+
+  // Validação reativa: recomputa sempre que o shop (React Query) ou o pedido mudar
+  const validation = useMemo(() => {
+    if (!lastOrder) return null
+    return validateOrder(lastOrder, shop)
+  }, [lastOrder, shop])
 
   if (!lastOrder || !validation || !shopSlug) return null
 
@@ -64,11 +75,11 @@ export default function ReorderCardCatalog({ accentColor }: ReorderCardCatalogPr
     (v) => v.orderItem.attributes.catalog_item?.data?.attributes?.image_url,
   )?.orderItem.attributes.catalog_item?.data?.attributes?.image_url
 
-  const itemsLabel = orderItems
-    .slice(0, 3)
-    .map((i) => i.attributes.catalog_item?.data?.attributes?.name ?? "Item")
-    .join(" · ")
-    + (itemCount > 3 ? ` +${itemCount - 3}` : "")
+  const itemsLabel =
+    orderItems
+      .slice(0, 3)
+      .map((i) => i.attributes.catalog_item?.data?.attributes?.name ?? "Item")
+      .join(" · ") + (itemCount > 3 ? ` +${itemCount - 3}` : "")
 
   return (
     <>

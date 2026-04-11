@@ -148,9 +148,9 @@ function toCartItem(catalogItem: CatalogItem, attrs: CustomerOrderItem["attribut
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
-export function validateOrder(order: CustomerOrder): OrderValidation {
-  const shopData = getShopFromStorage()
-  const index = buildCatalogIndex(shopData)
+export function validateOrder(order: CustomerOrder, shopData?: any): OrderValidation {
+  const data = shopData ?? getShopFromStorage()
+  const index = buildCatalogIndex(data)
   const orderItems = order.attributes.items?.data ?? []
 
   const validatedItems: ValidatedOrderItem[] = orderItems.map((oi) => {
