@@ -9,14 +9,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Copy,
   Check,
-  QrCode,
-  FileText,
   ExternalLink,
   AlertCircle,
 } from "lucide-react";
@@ -123,88 +120,46 @@ export default function PaymentModal({
             </Card>
           )}
 
-          {/* Opções de pagamento */}
+          {/* PIX */}
           {attributes.status !== "paid" && chargeAmount > 0 && (
-            <Tabs defaultValue="pix" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="pix" className="flex items-center gap-2">
-                  <QrCode className="h-4 w-4" />
-                  PIX
-                </TabsTrigger>
-                <TabsTrigger value="boleto" className="flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  Boleto
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="pix" className="space-y-4">
-                {attributes.asaas_pix_code ? (
-                  <>
-                    <div className="flex justify-center p-4 bg-white rounded-lg border">
-                      <QRCodeSVG
-                        value={attributes.asaas_pix_code}
-                        size={200}
-                        level="M"
-                      />
-                    </div>
-                    <Button
-                      onClick={handleCopyPix}
-                      className="w-full"
-                      variant={copied ? "secondary" : "default"}
-                    >
-                      {copied ? (
-                        <>
-                          <Check className="h-4 w-4 mr-2" />
-                          Copiado!
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="h-4 w-4 mr-2" />
-                          Copiar código PIX
-                        </>
-                      )}
-                    </Button>
-                    <p className="text-xs text-muted-foreground text-center">
-                      Escaneie o QR Code ou copie o código para pagar via PIX
-                    </p>
-                  </>
-                ) : (
-                  <div className="flex flex-col items-center gap-2 py-8 text-muted-foreground">
-                    <AlertCircle className="h-8 w-8" />
-                    <p>PIX não disponível para esta cobrança</p>
+            <div className="space-y-4">
+              {attributes.asaas_pix_code ? (
+                <>
+                  <div className="flex justify-center p-4 bg-white rounded-lg border">
+                    <QRCodeSVG
+                      value={attributes.asaas_pix_code}
+                      size={200}
+                      level="M"
+                    />
                   </div>
-                )}
-              </TabsContent>
-
-              <TabsContent value="boleto" className="space-y-4">
-                {attributes.asaas_boleto_url ? (
-                  <>
-                    <div className="flex flex-col items-center gap-4 py-4">
-                      <FileText className="h-16 w-16 text-muted-foreground" />
-                      <p className="text-center text-muted-foreground">
-                        Clique no botão abaixo para visualizar e imprimir o
-                        boleto bancário
-                      </p>
-                    </div>
-                    <Button asChild className="w-full">
-                      <a
-                        href={attributes.asaas_boleto_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        Abrir Boleto
-                      </a>
-                    </Button>
-                  </>
-                ) : (
-                  <div className="flex flex-col items-center gap-2 py-8 text-muted-foreground">
-                    <AlertCircle className="h-8 w-8" />
-                    <p>Boleto não disponível para esta cobrança</p>
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
+                  <Button
+                    onClick={handleCopyPix}
+                    className="w-full"
+                    variant={copied ? "secondary" : "default"}
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="h-4 w-4 mr-2" />
+                        Copiado!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-4 w-4 mr-2" />
+                        Copiar código PIX
+                      </>
+                    )}
+                  </Button>
+                  <p className="text-xs text-muted-foreground text-center">
+                    Escaneie o QR Code ou copie o código para pagar via PIX
+                  </p>
+                </>
+              ) : (
+                <div className="flex flex-col items-center gap-2 py-8 text-muted-foreground">
+                  <AlertCircle className="h-8 w-8" />
+                  <p>PIX não disponível para esta cobrança</p>
+                </div>
+              )}
+            </div>
           )}
 
           {/* Tier gratuito */}
