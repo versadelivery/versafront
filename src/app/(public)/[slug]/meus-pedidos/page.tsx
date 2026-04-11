@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from "next/navigation";
 import { getOrdersByPhone } from "@/services/order-service";
 import { CustomerOrder } from "@/types/order";
-import { useCustomerOrdersWebSocket } from "@/hooks/use-customer-orders-websocket";
+import { useQuery } from "@tanstack/react-query";
 import { formatCurrency } from "@/lib/utils";
 import {
   Truck,
@@ -64,55 +64,36 @@ export default function MeusPedidosPage() {
   const params = useParams();
   const slug = params.slug as string;
 
-  const [allOrders, setAllOrders] = useState<CustomerOrder[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [unauthorized, setUnauthorized] = useState(false);
-  const { subscribeToOrders, isLoading: wsLoading } = useCustomerOrdersWebSocket();
+  const [phone, setPhone] = useState<string | null>(null);
+  const [phoneChecked, setPhoneChecked] = useState(false);
 
   useEffect(() => {
-    let phone: string | null = null;
+    let p: string | null = null;
     try {
       const stored = localStorage.getItem('customer_info');
       if (stored) {
         const info = JSON.parse(stored);
-        if (info.phone) phone = info.phone.replace(/\D/g, '');
+        if (info.phone) p = info.phone.replace(/\D/g, '');
       }
     } catch {}
-    if (!phone) phone = localStorage.getItem('guest_phone');
+    if (!p) p = localStorage.getItem('guest_phone');
+    setPhone(p);
+    setPhoneChecked(true);
+  }, []);
 
-    if (!phone) {
-      setUnauthorized(true);
-      setLoading(false);
-      return;
-    }
+  const { data: ordersData, isLoading } = useQuery({
+    queryKey: ['customer-orders-page', phone],
+    queryFn: () => getOrdersByPhone(phone!),
+    enabled: !!phone && phoneChecked,
+    refetchInterval: 30 * 1000,
+    refetchOnWindowFocus: true,
+    staleTime: 0,
+  });
 
-    const fetchOrders = async () => {
-      try {
-        const response = await getOrdersByPhone(phone!);
-        if (response) {
-          setAllOrders(response.data);
-          setUnauthorized(false);
-        }
-      } catch {
-      } finally {
-        setLoading(false);
-      }
-    };
+  const unauthorized = phoneChecked && !phone;
+  const loading = !phoneChecked || (!!phone && isLoading && !ordersData);
 
-    const unsubscribe = subscribeToOrders((wsOrders: CustomerOrder[]) => {
-      setAllOrders(wsOrders);
-      setLoading(false);
-    });
-
-    const fallback = setTimeout(() => {
-      if (wsLoading || loading) fetchOrders();
-    }, 1000);
-
-    return () => {
-      unsubscribe();
-      clearTimeout(fallback);
-    };
-  }, [subscribeToOrders, wsLoading]);
+  const allOrders: CustomerOrder[] = ordersData?.data ?? [];
 
   // Filtra pedidos apenas da loja atual
   const orders = allOrders.filter(
@@ -170,7 +151,7 @@ export default function MeusPedidosPage() {
     );
   }
 
-  if (loading || wsLoading) {
+  if (loading) {
     return (
       <>
         {nav}
