@@ -15,6 +15,7 @@ import { useClient } from './client-context';
 import ahoy from '@/lib/ahoy';
 import { getTextColors } from './theme-utils';
 import ReviewsSection from './components/reviews-section';
+import ReorderCardCatalog from './components/reorder-card-catalog';
 
 interface ClientStoreContentProps {
   shop: ShopResponse;
@@ -158,7 +159,12 @@ export default function ClientStoreContent({ shop: initialShop }: ClientStoreCon
         </div>
       </div>
 
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Card de repetir pedido — logo abaixo da nav, sem padding grande */}
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-3">
+        <ReorderCardCatalog accentColor={accentColor} />
+      </div>
+
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Welcome message */}
         {welcomeMessage && (
           <div

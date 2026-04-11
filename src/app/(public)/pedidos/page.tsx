@@ -18,6 +18,7 @@ import PublicLoading from "@/components/public-loading";
 import { Button } from "@/components/ui/button";
 import PedidosHeader from "./pedidos-header";
 import Link from "next/link";
+import ReorderCardOrders from "./components/reorder-card-orders";
 
 const getPaymentMethodLabel = (method: string) => {
   const map: Record<string, string> = {
@@ -196,6 +197,9 @@ export default function OrdersPage() {
     );
   }
 
+  // Último pedido não cancelado (para o card de repetir)
+  const lastNonCancelledOrder = orders.find((o) => o.attributes.status !== 'cancelled') ?? null;
+
   return (
     <>
       {nav}
@@ -207,6 +211,12 @@ export default function OrdersPage() {
           </div>
 
           <div className="space-y-3">
+            {/* Card de repetir último pedido */}
+            {lastNonCancelledOrder && (
+              <ReorderCardOrders order={lastNonCancelledOrder} />
+            )}
+
+            {/* Lista de pedidos */}
             {orders.map((order) => {
               const date = formatDate(order.attributes.created_at);
               const total = order.attributes.total_price ? parseFloat(order.attributes.total_price) : 0;
