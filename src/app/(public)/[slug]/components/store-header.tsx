@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useClient } from "../client-context";
 import { Store, Clock, Truck, Receipt, MapPin, Package, Megaphone } from 'lucide-react';
@@ -23,9 +23,23 @@ export default function StoreHeader({ shop: initialShop }: StoreHeaderProps) {
   const params = useParams();
   const storeSlug = params?.slug as string;
   const [hasCustomerInfo, setHasCustomerInfo] = useState(false);
+  const stickyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setHasCustomerInfo(!!localStorage.getItem('customer_info'));
+  }, []);
+
+  // Publica altura real do header sticky como CSS var — o catalog nav usa como `top`
+  useEffect(() => {
+    const el = stickyRef.current;
+    if (!el) return;
+    const update = () => {
+      document.documentElement.style.setProperty('--store-header-height', `${el.offsetHeight}px`);
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
   }, []);
   const shopData = contextShop?.data ?? null;
   const attributes = shopData?.attributes || initialShop?.attributes || {};
@@ -55,33 +69,34 @@ export default function StoreHeader({ shop: initialShop }: StoreHeaderProps) {
 
   return (
     <>
-      {/* Banner promocional */}
-      {attributes.banner_active && attributes.banner_text && (
-        <div
-          className="w-full px-4 py-2 text-center text-sm font-medium z-40 sticky top-0"
+      {/* Banner + Nav header — sticky como uma unidade para não depender de altura fixa */}
+      <div ref={stickyRef} className="sticky top-0 z-40 w-full">
+        {/* Banner promocional */}
+        {attributes.banner_active && attributes.banner_text && (
+          <div
+            className="w-full px-4 py-2 text-center text-sm font-medium"
+            style={{
+              backgroundColor: headerColor || '#1F2937',
+              color: headerColor ? textColor : '#FFFFFF',
+              borderBottom: `1px solid ${borderColor}`,
+            }}
+          >
+            <div className="max-w-[1400px] mx-auto flex items-center justify-center gap-2">
+              <Megaphone className="w-4 h-4 flex-shrink-0" />
+              <span>{attributes.banner_text}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Nav header */}
+        <header
+          className="w-full"
           style={{
-            backgroundColor: headerColor || '#1F2937',
-            color: headerColor ? textColor : '#FFFFFF',
+            ...headerStyle,
+            ...(!headerColor ? { backgroundColor: '#FFFFFF' } : {}),
             borderBottom: `1px solid ${borderColor}`,
           }}
         >
-          <div className="max-w-[1400px] mx-auto flex items-center justify-center gap-2">
-            <Megaphone className="w-4 h-4 flex-shrink-0" />
-            <span>{attributes.banner_text}</span>
-          </div>
-        </div>
-      )}
-
-      {/* Nav header */}
-      <header
-        className="sticky z-40 w-full"
-        style={{
-          ...headerStyle,
-          ...(!headerColor ? { backgroundColor: '#FFFFFF' } : {}),
-          borderBottom: `1px solid ${borderColor}`,
-          top: attributes.banner_active && attributes.banner_text ? '37px' : '0px',
-        }}
-      >
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link href={`/${attributes.slug}`} className="md:hidden cursor-pointer">
@@ -131,6 +146,7 @@ export default function StoreHeader({ shop: initialShop }: StoreHeaderProps) {
           </div>
         </div>
       </header>
+      </div>
 
       {/* Shop info */}
       <div

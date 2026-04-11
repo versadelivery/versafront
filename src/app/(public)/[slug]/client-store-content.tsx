@@ -139,11 +139,11 @@ export default function ClientStoreContent({ shop: initialShop }: ClientStoreCon
       {/* Sticky search + nav bar */}
       <div
         className="sticky z-40 w-full bg-white border-b border-[#E5E2DD]"
-        style={{ top: hasBanner ? '101px' : '64px' }}
+        style={{ top: 'var(--store-header-height, 64px)' }}
       >
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:gap-8 py-3 lg:py-2.5">
-            <div className="order-2 lg:order-1 lg:flex-1 min-w-0 mt-2.5 lg:mt-0">
+            <div className="order-2 lg:order-1 lg:flex-1 min-w-0 mt-2.5 lg:mt-0 overflow-x-hidden">
               <CategoryNavigation
                 categories={groups}
                 activeCategory={activeCategory}
