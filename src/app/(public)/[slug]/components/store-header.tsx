@@ -202,35 +202,44 @@ export default function StoreHeader({ shop: initialShop }: StoreHeaderProps) {
             </div>
           </div>
 
-          <div
-            className="flex flex-wrap items-center gap-5 sm:gap-10 mt-5 pt-5"
-            style={{ borderTop: `1px solid ${borderColor}` }}
-          >
-            <div className="flex items-center gap-2.5">
-              <Clock className="w-5 h-5 flex-shrink-0" style={{ color: mutedColor }} />
-              <div>
-                <p className="text-base font-semibold leading-none" style={{ color: textColor }}>30–45 min</p>
-                <p className="text-xs mt-1" style={{ color: mutedColor }}>Entrega</p>
-              </div>
+          {/* Mobile: linha compacta com separadores · / Desktop: blocos com ícone */}
+          <div className="mt-5 pt-5" style={{ borderTop: `1px solid ${borderColor}` }}>
+            {/* Mobile */}
+            <div className="flex items-center justify-center gap-3.5 sm:hidden">
+              <Clock className="w-3.5 h-3.5 flex-shrink-0" style={{ color: mutedColor }} />
+              <span className="text-xs font-semibold" style={{ color: textColor }}>30–45 min</span>
+              <span className="text-xs" style={{ color: mutedColor }}>·</span>
+              <Truck className="w-3.5 h-3.5 flex-shrink-0" style={{ color: mutedColor }} />
+              <span className="text-xs font-semibold" style={{ color: textColor }}>{deliveryFee()}</span>
+              <span className="text-xs" style={{ color: mutedColor }}>·</span>
+              <Receipt className="w-3.5 h-3.5 flex-shrink-0" style={{ color: mutedColor }} />
+              <span className="text-xs font-semibold" style={{ color: textColor }}>{minimumOrder()}</span>
             </div>
 
-            <div className="w-px h-8 hidden sm:block" style={{ backgroundColor: borderColor }} />
-
-            <div className="flex items-center gap-2.5">
-              <Truck className="w-5 h-5 flex-shrink-0" style={{ color: mutedColor }} />
-              <div>
-                <p className="text-base font-semibold leading-none" style={{ color: textColor }}>{deliveryFee()}</p>
-                <p className="text-xs mt-1" style={{ color: mutedColor }}>Taxa de entrega</p>
+            {/* Desktop */}
+            <div className="hidden sm:flex sm:items-center sm:gap-10">
+              <div className="flex items-center gap-2.5">
+                <Clock className="w-5 h-5 flex-shrink-0" style={{ color: mutedColor }} />
+                <div>
+                  <p className="text-base font-semibold leading-none" style={{ color: textColor }}>30–45 min</p>
+                  <p className="text-xs mt-1" style={{ color: mutedColor }}>Entrega</p>
+                </div>
               </div>
-            </div>
-
-            <div className="w-px h-8 hidden sm:block" style={{ backgroundColor: borderColor }} />
-
-            <div className="flex items-center gap-2.5">
-              <Receipt className="w-5 h-5 flex-shrink-0" style={{ color: mutedColor }} />
-              <div>
-                <p className="text-base font-semibold leading-none" style={{ color: textColor }}>{minimumOrder()}</p>
-                <p className="text-xs mt-1" style={{ color: mutedColor }}>Pedido minimo</p>
+              <div className="w-px h-8" style={{ backgroundColor: borderColor }} />
+              <div className="flex items-center gap-2.5">
+                <Truck className="w-5 h-5 flex-shrink-0" style={{ color: mutedColor }} />
+                <div>
+                  <p className="text-base font-semibold leading-none" style={{ color: textColor }}>{deliveryFee()}</p>
+                  <p className="text-xs mt-1" style={{ color: mutedColor }}>Taxa de entrega</p>
+                </div>
+              </div>
+              <div className="w-px h-8" style={{ backgroundColor: borderColor }} />
+              <div className="flex items-center gap-2.5">
+                <Receipt className="w-5 h-5 flex-shrink-0" style={{ color: mutedColor }} />
+                <div>
+                  <p className="text-base font-semibold leading-none" style={{ color: textColor }}>{minimumOrder()}</p>
+                  <p className="text-xs mt-1" style={{ color: mutedColor }}>Pedido mínimo</p>
+                </div>
               </div>
             </div>
           </div>
