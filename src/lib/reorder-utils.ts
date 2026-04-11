@@ -107,25 +107,29 @@ function toCartItem(catalogItem: CatalogItem, attrs: CustomerOrderItem["attribut
   const isWeight = catalogItem.attributes.item_type === "weight_per_kg" || catalogItem.attributes.item_type === "weight_per_g"
 
   const validExtras = (attrs.selected_extras ?? [])
-    .map((e) => e.id)
-    .filter((id) => catalogItem.attributes.extra.data.some((e: any) => e.id === id))
+    .map((e) => String(e.id))
+    .filter((id) => catalogItem.attributes.extra.data.some((e: any) => String(e.id) === id))
 
   const validMethods = (attrs.selected_prepare_methods ?? [])
-    .map((pm) => pm.id)
-    .filter((id) => catalogItem.attributes.prepare_method.data.some((m: any) => m.id === id))
+    .map((pm) => String(pm.id))
+    .filter((id) => catalogItem.attributes.prepare_method.data.some((m: any) => String(m.id) === id))
 
   const validOptions: Record<string, string> = {}
   ;(attrs.selected_steps ?? []).forEach((step) => {
-    const s = catalogItem.attributes.steps.data.find((s: any) => s.id === step.catalog_item_step_id)
-    const optOk = s?.attributes.options.data.some((o: any) => o.id === step.catalog_item_step_option_id)
-    if (s && optOk) validOptions[step.catalog_item_step_id] = step.catalog_item_step_option_id
+    const s = catalogItem.attributes.steps.data.find(
+      (s: any) => String(s.id) === String(step.catalog_item_step_id),
+    )
+    const optOk = s?.attributes.options.data.some(
+      (o: any) => String(o.id) === String(step.catalog_item_step_option_id),
+    )
+    if (s && optOk) validOptions[String(step.catalog_item_step_id)] = String(step.catalog_item_step_option_id)
   })
 
   const validComplements = (attrs.complements ?? [])
-    .map((c) => c.id)
+    .map((c) => String(c.id))
     .filter((id) =>
       (catalogItem.attributes.shared_complements?.data ?? []).some((group: any) =>
-        group.attributes.options.some((o: any) => o.id.toString() === id.toString()),
+        group.attributes.options.some((o: any) => String(o.id) === id),
       ),
     )
 
