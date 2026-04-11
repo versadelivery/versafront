@@ -52,7 +52,7 @@ export function useAuth() {
       setToken(response.token)
       setUser(response.user)
       localStorage.setItem('auth_user', JSON.stringify(response.user))
-      toast.success('Login realizado com sucesso')
+      toast.success('Você entrou na sua conta')
 
       if (response.user?.role === 'delivery_man') {
         router.push('/delivery')
