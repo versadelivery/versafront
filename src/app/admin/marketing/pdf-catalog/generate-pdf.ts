@@ -11,6 +11,17 @@ interface ShopInfo {
 interface PdfOptions {
   includePhotos: boolean;
   includeDescriptions: boolean;
+  includeReviews: boolean;
+}
+
+interface ReviewData {
+  id: string;
+  attributes: {
+    rating: number;
+    comment: string | null;
+    customer_name: string | null;
+    created_at: string;
+  };
 }
 
 interface CatalogGroup {
@@ -73,7 +84,8 @@ async function loadImageAsBase64(url: string): Promise<string | null> {
 export async function generateCatalogPdf(
   shopInfo: ShopInfo,
   groups: CatalogGroup[],
-  options: PdfOptions
+  options: PdfOptions,
+  reviews: ReviewData[] = []
 ): Promise<void> {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -125,6 +137,86 @@ export async function generateCatalogPdf(
   doc.setDrawColor(220, 220, 220);
   doc.line(margin, y, pageWidth - margin, y);
   y += 8;
+
+  // Helper: desenha N bolinhas preenchidas + (5-N) vazias para representar estrelas
+  const drawStars = (rating: number, x: number, cy: number, color: [number, number, number]) => {
+    const r = 1.2;
+    const gap = 3.8;
+    for (let i = 0; i < 5; i++) {
+      const cx = x + i * gap;
+      if (i < Math.round(rating)) {
+        doc.setFillColor(...color);
+        doc.circle(cx, cy, r, "F");
+      } else {
+        doc.setDrawColor(...color);
+        doc.setLineWidth(0.25);
+        doc.circle(cx, cy, r, "S");
+      }
+    }
+    // retorna a largura ocupada
+    return 5 * gap;
+  };
+
+  // Reviews section
+  if (options.includeReviews && reviews.length > 0) {
+    const positiveReviews = reviews.filter((r) => r.attributes.rating >= 4);
+    const avgRating =
+      reviews.reduce((s, r) => s + r.attributes.rating, 0) / reviews.length;
+
+    checkPageBreak(40);
+
+    // Título
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(50, 50, 50);
+    doc.text("AVALIA\u00c7\u00d5ES DOS CLIENTES", margin, y);
+    y += 7;
+
+    // Nota média: bolinhas + número + contagem
+    drawStars(avgRating, margin, y - 1, [251, 191, 36]);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(50, 50, 50);
+    doc.text(avgRating.toFixed(1), margin + 22, y);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(130, 130, 130);
+    doc.text(`(${reviews.length} avalia\u00e7\u00f5es)`, margin + 30, y);
+    y += 7;
+
+    // Comentários positivos (até 5)
+    const withComments = positiveReviews
+      .filter((r) => r.attributes.comment)
+      .slice(0, 5);
+
+    for (const review of withComments) {
+      checkPageBreak(14);
+      const name =
+        review.attributes.customer_name?.split(" ")[0] || "Cliente";
+
+      // Comentário em itálico
+      const commentLines = doc.splitTextToSize(
+        `"${review.attributes.comment}"`,
+        contentWidth - 14
+      );
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "italic");
+      doc.setTextColor(80, 80, 80);
+      doc.text(commentLines.slice(0, 2), margin + 4, y);
+      y += commentLines.slice(0, 2).length * 3.8;
+
+      // Estrelas do review + nome
+      drawStars(review.attributes.rating, margin + 4, y - 1, [251, 191, 36]);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(150, 150, 150);
+      doc.text(`\u2014 ${name}`, margin + 26, y);
+      y += 6;
+    }
+
+    doc.setDrawColor(220, 220, 220);
+    doc.setLineWidth(0.2);
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 8;
+  }
 
   const activeGroups = groups.filter(
     (g) => g.attributes?.active !== false

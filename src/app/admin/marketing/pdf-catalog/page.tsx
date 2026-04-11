@@ -17,6 +17,7 @@ export default function PdfCatalogPage() {
   const { shop, isLoading: shopLoading } = useShop();
   const [includePhotos, setIncludePhotos] = useState(false);
   const [includeDescriptions, setIncludeDescriptions] = useState(true);
+  const [includeReviews, setIncludeReviews] = useState(true);
   const [generating, setGenerating] = useState(false);
 
   const { data: catalogData, isLoading: catalogLoading } = useQuery({
@@ -24,6 +25,14 @@ export default function PdfCatalogPage() {
     queryFn: async () => {
       const response = await api.get(API_ENDPOINTS.CATALOG);
       return response.data;
+    },
+  });
+
+  const { data: reviewsData } = useQuery({
+    queryKey: ["order-reviews-pdf"],
+    queryFn: async () => {
+      const response = await api.get(API_ENDPOINTS.ORDER_REVIEWS);
+      return response.data?.data ?? [];
     },
   });
 
@@ -43,7 +52,8 @@ export default function PdfCatalogPage() {
           description: shop.description,
         },
         catalogData.data,
-        { includePhotos, includeDescriptions }
+        { includePhotos, includeDescriptions, includeReviews },
+        reviewsData ?? []
       );
       toast.success("PDF gerado com sucesso!");
     } catch (error) {
@@ -129,6 +139,22 @@ export default function PdfCatalogPage() {
                   id="photos"
                   checked={includePhotos}
                   onCheckedChange={setIncludePhotos}
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <div>
+                  <Label htmlFor="reviews" className="font-medium">
+                    Incluir avaliações
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    Adiciona uma seção com a nota média e comentários dos clientes
+                  </p>
+                </div>
+                <Switch
+                  id="reviews"
+                  checked={includeReviews}
+                  onCheckedChange={setIncludeReviews}
                 />
               </div>
             </div>
