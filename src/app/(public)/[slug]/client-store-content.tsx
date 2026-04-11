@@ -143,7 +143,7 @@ export default function ClientStoreContent({ shop: initialShop }: ClientStoreCon
       >
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:gap-8 py-3 lg:py-2.5">
-            <div className="order-2 lg:order-1 lg:flex-1 min-w-0 mt-2.5 lg:mt-0 overflow-hidden">
+            <div className="order-2 lg:order-1 lg:flex-1 min-w-0 mt-2.5 lg:mt-0">
               <CategoryNavigation
                 categories={groups}
                 activeCategory={activeCategory}

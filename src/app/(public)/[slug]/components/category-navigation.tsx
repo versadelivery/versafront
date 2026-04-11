@@ -46,7 +46,7 @@ const CategoryNavigation = memo(function CategoryNavigation({ categories, active
     : undefined;
 
   return (
-    <div className="w-full overflow-hidden">
+    <div className="w-full">
       <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
         <button
           onClick={() => scrollToCategory('all')}
