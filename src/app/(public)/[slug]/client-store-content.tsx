@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams, useRouter, usePathname, useParams } from 'next/navigation';
-import { LayoutList, LayoutGrid } from 'lucide-react';
 import { ShopResponse } from "@/types/client-catalog";
 import { useQuery } from '@tanstack/react-query';
 import SearchBar from './components/search-bar';
@@ -128,14 +127,9 @@ export default function ClientStoreContent({ shop: initialShop }: ClientStoreCon
   const bgColor = shopAttrs.background_color || '#FAF9F7';
   const groupColor = shopAttrs.group_color || null;
   const accentColor = shopAttrs.accent_color || null;
-  const defaultLayout = (shopAttrs.catalog_layout || 'list') as 'list' | 'grid';
+  const catalogLayout = shopAttrs.catalog_layout || 'list';
   const welcomeMessage = shopAttrs.welcome_message || '';
   const hasBanner = shopAttrs.banner_active && shopAttrs.banner_text;
-
-  const [layout, setLayout] = useState<'list' | 'grid'>(defaultLayout);
-
-  // Sincroniza se o admin mudar o padrão enquanto o usuário está na página
-  useEffect(() => { setLayout(defaultLayout); }, [defaultLayout]);
 
   const bgTheme = useMemo(() => getTextColors(bgColor), [bgColor]);
   const groupTheme = useMemo(() => getTextColors(groupColor), [groupColor]);
@@ -158,21 +152,8 @@ export default function ClientStoreContent({ shop: initialShop }: ClientStoreCon
               />
             </div>
 
-            <div className="order-1 lg:order-2 flex items-center gap-2 w-full lg:w-auto flex-shrink-0">
-              <div className="flex-1 lg:w-72 xl:w-80">
-                <SearchBar value={searchInput} onChange={setSearchInput} />
-              </div>
-              <button
-                onClick={() => setLayout(l => l === 'list' ? 'grid' : 'list')}
-                className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-md border border-[#E5E2DD] bg-white hover:bg-[#F5F4F0] transition-colors"
-                aria-label={layout === 'list' ? 'Mudar para grade' : 'Mudar para lista'}
-                title={layout === 'list' ? 'Visualização em grade' : 'Visualização em lista'}
-              >
-                {layout === 'list'
-                  ? <LayoutGrid className="w-4 h-4 text-gray-500" />
-                  : <LayoutList className="w-4 h-4 text-gray-500" />
-                }
-              </button>
+            <div className="order-1 lg:order-2 w-full lg:w-72 xl:w-80 flex-shrink-0">
+              <SearchBar value={searchInput} onChange={setSearchInput} />
             </div>
           </div>
         </div>
@@ -205,7 +186,7 @@ export default function ClientStoreContent({ shop: initialShop }: ClientStoreCon
           activeCategory={activeCategory}
           searchQuery={searchQuery}
           onClearSearch={handleClearSearch}
-          catalogLayout={layout}
+          catalogLayout={catalogLayout}
           groupColor={groupColor}
           backgroundColor={bgColor}
         />
