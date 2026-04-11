@@ -73,7 +73,7 @@ export function useAuth() {
     removeToken()
     removeUser()
     localStorage.removeItem('auth_user')
-    toast.success('Logout realizado com sucesso')
+    toast.success('Você saiu da sua conta')
     router.push('/login')
   }
 
