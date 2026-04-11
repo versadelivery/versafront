@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { RotateCcw, AlertTriangle, ShoppingCart, Truck, Store } from "lucide-react"
+import { RotateCcw, AlertTriangle, ShoppingCart, Truck, Store, Clock } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
 import { validateOrder } from "@/lib/reorder-utils"
 import { ReorderModal } from "@/components/reorder/reorder-modal"
@@ -28,6 +28,9 @@ export default function ReorderCardOrders({ order }: ReorderCardOrdersProps) {
     refetchOnWindowFocus: true,
   })
 
+  // Status da loja: aberta ou fechada (vem do mesmo shopData, atualizado a cada 60s)
+  const shopIsOpen = shopData?.data?.attributes?.shop_status?.is_open ?? true
+
   // Recomputa disponibilidade toda vez que o catálogo ou o pedido mudar
   const validation: OrderValidation = useMemo(
     () => validateOrder(order, shopData),
@@ -35,6 +38,9 @@ export default function ReorderCardOrders({ order }: ReorderCardOrdersProps) {
   )
 
   const { allAvailable, unavailableNames, validatedItems } = validation
+
+  // Só permite repetir quando todos os itens estão disponíveis E a loja está aberta
+  const canReorder = allAvailable && shopIsOpen
 
   const shopName = order.attributes.shop.data.attributes.name
   const total = parseFloat(order.attributes.total_price ?? "0")
@@ -44,48 +50,60 @@ export default function ReorderCardOrders({ order }: ReorderCardOrdersProps) {
   const accentColor = shopData?.data?.attributes?.accent_color ?? null
 
   const handleClick = () => {
-    if (!allAvailable) return
+    if (!canReorder) return
     setModalOpen(true)
   }
+
+  // Determina aparência com base no estado
+  const headerBg = canReorder
+    ? (accentColor ?? "#1B1B1B")
+    : !shopIsOpen
+      ? "#FEF3C7"
+      : "#FEE2E2"
+  const borderColor = canReorder
+    ? (accentColor ?? "#1B1B1B")
+    : !shopIsOpen
+      ? "#FDE68A"
+      : "#FECACA"
+  const cardBg = canReorder ? "white" : !shopIsOpen ? "#FFFBEB" : "#FFF5F5"
 
   return (
     <>
       <div
-        role={allAvailable ? "button" : undefined}
-        tabIndex={allAvailable ? 0 : undefined}
+        role={canReorder ? "button" : undefined}
+        tabIndex={canReorder ? 0 : undefined}
         onClick={handleClick}
         onKeyDown={(e) => e.key === "Enter" && handleClick()}
         className={[
           "rounded-md overflow-hidden transition-all duration-200 border",
-          allAvailable
+          canReorder
             ? "cursor-pointer hover:shadow-md hover:border-gray-400 active:scale-[0.995]"
             : "cursor-not-allowed",
         ].join(" ")}
-        style={{
-          borderColor: allAvailable ? (accentColor ?? "#1B1B1B") : "#FECACA",
-          backgroundColor: allAvailable ? "white" : "#FFF5F5",
-        }}
+        style={{ borderColor, backgroundColor: cardBg }}
       >
         {/* ── Header bar with accent color ── */}
         <div
           className="px-5 py-2.5 flex items-center justify-between"
-          style={{
-            backgroundColor: allAvailable ? (accentColor ?? "#1B1B1B") : "#FEE2E2",
-          }}
+          style={{ backgroundColor: headerBg }}
         >
           <div className="flex items-center gap-2">
-            {allAvailable ? (
+            {canReorder ? (
               <RotateCcw className="w-4 h-4 text-white flex-shrink-0" />
+            ) : !shopIsOpen ? (
+              <Clock className="w-4 h-4 text-amber-600 flex-shrink-0" />
             ) : (
               <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
             )}
-            <span className={`text-sm font-bold ${allAvailable ? "text-white" : "text-red-700"}`}>
-              {allAvailable
+            <span className={`text-sm font-bold ${canReorder ? "text-white" : !shopIsOpen ? "text-amber-800" : "text-red-700"}`}>
+              {canReorder
                 ? "Clique aqui para repetir seu último pedido"
-                : `Pedido indisponível — ${unavailableNames.length === 1 ? `"${unavailableNames[0]}"` : `${unavailableNames.length} itens`} ${unavailableNames.length === 1 ? "está" : "estão"} fora do cardápio`}
+                : !shopIsOpen
+                  ? "Loja fechada — não é possível fazer pedidos agora"
+                  : `Pedido indisponível — ${unavailableNames.length === 1 ? `"${unavailableNames[0]}"` : `${unavailableNames.length} itens`} ${unavailableNames.length === 1 ? "está" : "estão"} fora do cardápio`}
             </span>
           </div>
-          {allAvailable && (
+          {canReorder && (
             <ShoppingCart className="w-4 h-4 text-white opacity-75 flex-shrink-0" />
           )}
         </div>
@@ -123,8 +141,8 @@ export default function ReorderCardOrders({ order }: ReorderCardOrdersProps) {
         <div
           className="flex items-center justify-between px-5 py-3 border-t gap-3"
           style={{
-            backgroundColor: allAvailable ? "#FAF9F7" : "#FFF5F5",
-            borderColor: allAvailable ? "#E5E2DD" : "#FECACA",
+            backgroundColor: canReorder ? "#FAF9F7" : !shopIsOpen ? "#FFFBEB" : "#FFF5F5",
+            borderColor: canReorder ? "#E5E2DD" : !shopIsOpen ? "#FDE68A" : "#FECACA",
           }}
         >
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
@@ -134,10 +152,15 @@ export default function ReorderCardOrders({ order }: ReorderCardOrdersProps) {
             </span>
           </div>
 
-          {allAvailable ? (
+          {canReorder ? (
             <span className="text-sm font-semibold text-primary flex items-center gap-1.5">
               <RotateCcw className="w-3.5 h-3.5" />
               Repetir pedido
+            </span>
+          ) : !shopIsOpen ? (
+            <span className="text-xs text-amber-600 font-medium flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5" />
+              Loja fechada
             </span>
           ) : (
             <span className="text-xs text-red-500 font-medium">Indisponível</span>

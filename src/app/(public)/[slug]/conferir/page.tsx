@@ -185,7 +185,7 @@ function PixPaymentScreen({ pixCode, expiresAt, orderId, shopSlug, onPaymentConf
 
   const navigateToTracking = () => {
     try { sessionStorage.removeItem('pix_pending') } catch {}
-    router.push(`/pedidos/${orderId}`)
+    router.push(`/${shopSlug}/meus-pedidos/${orderId}`)
   }
 
   // Polling: redireciona automaticamente quando pagamento for confirmado
@@ -797,12 +797,12 @@ export default function CheckoutPage() {
         // PIX gerado sem código — pedido criado mas geração de PIX falhou
         toast.warning('Pedido criado! Houve um problema ao gerar o código PIX. Entre em contato com a loja para combinar o pagamento.')
         setOrderCompleted(true)
-        if (orderId) router.push(`/pedidos/${orderId}`)
+        if (orderId) router.push(`/${storeSlug}/meus-pedidos/${orderId}`)
         return
       }
 
       setOrderCompleted(true)
-      if (orderId) setTimeout(() => router.push(`/pedidos/${orderId}`), 3500)
+      if (orderId) setTimeout(() => router.push(`/${storeSlug}/meus-pedidos/${orderId}`), 3500)
     } catch (error: any) {
       console.error('Erro ao enviar pedido:', error)
       const data = error.response?.data
@@ -894,7 +894,7 @@ export default function CheckoutPage() {
   }
 
   if (pixPaidOrderId) {
-    return <PixSuccessScreen onComplete={() => router.push(`/pedidos/${pixPaidOrderId}`)} />
+    return <PixSuccessScreen onComplete={() => router.push(`/${storeSlug}/meus-pedidos/${pixPaidOrderId}`)} />
   }
 
   if (pixData) {

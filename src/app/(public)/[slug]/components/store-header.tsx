@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
 import { useClient } from "../client-context";
 import { Store, Clock, Truck, Receipt, MapPin, Package, Megaphone } from 'lucide-react';
 import Image from 'next/image';
@@ -19,6 +20,8 @@ interface StoreHeaderProps {
 
 export default function StoreHeader({ shop: initialShop }: StoreHeaderProps) {
   const { shop: contextShop } = useClient();
+  const params = useParams();
+  const storeSlug = params?.slug as string;
   const [hasCustomerInfo, setHasCustomerInfo] = useState(false);
 
   useEffect(() => {
@@ -107,7 +110,7 @@ export default function StoreHeader({ shop: initialShop }: StoreHeaderProps) {
               {hasCustomerInfo && (
                 <>
                   <Link
-                    href="/pedidos"
+                    href={`/${storeSlug}/meus-pedidos`}
                     className="hidden md:flex items-center gap-2 text-sm font-medium transition-colors cursor-pointer"
                     style={{ color: mutedColor }}
                   >
@@ -115,7 +118,7 @@ export default function StoreHeader({ shop: initialShop }: StoreHeaderProps) {
                     Meus Pedidos
                   </Link>
                   <Link
-                    href="/pedidos"
+                    href={`/${storeSlug}/meus-pedidos`}
                     className="md:hidden flex items-center justify-center h-10 w-10 rounded-md transition-colors cursor-pointer"
                     style={{ borderColor, color: mutedColor, borderWidth: '1px' }}
                   >
