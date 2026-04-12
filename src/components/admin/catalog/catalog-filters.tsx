@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Filter, X, Percent } from "lucide-react";
+import { Filter, X, Percent, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -18,6 +18,7 @@ interface CatalogFiltersProps {
   onTagsChange: (tags: TagKey[]) => void;
   onItemTypeChange: (value: ItemTypeFilter) => void;
   onDiscountOnlyChange: (value: boolean) => void;
+  onOutOfStockIngredientOnlyChange: (value: boolean) => void;
   onClearFilters: () => void;
 }
 
@@ -46,7 +47,8 @@ function hasActiveFilters(filters: CatalogFiltersState): boolean {
     filters.status !== DEFAULT_FILTERS.status ||
     filters.tags.length > 0 ||
     filters.itemType !== DEFAULT_FILTERS.itemType ||
-    filters.discountOnly !== DEFAULT_FILTERS.discountOnly
+    filters.discountOnly !== DEFAULT_FILTERS.discountOnly ||
+    filters.outOfStockIngredientOnly !== DEFAULT_FILTERS.outOfStockIngredientOnly
   );
 }
 
@@ -56,6 +58,7 @@ function countActiveFilters(filters: CatalogFiltersState): number {
   if (filters.tags.length > 0) count++;
   if (filters.itemType !== DEFAULT_FILTERS.itemType) count++;
   if (filters.discountOnly) count++;
+  if (filters.outOfStockIngredientOnly) count++;
   return count;
 }
 
@@ -65,6 +68,7 @@ export function CatalogFilters({
   onTagsChange,
   onItemTypeChange,
   onDiscountOnlyChange,
+  onOutOfStockIngredientOnlyChange,
   onClearFilters,
 }: CatalogFiltersProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -145,6 +149,15 @@ export function CatalogFilters({
       >
         <Percent className="h-3.5 w-3.5" />
         Com desconto
+      </button>
+
+      {/* Sem Ingrediente */}
+      <button
+        onClick={() => onOutOfStockIngredientOnlyChange(!filters.outOfStockIngredientOnly)}
+        className={`inline-flex items-center gap-1.5 ${pillClass(filters.outOfStockIngredientOnly)}`}
+      >
+        <AlertCircle className="h-3.5 w-3.5" />
+        Ingrediente em falta
       </button>
 
       {/* Limpar Filtros */}

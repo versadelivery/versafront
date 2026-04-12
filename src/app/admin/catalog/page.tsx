@@ -96,7 +96,7 @@ function CatalogPage() {
   const { reorderGroups, reorderItems } = useCatalogReorder();
 
   const groups = catalog?.data || [];
-  const hasActiveFilters = filters.status !== "all" || filters.tags.length > 0 || filters.itemType !== "all" || filters.discountOnly;
+  const hasActiveFilters = filters.status !== "all" || filters.tags.length > 0 || filters.itemType !== "all" || filters.discountOnly || filters.outOfStockIngredientOnly;
   const isSearching = searchQuery.trim().length > 0;
   const isFiltering = isSearching || hasActiveFilters;
 
@@ -104,6 +104,7 @@ function CatalogPage() {
   const handleTagsChange = useCallback((tags: TagKey[]) => setFilters((f) => ({ ...f, tags })), []);
   const handleItemTypeChange = useCallback((value: ItemTypeFilter) => setFilters((f) => ({ ...f, itemType: value })), []);
   const handleDiscountOnlyChange = useCallback((value: boolean) => setFilters((f) => ({ ...f, discountOnly: value })), []);
+  const handleOutOfStockIngredientOnlyChange = useCallback((value: boolean) => setFilters((f) => ({ ...f, outOfStockIngredientOnly: value })), []);
   const handleClearFilters = useCallback(() => setFilters(DEFAULT_FILTERS), []);
 
   const validGroups = useMemo(() =>
@@ -212,6 +213,7 @@ function CatalogPage() {
     }
     if (filters.itemType !== "all" && attrs.item_type !== filters.itemType) return false;
     if (filters.discountOnly && !attrs.price_with_discount) return false;
+    if (filters.outOfStockIngredientOnly && !(attrs as any).has_out_of_stock_ingredient) return false;
 
     return true;
   };
@@ -341,6 +343,7 @@ function CatalogPage() {
                 onTagsChange={handleTagsChange}
                 onItemTypeChange={handleItemTypeChange}
                 onDiscountOnlyChange={handleDiscountOnlyChange}
+                onOutOfStockIngredientOnlyChange={handleOutOfStockIngredientOnlyChange}
                 onClearFilters={handleClearFilters}
               />
 
