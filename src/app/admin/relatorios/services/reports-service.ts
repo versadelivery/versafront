@@ -173,6 +173,37 @@ export interface PaymentMethodsResponse {
   summary: PaymentMethodsSummary;
 }
 
+// Orders by Payment Method (single day)
+export interface OrderByPaymentMethodEntry {
+  id: number;
+  customer_name: string;
+  total_price: number;
+  status: string;
+  status_label: string;
+  time_label: string;
+  withdrawal: boolean;
+}
+
+export interface OrdersByPaymentMethodGroup {
+  payment_method: string;
+  label: string;
+  color: string;
+  order_count: number;
+  total_revenue: number;
+  orders: OrderByPaymentMethodEntry[];
+}
+
+export interface OrdersByPaymentMethodSummary {
+  total_orders: number;
+  total_revenue: number;
+  date: string;
+}
+
+export interface OrdersByPaymentMethodResponse {
+  data: OrdersByPaymentMethodGroup[];
+  summary: OrdersByPaymentMethodSummary;
+}
+
 // Sales by Hour
 export interface SalesByHourEntry {
   hour: number;
@@ -757,6 +788,15 @@ export const reportsService = {
   ): Promise<CouponUsageResponse> => {
     const response = await api.get(API_ENDPOINTS.REPORTS.COUPON_USAGE, {
       params: { start_date: startDate, end_date: endDate },
+    });
+    return response.data;
+  },
+
+  getOrdersByPaymentMethod: async (
+    date: string
+  ): Promise<OrdersByPaymentMethodResponse> => {
+    const response = await api.get(API_ENDPOINTS.REPORTS.ORDERS_BY_PAYMENT_METHOD, {
+      params: { date },
     });
     return response.data;
   },
