@@ -81,5 +81,13 @@ export const API_ENDPOINTS = {
     VISITORS: "/reports/visitors",
     DELIVERY_FEES: "/reports/delivery_fees",
     COUPON_USAGE: "/reports/coupon_usage",
+    ORDERS_BY_PAYMENT_METHOD: "/reports/orders_by_payment_method",
+  },
+
+  // Fiscal
+  FISCAL: {
+    CONFIG: "/shop_fiscal_configs",
+    NOTES: "/fiscal_notes",
+    RETRY: (id: string) => `/fiscal_notes/${id}/retry`,
   },
 };
