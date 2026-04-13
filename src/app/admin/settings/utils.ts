@@ -1,4 +1,4 @@
-import { Settings, Users, Truck, CreditCard, Bell, Palette, ListOrdered } from "lucide-react";
+import { Settings, Users, Truck, CreditCard, Bell, Palette, ListOrdered, FileText } from "lucide-react";
 
 export const settingsCards = [
   {
@@ -49,5 +49,12 @@ export const settingsCards = [
     title: "Fluxo de Pedidos",
     description: "Configure as etapas que um pedido percorre na sua loja",
     iconBgColor: "bg-orange-500"
+  },
+  {
+    href: "/admin/settings/fiscal",
+    icon: FileText,
+    title: "Notas Fiscais (NF-e)",
+    description: "Configure a emissão automática de NF-e via nfe.io",
+    iconBgColor: "bg-teal-600"
   },
 ];
