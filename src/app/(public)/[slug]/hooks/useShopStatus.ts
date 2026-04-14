@@ -189,7 +189,12 @@ export function useShopStatus(options?: UseShopStatusOptions) {
         };
 
         const status = calculateShopStatus(schedule);
-        setShopStatus(status);
+        // Trust the server's is_open value when available — local recalc may differ
+        // due to timezone edge cases or manual overrides on the backend
+        const isOpen = options.initialShopStatus !== undefined
+          ? options.initialShopStatus.is_open
+          : status.isOpen;
+        setShopStatus({ ...status, isOpen });
         setLoading(false);
         return;
       }
