@@ -12,42 +12,42 @@ interface CancelOrderModalProps {
   onOpenChange: (open: boolean) => void;
   orderId: string;
   customerName: string;
+  orderStatus?: string;
   onCancelOrder: (orderId: string, reason: string, justification?: string) => void;
 }
 
-const CANCEL_REASONS = [
-  {
-    value: 'client_requested',
-    label: 'Cliente solicitou o cancelamento'
-  },
-  {
-    value: 'payment_rejected',
-    label: 'Pagamento rejeitado'
-  },
-  {
-    value: 'out_of_stock',
-    label: 'Produto fora de estoque'
-  },
-  {
-    value: 'delivery_unavailable',
-    label: 'Entrega indisponível'
-  },
-  {
-    value: 'other',
-    label: 'Outro motivo'
-  }
+const COMMON_REASONS = [
+  { value: 'client_requested', label: 'Cliente solicitou o cancelamento' },
+  { value: 'payment_rejected', label: 'Pagamento rejeitado' },
+  { value: 'out_of_stock', label: 'Produto fora de estoque' },
+  { value: 'delivery_unavailable', label: 'Entrega indisponível' }
 ];
+
+const DELIVERY_REASONS = [
+  { value: 'address_not_found', label: 'Endereço não localizado' },
+  { value: 'customer_absent', label: 'Cliente ausente/não atende' },
+  { value: 'customer_refused', label: 'Cliente recusou o pedido' },
+  { value: 'delivery_area_unsafe', label: 'Área de risco/insegura' },
+  { value: 'delivery_refused_no_payment', label: 'Pagamento não realizado' }
+];
+
+const OTHER_REASON = { value: 'other', label: 'Outro motivo' };
 
 export default function CancelOrderModal({
   open,
   onOpenChange,
   orderId,
   customerName,
+  orderStatus,
   onCancelOrder
 }: CancelOrderModalProps) {
   const [selectedReason, setSelectedReason] = useState<string>('');
   const [justification, setJustification] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const reasons = (orderStatus === 'saiu' || orderStatus === 'left_for_delivery')
+    ? [...DELIVERY_REASONS, OTHER_REASON]
+    : [...COMMON_REASONS, OTHER_REASON];
 
   const handleCancel = async () => {
     if (!selectedReason) {
@@ -58,7 +58,7 @@ export default function CancelOrderModal({
     setIsSubmitting(true);
     try {
       // Encontrar o label do motivo selecionado
-      const selectedReasonLabel = CANCEL_REASONS.find(r => r.value === selectedReason)?.label || selectedReason;
+      const selectedReasonLabel = reasons.find((r: any) => r.value === selectedReason)?.label || selectedReason;
       const fullReason = justification ? `${selectedReasonLabel} - ${justification}` : selectedReasonLabel;
       
       await onCancelOrder(orderId, selectedReason, fullReason);
@@ -117,7 +117,7 @@ export default function CancelOrderModal({
                 <SelectValue placeholder="Selecione um motivo" />
               </SelectTrigger>
               <SelectContent>
-                {CANCEL_REASONS.map((reason) => (
+                {reasons.map((reason: any) => (
                   <SelectItem key={reason.value} value={reason.value}>
                     {reason.label}
                   </SelectItem>

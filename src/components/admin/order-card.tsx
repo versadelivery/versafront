@@ -673,6 +673,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
       onOpenChange={setShowCancelModal}
       orderId={order.id}
       customerName={order.customerName}
+      orderStatus={order.status}
       onCancelOrder={handleConfirmCancel}
     />
 
