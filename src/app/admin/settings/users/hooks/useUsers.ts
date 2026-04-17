@@ -77,8 +77,7 @@ export function useUsers() {
   const getRoleName = (role: string) => {
     const roleMap = {
       'owner': 'Proprietário',
-      'manager': 'Gerente',
-      'employee': 'Funcionário', 
+      'employee': 'Funcionário',
       'delivery_man': 'Entregador'
     };
     return roleMap[role as keyof typeof roleMap] || role;

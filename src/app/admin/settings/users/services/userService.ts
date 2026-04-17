@@ -6,7 +6,7 @@ export interface User {
   attributes: {
     name: string;
     email: string;
-    role: 'owner' | 'manager' | 'employee' | 'delivery_man';
+    role: 'owner' | 'employee' | 'delivery_man';
     created_at?: string;
     updated_at?: string;
     shop?: any; // Incluindo shop caso venha nos dados
@@ -18,7 +18,7 @@ export interface CreateUserRequest {
     name: string;
     email: string;
     password: string;
-    role: 'owner' | 'manager' | 'employee' | 'delivery_man';
+    role: 'owner' | 'employee' | 'delivery_man';
   };
 }
 
@@ -26,7 +26,7 @@ export interface UpdateUserRequest {
   user: {
     name?: string;
     email?: string;
-    role?: 'owner' | 'manager' | 'employee' | 'delivery_man';
+    role?: 'owner' | 'employee' | 'delivery_man';
   };
 }
 
