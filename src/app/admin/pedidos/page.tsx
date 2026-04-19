@@ -1201,7 +1201,9 @@ export default function OrderManagement() {
             discount_amount: parseFloat(selectedOrder.socketData.attributes.discount_amount || '0'),
             payment_adjustment_amount: parseFloat(selectedOrder.socketData.attributes.payment_adjustment_amount || '0'),
             manual_adjustment: parseFloat((selectedOrder.socketData.attributes as any).manual_adjustment || '0'),
-            coupon_code: selectedOrder.socketData.attributes.coupon_code || undefined
+            coupon_code: selectedOrder.socketData.attributes.coupon_code || undefined,
+            cancellation_reason: (selectedOrder.socketData.attributes as any).cancellation_reason || undefined,
+            cancellation_reason_type: (selectedOrder.socketData.attributes as any).cancellation_reason_type || undefined,
           }}
           onUpdateOrder={async (orderId, data) => {
             
