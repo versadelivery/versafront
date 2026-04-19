@@ -617,7 +617,7 @@ export default function OrderManagement() {
     }));
   };
 
-  const filteredOrders = React.useMemo(() => {
+  const commonFilteredOrders = React.useMemo(() => {
     return orders.filter((order: Order) => {
       // Filtro por busca textual (ID, nome do cliente, telefone)
       if (searchQuery.trim()) {
@@ -641,6 +641,12 @@ export default function OrderManagement() {
         if (order.socketData?.attributes?.payment_method !== filterPaymentMethod) return false;
       }
 
+      return true;
+    });
+  }, [orders, searchQuery, filterDeliveryType, filterPaymentMethod]);
+
+  const filteredOrders = React.useMemo(() => {
+    return commonFilteredOrders.filter((order: Order) => {
       // Filtro por status
       if (filterStatus !== 'all') {
         if (order.status !== filterStatus) return false;
@@ -648,7 +654,7 @@ export default function OrderManagement() {
 
       return true;
     });
-  }, [orders, searchQuery, filterDeliveryType, filterPaymentMethod, filterStatus]);
+  }, [commonFilteredOrders, filterStatus]);
 
   const handleQuickSearch = useCallback(() => {
     const id = quickSearchId.trim();
@@ -920,8 +926,7 @@ export default function OrderManagement() {
 
                 {/* Cancelados - seção separada */}
                 {(() => {
-                  const cancelledOrders = getOrdersByStatus('cancelled');
-                  if (cancelledOrders.length === 0) return null;
+                  const cancelledOrders = commonFilteredOrders.filter(o => o.status === 'cancelled');
                   const config = statusConfig['cancelled'];
                   const isExpanded = expandedColumns['cancelled'];
 
@@ -1026,8 +1031,7 @@ export default function OrderManagement() {
 
                 {/* Cancelados - seção separada abaixo do grid */}
                 {(() => {
-                  const cancelledOrders = getOrdersByStatus('cancelled');
-                  if (cancelledOrders.length === 0) return null;
+                  const cancelledOrders = commonFilteredOrders.filter(o => o.status === 'cancelled');
                   const config = statusConfig['cancelled'];
                   const isExpanded = expandedColumns['cancelled'];
 

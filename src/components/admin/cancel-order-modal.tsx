@@ -13,6 +13,7 @@ interface CancelOrderModalProps {
   orderId: string;
   customerName: string;
   orderStatus?: string;
+  mode?: 'cancel' | 'delivery_failed';
   onCancelOrder: (orderId: string, reason: string, justification?: string) => void;
 }
 
@@ -39,13 +40,15 @@ export default function CancelOrderModal({
   orderId,
   customerName,
   orderStatus,
+  mode = 'cancel',
   onCancelOrder
 }: CancelOrderModalProps) {
   const [selectedReason, setSelectedReason] = useState<string>('');
   const [justification, setJustification] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const reasons = (orderStatus === 'saiu' || orderStatus === 'left_for_delivery')
+  const isDeliveryFailed = mode === 'delivery_failed';
+  const reasons = isDeliveryFailed || orderStatus === 'saiu' || orderStatus === 'left_for_delivery'
     ? [...DELIVERY_REASONS, OTHER_REASON]
     : [...COMMON_REASONS, OTHER_REASON];
 
@@ -87,10 +90,10 @@ export default function CancelOrderModal({
         <DialogHeader>
           <DialogTitle className="font-tomato flex items-center gap-2 text-red-600">
             <XCircle className="h-5 w-5" />
-            Cancelar Pedido
+            {isDeliveryFailed ? 'Entrega Não Realizada' : 'Cancelar Pedido'}
           </DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-4">
           <div className="bg-red-50 border border-red-200 rounded-lg p-3">
             <div className="flex items-center gap-2 text-red-700">
@@ -98,7 +101,9 @@ export default function CancelOrderModal({
               <span className="font-medium">Atenção!</span>
             </div>
             <p className="text-sm text-red-600 mt-1">
-              Esta ação não pode ser desfeita. O pedido será movido para a coluna "CANCELADOS".
+              {isDeliveryFailed
+                ? 'Indique o motivo pelo qual a entrega não pôde ser concluída. O pedido será movido para "CANCELADOS".'
+                : 'Esta ação não pode ser desfeita. O pedido será movido para a coluna "CANCELADOS".'}
             </p>
           </div>
 
@@ -110,7 +115,7 @@ export default function CancelOrderModal({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Motivo do cancelamento *
+              {isDeliveryFailed ? 'Motivo da falha na entrega *' : 'Motivo do cancelamento *'}
             </label>
             <Select value={selectedReason} onValueChange={setSelectedReason}>
               <SelectTrigger>
@@ -156,7 +161,9 @@ export default function CancelOrderModal({
               disabled={!selectedReason || isSubmitting}
               className="flex-1"
             >
-              {isSubmitting ? 'Cancelando...' : 'Confirmar Cancelamento'}
+              {isSubmitting
+                ? (isDeliveryFailed ? 'Registrando...' : 'Cancelando...')
+                : (isDeliveryFailed ? 'Confirmar Falha na Entrega' : 'Confirmar Cancelamento')}
             </Button>
           </div>
         </div>
