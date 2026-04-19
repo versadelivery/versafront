@@ -218,8 +218,8 @@ export function useAdminActionCable() {
     }
   }, [])  // Array vazio para memoizar a função
 
-  const updateOrder = useCallback((orderId: string, status?: string, paid_at?: boolean, deliveryPerson?: string, cancellationReason?: string): Promise<boolean> => {
-    console.log('🔄 updateOrder chamado:', { orderId, status, paid_at, deliveryPerson, cancellationReason });
+  const updateOrder = useCallback((orderId: string, status?: string, paid_at?: boolean, deliveryPerson?: string, cancellationReasonType?: string, cancellationReasonText?: string): Promise<boolean> => {
+    console.log('🔄 updateOrder chamado:', { orderId, status, paid_at, deliveryPerson, cancellationReasonType });
     
     return new Promise((resolve, reject) => {
       if (!subscriptionRef.current || !subscriptionRef.current.send) {
@@ -246,8 +246,8 @@ export function useAdminActionCable() {
           event: event,
           data: {
             id: orderId,
-            cancellation_reason_type: cancellationReason || "other",
-            cancellation_reason: cancellationReason || "Cancelado pelo administrador"
+            cancellation_reason_type: cancellationReasonType || "other",
+            ...(cancellationReasonText && { cancellation_reason: cancellationReasonText })
           }
         };
       }

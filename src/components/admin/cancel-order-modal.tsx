@@ -61,10 +61,7 @@ export default function CancelOrderModal({
     setIsSubmitting(true);
     try {
       // Encontrar o label do motivo selecionado
-      const selectedReasonLabel = reasons.find((r: any) => r.value === selectedReason)?.label || selectedReason;
-      const fullReason = justification ? `${selectedReasonLabel} - ${justification}` : selectedReasonLabel;
-      
-      await onCancelOrder(orderId, selectedReason, fullReason);
+      await onCancelOrder(orderId, selectedReason, justification.trim() || undefined);
       onOpenChange(false);
       // Reset form
       setSelectedReason('');

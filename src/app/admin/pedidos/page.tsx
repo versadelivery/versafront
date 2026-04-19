@@ -550,7 +550,7 @@ export default function OrderManagement() {
     updateOrder(orderId, undefined, undefined, deliveryPerson);
   };
 
-  const cancelOrder = useCallback(async (orderId: string, reason: string, reasonType?: string) => {
+  const cancelOrder = useCallback(async (orderId: string, reasonType: string, justification?: string) => {
     
     // Verificar se já está atualizando
     if (isUpdatingRef.current[orderId]) {
@@ -573,7 +573,7 @@ export default function OrderManagement() {
 
     try {
       // Enviar cancelamento via websocket
-      const success = await updateOrder(orderId, 'cancelled', undefined, undefined, reasonType || reason);
+      const success = await updateOrder(orderId, 'cancelled', undefined, undefined, reasonType, justification);
       
       if (success) {
       } else {

@@ -158,10 +158,9 @@ export default function OrderCard({
     setShowCancelModal(true);
   };
 
-  const handleConfirmCancel = async (orderId: string, reason: string, justification?: string) => {
+  const handleConfirmCancel = async (orderId: string, reasonType: string, justification?: string) => {
     if (onCancelOrder) {
-      const fullReason = justification ? `${reason} - ${justification}` : reason;
-      await onCancelOrder(orderId, fullReason, reason);
+      await onCancelOrder(orderId, reasonType, justification);
     }
   };
 
