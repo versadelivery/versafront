@@ -22,9 +22,23 @@ import {
   Copy,
   CheckCircle2,
   Clock,
+  PackageX,
 } from "lucide-react";
 import Link from "next/link";
 import PublicLoading from "@/components/public-loading";
+
+const CANCELLATION_REASON_LABELS: Record<string, string> = {
+  address_not_found: 'Endereço não localizado',
+  customer_absent: 'Cliente ausente / não atende',
+  customer_refused: 'Cliente recusou o pedido',
+  delivery_area_unsafe: 'Área de risco / insegura',
+  delivery_refused_no_payment: 'Pagamento não realizado na entrega',
+  client_requested: 'Cliente solicitou o cancelamento',
+  payment_rejected: 'Pagamento rejeitado',
+  out_of_stock: 'Produto fora de estoque',
+  delivery_unavailable: 'Entrega indisponível',
+  other: 'Outro motivo',
+};
 
 const statusConfig: Record<string, { label: string; dot: string; border: string; text: string; description: string }> = {
   received:       { label: "Recebido",    dot: "bg-amber-400",   border: "border-amber-300",   text: "text-amber-700",   description: "Seu pedido foi recebido e será processado em breve." },
@@ -185,7 +199,18 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
     asaas_pix_code: (orderData.attributes as any).asaas_pix_code ?? null,
     asaas_pix_expires_at: (orderData.attributes as any).asaas_pix_expires_at ?? null,
     paid_at: (orderData.attributes as any).paid_at ?? null,
+    cancellation_reason_type: (orderData.attributes as any).cancellation_reason_type ?? null,
+    cancellation_reason: (orderData.attributes as any).cancellation_reason ?? null,
   };
+
+  const CANCELLATION_ENUM_KEYS = new Set([
+    'client_requested', 'payment_rejected', 'out_of_stock', 'delivery_unavailable',
+    'other', 'address_not_found', 'customer_absent', 'customer_refused',
+    'delivery_area_unsafe', 'delivery_refused_no_payment',
+  ]);
+  const cancellationJustification = order.cancellation_reason && !CANCELLATION_ENUM_KEYS.has(order.cancellation_reason)
+    ? order.cancellation_reason
+    : null;
 
   const statusCfg = statusConfig[order.status] ?? statusConfig.received;
   const PaymentIcon = (paymentConfig[order.payment_method] ?? paymentConfig.cash).icon;
@@ -362,6 +387,23 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                       )}
                       {order.address.reference && (
                         <p className="text-sm text-muted-foreground mt-1">Ref: {order.address.reference}</p>
+                      )}
+                    </div>
+                  </div>
+                </InfoCard>
+              )}
+
+              {/* Motivo do cancelamento */}
+              {order.status === 'cancelled' && order.cancellation_reason_type && (
+                <InfoCard title="Pedido cancelado">
+                  <div className="flex items-start gap-2">
+                    <PackageX className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-red-700">
+                        {CANCELLATION_REASON_LABELS[order.cancellation_reason_type] ?? order.cancellation_reason_type}
+                      </p>
+                      {cancellationJustification && (
+                        <p className="text-sm text-muted-foreground mt-1">{cancellationJustification}</p>
                       )}
                     </div>
                   </div>
