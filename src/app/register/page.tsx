@@ -146,6 +146,7 @@ export default function Register() {
     }
   });
   const [errors, setErrors] = useState<RegisterStateErrors>({});
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const applyBackendErrors = (fieldErrors: RegisterStateErrors) => {
     if (!fieldErrors.shop && !fieldErrors.shop_user) {
@@ -415,6 +416,24 @@ export default function Register() {
           label="Email de cobrança"
           error={errors.shop_billing_config?.billing_email}
         />
+        <label className="flex items-start gap-3 cursor-pointer select-none mt-1">
+          <input
+            type="checkbox"
+            checked={termsAccepted}
+            onChange={(e) => setTermsAccepted(e.target.checked)}
+            className="mt-0.5 w-4 h-4 rounded accent-[#009246] cursor-pointer flex-shrink-0"
+          />
+          <span className="text-sm text-[#858585] leading-snug">
+            Li e aceito os{" "}
+            <Link href="/termos" target="_blank" className="text-[#009246] font-medium hover:underline">
+              Termos de Uso
+            </Link>{" "}
+            e a{" "}
+            <Link href="/privacidade" target="_blank" className="text-[#009246] font-medium hover:underline">
+              Política de Privacidade
+            </Link>
+          </span>
+        </label>
         <div className="flex gap-3 mt-2">
           <button
             type="button"
@@ -426,7 +445,7 @@ export default function Register() {
           </button>
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || !termsAccepted}
             className="flex-1 bg-[#1B1B1B] hover:bg-black text-white text-base font-medium py-4 rounded-2xl transition-colors cursor-pointer disabled:opacity-50"
           >
             {isLoading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "Cadastrar"}
