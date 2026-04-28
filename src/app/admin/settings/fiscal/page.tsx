@@ -22,6 +22,8 @@ interface FiscalConfig {
   tax_regime: string;
   environment: string;
   enabled: boolean;
+  state_tax_number?: string;
+  municipal_tax_number?: string;
   /** Vindo da API após GET/PUT — indica se há chave salva (o valor nunca é enviado). */
   webhook_hmac_set?: boolean;
 }
@@ -46,6 +48,8 @@ export default function FiscalSettingsPage() {
   const [buyerPostal, setBuyerPostal] = useState("");
   const [buyerCpf, setBuyerCpf] = useState("");
   const [buyerConsumidorCpfSet, setBuyerConsumidorCpfSet] = useState(false);
+  const [stateTaxNumber, setStateTaxNumber] = useState("");
+  const [municipalTaxNumber, setMunicipalTaxNumber] = useState("");
 
   async function loadFiscalConfig() {
     const res = await api.get(API_ENDPOINTS.FISCAL.CONFIG);
@@ -62,6 +66,8 @@ export default function FiscalSettingsPage() {
     setBuyerPostal(attr.buyer_address_postal_code ?? "");
     setBuyerConsumidorCpfSet(Boolean(attr.buyer_consumidor_cpf_set));
     setBuyerCpf("");
+    setStateTaxNumber(attr.state_tax_number ?? "");
+    setMunicipalTaxNumber(attr.municipal_tax_number ?? "");
   }
 
   useEffect(() => {
@@ -89,6 +95,8 @@ export default function FiscalSettingsPage() {
         buyer_address_state: buyerStateUf.trim() || undefined,
         buyer_address_postal_code: buyerPostal.trim() || undefined,
         buyer_consumidor_cpf: buyerCpfTrimmed ? buyerCpfTrimmed : undefined,
+        state_tax_number: stateTaxNumber.trim() || undefined,
+        municipal_tax_number: municipalTaxNumber.trim() || undefined,
       });
       const saved = Boolean(res.data?.data?.attributes?.webhook_hmac_set);
       setWebhookHmacSet(saved);
@@ -171,6 +179,7 @@ export default function FiscalSettingsPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="simples_nacional">Simples Nacional</SelectItem>
+              <SelectItem value="mei">Microempreendedor Individual (MEI)</SelectItem>
               <SelectItem value="lucro_presumido">Lucro Presumido</SelectItem>
               <SelectItem value="lucro_real">Lucro Real</SelectItem>
             </SelectContent>
@@ -188,6 +197,27 @@ export default function FiscalSettingsPage() {
           <p className="text-xs text-muted-foreground">
             ID da sua empresa no painel nfe.io
           </p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <Label htmlFor="state_tax">Inscrição Estadual (IE)</Label>
+            <Input
+              id="state_tax"
+              value={stateTaxNumber}
+              onChange={(e) => setStateTaxNumber(e.target.value)}
+              placeholder="Apenas números"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="municipal_tax">Inscrição Municipal (IM)</Label>
+            <Input
+              id="municipal_tax"
+              value={municipalTaxNumber}
+              onChange={(e) => setMunicipalTaxNumber(e.target.value)}
+              placeholder="Apenas números"
+            />
+          </div>
         </div>
 
         <div className="space-y-1">
