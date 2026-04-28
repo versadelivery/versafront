@@ -23,9 +23,9 @@ const resourceLinks = [
 ];
 
 const legalLinks = [
-  { name: "Termos de uso", href: "/" },
-  { name: "Privacidade", href: "/" },
-  { name: "Cookies", href: "/" },
+  { name: "Termos de uso", href: "/termos" },
+  { name: "Privacidade", href: "/privacidade" },
+  { name: "Cookies", href: "/privacidade#cookies" },
 ];
 
 const Footer = () => {
