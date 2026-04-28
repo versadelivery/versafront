@@ -31,6 +31,7 @@ import {
   Minus,
   Search,
   Loader2,
+  PackageX,
 } from 'lucide-react';
 import { getCatalog } from '@/api/requests/catalog/requests';
 import { ItemOptionsDialog } from '@/app/admin/pdv/item-options-dialog';
@@ -82,6 +83,8 @@ interface OrderDetailsModalProps {
     payment_adjustment_amount?: number;
     manual_adjustment?: number;
     coupon_code?: string;
+    cancellation_reason?: string;
+    cancellation_reason_type?: string;
   };
   onUpdateOrder?: (orderId: string, data: Partial<any>) => Promise<void>;
   onCancelOrder?: (orderId: string) => Promise<void>;
@@ -96,6 +99,19 @@ const getStatusInfo = (status: string) => {
     cancelled: { label: 'Cancelado', border: 'border-red-400', text: 'text-red-700', dot: 'bg-red-400' },
   };
   return statusMap[status as keyof typeof statusMap] || statusMap.processing;
+};
+
+const CANCELLATION_REASON_LABELS: Record<string, string> = {
+  address_not_found: 'Endereço não localizado',
+  customer_absent: 'Cliente ausente / não atende',
+  customer_refused: 'Cliente recusou o pedido',
+  delivery_area_unsafe: 'Área de risco / insegura',
+  delivery_refused_no_payment: 'Pagamento não realizado na entrega',
+  client_requested: 'Cliente solicitou o cancelamento',
+  payment_rejected: 'Pagamento rejeitado',
+  out_of_stock: 'Produto fora de estoque',
+  delivery_unavailable: 'Entrega indisponível',
+  other: 'Outro motivo',
 };
 
 const getPaymentMethodLabel = (method: string) => {
@@ -888,6 +904,21 @@ ${order.items.map((item) => `${item.quantity}x ${item.name} - ${formatCurrency(i
                     </div>
                     {isSavingDelivery && (
                       <p className="text-xs text-muted-foreground">Salvando...</p>
+                    )}
+                  </div>
+                </SectionCard>
+              )}
+              {/* Motivo do cancelamento */}
+              {order.status === 'cancelled' && order.cancellation_reason_type && (
+                <SectionCard icon={PackageX} title="Motivo do Cancelamento">
+                  <div className="divide-y divide-[#E5E2DD]">
+                    <InfoRow
+                      label="Motivo"
+                      value={CANCELLATION_REASON_LABELS[order.cancellation_reason_type] || order.cancellation_reason_type}
+                      className="text-red-700"
+                    />
+                    {order.cancellation_reason && (
+                      <InfoRow label="Detalhes" value={order.cancellation_reason} />
                     )}
                   </div>
                 </SectionCard>

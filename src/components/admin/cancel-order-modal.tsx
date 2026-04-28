@@ -12,42 +12,45 @@ interface CancelOrderModalProps {
   onOpenChange: (open: boolean) => void;
   orderId: string;
   customerName: string;
+  orderStatus?: string;
+  mode?: 'cancel' | 'delivery_failed';
   onCancelOrder: (orderId: string, reason: string, justification?: string) => void;
 }
 
-const CANCEL_REASONS = [
-  {
-    value: 'client_requested',
-    label: 'Cliente solicitou o cancelamento'
-  },
-  {
-    value: 'payment_rejected',
-    label: 'Pagamento rejeitado'
-  },
-  {
-    value: 'out_of_stock',
-    label: 'Produto fora de estoque'
-  },
-  {
-    value: 'delivery_unavailable',
-    label: 'Entrega indisponível'
-  },
-  {
-    value: 'other',
-    label: 'Outro motivo'
-  }
+const COMMON_REASONS = [
+  { value: 'client_requested', label: 'Cliente solicitou o cancelamento' },
+  { value: 'payment_rejected', label: 'Pagamento rejeitado' },
+  { value: 'out_of_stock', label: 'Produto fora de estoque' },
+  { value: 'delivery_unavailable', label: 'Entrega indisponível' }
 ];
+
+const DELIVERY_REASONS = [
+  { value: 'address_not_found', label: 'Endereço não localizado' },
+  { value: 'customer_absent', label: 'Cliente ausente/não atende' },
+  { value: 'customer_refused', label: 'Cliente recusou o pedido' },
+  { value: 'delivery_area_unsafe', label: 'Área de risco/insegura' },
+  { value: 'delivery_refused_no_payment', label: 'Pagamento não realizado' }
+];
+
+const OTHER_REASON = { value: 'other', label: 'Outro motivo' };
 
 export default function CancelOrderModal({
   open,
   onOpenChange,
   orderId,
   customerName,
+  orderStatus,
+  mode = 'cancel',
   onCancelOrder
 }: CancelOrderModalProps) {
   const [selectedReason, setSelectedReason] = useState<string>('');
   const [justification, setJustification] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const isDeliveryFailed = mode === 'delivery_failed';
+  const reasons = isDeliveryFailed || orderStatus === 'saiu' || orderStatus === 'left_for_delivery'
+    ? [...DELIVERY_REASONS, OTHER_REASON]
+    : [...COMMON_REASONS, OTHER_REASON];
 
   const handleCancel = async () => {
     if (!selectedReason) {
@@ -58,10 +61,7 @@ export default function CancelOrderModal({
     setIsSubmitting(true);
     try {
       // Encontrar o label do motivo selecionado
-      const selectedReasonLabel = CANCEL_REASONS.find(r => r.value === selectedReason)?.label || selectedReason;
-      const fullReason = justification ? `${selectedReasonLabel} - ${justification}` : selectedReasonLabel;
-      
-      await onCancelOrder(orderId, selectedReason, fullReason);
+      await onCancelOrder(orderId, selectedReason, justification.trim() || undefined);
       onOpenChange(false);
       // Reset form
       setSelectedReason('');
@@ -87,10 +87,10 @@ export default function CancelOrderModal({
         <DialogHeader>
           <DialogTitle className="font-tomato flex items-center gap-2 text-red-600">
             <XCircle className="h-5 w-5" />
-            Cancelar Pedido
+            {isDeliveryFailed ? 'Entrega Não Realizada' : 'Cancelar Pedido'}
           </DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-4">
           <div className="bg-red-50 border border-red-200 rounded-lg p-3">
             <div className="flex items-center gap-2 text-red-700">
@@ -98,7 +98,9 @@ export default function CancelOrderModal({
               <span className="font-medium">Atenção!</span>
             </div>
             <p className="text-sm text-red-600 mt-1">
-              Esta ação não pode ser desfeita. O pedido será movido para a coluna "CANCELADOS".
+              {isDeliveryFailed
+                ? 'Indique o motivo pelo qual a entrega não pôde ser concluída. O pedido será movido para "CANCELADOS".'
+                : 'Esta ação não pode ser desfeita. O pedido será movido para a coluna "CANCELADOS".'}
             </p>
           </div>
 
@@ -110,14 +112,14 @@ export default function CancelOrderModal({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Motivo do cancelamento *
+              {isDeliveryFailed ? 'Motivo da falha na entrega *' : 'Motivo do cancelamento *'}
             </label>
             <Select value={selectedReason} onValueChange={setSelectedReason}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione um motivo" />
               </SelectTrigger>
               <SelectContent>
-                {CANCEL_REASONS.map((reason) => (
+                {reasons.map((reason: any) => (
                   <SelectItem key={reason.value} value={reason.value}>
                     {reason.label}
                   </SelectItem>
@@ -156,7 +158,9 @@ export default function CancelOrderModal({
               disabled={!selectedReason || isSubmitting}
               className="flex-1"
             >
-              {isSubmitting ? 'Cancelando...' : 'Confirmar Cancelamento'}
+              {isSubmitting
+                ? (isDeliveryFailed ? 'Registrando...' : 'Cancelando...')
+                : (isDeliveryFailed ? 'Confirmar Falha na Entrega' : 'Confirmar Cancelamento')}
             </Button>
           </div>
         </div>

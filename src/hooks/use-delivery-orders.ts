@@ -28,6 +28,25 @@ export function useDeliveryOrders() {
     },
   })
 
+  const cancelOrder = useMutation({
+    mutationFn: ({
+      orderId,
+      reason,
+      reasonType,
+    }: {
+      orderId: string
+      reason: string
+      reasonType?: string
+    }) => deliveryOrdersService.cancelOrder(orderId, reason, reasonType),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['delivery-orders'] })
+      toast.success('Pedido cancelado')
+    },
+    onError: () => {
+      toast.error('Erro ao cancelar pedido')
+    },
+  })
+
   const orders = data?.data ?? []
   const ready = orders.filter((o) => o.attributes.status === 'ready')
   const inTransit = orders.filter((o) => o.attributes.status === 'left_for_delivery')
@@ -41,6 +60,7 @@ export function useDeliveryOrders() {
     isLoading,
     refetch,
     updateStatus: updateStatus.mutate,
-    isUpdating: updateStatus.isPending,
+    cancelOrder: cancelOrder.mutate,
+    isUpdating: updateStatus.isPending || cancelOrder.isPending,
   }
 }

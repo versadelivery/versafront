@@ -550,7 +550,7 @@ export default function OrderManagement() {
     updateOrder(orderId, undefined, undefined, deliveryPerson);
   };
 
-  const cancelOrder = useCallback(async (orderId: string, reason: string, reasonType?: string) => {
+  const cancelOrder = useCallback(async (orderId: string, reasonType: string, justification?: string) => {
     
     // Verificar se já está atualizando
     if (isUpdatingRef.current[orderId]) {
@@ -573,7 +573,7 @@ export default function OrderManagement() {
 
     try {
       // Enviar cancelamento via websocket
-      const success = await updateOrder(orderId, 'cancelled', undefined, undefined, reasonType || reason);
+      const success = await updateOrder(orderId, 'cancelled', undefined, undefined, reasonType, justification);
       
       if (success) {
       } else {
@@ -617,7 +617,7 @@ export default function OrderManagement() {
     }));
   };
 
-  const filteredOrders = React.useMemo(() => {
+  const commonFilteredOrders = React.useMemo(() => {
     return orders.filter((order: Order) => {
       // Filtro por busca textual (ID, nome do cliente, telefone)
       if (searchQuery.trim()) {
@@ -641,6 +641,12 @@ export default function OrderManagement() {
         if (order.socketData?.attributes?.payment_method !== filterPaymentMethod) return false;
       }
 
+      return true;
+    });
+  }, [orders, searchQuery, filterDeliveryType, filterPaymentMethod]);
+
+  const filteredOrders = React.useMemo(() => {
+    return commonFilteredOrders.filter((order: Order) => {
       // Filtro por status
       if (filterStatus !== 'all') {
         if (order.status !== filterStatus) return false;
@@ -648,7 +654,7 @@ export default function OrderManagement() {
 
       return true;
     });
-  }, [orders, searchQuery, filterDeliveryType, filterPaymentMethod, filterStatus]);
+  }, [commonFilteredOrders, filterStatus]);
 
   const handleQuickSearch = useCallback(() => {
     const id = quickSearchId.trim();
@@ -920,8 +926,7 @@ export default function OrderManagement() {
 
                 {/* Cancelados - seção separada */}
                 {(() => {
-                  const cancelledOrders = getOrdersByStatus('cancelled');
-                  if (cancelledOrders.length === 0) return null;
+                  const cancelledOrders = commonFilteredOrders.filter(o => o.status === 'cancelled');
                   const config = statusConfig['cancelled'];
                   const isExpanded = expandedColumns['cancelled'];
 
@@ -1026,8 +1031,7 @@ export default function OrderManagement() {
 
                 {/* Cancelados - seção separada abaixo do grid */}
                 {(() => {
-                  const cancelledOrders = getOrdersByStatus('cancelled');
-                  if (cancelledOrders.length === 0) return null;
+                  const cancelledOrders = commonFilteredOrders.filter(o => o.status === 'cancelled');
                   const config = statusConfig['cancelled'];
                   const isExpanded = expandedColumns['cancelled'];
 
@@ -1197,7 +1201,9 @@ export default function OrderManagement() {
             discount_amount: parseFloat(selectedOrder.socketData.attributes.discount_amount || '0'),
             payment_adjustment_amount: parseFloat(selectedOrder.socketData.attributes.payment_adjustment_amount || '0'),
             manual_adjustment: parseFloat((selectedOrder.socketData.attributes as any).manual_adjustment || '0'),
-            coupon_code: selectedOrder.socketData.attributes.coupon_code || undefined
+            coupon_code: selectedOrder.socketData.attributes.coupon_code || undefined,
+            cancellation_reason: (selectedOrder.socketData.attributes as any).cancellation_reason || undefined,
+            cancellation_reason_type: (selectedOrder.socketData.attributes as any).cancellation_reason_type || undefined,
           }}
           onUpdateOrder={async (orderId, data) => {
             

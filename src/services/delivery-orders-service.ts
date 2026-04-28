@@ -48,4 +48,19 @@ export const deliveryOrdersService = {
     })
     return response.data
   },
+
+  async cancelOrder(
+    orderId: string,
+    reason: string,
+    reasonType?: string
+  ): Promise<{ data: DeliveryOrder }> {
+    const response = await api.patch(`${API_ENDPOINTS.DELIVERY_ORDERS}/${orderId}`, {
+      order: { 
+        status: 'cancelled',
+        cancellation_reason: reason,
+        cancellation_reason_type: reasonType
+      },
+    })
+    return response.data
+  },
 }

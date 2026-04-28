@@ -9,6 +9,7 @@ import {
   Truck,
   CheckCircle,
   XCircle,
+  PackageX,
   Copy,
   ArrowRight,
   MessageCircle,
@@ -120,7 +121,13 @@ export default function OrderCard({
   
   // Estado para controlar os modais
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showDeliveryFailedModal, setShowDeliveryFailedModal] = useState(false);
   const [showDeliveryPersonModal, setShowDeliveryPersonModal] = useState(false);
+
+  // Pedidos de retirada pulam o status 'saiu' e vão direto para 'entregue'
+  const effectiveNextStatus = (nextStatus === 'saiu' && order.deliveryType === 'pickup')
+    ? 'entregue' as Order['status']
+    : nextStatus;
 
   // Statuses onde o dropdown de entregador fica disponível (apenas para delivery)
   const showDeliveryDropdown = order.deliveryType === 'delivery' && ['recebidos', 'aceitos', 'em_analise', 'em_preparo', 'prontos'].includes(order.status);
@@ -151,10 +158,9 @@ export default function OrderCard({
     setShowCancelModal(true);
   };
 
-  const handleConfirmCancel = async (orderId: string, reason: string, justification?: string) => {
+  const handleConfirmCancel = async (orderId: string, reasonType: string, justification?: string) => {
     if (onCancelOrder) {
-      const fullReason = justification ? `${reason} - ${justification}` : reason;
-      await onCancelOrder(orderId, fullReason, reason);
+      await onCancelOrder(orderId, reasonType, justification);
     }
   };
 
@@ -610,19 +616,19 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
           )}
 
           {/* Botão principal: avançar para o próximo status do fluxo */}
-          {nextStatus && !isEntregue && !isCancelled && (
+          {effectiveNextStatus && !isEntregue && !isCancelled && (
             <Button
               variant="ghost"
               className="w-full font-semibold rounded-xl bg-[#1B1B1B] text-white hover:bg-[#7ED957] hover:text-black transition-colors cursor-pointer"
               onClick={() => {
-                if (nextStatus === 'saiu') {
+                if (effectiveNextStatus === 'saiu') {
                   handleLeftForDelivery();
                 } else {
-                  onUpdateOrderStatus(order.id, nextStatus);
+                  onUpdateOrderStatus(order.id, effectiveNextStatus);
                 }
               }}
             >
-              {nextStatusLabels[nextStatus] || nextStatus.toUpperCase()}
+              {nextStatusLabels[effectiveNextStatus] || effectiveNextStatus.toUpperCase()}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           )}
@@ -640,6 +646,18 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
               onClick={() => onTogglePaymentStatus(order.id)}
             >
               PAGO {order.paymentStatus === 'paid' && <CheckCircle className="w-4 h-4 ml-1" />}
+            </Button>
+          )}
+
+          {/* Botão ENTREGA NÃO REALIZADA — aparece apenas para pedidos delivery que saíram para entrega */}
+          {order.status === 'saiu' && order.deliveryType === 'delivery' && !isCancelled && (
+            <Button
+              variant="ghost"
+              className="w-full font-semibold rounded-xl bg-orange-500 text-white hover:bg-orange-600 hover:text-white transition-colors cursor-pointer"
+              onClick={() => setShowDeliveryFailedModal(true)}
+            >
+              ENTREGA NÃO REALIZADA
+              <PackageX className="w-4 h-4 ml-1" />
             </Button>
           )}
 
@@ -673,6 +691,18 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
       onOpenChange={setShowCancelModal}
       orderId={order.id}
       customerName={order.customerName}
+      orderStatus={order.status}
+      onCancelOrder={handleConfirmCancel}
+    />
+
+    {/* Modal de Entrega Não Realizada */}
+    <CancelOrderModal
+      open={showDeliveryFailedModal}
+      onOpenChange={setShowDeliveryFailedModal}
+      orderId={order.id}
+      customerName={order.customerName}
+      orderStatus={order.status}
+      mode="delivery_failed"
       onCancelOrder={handleConfirmCancel}
     />
 
