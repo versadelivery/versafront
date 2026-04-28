@@ -2,140 +2,118 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { 
-  Menu, 
-  X, 
-} from "lucide-react";
-import { motion } from "framer-motion";
 import Image from "next/image";
-import logoHeader from "../../../public/img/logo.svg";
+import { Menu, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import logo from "../../../public/logo/logo-inline-primary.svg";
 
-type HeaderProps = {
-  alwaysOpaque?: boolean;
-}
-
-const Header = ({ alwaysOpaque = false }: HeaderProps) => {
+const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  
-  useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 10) {
-        setScrolled(true);
-      } else {
-        setScrolled(false);
-      }
-    };
 
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const toggleMenu = () => setIsOpen(!isOpen);
   const closeMenu = () => setIsOpen(false);
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
     if (element) {
-      element.scrollIntoView({
-        behavior: 'smooth'
-      });
-      
-      if (sectionId === 'sobre') {
-        setTimeout(() => {
-          window.scrollBy({
-            top: -20,
-            behavior: 'smooth'
-          });
-        }, 500);
-      }
+      element.scrollIntoView({ behavior: "smooth" });
     }
     closeMenu();
   };
 
   const navLinks = [
-    { name: "HOME", href: "#home" },
-    { name: "SOBRE", href: "#sobre" },
-    { name: "RECURSOS", href: "#recursos" },
-    { name: "FAQ", href: "#faq" },
+    { name: "Sobre", href: "sobre" },
+    { name: "Recursos", href: "recursos" },
+    { name: "FAQ", href: "faq" },
   ];
 
   return (
-    <nav className={`fixed w-full z-50 transition-all duration-300 ${scrolled || alwaysOpaque ? "bg-black/80 backdrop-blur-sm" : "bg-transparent backdrop-blur-sm"}`}>
-      <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-        <div className="flex justify-start">
-          <Link href="/">
-            <Image src={logoHeader} alt="Versa" width={120} />
-          </Link>
-        </div>
+    <nav
+      className={`fixed w-full z-50 transition-all duration-300 ${
+        scrolled
+          ? "bg-white/95 backdrop-blur-sm shadow-[0_1px_4px_rgba(0,0,0,.06)]"
+          : "bg-transparent"
+      }`}
+    >
+      <div className="w-full px-6 sm:px-10 lg:px-14 flex items-center h-[96px]">
+        <Link href="/" className="flex-shrink-0 mr-6 lg:mr-12">
+          <Image src={logo} alt="Versa Delivery" width={220} height={64} className="w-[180px] lg:w-[220px] h-auto" />
+        </Link>
 
-        <div className="font-antarctican-mono hidden md:flex justify-center gap-8">
-          {navLinks.map((link, index) => (
-            <Button 
-              key={index}
-              onClick={() => scrollToSection(link.href.replace('#', ''))}
-              className="cursor-pointer bg-transparent hover:bg-transparent text-white hover:text-gray-300"
+        <div className="hidden md:flex items-center gap-5 lg:gap-10">
+          {navLinks.map((link) => (
+            <button
+              key={link.href}
+              onClick={() => scrollToSection(link.href)}
+              className="font-tomato text-black hover:text-[#009246] hover:underline text-md font-bold transition-colors cursor-pointer whitespace-nowrap"
             >
               {link.name}
-            </Button>
+            </button>
           ))}
         </div>
 
-        <div className="flex justify-end items-center gap-4">
-          <div className="hidden md:block">
-            <Link href="/login">
-              <Button
-                variant="outline"
-                className="w-full font-antarctican-mono bg-transparent border-white text-white hover:bg-white hover:text-black text-lg font-semibold py-5 px-8 rounded-xs shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all duration-300 group"
-              >
-                ASSINE AGORA
-              </Button>
-            </Link>
-          </div>
-          
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={toggleMenu}
-            className="bg-transparent md:hidden text-white mr-8"
-          >
-            {isOpen ? <X size={24} /> : <Menu size={24} />}
-          </Button>
+        <div className="hidden md:flex items-center gap-2 lg:gap-3 ml-auto">
+          <Link href="/login">
+            <button className="text-[#1B1B1B] text-[15px] hover:border border-black rounded-xl px-4 lg:px-6 py-2.5 font-semibold transition-opacity cursor-pointer whitespace-nowrap">
+              Conectar-se
+            </button>
+          </Link>
+          <Link href="/register">
+            <button className="bg-[#1B1B1B] hover:bg-[#7ED957] text-white text-[15px] font-semibold px-4 lg:px-6 py-2.5 rounded-xl transition-colors cursor-pointer whitespace-nowrap">
+              Comece agora
+            </button>
+          </Link>
         </div>
+
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="md:hidden p-2 text-[#1B1B1B] cursor-pointer ml-auto"
+        >
+          {isOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
       </div>
 
-      {isOpen && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: "auto" }}
-          exit={{ opacity: 0, height: 0 }}
-          transition={{ duration: 0.3 }}
-          className="md:hidden bg-black/95 backdrop-blur-md"
-        >
-          <div className="container mx-auto px-4 py-4">
-            <nav className="flex flex-col space-y-4">
-              {navLinks.map((link, index) => (
-                <Button 
-                  key={index}
-                  onClick={() => scrollToSection(link.href.replace('#', ''))}
-                  className="bg-transparent text-white hover:text-gray-300 text-lg font-medium transition-colors py-2 text-left"
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="md:hidden bg-white border-t border-[#E8E4DF] overflow-hidden"
+          >
+            <div className="px-6 py-4 space-y-1">
+              {navLinks.map((link) => (
+                <button
+                  key={link.href}
+                  onClick={() => scrollToSection(link.href)}
+                  className="font-tomato block w-full text-left text-[#1B1B1B] text-base font-semibold py-3 px-2 rounded-xl hover:bg-black/5 transition-colors cursor-pointer"
                 >
                   {link.name}
-                </Button>
+                </button>
               ))}
-              <Link href="/login" onClick={closeMenu}>
-                <Button 
-                  variant="outline" 
-                  className="rounded-none bg-transparent border-white text-white hover:bg-white hover:text-black w-full py-6 text-lg mt-4"
-                >
-                  ASSINE AGORA
-                </Button>
-              </Link>
-            </nav>
-          </div>
-        </motion.div>
-      )}
+              <div className="pt-4 space-y-2 border-t border-[#E8E4DF]">
+                <Link href="/login" onClick={closeMenu} className="block">
+                  <button className="w-full text-[#1B1B1B] text-base font-semibold py-3 rounded-xl border border-[#1B1B1B] transition-colors cursor-pointer">
+                    Conectar-se
+                  </button>
+                </Link>
+                <Link href="/register" onClick={closeMenu} className="block">
+                  <button className="w-full bg-[#1B1B1B] hover:bg-[#7ED957] text-white text-base font-semibold py-3 rounded-xl transition-colors cursor-pointer">
+                    Comece agora
+                  </button>
+                </Link>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </nav>
   );
 };

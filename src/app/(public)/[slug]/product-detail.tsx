@@ -1,633 +1,566 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Image from "next/image";
-import { useParams, useRouter } from "next/navigation";
-import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Slider } from "@/components/ui/slider";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Checkbox } from "@/components/ui/checkbox";
-import { 
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger
-} from "@/components/ui/accordion";
-import { Badge } from "@/components/ui/badge";
+import { useState, useMemo, useRef, useEffect } from "react";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { CatalogItem } from "./types";
 import { formatPrice } from "./format-price";
-import { PlusCircle, Utensils, Minus, Plus, X, ChevronLeft, ChevronRight } from "lucide-react";
-import { useClient } from "./client-context";
+import { Minus, Plus, Utensils, X, Info } from "lucide-react";
 import { useCart } from "./cart/cart-context";
+
+const ITEM_H = 44;
+const VISIBLE = 5;
+const PAD = 2;
+
+function WeightPicker({ min, max, step, value, onChange, unit = 'kg' }: {
+  min: number; max: number; step: number; value: number; onChange: (v: number) => void; unit?: 'kg' | 'g';
+}) {
+  const precision = Math.max((step.toString().split('.')[1] ?? '').length, (min.toString().split('.')[1] ?? '').length);
+
+  const options: number[] = [];
+  for (let i = 0; ; i++) {
+    const v = parseFloat((min + i * step).toFixed(precision));
+    if (v > max) break;
+    options.push(v);
+  }
+  if (options.length === 0 || options[options.length - 1] < max) {
+    options.push(max);
+  }
+
+  const fmt = (v: number) => {
+    if (unit === 'g') return `${Math.round(v)} g`;
+    if (v < 1) return `${Math.round(v * 1000)} g`;
+    const str = precision > 0
+      ? v.toFixed(precision).replace(/(\.\d*[1-9])0+$/, '$1').replace(/\.0+$/, '')
+      : String(Math.round(v));
+    return `${str} kg`;
+  };
+
+  const listRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const idx = options.findIndex(o => Math.abs(o - value) < step * 0.01);
+    if (listRef.current && idx >= 0) {
+      listRef.current.scrollTop = idx * ITEM_H;
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleScroll = () => {
+    if (!listRef.current) return;
+    const idx = Math.round(listRef.current.scrollTop / ITEM_H);
+    const v = options[Math.max(0, Math.min(options.length - 1, idx))];
+    if (v !== undefined && Math.abs(v - value) > step * 0.001) onChange(v);
+  };
+
+  return (
+    <div
+      className="relative mx-auto overflow-hidden rounded-md border border-[#E5E2DD]"
+      style={{ height: ITEM_H * VISIBLE, maxWidth: 240 }}
+    >
+      <div
+        className="absolute inset-x-0 top-0 z-10 pointer-events-none"
+        style={{ height: ITEM_H * PAD, background: 'linear-gradient(to bottom, white 40%, transparent)' }}
+      />
+      <div
+        className="absolute inset-x-0 bottom-0 z-10 pointer-events-none"
+        style={{ height: ITEM_H * PAD, background: 'linear-gradient(to top, white 40%, transparent)' }}
+      />
+      <div
+        className="absolute inset-x-0 z-0 pointer-events-none bg-gray-50"
+        style={{ top: ITEM_H * PAD, height: ITEM_H, borderTop: '1px solid #e5e7eb', borderBottom: '1px solid #e5e7eb' }}
+      />
+      <div
+        ref={listRef}
+        onScroll={handleScroll}
+        className="relative z-0 h-full overflow-y-scroll [&::-webkit-scrollbar]:hidden"
+        style={{ scrollSnapType: 'y mandatory', scrollbarWidth: 'none' }}
+      >
+        <div aria-hidden style={{ height: ITEM_H * PAD }} />
+        {options.map((v) => {
+          const selected = Math.abs(v - value) < step * 0.001;
+          return (
+            <div
+              key={v}
+              style={{ height: ITEM_H, scrollSnapAlign: 'center' }}
+              className={`flex items-center justify-center cursor-pointer transition-all duration-150 ${
+                selected
+                  ? 'text-base font-bold text-foreground'
+                  : 'text-sm font-normal text-muted-foreground'
+              }`}
+              onClick={() => {
+                const idx = options.indexOf(v);
+                listRef.current?.scrollTo({ top: idx * ITEM_H, behavior: 'smooth' });
+                onChange(v);
+              }}
+            >
+              {fmt(v)}
+            </div>
+          );
+        })}
+        <div aria-hidden style={{ height: ITEM_H * PAD }} />
+      </div>
+    </div>
+  );
+}
+
+/* ── DoorDash-style custom checkbox ── */
+function DDCheckbox({ checked }: { checked: boolean }) {
+  return (
+    <div
+      className={`w-5 h-5 rounded flex-shrink-0 border-2 flex items-center justify-center transition-colors ${
+        checked
+          ? 'bg-foreground border-foreground'
+          : 'border-gray-300 bg-white'
+      }`}
+    >
+      {checked && (
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M2 6L5 9L10 3" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      )}
+    </div>
+  );
+}
+
+/* ── DoorDash-style custom radio ── */
+function DDRadio({ checked }: { checked: boolean }) {
+  return (
+    <div
+      className={`w-5 h-5 rounded-full flex-shrink-0 border-2 flex items-center justify-center transition-colors ${
+        checked
+          ? 'border-foreground'
+          : 'border-gray-300'
+      }`}
+    >
+      {checked && <div className="w-2.5 h-2.5 rounded-full bg-foreground" />}
+    </div>
+  );
+}
 
 interface ProductModalProps {
   product: CatalogItem;
   trigger?: React.ReactNode;
-  className?: string;
+  externalOpen?: boolean;
+  onExternalOpenChange?: (open: boolean) => void;
 }
 
-type StepType = 'quantity' | 'extras' | 'methods' | 'options' | 'review';
-
-export default function ProductModal({ product, trigger }: ProductModalProps) {
-  const router = useRouter();
-  const { client } = useClient();
-  const { slug } = useParams();
+export default function ProductModal({ product, trigger, externalOpen, onExternalOpenChange }: ProductModalProps) {
   const { addItem } = useCart();
 
-  if (!product) {
-    return null;
-  }
+  if (!product) return null;
 
-  const [open, setOpen] = useState(false);
+  const isControlled = externalOpen !== undefined;
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = isControlled ? externalOpen : internalOpen;
+  const setOpen = isControlled ? (v: boolean) => onExternalOpenChange?.(v) : setInternalOpen;
   const [quantity, setQuantity] = useState(1);
-  const [weight, setWeight] = useState(product.attributes.min_weight || 1);
+  const [weight, setWeight] = useState(product.attributes.min_weight || (product.attributes.item_type === 'weight_per_g' ? 100 : 1));
   const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
   const [selectedMethods, setSelectedMethods] = useState<string[]>([]);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(() => {
-    const initialSelections: Record<string, string> = {};
+    const init: Record<string, string> = {};
     product.attributes.steps.data.forEach(step => {
       if (step.attributes.options.data.length > 0) {
-        initialSelections[step.id] = step.attributes.options.data[0].id;
+        init[step.id] = step.attributes.options.data[0].id;
       }
     });
-    return initialSelections;
+    return init;
   });
-  const [currentStep, setCurrentStep] = useState<StepType | null>(null);
-  const [stepsAvailable, setStepsAvailable] = useState<StepType[]>([]);
+  const [selectedSharedComplements, setSelectedSharedComplements] = useState<string[]>([]);
 
   const { attributes } = product;
-  const isWeightBased = attributes.item_type === "weight_per_kg";
-  const hasDiscount = !!attributes.price_with_discount;
+  const isUnavailable = !!attributes.has_out_of_stock_ingredient;
+  const isWeightBased = attributes.item_type === "weight_per_kg" || attributes.item_type === "weight_per_g";
+  const isGrams = attributes.item_type === "weight_per_g";
+  const hasDiscount = !!attributes.price_with_discount &&
+    Number(attributes.price_with_discount) < Number(attributes.price);
+  const hasExtras = attributes.extra.data.length > 0;
+  const hasMethods = attributes.prepare_method.data.length > 0;
+  const hasSteps = attributes.steps.data.length > 0;
 
-  useEffect(() => {
-    if (!product) return;
+  const discountPercent = hasDiscount
+    ? Math.round(((attributes.price - (attributes.price_with_discount || 0)) / attributes.price) * 100)
+    : 0;
 
-    const availableSteps: StepType[] = ['quantity'];
-    
-    if (attributes.extra.data.length > 0) {
-      availableSteps.push('extras');
-    }
-    
-    if (attributes.prepare_method.data.length > 0) {
-      availableSteps.push('methods');
-    }
-    
-    if (attributes.steps.data.length > 0) {
-      availableSteps.push('options');
-    }
-    
-    availableSteps.push('review');
-    
-    setStepsAvailable(availableSteps);
-    setCurrentStep(null);
-  }, [product]);
-
-  const handleIncrement = () => {
-    setQuantity(prev => prev + 1);
-  };
-
-  const handleDecrement = () => {
-    if (quantity > 1) {
-      setQuantity(prev => prev - 1);
-    }
-  };
-
-  const handleWeightChange = (value: number[]) => {
-    setWeight(value[0]);
-  };
-
-  const handleExtraToggle = (extraId: string) => {
-    setSelectedExtras(prev => 
-      prev.includes(extraId) 
-        ? prev.filter(id => id !== extraId)
-        : [...prev, extraId]
-    );
-  };
-
-  const handleMethodToggle = (methodId: string) => {
-    setSelectedMethods(prev => 
-      prev.includes(methodId) 
-        ? prev.filter(id => id !== methodId)
-        : [...prev, methodId]
-    );
-  };
-
-  const handleAddToCart = () => {
-    const cartItem = {
-      ...product,
-      quantity,
-      weight: isWeightBased ? weight : undefined,
-      selectedExtras,
-      selectedMethods,
-      selectedOptions,
-      totalPrice: calculatePrice()
-    }
-  
-    addItem(cartItem);
-    setOpen(false);
-    resetModal();
-  };
-
-  const calculatePrice = () => {
-    const basePrice = hasDiscount 
-      ? attributes.price_with_discount! 
-      : attributes.price;
-
+  const calculatedPrice = useMemo(() => {
+    const basePrice = hasDiscount ? attributes.price_with_discount! : attributes.price;
     let total = isWeightBased ? basePrice * weight : basePrice * quantity;
 
     selectedExtras.forEach(extraId => {
       const extra = attributes.extra.data.find(e => e.id === extraId);
       if (extra) {
-        total += parseFloat(extra.attributes.price);
+        const extraPrice = parseFloat(extra.attributes.price);
+        if (!isNaN(extraPrice)) total += extraPrice;
       }
+    });
+
+    selectedSharedComplements.forEach(optionId => {
+      attributes.shared_complements?.data?.forEach(group => {
+        const option = group.attributes.options.find(o => o.id.toString() === optionId.toString());
+        if (option) {
+          const price = Number(option.price);
+          if (!isNaN(price)) total += price;
+        }
+      });
     });
 
     return total;
-  };
+  }, [hasDiscount, attributes, isWeightBased, weight, quantity, selectedExtras, selectedSharedComplements]);
 
-  const resetModal = () => {
+  const resetState = () => {
     setQuantity(1);
-    setWeight(product.attributes.min_weight || 1);
+    setWeight(product.attributes.min_weight || (product.attributes.item_type === 'weight_per_g' ? 100 : 1));
     setSelectedExtras([]);
     setSelectedMethods([]);
+    setSelectedSharedComplements([]);
     setSelectedOptions(() => {
-      const initialSelections: Record<string, string> = {};
+      const init: Record<string, string> = {};
       product.attributes.steps.data.forEach(step => {
         if (step.attributes.options.data.length > 0) {
-          initialSelections[step.id] = step.attributes.options.data[0].id;
+          init[step.id] = step.attributes.options.data[0].id;
         }
       });
-      return initialSelections;
+      return init;
     });
-    setCurrentStep(null);
   };
 
-  const startCustomization = () => {
-    setCurrentStep(stepsAvailable[0]);
+  const handleOpenChange = (v: boolean) => {
+    setOpen(v);
+    if (!v) resetState();
   };
 
-  const goToNextStep = () => {
-    const currentIndex = stepsAvailable.indexOf(currentStep!);
-    if (currentIndex < stepsAvailable.length - 1) {
-      setCurrentStep(stepsAvailable[currentIndex + 1]);
-    }
-  };
-
-  const goToPrevStep = () => {
-    const currentIndex = stepsAvailable.indexOf(currentStep!);
-    if (currentIndex > 0) {
-      setCurrentStep(stepsAvailable[currentIndex - 1]);
-    }
-  };
-
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 'quantity':
-        return (
-          <div className="pt-2">
-            <Label className="text-sm font-medium mb-2">
-              {isWeightBased ? "Peso (kg)" : "Quantidade"}
-            </Label>
-
-            {isWeightBased ? (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-9 w-9 rounded-full border border-border hover:bg-muted"
-                    onClick={() => handleWeightChange([Math.max((attributes.min_weight || 1), weight - (attributes.measure_interval || 0.5))])}
-                    disabled={weight <= (attributes.min_weight || 1)}
-                    aria-label="Diminuir peso"
-                  >
-                    <Minus className="h-4 w-4" />
-                  </Button>
-                  <div className="flex-1">
-                    <Slider
-                      value={[weight]}
-                      min={attributes.min_weight || 1}
-                      max={attributes.max_weight || 10}
-                      step={attributes.measure_interval || 0.5}
-                      onValueChange={handleWeightChange}
-                      className="mr-2"
-                    />
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-9 w-9 rounded-full border border-border hover:bg-muted"
-                    onClick={() => handleWeightChange([Math.min((attributes.max_weight || 10), weight + (attributes.measure_interval || 0.5))])}
-                    disabled={weight >= (attributes.max_weight || 10)}
-                    aria-label="Aumentar peso"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>{attributes.min_weight || 1}kg</span>
-                  <span className="font-semibold text-primary">{weight}kg</span>
-                  <span>{attributes.max_weight || 10}kg</span>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center border border-border rounded-full overflow-hidden w-fit">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-9 w-9 hover:bg-muted"
-                  onClick={handleDecrement}
-                  disabled={quantity <= 1}
-                >
-                  <Minus className="h-4 w-4" />
-                </Button>
-                <span className="w-10 text-center font-medium">{quantity}</span>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-9 w-9 hover:bg-muted"
-                  onClick={handleIncrement}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
-          </div>
-        );
-
-      case 'extras':
-        return (
-          <div className="space-y-4">
-            <h3 className="font-medium text-lg flex items-center gap-2">
-              <span className="bg-primary/10 text-primary p-1.5 rounded-full">
-                <PlusCircle className="w-5 h-5" />
-              </span>
-              Adicionais
-            </h3>
-            <p className="text-sm text-muted-foreground">Personalize seu pedido</p>
-            <div className="grid gap-2">
-              {attributes.extra.data.map((extra) => (
-                <div 
-                  key={extra.id} 
-                  className={`flex items-center justify-between p-3 rounded-lg transition-all ${selectedExtras.includes(extra.id) ? 'border border-primary bg-primary/5' : 'border border-border hover:border-muted-foreground/40'}`}
-                >
-                  <div className="flex items-center gap-3">
-                    <Checkbox 
-                      id={`extra-${extra.id}`}
-                      checked={selectedExtras.includes(extra.id)}
-                      onCheckedChange={() => handleExtraToggle(extra.id)}
-                      className="h-5 w-5 rounded-full border-2 data-[state=checked]:bg-primary data-[state=checked]:border-primary bg-muted-foreground/20"
-                    />
-                    <div>
-                      <Label htmlFor={`extra-${extra.id}`} className="cursor-pointer font-medium">
-                        {extra.attributes.name}
-                      </Label>
-                    </div>
-                  </div>
-                  <span className="text-sm font-medium text-primary">
-                    +{formatPrice(parseFloat(extra.attributes.price))}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-
-      case 'methods':
-        return (
-          <div className="space-y-4">
-            <h3 className="font-medium text-lg flex items-center gap-2">
-              <span className="bg-primary/10 text-primary p-1.5 rounded-full">
-                <Utensils className="w-5 h-5" />
-              </span>
-              Modos de preparo
-            </h3>
-            <p className="text-sm text-muted-foreground">Escolha como deseja seu prato</p>
-            <div className="grid gap-2">
-              {attributes.prepare_method.data.map((method) => (
-                <div 
-                  key={method.id} 
-                  className={`flex items-center justify-between p-3 rounded-lg transition-all ${selectedMethods.includes(method.id) ? 'border border-primary bg-primary/5' : 'border border-border hover:border-muted-foreground/40'}`}
-                >
-                  <div className="flex items-center gap-3">
-                    <Checkbox 
-                      id={`method-${method.id}`}
-                      checked={selectedMethods.includes(method.id)}
-                      onCheckedChange={() => handleMethodToggle(method.id)}
-                      className="h-5 w-5 rounded-full border-2 data-[state=checked]:bg-primary data-[state=checked]:border-primary bg-muted-foreground/20"
-                    />
-                    <div>
-                      <Label htmlFor={`method-${method.id}`} className="cursor-pointer font-medium">
-                        {method.attributes.name}
-                      </Label>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-
-      case 'options':
-        return (
-          <div className="space-y-4">
-            <h3 className="font-medium text-lg flex items-center gap-2">
-              <span className="bg-primary/10 text-primary p-1.5 rounded-full">
-                <Utensils className="w-5 h-5" />
-              </span>
-              Etapas do item
-            </h3>
-            <p className="text-sm text-muted-foreground">Personalize ao seu gosto</p>
-            <Accordion 
-              type="multiple" 
-              defaultValue={attributes.steps.data.map(step => step.id)} 
-              className="w-full space-y-2"
-            >
-              {attributes.steps.data.map((step) => (
-                <div 
-                  key={step.id} 
-                  className="border border-border rounded-lg overflow-hidden hover:border-muted-foreground/40 transition-all"
-                >
-                  <AccordionItem value={step.id} className="border-none">
-                    <AccordionTrigger className="hover:no-underline px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <span className="text-left font-medium">
-                          {step.attributes.name}
-                        </span>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-4 pb-3 pt-1">
-                      <RadioGroup 
-                        value={selectedOptions[step.id]} 
-                        onValueChange={(value) => setSelectedOptions(prev => ({
-                          ...prev,
-                          [step.id]: value
-                        }))}
-                        className="space-y-2"
-                      >
-                        {step.attributes.options.data.map((option) => (
-                          <div 
-                            key={option.id} 
-                            className={`flex items-start gap-3 p-3 rounded-lg transition-all ${selectedOptions[step.id] === option.id ? 'border border-primary bg-primary/5' : 'border border-border hover:border-muted-foreground/40'}`}
-                          >
-                            <RadioGroupItem 
-                              value={option.id} 
-                              id={`option-${step.id}-${option.id}`} 
-                              className="h-5 w-5 rounded-full bg-muted-foreground/20"
-                            />
-                            <div className="flex-1">
-                              <Label 
-                                htmlFor={`option-${step.id}-${option.id}`}
-                                className="cursor-pointer font-medium"
-                              >
-                                {option.attributes.name}
-                              </Label>
-                            </div>
-                          </div>
-                        ))}
-                      </RadioGroup>
-                    </AccordionContent>
-                  </AccordionItem>
-                </div>
-              ))}
-            </Accordion>
-          </div>
-        );
-
-      case 'review':
-        return (
-          <div className="space-y-4">
-            <h3 className="font-medium text-lg">Resumo do Pedido</h3>
-            
-            <div className="border border-border rounded-lg p-4 space-y-3">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Item:</span>
-                <span className="font-medium">{attributes.name}</span>
-              </div>
-              
-              {isWeightBased ? (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Peso:</span>
-                  <span className="font-medium">{weight}kg</span>
-                </div>
-              ) : (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Quantidade:</span>
-                  <span className="font-medium">{quantity}</span>
-                </div>
-              )}
-              
-              {selectedExtras.length > 0 && (
-                <div>
-                  <p className="text-muted-foreground mb-1">Adicionais:</p>
-                  <ul className="space-y-1">
-                    {selectedExtras.map(extraId => {
-                      const extra = attributes.extra.data.find(e => e.id === extraId);
-                      if (!extra) return null;
-                      return (
-                        <li key={extraId} className="flex justify-between">
-                          <span>+ {extra.attributes.name}</span>
-                          <span className="text-primary">
-                            +{formatPrice(parseFloat(extra.attributes.price))}
-                          </span>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              )}
-              
-              {selectedMethods.length > 0 && (
-                <div>
-                  <p className="text-muted-foreground mb-1">Modos de preparo:</p>
-                  <ul className="space-y-1">
-                    {selectedMethods.map(methodId => {
-                      const method = attributes.prepare_method.data.find(m => m.id === methodId);
-                      if (!method) return null;
-                      return (
-                        <li key={methodId}>{method.attributes.name}</li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              )}
-              
-              <Separator className="my-2" />
-              
-              <div className="flex justify-between font-bold text-lg">
-                <span>Total:</span>
-                <span className="text-primary">{formatPrice(calculatePrice())}</span>
-              </div>
-            </div>
-          </div>
-        );
-
-      default:
-        return null;
-    }
-  };
-
-  const renderStepNavigation = () => {
-    if (!currentStep) return null;
-
-    const currentIndex = stepsAvailable.indexOf(currentStep);
-    const isFirstStep = currentIndex === 0;
-    const isLastStep = currentIndex === stepsAvailable.length - 1;
-
-    return (
-      <div className="flex justify-between pt-4">
-        {!isFirstStep ? (
-          <Button variant="outline" onClick={goToPrevStep} className="gap-2">
-            <ChevronLeft className="h-4 w-4" />
-            Voltar
-          </Button>
-        ) : (
-          <div />
-        )}
-
-        {!isLastStep ? (
-          <Button onClick={goToNextStep} className="gap-2">
-            Continuar
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        ) : (
-          <Button 
-            className="py-6 text-base font-medium rounded-full" 
-            size="lg" 
-            onClick={handleAddToCart}
-          >
-            Adicionar ao carrinho - {formatPrice(calculatePrice())}
-          </Button>
-        )}
-      </div>
-    );
+  const handleAddToCart = () => {
+    addItem({
+      ...product,
+      cartId: crypto.randomUUID(),
+      quantity,
+      weight: isWeightBased ? weight : undefined,
+      selectedExtras,
+      selectedMethods,
+      selectedOptions,
+      selectedSharedComplements,
+      totalPrice: calculatedPrice,
+    });
+    setOpen(false);
+    resetState();
   };
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => {
-      setOpen(isOpen);
-      if (!isOpen) {
-        resetModal();
-      }
-    }}>
-      <DialogTrigger asChild>
-        {trigger}
-      </DialogTrigger>
+    <Sheet open={open} onOpenChange={handleOpenChange}>
+      {trigger && (
+        <SheetTrigger asChild>
+          {trigger}
+        </SheetTrigger>
+      )}
 
-      <DialogTitle className="sr-only">{attributes.name}</DialogTitle>
+      <SheetContent
+        side="right"
+        className="p-0 w-full sm:max-w-[520px] flex flex-col h-full [&>button:first-of-type]:hidden bg-white"
+      >
+        <SheetTitle className="sr-only">{attributes.name}</SheetTitle>
 
-      <DialogContent className="sm:max-w-[550px] p-0 overflow-hidden rounded-xl w-[98vw] max-h-full flex flex-col max-sm:p-0">
-        <div className="flex flex-col h-full">
-          <div className="relative">
-            <div className="aspect-video bg-muted max-h-[150px] sm:max-h-[250px] w-full">
-              {attributes.image_url ? (
-                <Image 
-                  src={attributes.image_url}
-                  alt={attributes.name}
-                  fill
-                  className="object-cover rounded-t-xl max-sm:rounded-t-lg"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-muted">
-                  <div className="text-4xl text-muted-foreground/20">Produto</div>
-                </div>
-              )}
+        {/* ── Scrollable area (image + info + options) ── */}
+        <div className="flex-1 overflow-y-auto">
+
+          {isUnavailable && (
+            <div className="bg-destructive/10 border-b border-destructive/20 px-4 py-3 flex items-center gap-2">
+              <Info className="h-4 w-4 text-destructive shrink-0" />
+              <p className="text-sm text-destructive font-medium">
+                Este item está temporariamente indisponível devido a um ingrediente em falta.
+              </p>
             </div>
+          )}
 
-            <button 
-              onClick={() => setOpen(false)} 
-              className="absolute top-4 right-4 h-8 w-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/70 transition-colors"
+          {/* Hero image */}
+          <div className="relative w-full aspect-[4/3] bg-gray-100">
+            {attributes.image_url ? (
+              <img
+                src={attributes.image_url}
+                alt={attributes.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-gray-50">
+                <Utensils className="w-16 h-16 text-gray-200" />
+              </div>
+            )}
+
+            {/* Close button - DoorDash style */}
+            <button
+              onClick={() => handleOpenChange(false)}
+              className="absolute top-4 left-4 h-9 w-9 rounded-full bg-white shadow-md flex items-center justify-center text-gray-700 hover:bg-gray-50 transition-colors z-10"
+              aria-label="Fechar"
             >
               <X className="h-5 w-5" />
             </button>
 
             {hasDiscount && (
-              <div className="absolute top-4 left-4 bg-primary text-primary-foreground text-sm font-bold px-3 py-1.5 rounded-full shadow-sm">
-                -{Math.round(((attributes.price - (attributes.price_with_discount || 0)) / attributes.price * 100))}%
+              <div className="absolute top-4 right-4 bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-sm">
+                -{discountPercent}%
               </div>
             )}
           </div>
 
-          <div className="flex flex-col overflow-y-auto p-3 sm:p-6 max-h-[calc(95vh-250px)] sm:max-h-[calc(90vh-350px)]">
-            <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-2 break-words">{attributes.name}</h2>
-            
-            <div className="flex items-baseline gap-2 sm:gap-3 mb-4 flex-wrap">
-              <span className={`text-xl sm:text-2xl font-bold ${hasDiscount ? 'text-primary' : 'text-foreground'}`}> 
-                {formatPrice(calculatePrice())}
-              </span>
+          {/* Item info */}
+          <div className="px-5 pt-5 pb-4">
+            <h2 className="font-tomato text-[22px] font-bold text-gray-900 leading-tight">
+              {attributes.name}
+            </h2>
 
+            <div className="flex items-baseline gap-2.5 mt-2">
+              <span className="text-base font-medium text-gray-900">
+                {formatPrice(hasDiscount ? attributes.price_with_discount! : attributes.price)}
+              </span>
               {hasDiscount && (
-                <span className="text-muted-foreground text-lg line-through">
-                  {formatPrice(attributes.price * (isWeightBased ? weight : quantity))}
+                <span className="text-sm text-gray-400 line-through">
+                  {formatPrice(attributes.price)}
                 </span>
               )}
-
               {isWeightBased && (
-                <Badge variant="outline" className="ml-2 bg-muted/50">
-                  {formatPrice(attributes.price)}/kg
-                </Badge>
+                <span className="text-sm text-gray-500">
+                  / {isGrams ? 'g' : 'kg'}
+                </span>
               )}
             </div>
 
             {attributes.description && (
-              <p className="text-muted-foreground mb-6">
+              <p className="mt-3 text-sm text-gray-500 leading-relaxed">
                 {attributes.description}
               </p>
             )}
+          </div>
 
-            {!currentStep ? (
-              <div className="space-y-6">
-                <div className="space-y-4">
-                  <h3 className="font-medium text-lg sm:text-xl">Detalhes do Produto</h3>
-                  <p className="text-sm sm:text-base text-muted-foreground">
-                    Este produto pode ser personalizado de acordo com suas preferências.
+          {/* ── Sections ── */}
+          <div>
+
+            {/* Weight picker */}
+            {isWeightBased && (
+              <div className="border-t-[6px] border-[#E5E2DD]">
+                <div className="px-5 py-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-tomato text-base font-bold text-gray-900">
+                      Quanto você gostaria?
+                    </h3>
+                    <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-md">
+                      Obrigatório
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-400 flex items-center gap-1.5 mb-3">
+                    <Info className="w-3.5 h-3.5 flex-shrink-0" />
+                    {isGrams ? 'Produtos por grama podem variar na pesagem.' : 'Produtos por kg podem variar na pesagem.'}
                   </p>
+                  <WeightPicker
+                    min={attributes.min_weight || (isGrams ? 100 : 0.1)}
+                    max={attributes.max_weight || (isGrams ? 5000 : 10)}
+                    step={attributes.measure_interval || (isGrams ? 50 : 0.1)}
+                    value={weight}
+                    onChange={setWeight}
+                    unit={isGrams ? 'g' : 'kg'}
+                  />
+                  <div className="text-center text-sm text-gray-500 mt-3">
+                    {weight} {isGrams ? 'g' : 'kg'} × {formatPrice(hasDiscount ? attributes.price_with_discount! : attributes.price)}/{isGrams ? 'g' : 'kg'}
+                    {' = '}
+                    <span className="font-semibold text-gray-900">
+                      {formatPrice((hasDiscount ? attributes.price_with_discount! : attributes.price) * weight)}
+                    </span>
+                  </div>
                 </div>
-
-                <Button 
-                  className="w-full py-3 sm:py-6 text-base sm:text-lg font-medium rounded-full" 
-                  size="lg" 
-                  onClick={startCustomization}
-                >
-                  Iniciar pedido
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-2 px-2">
-                  {stepsAvailable.map((step, index) => (
-                    <div key={step} className="flex items-center gap-2">
-                      <div 
-                        className={`flex items-center justify-center h-7 w-7 sm:h-8 sm:w-8 rounded-full border-2 ${stepsAvailable.indexOf(currentStep) >= index ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-muted text-muted-foreground'}`}
-                      >
-                        {index + 1}
-                      </div>
-                      <span 
-                        className={`whitespace-nowrap text-xs sm:text-sm ${stepsAvailable.indexOf(currentStep) >= index ? 'font-medium text-foreground' : 'text-muted-foreground'}`}
-                      >
-                        {step === 'quantity' ? 'Quantidade' : 
-                         step === 'extras' ? 'Adicionais' : 
-                         step === 'methods' ? 'Preparo' : 
-                         step === 'options' ? 'Opções' : 'Revisão'}
-                      </span>
-                      {index < stepsAvailable.length - 1 && (
-                        <div className="h-px w-3 sm:w-4 bg-border mx-1" />
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                <Separator />
-
-                {renderStepContent()}
-                {renderStepNavigation()}
               </div>
             )}
+
+            {/* Extras */}
+            {hasExtras && (
+              <div className="border-t-[6px] border-[#E5E2DD]">
+                <div className="px-5 py-4">
+                  <div className="flex items-center justify-between mb-1">
+                    <h3 className="font-tomato text-base font-bold text-gray-900">Adicionais</h3>
+                    <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-md">
+                      Opcional
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-400 mb-4">Selecione os itens que deseja</p>
+                  <div className="space-y-0">
+                    {attributes.extra.data.map((extra, idx) => (
+                      <div
+                        key={extra.id}
+                        onClick={() =>
+                          setSelectedExtras(prev =>
+                            prev.includes(extra.id)
+                              ? prev.filter(id => id !== extra.id)
+                              : [...prev, extra.id]
+                          )
+                        }
+                        className={`flex items-center justify-between py-3.5 cursor-pointer ${
+                          idx < attributes.extra.data.length - 1 ? 'border-b border-[#E5E2DD]' : ''
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <DDCheckbox checked={selectedExtras.includes(extra.id)} />
+                          <span className="text-sm text-gray-900">{extra.attributes.name}</span>
+                        </div>
+                        <span className="text-sm text-gray-500 ml-3 flex-shrink-0">
+                          +{formatPrice(parseFloat(extra.attributes.price))}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Shared Complements */}
+            {attributes.shared_complements?.data?.length > 0 &&
+              attributes.shared_complements.data.map(group => (
+                <div key={group.id} className="border-t-[6px] border-[#E5E2DD]">
+                  <div className="px-5 py-4">
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 className="font-tomato text-base font-bold text-gray-900">{group.attributes.name}</h3>
+                      <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-md">
+                        Opcional
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-400 mb-4">Selecione os itens que deseja</p>
+                    <div className="space-y-0">
+                      {group.attributes.options.map((option, idx) => (
+                        <div
+                          key={option.id}
+                          onClick={() =>
+                            setSelectedSharedComplements(prev =>
+                              prev.includes(option.id.toString())
+                                ? prev.filter(id => id !== option.id.toString())
+                                : [...prev, option.id.toString()]
+                            )
+                          }
+                          className={`flex items-center justify-between py-3.5 cursor-pointer ${
+                            idx < group.attributes.options.length - 1 ? 'border-b border-[#E5E2DD]' : ''
+                          }`}
+                        >
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <DDCheckbox checked={selectedSharedComplements.includes(option.id.toString())} />
+                            <span className="text-sm text-gray-900">{option.name}</span>
+                          </div>
+                          {Number(option.price) > 0 && (
+                            <span className="text-sm text-gray-500 ml-3 flex-shrink-0">
+                              +{formatPrice(Number(option.price))}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ))
+            }
+
+            {/* Prepare Methods */}
+            {hasMethods && (
+              <div className="border-t-[6px] border-[#E5E2DD]">
+                <div className="px-5 py-4">
+                  <div className="flex items-center justify-between mb-1">
+                    <h3 className="font-tomato text-base font-bold text-gray-900">Modo de Preparo</h3>
+                    <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-md">
+                      Opcional
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-400 mb-4">Selecione como deseja</p>
+                  <div className="space-y-0">
+                    {attributes.prepare_method.data.map((method, idx) => (
+                      <div
+                        key={method.id}
+                        onClick={() =>
+                          setSelectedMethods(prev =>
+                            prev.includes(method.id)
+                              ? prev.filter(id => id !== method.id)
+                              : [...prev, method.id]
+                          )
+                        }
+                        className={`flex items-center gap-3 py-3.5 cursor-pointer ${
+                          idx < attributes.prepare_method.data.length - 1 ? 'border-b border-[#E5E2DD]' : ''
+                        }`}
+                      >
+                        <DDCheckbox checked={selectedMethods.includes(method.id)} />
+                        <span className="text-sm text-gray-900">{method.attributes.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Steps / Options (radio) */}
+            {hasSteps &&
+              attributes.steps.data.map(step => (
+                <div key={step.id} className="border-t-[6px] border-[#E5E2DD]">
+                  <div className="px-5 py-4">
+                    <div className="mb-1">
+                      <h3 className="font-tomato text-base font-bold text-gray-900">{step.attributes.name}</h3>
+                    </div>
+                    <p className="text-sm text-gray-400 mb-4">Selecione 1 opção</p>
+                    <div className="space-y-0">
+                      {step.attributes.options.data.map((option, idx) => (
+                        <label
+                          key={option.id}
+                          onClick={() => setSelectedOptions(prev => ({ ...prev, [step.id]: option.id }))}
+                          className={`flex items-center gap-3 py-3.5 cursor-pointer ${
+                            idx < step.attributes.options.data.length - 1 ? 'border-b border-[#E5E2DD]' : ''
+                          }`}
+                        >
+                          <DDRadio checked={selectedOptions[step.id] === option.id} />
+                          <span className="text-sm text-gray-900">{option.attributes.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ))
+            }
+
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+
+        {/* ── Footer: quantity + add to cart ── */}
+        <div className="flex-shrink-0 border-t border-[#E5E2DD] bg-white px-5 py-4">
+          <div className="flex items-center gap-4">
+            {/* Quantity selector */}
+            {!isWeightBased && (
+              <div className="flex items-center rounded-full border border-gray-300 overflow-hidden flex-shrink-0">
+                <button
+                  className="h-10 w-10 flex items-center justify-center hover:bg-gray-50 disabled:opacity-30 transition-colors cursor-pointer"
+                  onClick={() => setQuantity(prev => Math.max(1, prev - 1))}
+                  disabled={quantity <= 1}
+                >
+                  <Minus className="h-4 w-4 text-gray-700" />
+                </button>
+                <span className="w-8 text-center font-bold text-base text-gray-900">{quantity}</span>
+                <button
+                  className="h-10 w-10 flex items-center justify-center hover:bg-gray-50 transition-colors cursor-pointer"
+                  onClick={() => setQuantity(prev => prev + 1)}
+                >
+                  <Plus className="h-4 w-4 text-gray-700" />
+                </button>
+              </div>
+            )}
+
+            {/* Add to cart button */}
+            <button
+              onClick={handleAddToCart}
+              disabled={isUnavailable}
+              className={`flex-1 h-12 font-bold text-base rounded-full transition-colors flex items-center justify-center gap-2 ${
+                isUnavailable
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-primary hover:bg-primary/90 text-white cursor-pointer'
+              }`}
+            >
+              {isUnavailable ? 'Indisponível' : `Adicionar ${formatPrice(calculatedPrice)}`}
+            </button>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }

@@ -33,7 +33,7 @@ export function useAuth() {
   const loginMutation = useMutation({
     mutationFn: authService.login,
     onSuccess: (data) => {
-      toast.success('Login realizado com sucesso')
+      toast.success('Você entrou na sua conta')
       localStorage.setItem('token', data.token)
       localStorage.setItem('customer', JSON.stringify(data.customer))
       setCustomer(data.customer)
@@ -62,7 +62,7 @@ export function useAuth() {
   const logoutMutation = useMutation({
     mutationFn: authService.logout,
     onSuccess: () => {
-      toast.success('Logout realizado com sucesso')
+      toast.success('Você saiu da sua conta')
       localStorage.removeItem('token')
       localStorage.removeItem('user')
       setCustomer(null)

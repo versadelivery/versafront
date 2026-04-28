@@ -1,9 +1,8 @@
 "use client"
 
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import { Heart, ShoppingCart, Package, PlusCircle } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { motion, AnimatePresence } from 'framer-motion'
 import { Item } from '@/types/client-catalog'
 import { ProductModal } from './product-modal'
 import { fixImageUrl } from "@/utils/image-url";
@@ -14,7 +13,7 @@ interface ProductCardProps {
   onToggleFavorite: (id: string) => void
 }
 
-export function ProductCard({ product, onAddToCart, onToggleFavorite }: ProductCardProps) {
+export const ProductCard = memo(function ProductCard({ product, onAddToCart, onToggleFavorite }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
@@ -25,65 +24,38 @@ export function ProductCard({ product, onAddToCart, onToggleFavorite }: ProductC
 
   return (
     <>
-      <motion.div 
-        className="group relative bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden"
+      <div
+        className="group relative bg-white rounded-xl shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 overflow-hidden"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        whileHover={{ y: -5 }}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
       >
         <div className="relative aspect-square overflow-hidden">
           {product.attributes.image_url ? (
-            <motion.img
+            <img
               src={fixImageUrl(product.attributes.image_url) || ''}
               alt={product.attributes.name}
-              className="h-full w-full object-cover"
-              whileHover={{ scale: 1.1 }}
-              transition={{ duration: 0.3 }}
+              className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-300"
             />
           ) : (
-            <motion.div
-              className="h-full w-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center"
-              animate={{
-                background: [
-                  'linear-gradient(45deg, rgba(99, 102, 241, 0.2), rgba(99, 102, 241, 0.1))',
-                  'linear-gradient(45deg, rgba(99, 102, 241, 0.1), rgba(99, 102, 241, 0.2))',
-                  'linear-gradient(45deg, rgba(99, 102, 241, 0.2), rgba(99, 102, 241, 0.1))',
-                ],
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                ease: 'linear',
-              }}
-            >
+            <div className="h-full w-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
               <span className="text-primary/50 text-4xl font-bold">
                 {product.attributes.name.charAt(0).toUpperCase()}
               </span>
-            </motion.div>
+            </div>
           )}
-          
-          <AnimatePresence>
-            {isHovered && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute inset-0 bg-black/20 flex items-center justify-center"
+
+          {isHovered && (
+            <div
+              className="absolute inset-0 bg-black/20 flex items-center justify-center animate-in fade-in duration-200"
+            >
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="bg-white p-3 rounded-full shadow-lg hover:scale-110 active:scale-95 transition-transform"
               >
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setIsModalOpen(true)}
-                  className="bg-white p-3 rounded-full shadow-lg"
-                >
-                  <ShoppingCart className="h-6 w-6 text-primary" />
-                </motion.button>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                <ShoppingCart className="h-6 w-6 text-primary" />
+              </button>
+            </div>
+          )}
 
           <div className="absolute top-2 right-2 flex flex-col gap-2">
             {hasDiscount && (
@@ -106,28 +78,23 @@ export function ProductCard({ product, onAddToCart, onToggleFavorite }: ProductC
               <h3 className="font-medium text-gray-900 line-clamp-2 min-h-[2.5rem]">{product.attributes.name}</h3>
               <p className="text-sm text-gray-500 line-clamp-2 min-h-[2.5rem]">{product.attributes.description}</p>
             </div>
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
+            <button
               onClick={() => onToggleFavorite(product.id)}
-              className={`p-1 rounded-full transition-colors flex-shrink-0 ${
+              className={`p-1 rounded-full transition-colors flex-shrink-0 hover:scale-110 active:scale-95 transition-transform ${
                 product.isFavorite
                   ? 'text-red-500 hover:text-red-600'
                   : 'text-gray-400 hover:text-gray-500'
               }`}
             >
               <Heart className="h-5 w-5" fill={product.isFavorite ? 'currentColor' : 'none'} />
-            </motion.button>
+            </button>
           </div>
 
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <motion.p 
-                className="text-lg font-semibold text-gray-900"
-                whileHover={{ scale: 1.05 }}
-              >
+              <p className="text-lg font-semibold text-gray-900">
                 R$ {hasDiscount ? product.attributes.price_with_discount : product.attributes.price}
-              </motion.p>
+              </p>
               {hasDiscount && (
                 <p className="text-sm text-gray-500 line-through">
                   R$ {product.attributes.price}
@@ -166,7 +133,7 @@ export function ProductCard({ product, onAddToCart, onToggleFavorite }: ProductC
             </div>
           )}
         </div>
-      </motion.div>
+      </div>
 
       <ProductModal
         product={product}
@@ -179,4 +146,4 @@ export function ProductCard({ product, onAddToCart, onToggleFavorite }: ProductC
       />
     </>
   )
-} 
+})

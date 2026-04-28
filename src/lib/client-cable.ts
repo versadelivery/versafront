@@ -1,5 +1,5 @@
 import { createConsumer } from "@rails/actioncable"
-import { getToken } from "./auth"
+import { getClientToken } from "./auth"
 import { useEffect, useRef, useState } from "react"
 
 export interface ClientOrderData {
@@ -11,6 +11,9 @@ export interface ClientOrderData {
     total_price: string | null
     total_items_price: string | null
     delivery_fee: string | null
+    discount_amount: string | null
+    payment_adjustment_amount: string | null
+    coupon_code: string | null
     withdrawal: boolean
     payment_method: string
     created_at: string
@@ -31,6 +34,7 @@ export interface ClientOrderData {
           address: string
           description: string
           image_url: string
+          email?: string
         }
       }
     }
@@ -50,13 +54,14 @@ export interface ClientOrderData {
 }
 
 export function createClientCableWithToken() {
-  const token = getToken()
-  if (token) {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-    const cableUrl = apiUrl.replace('http', 'ws').replace('https', 'wss') + `/cable?token=${token}`
-    return createConsumer(cableUrl)
-  }
-  return null
+  const token = getClientToken()
+  if (!token) return null
+
+  const base = process.env.NEXT_PUBLIC_CABLE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+  const wsBase = base.startsWith('ws') ? base : base.replace('http', 'ws').replace('https', 'wss')
+  const hasQuery = wsBase.includes('?')
+  const cableUrl = `${wsBase.replace(/\/$/, '')}${wsBase.endsWith('/cable') || wsBase.endsWith('/cable/') ? '' : '/cable'}${hasQuery ? '&' : '?'}token=${token}`
+  return createConsumer(cableUrl)
 }
 
 export function useClientActionCable(orderId: string) {
@@ -64,7 +69,7 @@ export function useClientActionCable(orderId: string) {
   const cableRef = useRef<any>(null)
 
   useEffect(() => {
-    const token = getToken()
+    const token = getClientToken()
     if (token && orderId) {
       const cable = createClientCableWithToken()
       if (cable) {

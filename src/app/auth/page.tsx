@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useClientLogin, useClientRegister } from "./use-auth";
@@ -13,6 +13,7 @@ import { z } from "zod";
 import Image from "next/image";
 import logoInline from "@/public/logo/logo-inline-black.svg";
 import { useRouter, useSearchParams } from "next/navigation";
+import PublicLoading from "@/components/public-loading";
 import { formatPhone } from "@/utils/format-phone";
 import { useClient } from "@/app/(public)/[slug]/client-context";
 import { usePhoneMask } from "@/hooks/use-phone-mask";
@@ -21,7 +22,7 @@ type AuthMode = "login" | "register";
 type LoginFormData = z.infer<typeof loginSchema>;
 type RegisterFormData = z.infer<typeof registerSchema>;
 
-export default function AuthPage() {
+function AuthForm() {
   const [mode, setMode] = useState<AuthMode>("login");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -251,5 +252,13 @@ export default function AuthPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function AuthPage() {
+  return (
+    <Suspense fallback={<PublicLoading />}>
+      <AuthForm />
+    </Suspense>
   );
 }

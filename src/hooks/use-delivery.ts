@@ -34,9 +34,6 @@ export function useDelivery() {
       queryClient.invalidateQueries({ queryKey: ["delivery-config"] });
       toast.success("Bairro criado com sucesso!");
     },
-    onError: () => {
-      toast.error("Erro ao criar bairro");
-    },
   });
 
   const { mutate: updateNeighborhood, isPending: isUpdatingNeighborhood } = useMutation({
@@ -46,9 +43,6 @@ export function useDelivery() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["delivery-config"] });
       toast.success("Bairro atualizado com sucesso!");
-    },
-    onError: () => {
-      toast.error("Erro ao atualizar bairro");
     },
   });
 

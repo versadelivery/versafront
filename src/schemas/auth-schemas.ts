@@ -1,16 +1,16 @@
 import { z } from "zod";
 
-const phoneRegex = /^\+\d{2} \(\d{2}\) \d{5}-\d{4}$/;
+const phoneRegex = /^\(\d{2}\) \d{4,5}-\d{4}$/;
 const nameRegex = /^[a-zA-ZÀ-ÿ\s']+$/;
 const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$%^&*])(?=.*[0-9]).{6,}$/;
 
 export const registerStep1Schema = z.object({
   storeName: z.string()
     .min(3, "Nome da loja deve ter pelo menos 3 caracteres")
-    .max(50, "Nome da loja não pode ter mais de 50 caracteres")
-    .regex(nameRegex, "Nome não pode conter números ou símbolos"),
+    .max(50, "Nome da loja não pode ter mais de 50 caracteres"),
   storePhone: z.string()
-    .regex(phoneRegex, "Telefone inválido. Use o formato +xx (xx) xxxxx-xxxx")
+    .min(14, "Telefone inválido")
+    .regex(phoneRegex, "Telefone inválido. Use o formato (xx) xxxxx-xxxx")
 });
 
 const baseStep2Schema = z.object({
@@ -36,16 +36,47 @@ export const registerStep2Schema = baseStep2Schema.refine(
   }
 );
 
+const documentRegex = /^(\d{3}\.\d{3}\.\d{3}-\d{2}|\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2})$/;
+
+export const registerStep3Schema = z.object({
+  document: z.string()
+    .regex(documentRegex, "Documento inválido. Use CPF (000.000.000-00) ou CNPJ (00.000.000/0000-00)"),
+  billingEmail: z.string()
+    .min(1, "Email de cobrança é obrigatório")
+    .email("Email inválido")
+    .max(100, "Email não pode ter mais de 100 caracteres")
+});
+
 export const registerSchema = z.object({
   shop: z.object({
-    name: z.string().min(1, "Nome do estabelecimento é obrigatório"),
-    cellphone: z.string().min(1, "Telefone é obrigatório")
+    name: z.string()
+      .min(3, "Nome da loja deve ter pelo menos 3 caracteres")
+      .max(50, "Nome da loja não pode ter mais de 50 caracteres"),
+    cellphone: z.string()
+      .min(14, "Telefone inválido")
+      .regex(/^\(\d{2}\) \d{4,5}-\d{4}$/, "Telefone inválido. Use o formato (xx) xxxxx-xxxx")
   }),
   shop_user: z.object({
-    name: z.string().min(1, "Nome é obrigatório"),
-    email: z.string().email("Email inválido"),
-    password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
+    name: z.string()
+      .min(3, "Nome deve ter pelo menos 3 caracteres")
+      .max(50, "Nome não pode ter mais de 50 caracteres")
+      .regex(nameRegex, "Nome não pode conter números ou símbolos"),
+    email: z.string()
+      .min(1, "Email é obrigatório")
+      .email("Email inválido")
+      .max(100, "Email não pode ter mais de 100 caracteres"),
+    password: z.string()
+      .min(6, "Senha deve ter no mínimo 6 caracteres")
+      .max(50, "Senha não pode ter mais de 50 caracteres"),
     confirmPassword: z.string()
+  }),
+  shop_billing_config: z.object({
+    document: z.string()
+      .regex(documentRegex, "Documento inválido. Use CPF (000.000.000-00) ou CNPJ (00.000.000/0000-00)"),
+    billing_email: z.string()
+      .min(1, "Email de cobrança é obrigatório")
+      .email("Email inválido")
+      .max(100, "Email não pode ter mais de 100 caracteres")
   })
 }).refine((data) => data.shop_user.password === data.shop_user.confirmPassword, {
   message: "As senhas não coincidem",
@@ -64,3 +95,23 @@ export const loginSchema = z.object({
 });
 
 export type LoginFormData = z.infer<typeof loginSchema>;
+
+export const forgotPasswordSchema = z.object({
+  email: z.string()
+    .email("Email inválido")
+    .max(100, "Email não pode ter mais de 100 caracteres")
+});
+
+export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
+
+export const resetPasswordSchema = z.object({
+  password: z.string()
+    .min(6, "Senha deve ter pelo menos 6 caracteres")
+    .max(50, "Senha não pode ter mais de 50 caracteres"),
+  confirmPassword: z.string()
+}).refine(data => data.password === data.confirmPassword, {
+  message: "As senhas não coincidem",
+  path: ["confirmPassword"]
+});
+
+export type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;

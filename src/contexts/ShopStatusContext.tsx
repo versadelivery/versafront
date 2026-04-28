@@ -1,18 +1,19 @@
 "use client"
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { shopStatusService } from '@/services/shopStatusService';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { fetchShopBySlug } from '@/app/(public)/[slug]/slug-service';
 
 interface ShopStatusContextType {
   isOpen: boolean;
   loading: boolean;
-  checkStatus: () => Promise<void>;
+  checkStatus: () => void;
 }
 
 const ShopStatusContext = createContext<ShopStatusContextType>({
   isOpen: true,
   loading: true,
-  checkStatus: async () => {}
+  checkStatus: () => {}
 });
 
 export const useShopStatusContext = () => {
@@ -28,31 +29,48 @@ interface ShopStatusProviderProps {
 }
 
 export const ShopStatusProvider: React.FC<ShopStatusProviderProps> = ({ children }) => {
-  const [isOpen, setIsOpen] = useState(true);
-  const [loading, setLoading] = useState(true);
+  const [slug, setSlug] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
-  const checkStatus = async () => {
-    try {
-      setLoading(true);
-      const response = await shopStatusService.getStatus();
-      setIsOpen(response.data.attributes.is_open);
-    } catch (error) {
-      console.error('Erro ao verificar status da loja:', error);
-      // Em caso de erro, assumir que está aberta para não bloquear vendas
-      setIsOpen(true);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Lê slug do localStorage após montar (sem mismatch de hidratação)
   useEffect(() => {
-    checkStatus();
-    
-    // Verificar status a cada 2 minutos
-    const interval = setInterval(checkStatus, 120000);
-    
-    return () => clearInterval(interval);
+    try {
+      const cached = localStorage.getItem('shop');
+      const s = cached ? JSON.parse(cached)?.data?.attributes?.slug : null;
+      if (s) setSlug(s);
+    } catch {}
+
+    // Atualiza slug se a loja mudar (ex: usuário navega para outra loja)
+    const handleShopUpdated = () => {
+      try {
+        const cached = localStorage.getItem('shop');
+        const s = cached ? JSON.parse(cached)?.data?.attributes?.slug : null;
+        if (s) setSlug(s);
+      } catch {}
+    };
+
+    window.addEventListener('shop-updated', handleShopUpdated);
+    return () => window.removeEventListener('shop-updated', handleShopUpdated);
   }, []);
+
+  // Mesma queryKey do catálogo (['shop', slug]) → compartilha o cache do React Query.
+  // Quando o catálogo refaz o fetch, este contexto recebe o dado atualizado sem nova requisição.
+  // Quando o usuário está em /carrinho ou /conferir (catálogo desmontado), polling próprio de 60s garante atualização.
+  const { data: shopData, isLoading, refetch } = useQuery({
+    queryKey: ['shop', slug],
+    queryFn: () => fetchShopBySlug(slug!),
+    enabled: !!slug,
+    staleTime: 0,
+    refetchInterval: 60 * 1000,
+    refetchOnWindowFocus: true,
+  });
+
+  const isOpen = shopData?.data?.attributes?.shop_status?.is_open ?? true;
+  const loading = !!slug && isLoading && !shopData;
+
+  const checkStatus = () => {
+    if (slug) queryClient.invalidateQueries({ queryKey: ['shop', slug] });
+  };
 
   return (
     <ShopStatusContext.Provider value={{ isOpen, loading, checkStatus }}>

@@ -1,7 +1,6 @@
 "use client";
 
 import { AuthFormInputProps } from "@/types/utils";
-import { Input } from "@/components/ui/input";
 import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 
@@ -16,24 +15,22 @@ export function AuthFormInput({
   disabled = false,
   showPasswordToggle = false,
   error
-}: AuthFormInputProps & {
-  onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
-}) {
+}: AuthFormInputProps) {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
     <div>
-      <label className="block text-foreground/40 font-bold mb-2">{label}</label>
+      <label className="block text-sm font-medium text-[#474747] mb-1.5">{label}</label>
       <div className="relative">
-        <Input
+        <input
           type={showPasswordToggle ? (showPassword ? "text" : "password") : type}
           name={name}
           value={value}
           onChange={onChange}
           placeholder={placeholder}
-          className={`rounded-sm bg-transparent w-full p-8 border pr-10 placeholder:text-foreground/40 ${
-            error ? "border-red-500" : ""
-          }`}
+          className={`w-full px-4 py-3.5 rounded-xl border bg-white text-[#1B1B1B] placeholder:text-[#858585] transition-colors outline-none focus:border-[#009246] focus:ring-1 focus:ring-[#009246] ${
+            error ? "border-red-400" : "border-[#E8E4DF]"
+          } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
           required={required}
           disabled={disabled}
         />
@@ -41,18 +38,14 @@ export function AuthFormInput({
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="cursor-pointer not-only:absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#858585] hover:text-[#474747] cursor-pointer"
             aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
           >
-            {showPassword ? (
-              <EyeOff className="h-5 w-5" />
-            ) : (
-              <Eye className="h-5 w-5" />
-            )}
+            {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
           </button>
         )}
       </div>
-      {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
+      {error && <p className="mt-1.5 text-sm text-red-500">{error}</p>}
     </div>
   );
 }

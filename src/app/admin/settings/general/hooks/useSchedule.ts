@@ -1,5 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { scheduleService, ShopScheduleConfig, DaySchedule } from "../services/scheduleService";
+
+// Tipo para as chaves dos dias da semana
+export type DayKey = "sunday" | "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday";
 
 export interface WeekSchedule {
   sunday: DaySchedule;
@@ -20,24 +23,30 @@ export function useSchedule() {
   // Função para extrair apenas a hora de um timestamp
   const extractTime = (timeString: string | null): string => {
     if (!timeString) return "00:00";
-    try {
-      const date = new Date(timeString);
-      // Usa getHours() e getMinutes() em vez de getUTCHours() para respeitar o timezone local
-      const hours = date.getHours().toString().padStart(2, '0');
-      const minutes = date.getMinutes().toString().padStart(2, '0');
-      console.log(`Original: ${timeString} -> Extracted time: ${hours}:${minutes}`);
-      return `${hours}:${minutes}`;
-    } catch (error) {
-      console.error('Erro ao extrair hora:', error);
-      // Se não conseguir fazer parse, assume que já está no formato HH:MM
-      return timeString.includes(':') ? timeString : "00:00";
+
+    // Se já está no formato HH:MM, retorna diretamente
+    const directMatch = timeString.match(/^(\d{1,2}):(\d{2})$/);
+    if (directMatch) {
+      return `${directMatch[1].padStart(2, '0')}:${directMatch[2]}`;
     }
+
+    // ISO format: extrai a parte de tempo diretamente da string (sem usar new Date que aplica timezone)
+    const isoMatch = timeString.match(/T(\d{2}):(\d{2})/);
+    if (isoMatch) {
+      return `${isoMatch[1]}:${isoMatch[2]}`;
+    }
+
+    // Fallback: tenta extrair qualquer padrão HH:MM
+    const anyMatch = timeString.match(/(\d{1,2}):(\d{2})/);
+    if (anyMatch) {
+      return `${anyMatch[1].padStart(2, '0')}:${anyMatch[2]}`;
+    }
+
+    return "00:00";
   };
 
   // Função para converter os dados da API para o formato do componente
   const apiToSchedule = (data: ShopScheduleConfig): WeekSchedule => {
-    console.log('Convertendo dados da API:', data);
-    
     const schedule = {
       sunday: {
         active: data.attributes.sunday_active || false,
@@ -76,7 +85,6 @@ export function useSchedule() {
       }
     };
     
-    console.log('Schedule convertido:', schedule);
     return schedule;
   };
 
@@ -120,9 +128,7 @@ export function useSchedule() {
       setLoading(true);
       setError(null);
       const response = await scheduleService.getSchedule();
-      console.log('Raw API response:', response.data);
       const scheduleData = apiToSchedule(response.data);
-      console.log('Final schedule data:', scheduleData);
       setSchedule(scheduleData);
     } catch (err: any) {
       setError(err.message || 'Erro ao carregar horários');
@@ -132,8 +138,14 @@ export function useSchedule() {
     }
   };
 
-  // Atualizar horários
-  const updateSchedule = async (newSchedule: WeekSchedule) => {
+  // Memoizar o resultado da conversão para manter a referência estável
+  const scheduleData = useMemo(() => {
+    if (!schedule) return null;
+    return schedule;
+  }, [schedule]);
+
+  // Envolver funções em useCallback para manter referências estáveis
+  const stabilizedUpdateSchedule = useCallback(async (newSchedule: WeekSchedule) => {
     try {
       setIsUpdating(true);
       setError(null);
@@ -151,52 +163,11 @@ export function useSchedule() {
     } finally {
       setIsUpdating(false);
     }
-  };
+  }, []);
 
-  // Copiar horário para todos os dias
-  const copyToAllDays = (daySchedule: DaySchedule) => {
-    if (!schedule) return;
-    
-    const newSchedule = {
-      sunday: { ...daySchedule },
-      monday: { ...daySchedule },
-      tuesday: { ...daySchedule },
-      wednesday: { ...daySchedule },
-      thursday: { ...daySchedule },
-      friday: { ...daySchedule },
-      saturday: { ...daySchedule }
-    };
-    
-    return updateSchedule(newSchedule);
-  };
-
-  // Copiar horário para dias úteis
-  const copyToWeekdays = (daySchedule: DaySchedule) => {
-    if (!schedule) return;
-    
-    const newSchedule = {
-      ...schedule,
-      monday: { ...daySchedule },
-      tuesday: { ...daySchedule },
-      wednesday: { ...daySchedule },
-      thursday: { ...daySchedule },
-      friday: { ...daySchedule }
-    };
-    
-    return updateSchedule(newSchedule);
-  };
-
-  // Atualizar um dia específico
-  const updateDay = (day: keyof WeekSchedule, daySchedule: DaySchedule) => {
-    if (!schedule) return;
-    
-    const newSchedule = {
-      ...schedule,
-      [day]: { ...daySchedule }
-    };
-    
-    setSchedule(newSchedule);
-  };
+  const stabilizedRefetch = useCallback(() => {
+    return fetchSchedule();
+  }, []);
 
   // Carregar horários na inicialização
   useEffect(() => {
@@ -204,14 +175,11 @@ export function useSchedule() {
   }, []);
 
   return {
-    schedule,
+    schedule: scheduleData,
     loading,
     error,
     isUpdating,
-    updateSchedule,
-    updateDay,
-    copyToAllDays,
-    copyToWeekdays,
-    refetch: fetchSchedule
+    updateSchedule: stabilizedUpdateSchedule,
+    refetch: stabilizedRefetch,
   };
 }

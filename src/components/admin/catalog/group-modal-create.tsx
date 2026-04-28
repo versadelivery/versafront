@@ -1,166 +1,384 @@
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Form, FormControl, FormItem, FormLabel } from '@/components/ui/form'
-import { FormField } from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import React, { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { Textarea } from '@/components/ui/textarea'
-import { Info, Camera, X, Loader2 } from 'lucide-react'
-import { z } from 'zod'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useCatalogGroup } from '../../../hooks/useCatalogGroup'
-import Image from 'next/image'
-import { Button } from '@/components/ui/button'
+"use client";
 
-export default function GroupModal({ isOpen, onOpenChange }: { isOpen: boolean, onOpenChange: (open: boolean) => void }) {
-  const { createCatalogGroup, isCreatingGroup } = useCatalogGroup()
-  const [previewImage, setPreviewImage] = useState<string | null>(null)
-  
-  const form = useForm({
-    defaultValues: {
-      name: '',
-      priority: 1,
-      image: undefined,
-      description: '',
-    },
-    resolver: zodResolver(z.object({
-      name: z.string().min(1),
-      priority: z.coerce.number().min(1),
-      image: z.instanceof(File).optional(),
-      description: z.string().min(1),
-    }))
-  })
+import { useState, useEffect, useRef } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Camera, Info, Loader2, Power } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+
+import { useCatalogGroup } from "@/hooks/useCatalogGroup";
+import { DeleteConfirmation } from "@/components/ui/delete-confirmation";
+import Image from "next/image";
+import { fixImageUrl } from "@/utils/image-url";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+interface GroupModalProps {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  editingGroup?: string | null;
+}
+
+export default function GroupModal({ isOpen, onOpenChange, editingGroup }: GroupModalProps) {
+  const {
+    createCatalogGroup,
+    isCreatingGroup,
+    updateCatalogGroup,
+    isUpdatingGroup,
+    deleteCatalogGroup,
+    isDeletingGroup,
+    catalogGroup,
+    isLoadingGroup,
+  } = useCatalogGroup(editingGroup || undefined);
+
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [priority, setPriority] = useState("1");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [active, setActive] = useState(true);
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isEditing = !!editingGroup;
+  const isLoading = isCreatingGroup || isUpdatingGroup;
+
+  useEffect(() => {
+    if (!isOpen) {
+      resetForm();
+      return;
+    }
+
+    if (isEditing && catalogGroup) {
+      const attrs = catalogGroup.data.attributes;
+      setName(attrs.name || "");
+      setDescription(attrs.description || "");
+      setPriority(attrs.priority?.toString() || "1");
+      setImagePreview(attrs.image_url || null);
+      setActive(attrs.active ?? true);
+
+    }
+  }, [isOpen, catalogGroup, isEditing]);
+
+  const resetForm = () => {
+    setName("");
+    setDescription("");
+    setPriority("1");
+    setImageFile(null);
+    setImagePreview(null);
+    setActive(true);
+
+    setErrors({});
+  };
+
+  const clearError = (field: string) => {
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: "" }));
+    }
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      newErrors.name = "Nome é obrigatório";
+    } else if (trimmedName.length < 2) {
+      newErrors.name = "Mínimo 2 caracteres";
+    }
+
+    const trimmedDescription = description.trim();
+    if (!trimmedDescription) {
+      newErrors.description = "Descrição é obrigatória";
+    } else if (trimmedDescription.length < 5) {
+      newErrors.description = "Mínimo 5 caracteres";
+    }
+
+    const priorityNumber = parseInt(priority, 10);
+    if (!priority || isNaN(priorityNumber) || priorityNumber < 1) {
+      newErrors.priority = "Deve ser um número maior que 0";
+    }
+
+    if (!isEditing && !imageFile && !imagePreview) {
+      newErrors.image = "Imagem é obrigatória";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSelectImage = () => {
+    fileInputRef.current?.click();
+  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+    const file = e.target.files?.[0];
     if (file) {
-      form.setValue('image', file)
-      const reader = new FileReader()
+      setImageFile(file);
+      const reader = new FileReader();
       reader.onloadend = () => {
-        setPreviewImage(reader.result as string)
-      }
-      reader.readAsDataURL(file)
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+      clearError("image");
     }
-  }
+  };
 
-  const handleChangeImageClick = () => {
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = 'image/*'
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0]
-      if (file) {
-        form.setValue('image', file)
-        const reader = new FileReader()
-        reader.onloadend = () => {
-          setPreviewImage(reader.result as string)
-        }
-        reader.readAsDataURL(file)
-      }
-    }
-    input.click()
-  }
+  const handlePriorityChange = (value: string) => {
+    const numericValue = value.replace(/[^0-9]/g, "");
+    setPriority(numericValue);
+    clearError("priority");
+  };
 
-  const onSubmit = (data: any) => {
+  const handleSubmit = () => {
+    if (!validateForm()) return;
+
     const formData = new FormData();
-    formData.append('name', data.name);
-    formData.append('priority', Number(data.priority).toString());
-    formData.append('image', data.image);
-    formData.append('description', data.description);
-    createCatalogGroup(formData)
-    onOpenChange(false)
-    form.reset()
-    setPreviewImage(null)
-  }
+    formData.append("name", name.trim());
+    formData.append("description", description.trim());
+    formData.append("priority", priority || "1");
+    formData.append("active", active.toString());
+
+
+    if (imageFile) {
+      formData.append("image", imageFile);
+    }
+
+    if (isEditing && editingGroup) {
+      formData.append("id", editingGroup);
+      updateCatalogGroup(formData);
+    } else {
+      createCatalogGroup(formData);
+    }
+
+    handleClose();
+  };
+
+  const handleClose = () => {
+    if (isLoading) return;
+    resetForm();
+    onOpenChange(false);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!editingGroup) return;
+    deleteCatalogGroup(editingGroup);
+    setShowDeleteModal(false);
+    handleClose();
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-    <DialogContent className='rounded-xs sm:h-auto max-w-[95vw] sm:max-w-[720px] p-4 sm:p-6 md:p-8 bg-white max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#212121] [&::-webkit-scrollbar-thumb]:rounded-sm [&::-webkit-scrollbar]:px-2'>
-      <DialogHeader>
-        <DialogTitle className="text-start font-outfit text-xl md:text-2xl font-bold">NOVO GRUPO</DialogTitle>
-      </DialogHeader>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="font-outfit text-sm font-bold text-foreground">NOME</FormLabel>
-                <FormControl>
-                  <Input {...field} placeholder="Ex: Carne moída" className="border border-gray-300 h-12" />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          <div className="flex gap-4">
-            <FormField
-              control={form.control}
-              name="image"
-              render={({ field: { onChange, ...rest } }) => (
-                <FormItem className="flex-1">
-                  <FormLabel className="font-outfit text-sm font-bold text-foreground">IMAGEM</FormLabel>
-                  <div className="flex flex-col gap-2">
-                    {previewImage ? (
-                      <div className="flex items-center justify-center flex-col gap-2 w-[200px]">
+    <>
+      <Dialog open={isOpen} onOpenChange={handleClose}>
+        <DialogContent className="rounded-lg sm:max-w-[640px] p-0 bg-white max-h-[90vh] flex flex-col overflow-hidden">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b border-gray-100">
+            <DialogTitle className="font-tomato text-lg font-semibold">
+              {isEditing ? "Editar Grupo" : "Novo Grupo"}
+            </DialogTitle>
+          </DialogHeader>
+
+          {isEditing && isLoadingGroup ? (
+            <div className="flex items-center justify-center h-40">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            <>
+              <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1.5 block">
+                    Imagem do Grupo {!isEditing && "*"}
+                  </label>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageChange}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleSelectImage}
+                    disabled={isLoading}
+                    className={`w-full h-40 rounded-lg border border-dashed overflow-hidden transition-colors hover:bg-gray-50 ${
+                      errors.image ? "border-destructive" : "border-gray-200"
+                    }`}
+                  >
+                    {imagePreview ? (
+                      <div className="relative w-full h-full">
                         <Image
-                          src={previewImage}
+                          src={fixImageUrl(imagePreview) || imagePreview}
                           alt="Preview"
-                          width={200}
-                          height={200}
-                          className="rounded-xs object-cover w-[200px] h-[200px]"
+                          fill
+                          className="object-cover"
+                          unoptimized
                         />
-                        <button
-                          type="button"
-                          onClick={handleChangeImageClick}
-                          className="cursor-pointer w-[200px] text-sm font-semibold h-10 bg-muted-foreground text-white rounded-xs flex items-center justify-center gap-2 hover:bg-muted-foreground/80 transition-colors"
-                        >
-                          TROCAR
-                          <Camera size={16} />
-                        </button>
-                        <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} name={rest.name} ref={rest.ref} />
                       </div>
                     ) : (
-                      <label className="flex h-12 items-center gap-2 border rounded cursor-pointer hover:bg-gray-100 max-w-48">
-                        <div className="w-12 h-full bg-black flex items-center justify-center rounded-l">
-                          <Camera size={32} className="text-white" />
-                        </div>
-                        <span className="font-semibold pl-4">Procurar</span>
-                        <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} name={rest.name} ref={rest.ref} />
-                      </label>
+                      <div className="flex flex-col items-center justify-center h-full gap-2 text-muted-foreground">
+                        <Camera className="h-8 w-8" />
+                        <span className="text-sm">Clique para adicionar</span>
+                      </div>
                     )}
+                  </button>
+                  {errors.image && (
+                    <p className="text-xs text-destructive mt-1">{errors.image}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1.5 block">
+                    Nome do grupo *
+                  </label>
+                  <Input
+                    value={name}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      clearError("name");
+                    }}
+                    placeholder="Ex: Pratos Principais"
+                    maxLength={50}
+                    disabled={isLoading}
+                    className={errors.name ? "border-destructive" : ""}
+                  />
+                  {errors.name && (
+                    <p className="text-xs text-destructive mt-1">{errors.name}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1.5 block">
+                    Descrição *
+                  </label>
+                  <Textarea
+                    value={description}
+                    onChange={(e) => {
+                      setDescription(e.target.value);
+                      clearError("description");
+                    }}
+                    placeholder="Digite a descrição do grupo"
+                    rows={3}
+                    maxLength={200}
+                    disabled={isLoading}
+                    className={errors.description ? "border-destructive" : ""}
+                  />
+                  {errors.description && (
+                    <p className="text-xs text-destructive mt-1">{errors.description}</p>
+                  )}
+                </div>
+
+                <div>
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <label className="text-sm font-medium text-foreground">
+                      Prioridade *
+                    </label>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button type="button" className="text-primary">
+                            <Info className="h-4 w-4" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Maior número = aparece primeiro</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="priority"
-              render={({ field }) => (
-                <FormItem className="flex-1">
-                  <FormLabel className="flex items-center gap-1 font-outfit text-sm font-bold text-foreground">PRIORIDADE DO GRUPO <Info size={16} /></FormLabel>
-                  <FormControl>
-                    <Input {...field} type="number" min={1} className="border border-gray-300 h-12" placeholder="Ex: 1" />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-          </div>
-          <FormField
-            control={form.control}
-            name="description"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="font-outfit text-sm font-bold text-foreground">DESCRIÇÃO</FormLabel>
-                <FormControl>
-                  <Textarea {...field} placeholder="Digite a descrição do grupo" rows={3} className="border border-gray-300 h-12" />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          <Button onClick={form.handleSubmit(onSubmit)} className="w-full" disabled={isCreatingGroup}>{isCreatingGroup ? <Loader2 className="animate-spin" /> : 'CRIAR GRUPO'}</Button>
-        </form>
-      </Form>
-    </DialogContent>
-  </Dialog>
-  )
+                  <Input
+                    value={priority}
+                    onChange={(e) => handlePriorityChange(e.target.value)}
+                    placeholder="1"
+                    maxLength={3}
+                    disabled={isLoading}
+                    className={errors.priority ? "border-destructive" : ""}
+                  />
+                  {errors.priority && (
+                    <p className="text-xs text-destructive mt-1">{errors.priority}</p>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <Power className={`h-4 w-4 ${active ? 'text-green-500' : 'text-gray-400'}`} />
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Status do Grupo</p>
+                      <p className="text-xs text-muted-foreground">
+                        {active ? "O grupo está visível no cardápio" : "O grupo está oculto para clientes"}
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={active}
+                    onCheckedChange={setActive}
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
+
+
+              <div className="px-6 py-4 border-t border-gray-100 flex gap-3">
+                {isEditing ? (
+                  <Button
+                    variant="outline"
+                    className="flex-1 bg-destructive text-white hover:bg-destructive/90 border-destructive"
+                    onClick={() => setShowDeleteModal(true)}
+                    disabled={isLoading || isDeletingGroup}
+                  >
+                    {isDeletingGroup ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "Deletar grupo"
+                    )}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={handleClose}
+                    disabled={isLoading}
+                  >
+                    Cancelar
+                  </Button>
+                )}
+                <Button
+                  className="flex-1"
+                  onClick={handleSubmit}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : isEditing ? (
+                    "Salvar"
+                  ) : (
+                    "Criar"
+                  )}
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <DeleteConfirmation
+        isOpen={showDeleteModal}
+        onOpenChange={setShowDeleteModal}
+        onConfirm={handleConfirmDelete}
+        isLoading={isDeletingGroup}
+        type="grupo"
+      />
+    </>
+  );
 }

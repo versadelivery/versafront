@@ -2,11 +2,9 @@
 
 import { useState } from "react";
 import { AuthLayout } from "@/components/auth/auth-layout";
-import cesta from "../../../public/img/cesta.png";
 import { loginSchema, LoginFormData } from "@/schemas/auth-schemas";
 import { useAuth } from "@/hooks/use-auth";
 import { z } from "zod";
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { AuthFormInput } from "@/components/auth/auth-form-input";
@@ -58,45 +56,47 @@ export default function Login() {
   }
 
   return (
-    <AuthLayout 
-      title="Faça Login para Iniciar" 
-      imageSrc={cesta} 
-      imagePosition="left"
-    >
-      <div className="w-full flex flex-col justify-center mb-4">
+    <AuthLayout title="Faça login na sua conta">
+      <form onSubmit={handleSubmit} className="space-y-4">
         <AuthFormInput
           type="email"
           name="email"
-          placeholder="Email"
+          placeholder="seu@email.com"
           value={formData.email}
           onChange={handleChange}
           disabled={isLoading}
           label="Email"
           error={errors.email}
         />
-      </div>
-      <div className="w-full flex flex-col justify-center mb-4">
         <AuthFormInput
           type="password"
           name="password"
-          placeholder="Senha"
+          placeholder="Sua senha"
           value={formData.password}
           onChange={handleChange}
           disabled={isLoading}
           label="Senha"
-          error={errors.password}showPasswordToggle
+          error={errors.password}
+          showPasswordToggle
         />
-      </div>
-      <Button
-        type="submit"
-        className="w-full mt-4 mb-4 text-lg font-bold py-8"
-        onClick={handleSubmit}
-        disabled={isLoading}
-      >
-        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Entrar"}
-      </Button>
-      <p className="text-md text-center mt-4">
-        Não tem uma conta? <Link href="/register" className="text-primary">Cadastre-se</Link>
+        <div className="flex justify-end">
+          <Link href="/forgot-password" className="text-sm text-[#009246] hover:underline">
+            Esqueceu sua senha?
+          </Link>
+        </div>
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="w-full bg-[#1B1B1B] hover:bg-black text-white text-base font-medium py-4 rounded-2xl transition-colors cursor-pointer disabled:opacity-50"
+        >
+          {isLoading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "Entrar"}
+        </button>
+      </form>
+      <p className="text-sm text-[#858585] text-center mt-6">
+        Não tem uma conta?{" "}
+        <Link href="/register" className="text-[#009246] font-medium hover:underline">
+          Cadastre-se
+        </Link>
       </p>
     </AuthLayout>
   );

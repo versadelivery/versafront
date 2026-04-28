@@ -4,7 +4,8 @@ export interface RestaurantSounds {
   orderAccepted: () => void;
   orderReady: () => void;
   newOrder: () => void;
-  playSound: (soundType: 'orderAccepted' | 'orderReady' | 'newOrder') => void;
+  orderOverdue: () => void;
+  playSound: (soundType: 'orderAccepted' | 'orderReady' | 'newOrder' | 'orderOverdue') => void;
   updateSettings: (settings: SoundSettings) => void;
 }
 
@@ -14,6 +15,7 @@ export interface SoundSettings {
   orderAccepted: boolean;
   orderReady: boolean;
   newOrder: boolean;
+  orderOverdue?: boolean;
 }
 
 export function useRestaurantSounds(): RestaurantSounds {
@@ -188,8 +190,40 @@ export function useRestaurantSounds(): RestaurantSounds {
     }
   }, [settings.enabled, settings.newOrder, settings.volume]);
 
+  // Função para tocar som de pedido atrasado (urgente, tom grave repetido)
+  const orderOverdue = useCallback(() => {
+    if (!settings.enabled || settings.orderOverdue === false) {
+      return;
+    }
+
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const now = audioContext.currentTime;
+
+      // Três beeps graves e urgentes
+      for (let i = 0; i < 3; i++) {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        oscillator.frequency.setValueAtTime(300, now + i * 0.25);
+        oscillator.frequency.setValueAtTime(200, now + i * 0.25 + 0.1);
+
+        gainNode.gain.setValueAtTime(settings.volume, now + i * 0.25);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + i * 0.25 + 0.2);
+
+        oscillator.start(now + i * 0.25);
+        oscillator.stop(now + i * 0.25 + 0.2);
+      }
+    } catch (error) {
+      console.warn('Erro ao tocar som de pedido atrasado:', error);
+    }
+  }, [settings.enabled, settings.orderOverdue, settings.volume]);
+
   // Função genérica para tocar qualquer som
-  const playSound = useCallback((soundType: 'orderAccepted' | 'orderReady' | 'newOrder') => {
+  const playSound = useCallback((soundType: 'orderAccepted' | 'orderReady' | 'newOrder' | 'orderOverdue') => {
     switch (soundType) {
       case 'orderAccepted':
         orderAccepted();
@@ -200,10 +234,13 @@ export function useRestaurantSounds(): RestaurantSounds {
       case 'newOrder':
         newOrder();
         break;
+      case 'orderOverdue':
+        orderOverdue();
+        break;
       default:
         console.warn('Tipo de som não reconhecido:', soundType);
     }
-  }, [orderAccepted, orderReady, newOrder]);
+  }, [orderAccepted, orderReady, newOrder, orderOverdue]);
 
   // Função para atualizar configurações
   const updateSettings = useCallback((newSettings: SoundSettings) => {
@@ -218,6 +255,7 @@ export function useRestaurantSounds(): RestaurantSounds {
     orderAccepted,
     orderReady,
     newOrder,
+    orderOverdue,
     playSound,
     updateSettings
   };

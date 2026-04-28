@@ -12,36 +12,59 @@ export function useAuth() {
 
   useEffect(() => {
     const token = getToken()
+    const storedUser = typeof window !== 'undefined' ? localStorage.getItem('auth_user') : null
+
     if (!token) {
       setIsLoading(false)
       return
     }
+
+    if (storedUser && storedUser !== 'undefined') {
+      try {
+        setUser(JSON.parse(storedUser))
+      } catch (e) {
+        console.error('Error parsing stored user', e)
+        localStorage.removeItem('auth_user')
+      }
+    }
+
     setIsLoading(false)
   }, [])
 
-  const register = async (data: RegisterData)=> {
-    try {
-      const response = await registerShop(data)
-      setToken(response.token)
-      setUser(response.user)
-      toast.success('Loja cadastrada com sucesso')
-      router.push('/admin')
-      return response
-    } catch (error) {
-      toast.error('Erro ao cadastrar loja')
-    }
+  const register = async (data: RegisterData) => {
+    const response = await registerShop(data)
+    toast.success('Loja cadastrada com sucesso!')
+    router.push('/pending-approval')
+    return response
   }
 
   const login = async (data: LoginData): Promise<LoginResponse> => {
     try {
       const response = await loginUser(data)
+
+      const shopApproved = response.user?.shop?.attributes?.approved
+
+      if (shopApproved === false) {
+        router.push('/pending-approval')
+        return response
+      }
+
       setToken(response.token)
       setUser(response.user)
-      toast.success('Login realizado com sucesso')
-      router.push('/admin')
+      localStorage.setItem('auth_user', JSON.stringify(response.user))
+      toast.success('Você entrou na sua conta')
+
+      if (response.user?.role === 'delivery_man') {
+        router.push('/delivery')
+      } else {
+        router.push('/admin')
+      }
+
       return response
-    } catch (error) {
-      toast.error('Erro ao fazer login')
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: { error?: string } } }
+      const errorMessage = axiosError.response?.data?.error || 'Erro ao fazer login'
+      toast.error(errorMessage)
       throw error
     }
   }
@@ -49,7 +72,8 @@ export function useAuth() {
   const logout = () => {
     removeToken()
     removeUser()
-    toast.success('Logout realizado com sucesso')
+    localStorage.removeItem('auth_user')
+    toast.success('Você saiu da sua conta')
     router.push('/login')
   }
 

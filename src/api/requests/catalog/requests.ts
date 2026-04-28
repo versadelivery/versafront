@@ -33,3 +33,8 @@ export async function deleteCatalogGroup(id: string) {
   const response = await api.delete(`/catalog_groups/${id}`);
   return response.data;
 }
+
+export async function reorderCatalogGroups(orderedIds: string[]) {
+  const response = await api.patch('/catalog_groups/reorder', { ordered_ids: orderedIds });
+  return response.data;
+}

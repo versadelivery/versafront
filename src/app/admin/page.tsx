@@ -9,7 +9,7 @@ import { useShop } from "@/hooks/use-shop";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { useSchedule } from "@/app/admin/settings/general/hooks/useSchedule";
+import { useSchedule, WeekSchedule } from "@/app/admin/settings/general/hooks/useSchedule";
 
 export default function AdminDashboard() {
   const { shop, isLoading } = useShop();
@@ -26,8 +26,47 @@ export default function AdminDashboard() {
     'saturday'
   ] as const;
 
-  const todayKey = dayKeys[new Date().getDay()] as keyof typeof schedule;
-  const isOpenToday = !!(schedule && schedule[todayKey] && schedule[todayKey].active);
+  const todayKey = dayKeys[new Date().getDay()] as keyof WeekSchedule;
+  const yesterdayKey = dayKeys[(new Date().getDay() + 6) % 7] as keyof WeekSchedule;
+  const todaySchedule = schedule ? schedule[todayKey] : null;
+  const yesterdaySchedule = schedule ? schedule[yesterdayKey] : null;
+  const isActiveToday = !!(todaySchedule && todaySchedule.active);
+
+  // Calcular se a loja está aberta agora baseado no horário (aproximação para o admin)
+  const isWithinHours = () => {
+    // Pegar horário de Brasília para consistência com o backend
+    const now = new Date();
+    const brasiliaTime = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+    const currentMinutes = brasiliaTime.getHours() * 60 + brasiliaTime.getMinutes();
+
+    // Verifica o horário de hoje
+    if (todaySchedule && todaySchedule.active) {
+      const [openH, openM] = todaySchedule.open.split(':').map(Number);
+      const [closeH, closeM] = todaySchedule.close.split(':').map(Number);
+      const openMinutes = openH * 60 + openM;
+      const closeMinutes = closeH * 60 + closeM;
+      if (closeMinutes < openMinutes) {
+        if (currentMinutes >= openMinutes) return true;
+      } else {
+        if (currentMinutes >= openMinutes && currentMinutes <= closeMinutes) return true;
+      }
+    }
+
+    // Verifica se o horário de ontem cruzava meia-noite e ainda estamos dentro
+    if (yesterdaySchedule && yesterdaySchedule.active) {
+      const [yOpenH, yOpenM] = yesterdaySchedule.open.split(':').map(Number);
+      const [yCloseH, yCloseM] = yesterdaySchedule.close.split(':').map(Number);
+      const yOpenMinutes = yOpenH * 60 + yOpenM;
+      const yCloseMinutes = yCloseH * 60 + yCloseM;
+      if (yCloseMinutes < yOpenMinutes && currentMinutes <= yCloseMinutes) {
+        return true;
+      }
+    }
+
+    return false;
+  };
+
+  const isReallyOpenNow = isWithinHours();
 
   const toggleTodayOpen = async () => {
     if (!schedule) return;
@@ -35,7 +74,7 @@ export default function AdminDashboard() {
     try {
       const newSchedule = {
         ...schedule,
-        [todayKey]: { ...schedule[todayKey], active: !isOpenToday }
+        [todayKey]: { ...schedule[todayKey], active: !isActiveToday }
       };
       await updateSchedule(newSchedule as any);
     } catch (err) {
@@ -51,19 +90,49 @@ export default function AdminDashboard() {
         {/* Overlay control placed over the banner for stronger visual hierarchy */}
         <div className="absolute right-6 top-6 z-30">
           <div className="bg-background/80 backdrop-blur-sm rounded-lg p-3 shadow-md border border-border flex items-center gap-3">
-            <div>
-              <p className="text-sm font-medium">{loadingSchedule || !schedule ? 'Carregando...' : isOpenToday ? 'Aberta hoje' : 'Fechada hoje'}</p>
-              {!loadingSchedule && (
-                <p className="text-xs text-muted-foreground">{isOpenToday ? 'Fechando até o fim do dia' : 'Fechada até reabrir'}</p>
+            <div className="min-w-[120px]">
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${isReallyOpenNow ? 'bg-green-500' : isActiveToday ? 'bg-orange-500' : 'bg-red-500'}`} />
+                <p className="text-sm font-semibold">
+                  {loadingSchedule || !schedule
+                    ? 'Carregando...'
+                    : isReallyOpenNow
+                      ? 'Aberta agora'
+                      : isActiveToday
+                        ? 'Fechada (fora do horário)'
+                        : 'Fechada hoje'}
+                </p>
+              </div>
+              {!loadingSchedule && (todaySchedule || (isReallyOpenNow && yesterdaySchedule)) && (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {(() => {
+                    if (isReallyOpenNow && !isActiveToday && yesterdaySchedule?.active) {
+                      return `${yesterdaySchedule.open} às ${yesterdaySchedule.close}`;
+                    }
+                    if (isReallyOpenNow && isActiveToday && todaySchedule) {
+                      const now = new Date();
+                      const brasiliaTime = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+                      const currentMinutes = brasiliaTime.getHours() * 60 + brasiliaTime.getMinutes();
+                      const [openH, openM] = todaySchedule.open.split(':').map(Number);
+                      if (currentMinutes < openH * 60 + openM && yesterdaySchedule?.active) {
+                        return `${yesterdaySchedule.open} às ${yesterdaySchedule.close}`;
+                      }
+                      return `${todaySchedule.open} às ${todaySchedule.close}`;
+                    }
+                    if (isActiveToday && todaySchedule) return `${todaySchedule.open} às ${todaySchedule.close}`;
+                    return 'Dia desativado';
+                  })()}
+                </p>
               )}
             </div>
             <Button
               size="sm"
-              className={isOpenToday ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}
+              variant={isActiveToday ? 'destructive' : 'default'}
+              className={isActiveToday ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}
               onClick={toggleTodayOpen}
               disabled={loadingSchedule || isUpdatingSchedule || isToggling}
             >
-              {isToggling || isUpdatingSchedule ? 'Processando...' : isOpenToday ? 'Fechar' : 'Reabrir'}
+              {isToggling || isUpdatingSchedule ? '...' : isActiveToday ? 'Desativar Hoje' : 'Ativar Hoje'}
             </Button>
           </div>
         </div>

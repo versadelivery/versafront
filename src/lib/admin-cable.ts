@@ -11,10 +11,16 @@ export interface AdminOrderData {
     total_price: string | null
     total_items_price: string | null
     delivery_fee: string | null
+    discount_amount: string
+    payment_adjustment_amount: string
+    coupon_code: string | null
     withdrawal: boolean
     payment_method: string
     created_at: string
     paid_at?: string | null
+    accepted_at?: string | null
+    ready_at?: string | null
+    left_for_delivery_at?: string | null
     delivery_person?: string | null
     items: {
       data: any[]
@@ -53,12 +59,15 @@ export interface AdminOrderData {
 
 export function createAdminCableWithToken() {
   const token = getToken()
-  if (token) {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-    const cableUrl = apiUrl.replace('http', 'ws').replace('https', 'wss') + `/cable?token=${token}`
-    return createConsumer(cableUrl)
-  }
-  return null
+  if (!token) return null
+
+  const base = process.env.NEXT_PUBLIC_CABLE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+  // If base already points to ws(s), keep it; otherwise convert http(s) -> ws(s)
+  const wsBase = base.startsWith('ws') ? base : base.replace('http', 'ws').replace('https', 'wss')
+  const hasQuery = wsBase.includes('?')
+  const cableUrl = `${wsBase.replace(/\/$/, '')}${wsBase.endsWith('/cable') || wsBase.endsWith('/cable/') ? '' : '/cable'}${hasQuery ? '&' : '?'}token=${token}`
+
+  return createConsumer(cableUrl)
 }
 
 export function useAdminActionCable() {
@@ -226,7 +235,7 @@ export function useAdminActionCable() {
           id: orderId,
           ...(status && { status }),
           ...(paid_at !== undefined && { paid_at }),
-          ...(deliveryPerson && { delivery_person: deliveryPerson })
+          ...(deliveryPerson !== undefined && { delivery_person: deliveryPerson })
         }
       };
 
@@ -351,7 +360,7 @@ export function useAdminActionCable() {
       if (data.items) {
         supportedData.items = data.items;
       }
-      
+
       if (data.total !== undefined) {
         supportedData.total = data.total;
       }
@@ -360,8 +369,29 @@ export function useAdminActionCable() {
         supportedData.delivery_person = data.deliveryPerson;
       }
 
+      if (data.payment_method !== undefined) {
+        supportedData.payment_method = data.payment_method;
+      }
+
+      if (data.manual_adjustment !== undefined) {
+        supportedData.manual_adjustment = data.manual_adjustment;
+      }
+
+      if (data.removed_item_ids) {
+        supportedData.removed_item_ids = data.removed_item_ids;
+      }
+
+      if (data.new_items) {
+        supportedData.new_items = data.new_items;
+      }
+
+      if (data.withdrawal !== undefined) {
+        supportedData.withdrawal = data.withdrawal;
+      }
+
       // Determinar se é uma edição completa ou atualização simples
-      const hasItemsChanges = data.items && Object.keys(data.items).length > 0;
+      const hasItemsChanges = (data.items && (Array.isArray(data.items) ? data.items.length > 0 : Object.keys(data.items).length > 0)) ||
+        data.removed_item_ids || data.new_items;
       const event = hasItemsChanges ? "edit_order" : "update_order";
 
       const updateData = {

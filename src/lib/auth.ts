@@ -1,8 +1,11 @@
-// Admin tokens
+// Admin tokens (merchant)
 const ADMIN_TOKEN_KEY = 'auth_token'
 
-// Client tokens  
+// Client tokens
 const CLIENT_TOKEN_KEY = 'client_token'
+
+// Super Admin tokens
+const SUPER_ADMIN_TOKEN_KEY = 'super_admin_token'
 
 // Admin token functions
 export const getToken = (): string | null => {
@@ -43,4 +46,20 @@ export const getAdminToken = (): string | null => {
 
 export const removeUser = (): void => {
   removeClientToken()
+}
+
+// Super Admin token functions
+export const getSuperAdminToken = (): string | null => {
+  if (typeof window === 'undefined') return null
+  return localStorage.getItem(SUPER_ADMIN_TOKEN_KEY)
+}
+
+export const setSuperAdminToken = (token: string): void => {
+  if (typeof window === 'undefined') return
+  localStorage.setItem(SUPER_ADMIN_TOKEN_KEY, token)
+}
+
+export const removeSuperAdminToken = (): void => {
+  if (typeof window === 'undefined') return
+  localStorage.removeItem(SUPER_ADMIN_TOKEN_KEY)
 }

@@ -1,64 +1,57 @@
 "use client"
 
 import { useShopStatus } from '../hooks/useShopStatus';
-import { CheckCircle, XCircle, Clock } from 'lucide-react';
-import { motion } from 'framer-motion';
 
-export default function ShopStatus() {
-  const { shopStatus, loading } = useShopStatus();
+interface ShopStatusProps {
+  shopStatusData?: {
+    is_open: boolean;
+    current_time?: string;
+    timezone?: string;
+  };
+  shopScheduleConfig?: any;
+  isDarkHeader?: boolean;
+}
+
+export default function ShopStatus({ shopStatusData, shopScheduleConfig, isDarkHeader = false }: ShopStatusProps) {
+  const { shopStatus, loading } = useShopStatus({
+    initialShopStatus: shopStatusData,
+    shopScheduleConfig: shopScheduleConfig
+  });
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 px-3 py-1 rounded-full text-sm bg-gray-500/20 text-gray-100 border border-gray-400/30">
-        <Clock className="w-4 h-4 animate-pulse" />
-        <span>Verificando...</span>
-      </div>
+      <span
+        className="border-l-2 pl-2.5 text-sm font-medium"
+        style={{
+          borderColor: isDarkHeader ? 'rgba(255,255,255,0.3)' : '#D1D5DB',
+          color: isDarkHeader ? 'rgba(255,255,255,0.5)' : '#9CA3AF',
+        }}
+      >
+        Verificando...
+      </span>
     );
   }
 
-  return (
-    <motion.div 
-      className="flex flex-col gap-2"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-    >
-      {/* Status Atual */}
-      <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${
-        shopStatus.isOpen 
-          ? 'bg-green-500/20 text-green-100 border border-green-400/30' 
-          : 'bg-red-500/20 text-red-100 border border-red-400/30'
-      }`}>
-        {shopStatus.isOpen ? (
-          <>
-            <CheckCircle className="w-4 h-4" />
-            <span>Aberto agora</span>
-          </>
-        ) : (
-          <>
-            <XCircle className="w-4 h-4" />
-            <span>Fechado</span>
-            {shopStatus.nextOpenTime && (
-              <span className="text-xs opacity-80">
-                • Abre às {shopStatus.nextOpenTime}
-              </span>
-            )}
-          </>
-        )}
-      </div>
+  const openBorder = isDarkHeader ? '#86EFAC' : '#22C55E';
+  const openText = isDarkHeader ? '#86EFAC' : '#16A34A';
+  const closedBorder = isDarkHeader ? '#FCA5A5' : '#EF4444';
+  const closedText = isDarkHeader ? '#FCA5A5' : '#DC2626';
+  const mutedText = isDarkHeader ? 'rgba(255,255,255,0.6)' : undefined;
 
-      {/* Horário de Hoje */}
-      {shopStatus.todaySchedule && (
-        <div className="flex items-center gap-2 text-white/80">
-          <Clock className="w-3 h-3" />
-          <span className="text-xs">
-            {shopStatus.todaySchedule.active 
-              ? `Hoje: ${shopStatus.todaySchedule.open} às ${shopStatus.todaySchedule.close}`
-              : 'Fechado hoje'
-            }
-          </span>
-        </div>
+  return (
+    <span
+      className="border-l-2 pl-2.5 text-sm font-semibold"
+      style={{
+        borderColor: shopStatus.isOpen ? openBorder : closedBorder,
+        color: shopStatus.isOpen ? openText : closedText,
+      }}
+    >
+      {shopStatus.isOpen ? 'Aberto' : 'Fechado'}
+      {!shopStatus.isOpen && shopStatus.nextOpenTime && (
+        <span className="font-normal ml-1" style={{ opacity: 0.8, color: mutedText }}>
+          · Abre às {shopStatus.nextOpenTime}
+        </span>
       )}
-    </motion.div>
+    </span>
   );
 }

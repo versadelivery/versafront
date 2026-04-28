@@ -1,9 +1,7 @@
 "use client"
 
-import { useState, useEffect } from 'react';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { motion } from 'framer-motion';
+import { memo, useMemo } from 'react';
+import { isDarkColor } from '../theme-utils';
 
 interface Category {
   id: string;
@@ -17,91 +15,80 @@ interface CategoryNavigationProps {
   categories: Category[];
   activeCategory: string;
   onChange: (category: string) => void;
+  accentColor?: string | null;
 }
 
-export default function CategoryNavigation({ categories, activeCategory, onChange }: CategoryNavigationProps) {
-  const [mounted, setMounted] = useState(false);
+const CategoryNavigation = memo(function CategoryNavigation({ categories, activeCategory, onChange, accentColor }: CategoryNavigationProps) {
+  const accentText = useMemo(() => {
+    if (!accentColor) return '#FFFFFF';
+    return isDarkColor(accentColor) ? '#FFFFFF' : '#111827';
+  }, [accentColor]);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const scrollToCategory = (categoryName: string, buttonEl: HTMLButtonElement) => {
+    onChange(categoryName);
 
-  if (!mounted) return null;
+    // Rola o botão clicado para dentro da área visível do scroll horizontal
+    buttonEl.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
 
-  const tabVariants = {
-    inactive: { opacity: 0.7, scale: 0.95 },
-    active: { opacity: 1, scale: 1 }
+    // Rola a página até a seção da categoria
+    const element = document.getElementById(categoryName.toLowerCase().replace(/\s+/g, '-'));
+    if (element) {
+      const offset = 140;
+      const bodyRect = document.body.getBoundingClientRect().top;
+      const elementRect = element.getBoundingClientRect().top;
+      const elementPosition = elementRect - bodyRect;
+      const offsetPosition = elementPosition - offset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
   };
 
+  const activeStyle = accentColor
+    ? { backgroundColor: accentColor, color: accentText, borderColor: accentColor }
+    : undefined;
+
   return (
-    <>
-      <div className="md:hidden w-full">
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.1 }}
+    <div className="w-full">
+      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+        <button
+          onClick={(e) => scrollToCategory('all', e.currentTarget)}
+          className={`
+            whitespace-nowrap px-5 py-2 text-sm font-semibold transition-all duration-150 flex-shrink-0 border rounded-md cursor-pointer
+            ${activeCategory === 'all'
+              ? (accentColor ? '' : 'bg-primary text-white border-primary')
+              : 'bg-white text-gray-600 border-[#E5E2DD] hover:border-gray-400 hover:text-gray-900'}
+          `}
+          style={activeCategory === 'all' ? activeStyle : undefined}
         >
-          <Select value={activeCategory} onValueChange={onChange}>
-            <SelectTrigger className="w-full h-12 border-2 rounded-full px-4 flex items-center justify-between bg-background">
-              <SelectValue placeholder="Select a category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all" className="cursor-pointer">
-                Todos os produtos
-              </SelectItem>
-              {categories.map(category => (
-                <SelectItem key={category.id} value={category.attributes.name} className="cursor-pointer">
-                  {category.attributes.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </motion.div>
+          Tudo
+        </button>
+
+        {categories.map(category => (
+          <button
+            key={category.id}
+            onClick={(e) => scrollToCategory(category.attributes.name, e.currentTarget)}
+            className={`
+              whitespace-nowrap px-5 py-2 text-sm font-semibold transition-all duration-150 flex-shrink-0 border rounded-md cursor-pointer
+              ${activeCategory === category.attributes.name
+                ? (accentColor ? '' : 'bg-primary text-white border-primary')
+                : 'bg-white text-gray-600 border-[#E5E2DD] hover:border-gray-400 hover:text-gray-900'}
+            `}
+            style={activeCategory === category.attributes.name ? activeStyle : undefined}
+          >
+            {category.attributes.name}
+          </button>
+        ))}
       </div>
 
-      <motion.div 
-        className="hidden md:block w-full"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.2 }}
-      >
-        <Tabs value={activeCategory} onValueChange={onChange} className="w-full">
-          <TabsList className="w-full flex gap-1 p-1 bg-muted/50 rounded-full h-12">
-            <motion.div 
-              className="flex-1"
-              variants={tabVariants}
-              initial="inactive"
-              animate={activeCategory === 'all' ? 'active' : 'inactive'}
-              transition={{ duration: 0.2 }}
-            >
-              <TabsTrigger 
-                value="all" 
-                className="flex-1 w-full py-2.5 rounded-full data-[state=active]:bg-primary data-[state=active]:text-white font-medium text-sm data-[state=active]:shadow-sm transition-all duration-200"
-              >
-                Todos os produtos
-              </TabsTrigger>
-            </motion.div>
-            
-            {categories.map(category => (
-              <motion.div 
-                key={category.id}
-                className="flex-1"
-                variants={tabVariants}
-                initial="inactive"
-                animate={activeCategory === category.attributes.name ? 'active' : 'inactive'}
-                transition={{ duration: 0.2 }}
-              >
-                <TabsTrigger 
-                  value={category.attributes.name}
-                  className="flex-1 w-full py-2.5 rounded-full data-[state=active]:bg-primary data-[state=active]:text-white font-medium text-sm data-[state=active]:shadow-sm transition-all duration-200"
-                >
-                  {category.attributes.name}
-                </TabsTrigger>
-              </motion.div>
-            ))}
-          </TabsList>
-        </Tabs>
-      </motion.div>
-    </>
+      <style jsx global>{`
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      `}</style>
+    </div>
   );
-}
+});
+
+export default CategoryNavigation;

@@ -15,6 +15,11 @@ export async function createCatalogItem(formData: FormData) {
   return response.data;
 }
 
+export async function duplicateCatalogItem(id: string): Promise<CatalogItemResponse> {
+  const response = await api.post(`/catalog_items/${id}/duplicate`);
+  return response.data;
+}
+
 export async function updateExtra(id: string, extraId: string, name: string, price: number) {
   const response = await api.put(`/catalog_items/${id}`, {
     "catalog_item_extras_attributes": [
@@ -63,7 +68,7 @@ export async function updateStepOption(id: string, stepId: string, optionId: str
             name: name,
           }
         ]
-      } 
+      }
     ]
   });
   return response.data;
@@ -99,7 +104,7 @@ export async function destroyExtra(id: string, itemId: string) {
   const response = await api.put(`/catalog_items/${itemId}`, {
     "catalog_item_extras_attributes": [
       {
-        id: id, 
+        id: id,
         _destroy: true
       }
     ]
@@ -111,7 +116,7 @@ export async function destroyStep(id: string, itemId: string) {
   const response = await api.put(`/catalog_items/${id}`, {
     "catalog_item_steps_attributes": [
       {
-        id: itemId, 
+        id: itemId,
         _destroy: true
       }
     ]
@@ -123,15 +128,23 @@ export async function destroyStepOption(id: string, stepId: string, optionId: st
   const response = await api.put(`/catalog_items/${id}`, {
     "catalog_item_steps_attributes": [
       {
-        id: stepId, 
+        id: stepId,
         "catalog_item_step_options_attributes": [
           {
-          id: optionId, 
-          _destroy: true
+            id: optionId,
+            _destroy: true
           }
         ]
       }
     ]
+  });
+  return response.data;
+}
+
+export async function reorderCatalogItems(catalogGroupId: string, orderedIds: string[]) {
+  const response = await api.patch('/catalog_items/reorder', {
+    catalog_group_id: catalogGroupId,
+    ordered_ids: orderedIds,
   });
   return response.data;
 }

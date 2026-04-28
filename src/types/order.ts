@@ -3,13 +3,18 @@ export interface OrderAddress {
   neighborhood: string;
   complement?: string;
   reference?: string;
-  shop_delivery_neighborhood?: string;
+  shop_delivery_neighborhood_id?: number;
 }
 
 export interface OrderItem {
   catalog_item_id: number;
   quantity: number;
+  weight?: number;
   observation?: string;
+  selected_extras?: string[];
+  selected_methods?: string[];
+  selected_options?: Record<string, string>;
+  selected_shared_complements?: string[];
 }
 
 export interface OrderData {
@@ -24,15 +29,17 @@ export interface CreateOrderRequest {
   order: {
     shop_id: number;
     withdrawal: boolean;
-    payment_method: 'manual_pix' | 'credit' | 'debit' | 'cash';
+    payment_method: 'manual_pix' | 'asaas_pix' | 'credit' | 'debit' | 'cash';
     customer_name?: string;
     customer_phone?: string;
+    coupon_code?: string;
+    table_session_id?: number;
     address: {
       address: string;
       neighborhood: string;
       complement?: string;
       reference?: string;
-      shop_delivery_neighborhood?: string;
+      shop_delivery_neighborhood_id?: number;
     };
     items: OrderItem[];
   };
@@ -78,7 +85,7 @@ export interface Order {
   updated_at: string;
 }
 
-export type OrderStatus = 
+export type OrderStatus =
   | 'pending'
   | 'confirmed'
   | 'preparing'
@@ -95,6 +102,9 @@ export interface ActionCableOrderData {
     total_price: string
     total_items_price: string
     delivery_fee: string
+    discount_amount: string
+    payment_adjustment_amount: string
+    coupon_code: string | null
     withdrawal: boolean
     payment_method: string
     created_at: string
@@ -195,6 +205,17 @@ export interface CustomerOrderItem {
     price: string;
     total_price: string;
     item_type: string;
+    weight?: number | null;
+    selected_extras?: Array<{ id: string; name: string; price: number }>;
+    selected_prepare_methods?: Array<{ id: string; name: string }>;
+    selected_steps?: Array<{
+      id: string;
+      step_name: string;
+      option_name: string;
+      catalog_item_step_id: string;
+      catalog_item_step_option_id: string;
+    }>;
+    complements?: Array<{ id: string; name: string; price: number }>;
     catalog_item: {
       data: {
         id: string;
@@ -262,6 +283,9 @@ export interface CustomerOrder {
     total_price: string | null;
     total_items_price: string | null;
     delivery_fee: string | null;
+    discount_amount: string | null;
+    payment_adjustment_amount: string | null;
+    coupon_code: string | null;
     withdrawal: boolean;
     payment_method: string;
     created_at: string;

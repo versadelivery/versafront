@@ -34,30 +34,56 @@ interface CatalogItemExtra {
   };
 }
 
-export interface Item{
+export interface Item {
   name: string;
-    description: string;
-    item_type: 'unit' | 'weight_per_g' | 'weight_per_kg';
-    price: number;
-    price_with_discount: number | null;
-    measure_interval: number | null;
-    min_weight: number | null;
-    max_weight: number | null;
-    priority: number;
-    image_url: string | null;
-    extra: {
-      data: CatalogItemExtra[];
-    };
-    prepare_method: {
-      data: CatalogItemPrepareMethod[];
-    };
-    steps: {
-      data: CatalogItemStep[];
-    };
+  active: boolean;
+  description: string;
+  item_type: 'unit' | 'weight_per_g' | 'weight_per_kg';
+  price: number;
+  price_with_discount: number | null;
+  measure_interval: number | null;
+  min_weight: number | null;
+  max_weight: number | null;
+  priority: number;
+  image_url: string | null;
+  cost?: number | null;
+  ncm_code?: string | null;
+  highlight?: boolean;
+  sunday_active?: boolean;
+  monday_active?: boolean;
+  tuesday_active?: boolean;
+  wednesday_active?: boolean;
+  thursday_active?: boolean;
+  friday_active?: boolean;
+  saturday_active?: boolean;
+  promotion_tag?: boolean;
+  best_seller_tag?: boolean;
+  new_tag?: boolean;
+  available_delivery?: boolean;
+  available_dine_in?: boolean;
+  extra: {
+    data: CatalogItemExtra[];
+  };
+  prepare_method: {
+    data: CatalogItemPrepareMethod[];
+  };
+  steps: {
+    data: CatalogItemStep[];
+  };
+  shared_complements: {
+    data: any[];
+  };
+  has_out_of_stock_ingredient?: boolean;
+  ingredients?: Array<{
+    id: number;
+    name: string;
+    in_stock: boolean;
+  }>;
 }
 
 export interface CatalogItemAttributes {
   name: string;
+  active: boolean;
   description: string;
   item_type: string;
   price: number;
@@ -67,6 +93,21 @@ export interface CatalogItemAttributes {
   max_weight: number | null;
   priority: number;
   image_url: string;
+  cost?: number | null;
+  ncm_code?: string | null;
+  highlight?: boolean;
+  sunday_active?: boolean;
+  monday_active?: boolean;
+  tuesday_active?: boolean;
+  wednesday_active?: boolean;
+  thursday_active?: boolean;
+  friday_active?: boolean;
+  saturday_active?: boolean;
+  promotion_tag?: boolean;
+  best_seller_tag?: boolean;
+  new_tag?: boolean;
+  available_delivery?: boolean;
+  available_dine_in?: boolean;
   group?: {
     data: any;
   };
@@ -79,6 +120,15 @@ export interface CatalogItemAttributes {
   steps: {
     data: CatalogItemStep[];
   };
+  shared_complements: {
+    data: any[];
+  };
+  has_out_of_stock_ingredient?: boolean;
+  ingredients?: Array<{
+    id: number;
+    name: string;
+    in_stock: boolean;
+  }>;
 }
 
 

@@ -1,0 +1,13 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+      - NEXT_PUBLIC_SHOP_DOMAIN=${NEXT_PUBLIC_SHOP_DOMAIN:-http://localhost:3000}
+      - NEXT_PUBLIC_CABLE_URL=${NEXT_PUBLIC_CABLE_URL:-http://localhost:8080}
+      - NODE_ENV=production
+    restart: unless-stopped

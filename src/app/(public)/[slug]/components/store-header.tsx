@@ -1,143 +1,250 @@
 "use client"
 
+import { useMemo, useState, useEffect, useRef } from 'react';
+import { useParams } from 'next/navigation';
 import { useClient } from "../client-context";
-import { Package, Store, Clock, Phone, MapPin, CheckCircle, XCircle } from 'lucide-react';
+import { Store, Clock, Truck, Receipt, MapPin, Package, Megaphone } from 'lucide-react';
 import Image from 'next/image';
-import { CartDrawer } from '../cart/cart-drawer';
-import { motion } from 'framer-motion';
-import { Button } from "@/components/ui/button";
+import { CartLink } from '../cart/cart-link';
 import Link from "next/link";
 import AuthIndicator from './auth-indicator';
 import ShopStatus from './shop-status';
+import favicon from "@/public/logo/favicon.svg";
+import logoInlineBlack from "@/public/logo/logo-inline-black.svg";
+
+import { getTextColors } from '../theme-utils';
 
 interface StoreHeaderProps {
   shop: any;
 }
 
-export default function StoreHeader({ shop }: StoreHeaderProps) {
-  const { client } = useClient();
-  
+export default function StoreHeader({ shop: initialShop }: StoreHeaderProps) {
+  const { shop: contextShop } = useClient();
+  const params = useParams();
+  const storeSlug = params?.slug as string;
+  const [hasCustomerInfo, setHasCustomerInfo] = useState(false);
+  const stickyRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setHasCustomerInfo(!!localStorage.getItem('customer_info'));
+  }, []);
+
+  // Publica altura real do header sticky como CSS var — o catalog nav usa como `top`
+  useEffect(() => {
+    const el = stickyRef.current;
+    if (!el) return;
+    const update = () => {
+      document.documentElement.style.setProperty('--store-header-height', `${el.offsetHeight}px`);
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const shopData = contextShop?.data ?? null;
+  const attributes = shopData?.attributes || initialShop?.attributes || {};
+
+  const headerColor = attributes.header_color || null;
+  const { isDark, text: textColor, textMuted: mutedColor, border: borderColor, subtleBg } = useMemo(
+    () => getTextColors(headerColor), [headerColor]
+  );
+
+  const deliveryFee = () => {
+    const config = attributes.shop_delivery_config?.data?.attributes;
+    if (!config) return 'A combinar';
+    if (config.delivery_fee_kind === 'fixed') {
+      return `R$ ${Number(config.amount).toFixed(2).replace('.', ',')}`;
+    }
+    if (config.delivery_fee_kind === 'per_neighborhood') return 'Por bairro';
+    return 'A combinar';
+  };
+
+  const minimumOrder = () => {
+    const min = attributes.shop_delivery_config?.data?.attributes?.minimum_order_value || 0;
+    return `R$ ${Number(min).toFixed(2).replace('.', ',')}`;
+  };
+
+  const headerStyle = headerColor ? { backgroundColor: headerColor } : {};
+  const headerBorderStyle = { borderColor };
+
   return (
     <>
-      <header className="sticky top-0 z-50 w-full p-4 backdrop-blur-md bg-black/95 shadow-md">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4 max-w-7xl">
-          <motion.div 
-            className="flex items-center"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
+      {/* Banner + Nav header — sticky como uma unidade para não depender de altura fixa */}
+      <div ref={stickyRef} className="sticky top-0 z-40 w-full">
+        {/* Banner promocional */}
+        {attributes.banner_active && attributes.banner_text && (
+          <div
+            className="w-full px-4 py-2 text-center text-sm font-medium"
+            style={{
+              backgroundColor: headerColor || '#1F2937',
+              color: headerColor ? textColor : '#FFFFFF',
+              borderBottom: `1px solid ${borderColor}`,
+            }}
           >
-            <Image 
-              src="/logo/logo-inline.svg" 
-              alt="Logo" 
-              width={150} 
-              height={40} 
-              priority
-              className="h-auto"
-            />
-          </motion.div>
-          
-          <div className="flex items-center justify-center gap-4">
-            <AuthIndicator />
-            
-            {client && (
-              <Button variant="outline" className="hidden md:flex bg-primary text-white hover:text-black/80 border-none py-5 px-8 rounded-xs shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all duration-300 group">
-                <Package className="w-4 h-4 mr-2" />
-                <Link href="/pedidos">
-                  <span className="text-sm font-medium">Meus Pedidos</span>
-                </Link>
-              </Button>
-            )}
+            <div className="max-w-[1400px] mx-auto flex items-center justify-center gap-2">
+              <Megaphone className="w-4 h-4 flex-shrink-0" />
+              <span>{attributes.banner_text}</span>
+            </div>
+          </div>
+        )}
 
-          
-            <Button variant="outline" className="mr-4 md:hidden bg-transparent items-center justify-center text-white border border-white py-5 px-12 rounded-xs shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all duration-300 group">
-              <Package className="w-6 h-6" />
-            </Button>
-          
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2, duration: 0.3 }}
-            >
-              <CartDrawer />
-            </motion.div>
-        
+        {/* Nav header */}
+        <header
+          className="w-full"
+          style={{
+            ...headerStyle,
+            ...(!headerColor ? { backgroundColor: '#FFFFFF' } : {}),
+            borderBottom: `1px solid ${borderColor}`,
+          }}
+        >
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <Link href={`/${attributes.slug}`} className="md:hidden cursor-pointer">
+              <Image
+                src={favicon}
+                alt="Versa"
+                width={90}
+                height={90}
+                priority
+                style={isDark ? { filter: 'brightness(0) invert(1)' } : undefined}
+              />
+            </Link>
+            <Link href={`/${attributes.slug}`} className="hidden md:block cursor-pointer">
+              <Image
+                src={logoInlineBlack}
+                alt="Versa"
+                width={180}
+                height={56}
+                priority
+                style={isDark ? { filter: 'brightness(0) invert(1)' } : undefined}
+              />
+            </Link>
+
+            <div className="flex items-center gap-3 sm:gap-4">
+              <AuthIndicator isDarkHeader={isDark} />
+              {hasCustomerInfo && (
+                <>
+                  <Link
+                    href={`/${storeSlug}/meus-pedidos`}
+                    className="hidden md:flex items-center gap-2 text-sm font-medium transition-colors cursor-pointer"
+                    style={{ color: mutedColor }}
+                  >
+                    <Package className="w-5 h-5" />
+                    Meus Pedidos
+                  </Link>
+                  <Link
+                    href={`/${storeSlug}/meus-pedidos`}
+                    className="md:hidden flex items-center justify-center h-10 w-10 rounded-md transition-colors cursor-pointer"
+                    style={{ borderColor, color: mutedColor, borderWidth: '1px' }}
+                  >
+                    <Package className="w-5 h-5" />
+                  </Link>
+                </>
+              )}
+              <CartLink isDarkHeader={isDark} />
+            </div>
           </div>
         </div>
       </header>
+      </div>
 
-      <motion.div 
-        className="bg-gradient-to-r from-primary to-primary/80 py-10 sm:py-16 text-white px-4"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6 }}
+      {/* Shop info */}
+      <div
+        className="w-full"
+        style={{
+          ...headerStyle,
+          ...(!headerColor ? { backgroundColor: '#FFFFFF' } : {}),
+          borderBottom: `1px solid ${borderColor}`,
+        }}
       >
-        <div className="container mx-auto px-4 flex flex-col sm:flex-row items-center sm:items-start gap-6 max-w-7xl">
-          <motion.div 
-            className="w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center rounded-full bg-white/10 backdrop-blur-sm shadow-lg"
-            initial={{ scale: 0.8 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.3, duration: 0.5, type: "spring" }}
-          >
-            <Store className="w-12 h-12 sm:w-14 sm:h-14 text-white" />
-          </motion.div>
-          
-          <div className="text-center sm:text-left flex-1">
-            <motion.h1 
-              className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-4"
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.4, duration: 0.5 }}
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-start gap-5 sm:gap-6">
+            <div
+              className="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-md overflow-hidden"
+              style={{ borderColor, borderWidth: '1px', backgroundColor: headerColor || '#FFFFFF' }}
             >
-              {shop.attributes.name}
-            </motion.h1>
-            
-            {/* Status da Loja */}
-            <motion.div 
-              className="flex items-center justify-center sm:justify-start mb-3"
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.5, duration: 0.5 }}
-            >
-              <ShopStatus />
-            </motion.div>
-
-            {/* Informações de Contato */}
-            <motion.div 
-              className="flex flex-col sm:flex-row items-center sm:items-start gap-3 text-white/90"
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.7, duration: 0.5 }}
-            >
-              {shop.attributes.cellphone && (
-                <div className="flex items-center gap-2">
-                  <Phone className="w-4 h-4" />
-                  <span className="text-sm">{shop.attributes.cellphone}</span>
+              {attributes.image_url ? (
+                <img
+                  src={attributes.image_url}
+                  alt={attributes.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: subtleBg }}>
+                  <Store className="w-7 h-7 sm:w-8 sm:h-8" style={{ color: mutedColor }} />
                 </div>
               )}
+            </div>
 
-              {shop.attributes.address && (
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
-                  <span className="text-sm">{shop.attributes.address}</span>
-                </div>
-              )}
-            </motion.div>
-
-            {/* Descrição da Loja */}
-            {shop.attributes.description && (
-              <motion.div 
-                className="mt-3 text-white/80"
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.8, duration: 0.5 }}
+            <div className="flex-1 min-w-0">
+              <h1
+                className="text-xl sm:text-2xl font-bold uppercase tracking-wide leading-tight"
+                style={{ color: textColor }}
               >
-                <p className="text-sm max-w-2xl">{shop.attributes.description}</p>
-              </motion.div>
-            )}
+                {attributes.name}
+              </h1>
+              <div className="flex flex-wrap items-center gap-3 sm:gap-5 mt-2">
+                <ShopStatus
+                  shopStatusData={attributes.shop_status}
+                  shopScheduleConfig={
+                    attributes.shop_schedule_config?.data?.attributes ||
+                    attributes.shop_schedule_config
+                  }
+                  isDarkHeader={isDark}
+                />
+                {attributes.address && (
+                  <span className="flex items-center gap-1.5 text-sm" style={{ color: mutedColor }}>
+                    <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+                    <span className="truncate max-w-[300px]">{attributes.address}</span>
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile: linha compacta com separadores · / Desktop: blocos com ícone */}
+          <div className="mt-5 pt-5" style={{ borderTop: `1px solid ${borderColor}` }}>
+            {/* Mobile */}
+            <div className="flex items-center justify-center gap-3.5 sm:hidden">
+              <Clock className="w-3.5 h-3.5 flex-shrink-0" style={{ color: mutedColor }} />
+              <span className="text-xs font-semibold" style={{ color: textColor }}>30–45 min</span>
+              <span className="text-xs" style={{ color: mutedColor }}>·</span>
+              <Truck className="w-3.5 h-3.5 flex-shrink-0" style={{ color: mutedColor }} />
+              <span className="text-xs font-semibold" style={{ color: textColor }}>{deliveryFee()}</span>
+              <span className="text-xs" style={{ color: mutedColor }}>·</span>
+              <Receipt className="w-3.5 h-3.5 flex-shrink-0" style={{ color: mutedColor }} />
+              <span className="text-xs font-semibold" style={{ color: textColor }}>{minimumOrder()}</span>
+            </div>
+
+            {/* Desktop */}
+            <div className="hidden sm:flex sm:items-center sm:gap-10">
+              <div className="flex items-center gap-2.5">
+                <Clock className="w-5 h-5 flex-shrink-0" style={{ color: mutedColor }} />
+                <div>
+                  <p className="text-base font-semibold leading-none" style={{ color: textColor }}>30–45 min</p>
+                  <p className="text-xs mt-1" style={{ color: mutedColor }}>Entrega</p>
+                </div>
+              </div>
+              <div className="w-px h-8" style={{ backgroundColor: borderColor }} />
+              <div className="flex items-center gap-2.5">
+                <Truck className="w-5 h-5 flex-shrink-0" style={{ color: mutedColor }} />
+                <div>
+                  <p className="text-base font-semibold leading-none" style={{ color: textColor }}>{deliveryFee()}</p>
+                  <p className="text-xs mt-1" style={{ color: mutedColor }}>Taxa de entrega</p>
+                </div>
+              </div>
+              <div className="w-px h-8" style={{ backgroundColor: borderColor }} />
+              <div className="flex items-center gap-2.5">
+                <Receipt className="w-5 h-5 flex-shrink-0" style={{ color: mutedColor }} />
+                <div>
+                  <p className="text-base font-semibold leading-none" style={{ color: textColor }}>{minimumOrder()}</p>
+                  <p className="text-xs mt-1" style={{ color: mutedColor }}>Pedido mínimo</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </motion.div>
+      </div>
     </>
   );
 }

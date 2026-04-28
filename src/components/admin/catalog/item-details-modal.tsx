@@ -1,4 +1,6 @@
-import { X, Package, Info, Scale, Clock, Plus, ChefHat, ListChecks, Loader2 } from "lucide-react";
+"use client";
+
+import { Package, Scale, Plus, ChefHat, ListChecks, Loader2, CalendarDays, Boxes } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import {
@@ -7,8 +9,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useCatalogItem } from "../../../hooks/useCatalogGroup";
+import { useCatalogItem } from "@/hooks/useCatalogGroup";
 import { fixImageUrl } from "@/utils/image-url";
+
+// =============================================================================
+// TIPOS
+// =============================================================================
 
 interface ItemDetailsModalProps {
   id: number;
@@ -16,146 +22,324 @@ interface ItemDetailsModalProps {
   onClose: () => void;
 }
 
+// =============================================================================
+// CONSTANTES
+// =============================================================================
+
+const DAYS_OF_WEEK = [
+  { key: 'sunday_active', label: 'Dom' },
+  { key: 'monday_active', label: 'Seg' },
+  { key: 'tuesday_active', label: 'Ter' },
+  { key: 'wednesday_active', label: 'Qua' },
+  { key: 'thursday_active', label: 'Qui' },
+  { key: 'friday_active', label: 'Sex' },
+  { key: 'saturday_active', label: 'Sáb' },
+] as const;
+
+// =============================================================================
+// COMPONENTE PRINCIPAL
+// =============================================================================
+
 export function ItemDetailsModal({ id, isOpen, onClose }: ItemDetailsModalProps) {
   const { catalogItem, isLoadingCatalogItem } = useCatalogItem(id.toString());
-  const item = catalogItem;
 
+  // =============================================================================
+  // FUNÇÕES AUXILIARES
+  // =============================================================================
+
+  const formatPrice = (price: string | number) => {
+    const num = typeof price === 'string' ? parseFloat(price) : price;
+    return `R$ ${(num || 0).toFixed(2).replace('.', ',')}`;
+  };
+
+  const getItemTypeLabel = (itemType: string) => {
+    switch (itemType) {
+      case 'weight_per_g': return 'por grama';
+      case 'weight_per_kg': return 'por quilo';
+      default: return 'por unidade';
+    }
+  };
+
+  const getWeightUnit = (itemType: string) => {
+    return itemType === 'weight_per_g' ? 'g' : 'kg';
+  };
+
+  // =============================================================================
+  // RENDER - LOADING
+  // =============================================================================
 
   if (isLoadingCatalogItem) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="flex justify-center items-center h-full">
-          <DialogHeader>
-            <DialogTitle>Carregando...</DialogTitle>
+        <DialogContent className="rounded-md sm:max-w-[640px] p-0 bg-white">
+          <DialogHeader className="px-6 pt-6 pb-4">
+            <DialogTitle className="font-tomato">Carregando...</DialogTitle>
           </DialogHeader>
-          <Loader2 className="h-10 w-10 animate-spin" />
+          <div className="flex flex-col items-center justify-center h-40 gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Carregando detalhes...</p>
+          </div>
         </DialogContent>
       </Dialog>
     );
   }
 
+  // =============================================================================
+  // RENDER - ERRO
+  // =============================================================================
+
+  if (!catalogItem) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="rounded-md sm:max-w-[640px] p-0 bg-white">
+          <DialogHeader className="px-6 pt-6 pb-4">
+            <DialogTitle className="font-tomato">Erro</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center justify-center h-40 gap-3">
+            <p className="text-sm text-muted-foreground">Não foi possível carregar os detalhes do item</p>
+            <Button variant="outline" onClick={onClose}>Fechar</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // =============================================================================
+  // DADOS DO ITEM
+  // =============================================================================
+
+  const attrs = catalogItem.data.attributes;
+  const hasImage = !!attrs.image_url;
+  const hasDiscount = attrs.price_with_discount && attrs.price_with_discount < attrs.price;
+  const isWeightBased = attrs.item_type !== 'unit';
+  const hasExtras = attrs.extra?.data && attrs.extra.data.length > 0;
+  const hasPrepareMethods = attrs.prepare_method?.data && attrs.prepare_method.data.length > 0;
+  const hasSteps = attrs.steps?.data && attrs.steps.data.length > 0;
+  const hasSharedComplements = attrs.shared_complements?.data && attrs.shared_complements.data.length > 0;
+
+  // =============================================================================
+  // RENDER
+  // =============================================================================
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="rounded-xs sm:h-auto max-w-[95vw] sm:max-w-[720px] p-4 sm:p-6 md:p-8 bg-white rounded-sm max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#212121] [&::-webkit-scrollbar-thumb]:rounded-sm [&::-webkit-scrollbar]:px-2">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+      <DialogContent className="rounded-md sm:max-w-[640px] p-0 bg-white max-h-[90vh] flex flex-col overflow-hidden">
+        {/* Header */}
+        <DialogHeader className="px-6 pt-6 pb-4 border-b border-[#E5E2DD]">
+          <DialogTitle className="font-tomato flex items-center gap-2 text-lg font-semibold">
             <Package className="h-5 w-5" />
             Detalhes do Item
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {item?.data.attributes.image_url && (
-            <div className="relative h-64 w-full rounded-lg overflow-hidden">
+        {/* Conteúdo */}
+        <div className="flex-1 overflow-y-auto bg-[#FAF9F7]">
+          {/* Imagem */}
+          {hasImage && (
+            <div className="relative h-48 w-full bg-[#F0EFEB]">
               <Image
-                src={fixImageUrl(item.data.attributes.image_url) || ''}
-                alt={item.data.attributes.name}
+                src={fixImageUrl(attrs.image_url) || ''}
+                alt={attrs.name}
                 fill
+                sizes="640px"
                 className="object-cover"
+                unoptimized
               />
             </div>
           )}
 
-          <div className="space-y-4">
+          <div className="px-6 py-5 space-y-5">
+            {/* Nome e Descrição */}
             <div>
-              <h3 className="text-xl font-semibold text-gray-800">{item?.data.attributes.name}</h3>
-              {item?.data.attributes.description && (
-                <p className="text-gray-600 mt-2 flex items-start gap-2">
-                  <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                  {item?.data.attributes.description}
-                </p>
+              <h2 className="font-tomato text-xl font-bold text-foreground">{attrs.name}</h2>
+              {attrs.description && (
+                <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{attrs.description}</p>
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <h4 className="font-medium text-gray-700">Preço</h4>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-bold text-gray-900">
-                    R$ {item?.data.attributes.price_with_discount ? item?.data.attributes.price_with_discount.toFixed(2).replace('.', ',') : item?.data.attributes.price.toFixed(2).replace('.', ',')}
-                  </span>
-                  {item?.data.attributes.price_with_discount && (
-                    <span className="text-sm text-gray-500 line-through">
-                      R$ {item?.data.attributes.price.toFixed(2).replace('.', ',')}
-                    </span>
-                  )}
-                </div>
-                <span className="text-sm text-gray-500">
-                  {item?.data.attributes.item_type === 'weight_per_g' ? 'por grama' : item?.data.attributes.item_type === 'weight_per_kg' ? 'por quilo' : 'unidade'}
+            {/* Preço */}
+            <div className="rounded-md p-4 border border-[#E5E2DD] bg-white">
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-1">Preço</p>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold">
+                  {formatPrice(hasDiscount ? attrs.price_with_discount! : attrs.price)}
                 </span>
+                {hasDiscount && (
+                  <span className="text-sm text-muted-foreground line-through">
+                    {formatPrice(attrs.price)}
+                  </span>
+                )}
               </div>
-
-              {item?.data.attributes.item_type !== 'unit' && (
-                <div className="space-y-2">
-                  <h4 className="font-medium text-gray-700 flex items-center gap-2">
-                    <Scale className="h-4 w-4" />
-                    Peso
-                  </h4>
-                  <div className="space-y-1">
-                    {item?.data.attributes.min_weight && item?.data.attributes.max_weight && (
-                      <p className="text-gray-600">
-                        {item?.data.attributes.min_weight} - {item?.data.attributes.max_weight} {item?.data.attributes.item_type === 'weight_per_g' ? 'g' : 'kg'}
-                      </p>
-                    )}
-                    {item?.data.attributes.measure_interval && (
-                      <p className="text-gray-600 flex items-center gap-2">
-                        <Clock className="h-4 w-4" />
-                        Intervalo: {item?.data.attributes.measure_interval} {item?.data.attributes.item_type === 'weight_per_g' ? 'g' : 'kg'}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
+              <p className="text-xs text-muted-foreground mt-1">{getItemTypeLabel(attrs.item_type)}</p>
             </div>
 
-            {item?.data.attributes.extra && item?.data.attributes.extra.data.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="font-medium text-gray-700 flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
-                  Adicionais
-                </h4>
-                <ul className="grid grid-cols-2 gap-2">
-                  {item?.data.attributes.extra.data.map((extra, index) => (
-                    <li key={index} className="text-gray-600 bg-gray-50 p-2 rounded-md">
-                      {extra.attributes.name}
-                    </li>
-                  ))}
-                </ul>
+            {/* Tags visuais */}
+            {((attrs as any).new_tag || (attrs as any).best_seller_tag || (attrs as any).highlight || (attrs as any).promotion_tag) && (
+              <div className="flex flex-wrap gap-2">
+                {(attrs as any).new_tag && (
+                  <span className="bg-green-500 text-white text-xs font-bold px-2.5 py-1 rounded-md">NOVO!</span>
+                )}
+                {(attrs as any).best_seller_tag && (
+                  <span className="bg-amber-500 text-white text-xs font-bold px-2.5 py-1 rounded-md">+ VENDIDO</span>
+                )}
+                {(attrs as any).highlight && (
+                  <span className="bg-blue-500 text-white text-xs font-bold px-2.5 py-1 rounded-md">DESTAQUE</span>
+                )}
+                {(attrs as any).promotion_tag && (
+                  <span className="bg-primary text-white text-xs font-bold px-2.5 py-1 rounded-md">PROMOÇÃO</span>
+                )}
               </div>
             )}
 
-            {item?.data.attributes.prepare_method && item?.data.attributes.prepare_method.data.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="font-medium text-gray-700 flex items-center gap-2">
-                  <ChefHat className="h-4 w-4" />
-                  Métodos de Preparo
-                </h4>
-                <ul className="grid grid-cols-2 gap-2">
-                  {item?.data.attributes.prepare_method.data.map((method, index) => (
-                    <li key={index} className="text-gray-600 bg-gray-50 p-2 rounded-md">
-                      {method.attributes.name}
-                    </li>
-                  ))}
-                </ul>
+            {/* Peso */}
+            {isWeightBased && (attrs.min_weight || attrs.max_weight) && (
+              <div className="rounded-md p-4 border border-[#E5E2DD] bg-white">
+                <div className="flex items-center gap-2 mb-2">
+                  <Scale className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold">Peso</span>
+                </div>
+                {attrs.min_weight && attrs.max_weight && (
+                  <p className="text-sm">De {attrs.min_weight} até {attrs.max_weight} {getWeightUnit(attrs.item_type)}</p>
+                )}
+                {attrs.measure_interval && (
+                  <p className="text-xs text-muted-foreground mt-1">Intervalo: {attrs.measure_interval} {getWeightUnit(attrs.item_type)}</p>
+                )}
               </div>
             )}
 
-            {item?.data.attributes.steps && item?.data.attributes.steps.data.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="font-medium text-gray-700 flex items-center gap-2">
-                  <ListChecks className="h-4 w-4" />
-                  Passos
-                </h4>
-                <ol className="space-y-2">
-                  {item?.data.attributes.steps.data.map((step, index) => (
-                    <li key={index} className="text-gray-600 bg-gray-50 p-2 rounded-md">
-                      {step.attributes.name}
-                    </li>
+            {/* Dias da Semana */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <CalendarDays className="h-4 w-4 text-primary" />
+                <span className="text-sm font-semibold">Disponibilidade Semanal</span>
+              </div>
+              <div className="grid grid-cols-7 gap-2">
+                {DAYS_OF_WEEK.map(({ key, label }) => {
+                  const isActive = (attrs as any)[key] !== false;
+                  return (
+                    <div
+                      key={key}
+                      className={`flex flex-col items-center justify-center py-3 rounded-md border transition-all duration-200 ${
+                        isActive
+                          ? 'bg-primary border-primary'
+                          : 'bg-white border-[#E5E2DD] text-gray-400 border-dashed opacity-60'
+                      }`}
+                    >
+                      <span className={`text-[10px] font-bold uppercase mb-0.5 ${isActive ? 'text-white' : 'text-gray-400'}`}>
+                        {label}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Complementos Compartilhados */}
+            {hasSharedComplements && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Boxes className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold">Adicionais Compartilhados</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {attrs.shared_complements!.data.map((group: any) => (
+                    <div key={group.id} className="p-3 rounded-md border border-[#E5E2DD] bg-white space-y-2">
+                      <p className="text-sm font-bold text-foreground underline decoration-primary/30 underline-offset-4">
+                        {group.attributes.name}
+                      </p>
+                      {group.attributes.options && group.attributes.options.length > 0 && (
+                        <div className="space-y-1">
+                          {group.attributes.options.map((option: any) => (
+                            <div key={option.id} className="text-xs text-muted-foreground flex justify-between">
+                              <span>• {option.name}</span>
+                              {Number(option.price) > 0 && (
+                                <span className="text-primary font-medium">+ {formatPrice(parseFloat(option.price))}</span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   ))}
-                </ol>
+                </div>
+              </div>
+            )}
+
+            {/* Adicionais */}
+            {hasExtras && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Plus className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold">Adicionais</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {attrs.extra!.data.map((extra: any, index: number) => (
+                    <div key={extra.id || index} className="px-3 py-2 rounded-md border border-[#E5E2DD] bg-white">
+                      <span className="text-sm font-medium">{extra.attributes.name}</span>
+                      {Number(extra.attributes.price) > 0 && (
+                        <span className="text-xs text-primary ml-1.5">+ {formatPrice(parseFloat(extra.attributes.price))}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Modos de Preparo */}
+            {hasPrepareMethods && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <ChefHat className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold">Modos de Preparo</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {attrs.prepare_method!.data.map((method: any, index: number) => (
+                    <div key={method.id || index} className="px-3 py-2 rounded-md border border-[#E5E2DD] bg-white">
+                      <span className="text-sm font-medium">{method.attributes.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Etapas */}
+            {hasSteps && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <ListChecks className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold">Etapas de Montagem</span>
+                </div>
+                <div className="space-y-2">
+                  {attrs.steps!.data.map((step: any, index: number) => (
+                    <div key={step.id || index} className="flex gap-3 p-3 rounded-md border border-[#E5E2DD] bg-white">
+                      <div className="w-6 h-6 rounded-full bg-foreground text-white flex items-center justify-center text-xs font-bold shrink-0">
+                        {index + 1}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold">{step.attributes.name}</p>
+                        {step.attributes.options?.data?.length > 0 && (
+                          <div className="mt-1.5 space-y-0.5">
+                            {step.attributes.options.data.map((option: any, optIndex: number) => (
+                              <p key={option.id || optIndex} className="text-xs text-muted-foreground">
+                                • {option.attributes.name}
+                              </p>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-[#E5E2DD]">
+          <Button variant="outline" className="w-full border border-gray-300 cursor-pointer" onClick={onClose}>
+            Fechar
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

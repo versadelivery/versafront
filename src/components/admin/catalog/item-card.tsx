@@ -1,10 +1,19 @@
-import { Edit, Info, Package, Scale, Clock, Plus, ChefHat, ListChecks } from "lucide-react";
-import { Button } from "@/components/ui/button";
+"use client";
+
+import { Edit2, Scale, Plus, ChefHat, ListChecks, ImageOff, Copy, Loader2, Link } from "lucide-react";
+import { useCatalogGroup } from "@/hooks/useCatalogGroup";
+import { useShop } from "@/hooks/use-shop";
 import Image from "next/image";
-import { useState } from "react";
+import React, { useState } from "react";
 import { ItemDetailsModal } from "./item-details-modal";
 import { EditItemModal } from "./edit-item-modal";
 import { fixImageUrl } from "@/utils/image-url";
+import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
+
+// =============================================================================
+// TIPOS
+// =============================================================================
 
 interface ItemCardProps {
   item: {
@@ -19,171 +28,351 @@ interface ItemCardProps {
     max_weight?: number;
     measure_interval?: number;
     image?: string;
+    new_tag?: boolean;
+    best_seller_tag?: boolean;
+    highlight?: boolean;
+    promotion_tag?: boolean;
+    active: boolean;
+    has_out_of_stock_ingredient?: boolean;
     catalog_item_extras_attributes?: any[];
     catalog_item_prepare_methods_attributes?: any[];
     catalog_item_steps_attributes?: any[];
   };
+  layout?: 'grid' | 'list';
 }
 
-export function ItemCard({ item }: ItemCardProps) {
+// =============================================================================
+// COMPONENTE PRINCIPAL
+// =============================================================================
+
+export function ItemCard({ item, layout = 'grid' }: ItemCardProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const { duplicateCatalogItem, isDuplicatingItem } = useCatalogGroup();
 
-  const handleOpenDetails = () => {
-    setIsDetailsModalOpen(true);
+  const handleDuplicate = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    duplicateCatalogItem(item.id.toString());
+  };
+  const { toggleCatalogItemActive } = useCatalogGroup();
+  const { shop } = useShop();
+
+  const handleCopyLink = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!shop?.slug) {
+      toast.error("Não foi possível gerar o link");
+      return;
+    }
+    const url = `${window.location.origin}/${shop.slug}?item=${item.id}`;
+    navigator.clipboard.writeText(url);
+    toast.success("Link copiado!");
+  };
+
+  // =============================================================================
+  // FUNÇÕES AUXILIARES
+  // =============================================================================
+
+  const formatPrice = (price: number) => {
+    return `R$ ${price.toFixed(2).replace('.', ',')}`;
+  };
+
+  const getItemTypeLabel = () => {
+    switch (item.item_type) {
+      case 'weight_per_g': return 'por g';
+      case 'weight_per_kg': return 'por kg';
+      default: return '';
+    }
+  };
+
+  const getWeightUnit = () => {
+    return item.item_type === 'weight_per_g' ? 'g' : 'kg';
+  };
+
+  const getName = (obj: any) => {
+    if (!obj) return null;
+    if (obj.attributes) return obj.attributes.name || null;
+    return obj.name || null;
+  };
+
+  const hasDiscount = item.price_with_discount && item.price_with_discount < item.price;
+  const discountPercentage = hasDiscount
+    ? Math.round((item.price - item.price_with_discount!) / item.price * 100)
+    : null;
+
+  const hasExtras = item.catalog_item_extras_attributes && item.catalog_item_extras_attributes.length > 0;
+  const hasPrepareMethods = item.catalog_item_prepare_methods_attributes && item.catalog_item_prepare_methods_attributes.length > 0;
+  const hasSteps = item.catalog_item_steps_attributes && item.catalog_item_steps_attributes.length > 0;
+  const hasIndicators = hasExtras || hasPrepareMethods || hasSteps;
+
+  // =============================================================================
+  // RENDER
+  // =============================================================================
+
+  // ── Modo lista ────────────────────────────────────────────────────────────────
+  if (layout === 'list') {
+    return (
+      <>
+        <div
+          className={`bg-white border border-[#E5E2DD] rounded-md overflow-hidden cursor-pointer hover:border-primary/40 transition-colors duration-200 flex flex-row items-center gap-3 px-3 py-2.5 ${!item.active ? 'opacity-60' : ''}`}
+          onClick={() => setIsDetailsOpen(true)}
+        >
+          {/* Imagem */}
+          <div className="relative h-12 w-12 flex-shrink-0 rounded-md overflow-hidden bg-[#F0EFEB]">
+            {item.image ? (
+              <Image
+                src={fixImageUrl(item.image) || ''}
+                alt={item.name}
+                fill
+                sizes="48px"
+                className="object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <ImageOff className="h-5 w-5 text-muted-foreground/20" />
+              </div>
+            )}
+          </div>
+
+          {/* Nome + descrição */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-sm font-semibold text-foreground truncate">{item.name}</span>
+              {item.has_out_of_stock_ingredient && (
+                <span className="bg-destructive text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md flex-shrink-0">INDISPONÍVEL</span>
+              )}
+              {item.new_tag && <span className="bg-green-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md flex-shrink-0">NOVO!</span>}
+              {item.best_seller_tag && <span className="bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md flex-shrink-0">+VENDIDO</span>}
+              {item.promotion_tag && <span className="bg-primary text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md flex-shrink-0">PROMOÇÃO</span>}
+            </div>
+            {item.description && (
+              <p className="text-xs text-muted-foreground truncate mt-0.5">{item.description}</p>
+            )}
+          </div>
+
+          {/* Indicadores de customização */}
+          {hasIndicators && (
+            <div className="hidden sm:flex items-center gap-1 flex-shrink-0">
+              {hasExtras && <div className="w-5 h-5 rounded-full bg-white border border-primary/30 flex items-center justify-center"><Plus className="h-2.5 w-2.5 text-primary" /></div>}
+              {hasPrepareMethods && <div className="w-5 h-5 rounded-full bg-white border border-primary/30 flex items-center justify-center"><ChefHat className="h-2.5 w-2.5 text-primary" /></div>}
+              {hasSteps && <div className="w-5 h-5 rounded-full bg-white border border-primary/30 flex items-center justify-center"><ListChecks className="h-2.5 w-2.5 text-primary" /></div>}
+            </div>
+          )}
+
+          {/* Preço */}
+          <div className="flex-shrink-0 text-right">
+            <div className="text-sm font-bold text-foreground tabular-nums">
+              {formatPrice(hasDiscount ? item.price_with_discount! : item.price)}
+              {getItemTypeLabel() && <span className="text-[10px] text-muted-foreground font-normal ml-1">{getItemTypeLabel()}</span>}
+            </div>
+            {hasDiscount && (
+              <div className="text-[11px] text-muted-foreground line-through tabular-nums">{formatPrice(item.price)}</div>
+            )}
+          </div>
+
+          {/* Ações */}
+          <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+            <button className="cursor-pointer p-1.5 rounded-md hover:bg-[#F0EFEB] text-muted-foreground hover:text-primary transition-colors" onClick={handleCopyLink} title="Copiar link">
+              <Link className="h-3.5 w-3.5" />
+            </button>
+            <button className="cursor-pointer p-1.5 rounded-md hover:bg-[#F0EFEB] text-muted-foreground hover:text-primary transition-colors" onClick={handleDuplicate} disabled={isDuplicatingItem} title="Duplicar">
+              {isDuplicatingItem ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Copy className="h-3.5 w-3.5" />}
+            </button>
+            <button className="cursor-pointer p-1.5 rounded-md hover:bg-[#F0EFEB] text-muted-foreground hover:text-primary transition-colors" onClick={(e) => { e.stopPropagation(); setIsEditing(true); }} title="Editar">
+              <Edit2 className="h-3.5 w-3.5" />
+            </button>
+            <Switch
+              checked={item.active}
+              onCheckedChange={(checked) => toggleCatalogItemActive({ id: item.id.toString(), active: checked })}
+              className="scale-[0.7] origin-center"
+            />
+          </div>
+        </div>
+
+        <ItemDetailsModal id={item.id} isOpen={isDetailsOpen} onClose={() => setIsDetailsOpen(false)} />
+        <EditItemModal id={item.id.toString()} isOpen={isEditing} onOpenChange={setIsEditing} />
+      </>
+    );
   }
 
-  const handleCloseDetails = () => {
-    setIsDetailsModalOpen(false);
-  }
-
-  const handleEdit = () => {
-    setIsEditing(true);
-  }
-  
+  // ── Modo grade (padrão) ────────────────────────────────────────────────────
   return (
     <>
-      <div 
-        className="bg-white rounded-xs shadow-md overflow-hidden min-w-64 w-full max-w-sm relative cursor-pointer hover:shadow-lg transition-shadow"
-        onClick={handleOpenDetails}
+      <div
+        className={`bg-white rounded-md border border-[#E5E2DD] overflow-hidden cursor-pointer hover:border-primary/40 transition-colors duration-200 flex flex-col h-full ${!item.active ? 'opacity-60' : ''}`}
+        onClick={() => setIsDetailsOpen(true)}
       >
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="absolute top-2 right-2 z-10 bg-background/80 hover:bg-background backdrop-blur-sm"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleEdit();
-          }}
-        >
-          <Edit className="h-4 w-4" />
-        </Button>
-
-        {item.price_with_discount && (
-          <div className="absolute top-2 left-2 px-2 py-1 rounded-full z-10 bg-primary text-primary-foreground">
-            <span className="text-sm font-semibold">
-              - {((item.price - item.price_with_discount) / item.price * 100).toFixed(2)}%
-            </span>
-          </div>
-        )}
-
-        {item.image && (
-          <div className="relative h-48 w-full">
+        {/* Imagem */}
+        <div className="relative h-32 w-full">
+          {item.image ? (
             <Image
               src={fixImageUrl(item.image) || ''}
               alt={item.name}
               fill
+              sizes="(max-width: 768px) 100vw, 33vw"
               className="object-cover"
             />
-          </div>
-        )}
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-[#F0EFEB]">
+              <ImageOff className="h-8 w-8 text-muted-foreground/20" />
+            </div>
+          )}
 
-        <div className="p-4 space-y-4">
-          <div className="max-w-xs overflow-hidden">
-            <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-              <Package className="h-4 w-4 flex-shrink-0" />
-              <span className="whitespace-normal break-all">{item.name}</span>
-            </h3>
-            {item.description && (
-              <p className="text-sm text-gray-600 mt-2 flex items-start gap-2">
-                <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                <span className="break-words whitespace-normal">
-                  {item.description}
-                </span>
-              </p>
+          {/* Badge desconto */}
+          {hasDiscount && (
+            <div className="absolute bottom-2 left-2 bg-destructive text-white text-[10px] font-semibold px-2 py-0.5 rounded">
+              -{discountPercentage}%
+            </div>
+          )}
+
+          {/* Botões de Ação */}
+          <div className="absolute top-2 right-2 flex items-center gap-2">
+            {/* Copiar Link */}
+            <button
+              className="bg-white/95 cursor-pointer backdrop-blur-sm rounded-full p-2 flex items-center justify-center  border border-[#E5E2DD] hover:bg-white transition-colors group"
+              onClick={handleCopyLink}
+              title="Copiar link do item"
+            >
+              <Link className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+            </button>
+
+            {/* Duplicar */}
+            <button
+              className="bg-white/95 cursor-pointer backdrop-blur-sm rounded-full p-2 flex items-center justify-center  border border-[#E5E2DD] hover:bg-white transition-colors group"
+              onClick={handleDuplicate}
+              disabled={isDuplicatingItem}
+              title="Duplicar item"
+            >
+              {isDuplicatingItem ? (
+                <Loader2 className="h-3.5 w-3.5 text-muted-foreground animate-spin" />
+              ) : (
+                <Copy className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+              )}
+            </button>
+
+            {/* Container Ativo + Editar */}
+            <div
+              className="bg-white/95 backdrop-blur-sm rounded-full py-1 px-2.5 flex items-center  border border-[#E5E2DD] gap-2"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center -ml-1">
+                <Switch
+                  checked={item.active}
+                  onCheckedChange={(checked) => {
+                    toggleCatalogItemActive({ id: item.id.toString(), active: checked });
+                  }}
+                  className="scale-[0.55] origin-center"
+                />
+              </div>
+              <div className="w-[1px] h-3 bg-[#E5E2DD]" />
+              <button
+                className="cursor-pointer text-muted-foreground hover:text-primary transition-colors py-0.5"
+                onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}
+                title="Editar item"
+              >
+                <Edit2 className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Conteúdo */}
+        <div className="p-3 flex flex-col flex-1 gap-1">
+          <h3 className="text-sm font-semibold text-foreground line-clamp-2 leading-tight">
+            {item.name}
+          </h3>
+
+          {item.description && (
+            <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+              {item.description}
+            </p>
+          )}
+
+          {/* Preço */}
+          <div className="flex items-baseline gap-1.5 mt-1">
+            <span className="text-base font-bold text-foreground">
+              {formatPrice(hasDiscount ? item.price_with_discount! : item.price)}
+              {getItemTypeLabel() && (
+                <span className="text-[10px] text-muted-foreground font-normal ml-1">{getItemTypeLabel()}</span>
+              )}
+            </span>
+            {hasDiscount && (
+              <span className="text-xs text-muted-foreground line-through">
+                {formatPrice(item.price)}
+              </span>
             )}
           </div>
-          
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="text-lg font-bold text-gray-900">
-                R$ {item.price_with_discount ? item.price_with_discount.toFixed(2).replace('.', ',') : item.price.toFixed(2).replace('.', ',')}
-                <span className="text-xs text-gray-500 ml-1">
-                  {item.item_type === 'weight_per_g' ? 'por g' : item.item_type === 'weight_per_kg' ? 'por kg' : ''}
-                </span>
+
+          {/* Peso */}
+          {item.item_type !== 'unit' && (
+            <div className="flex items-center gap-1 mt-0.5">
+              <Scale className="h-3 w-3 text-muted-foreground" />
+              <span className="text-[10px] text-muted-foreground">
+                {item.min_weight && item.max_weight
+                  ? `${item.min_weight}-${item.max_weight}${getWeightUnit()}`
+                  : getWeightUnit()
+                }
               </span>
-              {item.price_with_discount && (
-                <span className="text-sm text-gray-500 line-through">
-                  R$ {item.price.toFixed(2).replace('.', ',')} 
-                  <span className="text-xs text-gray-500 ml-1">
-                    {item.item_type === 'weight_per_g' ? 'por g' : item.item_type === 'weight_per_kg' ? 'por kg' : ''}
-                  </span>
-                </span>
+            </div>
+          )}
+
+          {/* Ingrediente indisponível */}
+          {item.has_out_of_stock_ingredient && (
+            <div className="flex items-center gap-1 mt-1">
+              <span className="bg-destructive text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md">INGREDIENTE INDISPONÍVEL</span>
+            </div>
+          )}
+
+          {/* Tags visuais */}
+          {(item.new_tag || item.best_seller_tag || item.highlight || item.promotion_tag) && (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {item.new_tag && (
+                <span className="bg-green-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md">NOVO!</span>
+              )}
+              {item.best_seller_tag && (
+                <span className="bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md">+VENDIDO</span>
+              )}
+              {item.highlight && (
+                <span className="bg-blue-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md">DESTAQUE</span>
+              )}
+              {item.promotion_tag && (
+                <span className="bg-primary text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md">PROMOÇÃO</span>
               )}
             </div>
-            
-            {item.item_type !== 'unit' && (
-              <div className="flex items-center gap-2 text-sm text-gray-500">
-                <Scale className="h-4 w-4" />
-                {item.min_weight && item.max_weight ? (
-                  `${item.min_weight} - ${item.max_weight} ${item.item_type === 'weight_per_g' ? 'g' : 'kg'}`
-                ) : (
-                  item.item_type === 'weight_per_g' ? 'g' : 'kg'
-                )}
-                {item.measure_interval && (
-                  <span className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    Intervalo: {item.measure_interval} {item.item_type === 'weight_per_g' ? 'g' : 'kg'}
-                  </span>
-                )}
-              </div>
-            )} 
-          </div>
-
-          {item.catalog_item_extras_attributes && item.catalog_item_extras_attributes.length > 0 && (
-            <div className="space-y-1">
-              <h4 className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Adicionais
-              </h4>
-              <ul className="text-sm text-gray-600 pl-6">
-                {item.catalog_item_extras_attributes.map((extra, index) => (
-                  <li key={index}>{extra.name}</li>
-                ))}
-              </ul>
-            </div>
           )}
 
-          {item.catalog_item_prepare_methods_attributes && item.catalog_item_prepare_methods_attributes.length > 0 && (
-            <div className="space-y-1">
-              <h4 className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                <ChefHat className="h-4 w-4" />
-                Métodos de Preparo
-              </h4>
-              <ul className="text-sm text-gray-600 pl-6">
-                {item.catalog_item_prepare_methods_attributes.map((method, index) => (
-                  <li key={index}>{method.name}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {item.catalog_item_steps_attributes && item.catalog_item_steps_attributes.length > 0 && (
-            <div className="space-y-1">
-              <h4 className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                <ListChecks className="h-4 w-4" />
-                Passos
-              </h4>
-              <ul className="text-sm text-gray-600 pl-6">
-                {item.catalog_item_steps_attributes.map((step, index) => (
-                  <li key={index}>{step.description}</li>
-                ))}
-              </ul>
+          {/* Indicadores */}
+          {hasIndicators && (
+            <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-[#E5E2DD]">
+              {hasExtras && (
+                <div className="w-5 h-5 rounded-full bg-white border border-primary/30 flex items-center justify-center">
+                  <Plus className="h-2.5 w-2.5 text-primary" />
+                </div>
+              )}
+              {hasPrepareMethods && (
+                <div className="w-5 h-5 rounded-full bg-white border border-primary/30 flex items-center justify-center">
+                  <ChefHat className="h-2.5 w-2.5 text-primary" />
+                </div>
+              )}
+              {hasSteps && (
+                <div className="w-5 h-5 rounded-full bg-white border border-primary/30 flex items-center justify-center">
+                  <ListChecks className="h-2.5 w-2.5 text-primary" />
+                </div>
+              )}
             </div>
           )}
         </div>
       </div>
 
-      <ItemDetailsModal 
+      <ItemDetailsModal
         id={item.id}
-        isOpen={isDetailsModalOpen}
-        onClose={handleCloseDetails}
+        isOpen={isDetailsOpen}
+        onClose={() => setIsDetailsOpen(false)}
       />
-      <EditItemModal 
+      <EditItemModal
         id={item.id.toString()}
         isOpen={isEditing}
         onOpenChange={setIsEditing}
       />
     </>
   );
-} 
+}

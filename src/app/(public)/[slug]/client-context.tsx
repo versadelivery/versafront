@@ -142,6 +142,7 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
     } else {
       localStorage.removeItem("shop");
     }
+    window.dispatchEvent(new Event('shop-updated'));
   };
 
   const handleSetPaymentMethods = (methods: PaymentMethod[]) => {

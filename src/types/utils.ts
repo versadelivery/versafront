@@ -1,19 +1,3 @@
-import { StaticImageData } from "next/image";
-
-export interface UserData {
-  email: string
-  name: string
-  role: string
-  shop: {
-    id: string
-    type: string
-    attributes: {
-      cellphone: string
-      name: string
-      slug: string
-    }
-  }
-}
 
 export interface ShopData {
   name: string
@@ -54,10 +38,6 @@ export interface AuthBreadcrumbProps {
 export interface AuthLayoutProps {
   children: React.ReactNode;
   title: string;
-  imageSrc: string | StaticImageData;
-  imagePosition?: "left" | "right";
-  headerDisplay?: boolean;
-  imageDisplay?: boolean;
 }
 
 export interface AuthFormFooterProps {
@@ -107,6 +87,10 @@ export interface RegisterData {
     name: string;
     email: string;
     password: string;
+  };
+  shop_billing_config: {
+    document: string;
+    billing_email: string;
   };
 }
 
@@ -167,6 +151,7 @@ export interface UserData {
       cellphone: string;
       name: string;
       slug: string;
+      approved: boolean;
     };
   };
 }
