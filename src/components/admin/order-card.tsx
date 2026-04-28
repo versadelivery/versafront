@@ -34,11 +34,13 @@ import CancelOrderModal from './cancel-order-modal';
 import SelectDeliveryPersonModal from './select-delivery-person-modal';
 import { buildWhatsAppOrderMessage } from '@/utils/whatsapp-template';
 
-const getPaymentMethodLabel = (method: string) => {
+const getPaymentMethodLabel = (method: string, manualPixPaymentMoment?: string) => {
+  if (method === 'manual_pix') {
+    return manualPixPaymentMoment === 'on_order' ? 'PIX (no pedido)' : 'PIX (na entrega)';
+  }
   const methodMap: Record<string, string> = {
     'credit': 'Cartão de Crédito',
     'debit': 'Cartão de Débito',
-    'manual_pix': 'Pix',
     'cash': 'Dinheiro'
   };
   return methodMap[method] || method;
@@ -256,7 +258,7 @@ export default function OrderCard({
             
             <div class="section">
               <div class="section-title">FORMA DE PAGAMENTO</div>
-              <p>${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}</p>
+              <p>${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '', order.socketData?.attributes?.manual_pix_payment_moment)}</p>
             </div>
             
             <div class="total">
@@ -308,7 +310,7 @@ ${order.socketData?.attributes?.items?.data?.map((item: any) => `
 `).join('') || 'Nenhum item'}
 
 💳 *FORMA DE PAGAMENTO*
-${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
+${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '', order.socketData?.attributes?.manual_pix_payment_moment)}
 
 💰 *TOTAL: R$ ${order.amount.toFixed(2)}*
     `.trim();
@@ -329,6 +331,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
   const rawPhone = order.socketData?.attributes?.customer?.data?.attributes?.cellphone;
   const customerPhone = rawPhone && rawPhone !== 'N/A' ? rawPhone : undefined;
   const paymentMethod = order.socketData?.attributes?.payment_method;
+  const manualPixPaymentMoment = order.socketData?.attributes?.manual_pix_payment_moment;
   const deliveryFee = order.socketData?.attributes?.delivery_fee ? parseFloat(order.socketData.attributes.delivery_fee) : 0;
   const couponCode = order.socketData?.attributes?.coupon_code;
   const discountAmount = parseFloat(order.socketData?.attributes?.discount_amount || '0');
@@ -429,7 +432,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
               {paymentMethod && (
                 <div className="flex items-center gap-1.5 text-gray-700">
                   <CreditCard className="w-3 h-3 text-gray-700" />
-                  <span>{getPaymentMethodLabel(paymentMethod)}</span>
+                  <span>{getPaymentMethodLabel(paymentMethod, manualPixPaymentMoment)}</span>
                 </div>
               )}
               {order.deliveryType === 'delivery' && deliveryFee > 0 && (
