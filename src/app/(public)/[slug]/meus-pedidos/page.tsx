@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { getOrdersByPhone } from "@/services/order-service";
 import { CustomerOrder } from "@/types/order";
-import { useCustomerOrdersWebSocket } from "@/hooks/use-customer-orders-websocket";
+import { useQuery } from "@tanstack/react-query";
 import { formatCurrency } from "@/lib/utils";
 import {
   Truck,
@@ -16,9 +16,9 @@ import {
 } from "lucide-react";
 import PublicLoading from "@/components/public-loading";
 import { Button } from "@/components/ui/button";
-import PedidosHeader from "./pedidos-header";
+import PedidosHeader from "../../pedidos/pedidos-header";
 import Link from "next/link";
-import ReorderCardOrders from "./components/reorder-card-orders";
+import ReorderCardOrders from "../../pedidos/components/reorder-card-orders";
 
 const getPaymentMethodLabel = (method: string) => {
   const map: Record<string, string> = {
@@ -59,65 +59,50 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-export default function OrdersPage() {
+export default function MeusPedidosPage() {
   const router = useRouter();
-  const [orders, setOrders] = useState<CustomerOrder[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [unauthorized, setUnauthorized] = useState(false);
-  const { subscribeToOrders, isLoading: wsLoading } = useCustomerOrdersWebSocket();
+  const params = useParams();
+  const slug = params.slug as string;
+
+  const [phone, setPhone] = useState<string | null>(null);
+  const [phoneChecked, setPhoneChecked] = useState(false);
 
   useEffect(() => {
-    let phone: string | null = null;
+    let p: string | null = null;
     try {
       const stored = localStorage.getItem('customer_info');
       if (stored) {
         const info = JSON.parse(stored);
-        if (info.phone) phone = info.phone.replace(/\D/g, '');
+        if (info.phone) p = info.phone.replace(/\D/g, '');
       }
     } catch {}
-    if (!phone) phone = localStorage.getItem('guest_phone');
+    if (!p) p = localStorage.getItem('guest_phone');
+    setPhone(p);
+    setPhoneChecked(true);
+  }, []);
 
-    if (!phone) {
-      setUnauthorized(true);
-      setLoading(false);
-      return;
-    }
+  const { data: ordersData, isLoading } = useQuery({
+    queryKey: ['customer-orders-page', phone],
+    queryFn: () => getOrdersByPhone(phone!),
+    enabled: !!phone && phoneChecked,
+    refetchInterval: 30 * 1000,
+    refetchOnWindowFocus: true,
+    staleTime: 0,
+  });
 
-    const fetchOrders = async () => {
-      try {
-        const response = await getOrdersByPhone(phone!);
-        if (response) {
-          setOrders(response.data);
-          setUnauthorized(false);
-        }
-      } catch {
-      } finally {
-        setLoading(false);
-      }
-    };
+  const unauthorized = phoneChecked && !phone;
+  const loading = !phoneChecked || (!!phone && isLoading && !ordersData);
 
-    const unsubscribe = subscribeToOrders((wsOrders: CustomerOrder[]) => {
-      setOrders(wsOrders);
-      setLoading(false);
-    });
+  const allOrders: CustomerOrder[] = ordersData?.data ?? [];
 
-    const fallback = setTimeout(() => {
-      if (wsLoading || loading) fetchOrders();
-    }, 1000);
-
-    return () => {
-      unsubscribe();
-      clearTimeout(fallback);
-    };
-  }, [subscribeToOrders, wsLoading]);
-
-  const shopSlug = typeof window !== 'undefined'
-    ? (() => { try { return JSON.parse(localStorage.getItem('shop') || '{}')?.data?.attributes?.slug; } catch { return null; } })()
-    : null;
+  // Filtra pedidos apenas da loja atual
+  const orders = allOrders.filter(
+    (o) => o.attributes.shop.data.attributes.slug === slug
+  );
 
   const nav = (
     <PedidosHeader
-      backHref={shopSlug ? `/${shopSlug}` : '/'}
+      backHref={`/${slug}`}
       backLabel="Voltar ao cardápio"
     />
   );
@@ -166,7 +151,7 @@ export default function OrdersPage() {
     );
   }
 
-  if (loading || wsLoading) {
+  if (loading) {
     return (
       <>
         {nav}
@@ -185,12 +170,10 @@ export default function OrdersPage() {
               <ShoppingBag className="w-7 h-7 text-muted-foreground" />
             </div>
             <h2 className="font-tomato text-lg font-bold text-foreground mb-2">Nenhum pedido ainda</h2>
-            <p className="text-sm text-muted-foreground mb-6">Seus pedidos aparecerão aqui após a primeira compra.</p>
-            {shopSlug && (
-              <Button asChild className="rounded-md">
-                <Link href={`/${shopSlug}`}>Ver cardápio</Link>
-              </Button>
-            )}
+            <p className="text-sm text-muted-foreground mb-6">Seus pedidos nesta loja aparecerão aqui após a primeira compra.</p>
+            <Button asChild className="rounded-md">
+              <Link href={`/${slug}`}>Ver cardápio</Link>
+            </Button>
           </div>
         </div>
       </>
@@ -267,7 +250,7 @@ export default function OrdersPage() {
                       size="sm"
                       variant="ghost"
                       className="text-sm font-semibold text-primary hover:text-primary hover:bg-primary/5 flex-shrink-0 px-3 h-9"
-                      onClick={() => router.push(`/pedidos/${order.id}`)}
+                      onClick={() => router.push(`/${slug}/meus-pedidos/${order.id}`)}
                     >
                       Detalhes
                       <ArrowRight className="w-4 h-4 ml-1" />

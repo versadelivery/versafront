@@ -9,9 +9,10 @@ import React from "react";
 interface SortableItemCardProps {
   id: string;
   item: React.ComponentProps<typeof ItemCard>["item"];
+  layout?: 'grid' | 'list';
 }
 
-export function SortableItemCard({ id, item }: SortableItemCardProps) {
+export function SortableItemCard({ id, item, layout = 'grid' }: SortableItemCardProps) {
   const {
     attributes,
     listeners,
@@ -36,7 +37,7 @@ export function SortableItemCard({ id, item }: SortableItemCardProps) {
       >
         <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
       </div>
-      <ItemCard item={item} />
+      <ItemCard item={item} layout={layout} />
     </div>
   );
 }

@@ -38,13 +38,14 @@ interface ItemCardProps {
     catalog_item_prepare_methods_attributes?: any[];
     catalog_item_steps_attributes?: any[];
   };
+  layout?: 'grid' | 'list';
 }
 
 // =============================================================================
 // COMPONENTE PRINCIPAL
 // =============================================================================
 
-export function ItemCard({ item }: ItemCardProps) {
+export function ItemCard({ item, layout = 'grid' }: ItemCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const { duplicateCatalogItem, isDuplicatingItem } = useCatalogGroup();
@@ -107,6 +108,93 @@ export function ItemCard({ item }: ItemCardProps) {
   // RENDER
   // =============================================================================
 
+  // ── Modo lista ────────────────────────────────────────────────────────────────
+  if (layout === 'list') {
+    return (
+      <>
+        <div
+          className={`bg-white border border-[#E5E2DD] rounded-md overflow-hidden cursor-pointer hover:border-primary/40 transition-colors duration-200 flex flex-row items-center gap-3 px-3 py-2.5 ${!item.active ? 'opacity-60' : ''}`}
+          onClick={() => setIsDetailsOpen(true)}
+        >
+          {/* Imagem */}
+          <div className="relative h-12 w-12 flex-shrink-0 rounded-md overflow-hidden bg-[#F0EFEB]">
+            {item.image ? (
+              <Image
+                src={fixImageUrl(item.image) || ''}
+                alt={item.name}
+                fill
+                sizes="48px"
+                className="object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <ImageOff className="h-5 w-5 text-muted-foreground/20" />
+              </div>
+            )}
+          </div>
+
+          {/* Nome + descrição */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-sm font-semibold text-foreground truncate">{item.name}</span>
+              {item.has_out_of_stock_ingredient && (
+                <span className="bg-destructive text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md flex-shrink-0">INDISPONÍVEL</span>
+              )}
+              {item.new_tag && <span className="bg-green-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md flex-shrink-0">NOVO!</span>}
+              {item.best_seller_tag && <span className="bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md flex-shrink-0">+VENDIDO</span>}
+              {item.promotion_tag && <span className="bg-primary text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md flex-shrink-0">PROMOÇÃO</span>}
+            </div>
+            {item.description && (
+              <p className="text-xs text-muted-foreground truncate mt-0.5">{item.description}</p>
+            )}
+          </div>
+
+          {/* Indicadores de customização */}
+          {hasIndicators && (
+            <div className="hidden sm:flex items-center gap-1 flex-shrink-0">
+              {hasExtras && <div className="w-5 h-5 rounded-full bg-white border border-primary/30 flex items-center justify-center"><Plus className="h-2.5 w-2.5 text-primary" /></div>}
+              {hasPrepareMethods && <div className="w-5 h-5 rounded-full bg-white border border-primary/30 flex items-center justify-center"><ChefHat className="h-2.5 w-2.5 text-primary" /></div>}
+              {hasSteps && <div className="w-5 h-5 rounded-full bg-white border border-primary/30 flex items-center justify-center"><ListChecks className="h-2.5 w-2.5 text-primary" /></div>}
+            </div>
+          )}
+
+          {/* Preço */}
+          <div className="flex-shrink-0 text-right">
+            <div className="text-sm font-bold text-foreground tabular-nums">
+              {formatPrice(hasDiscount ? item.price_with_discount! : item.price)}
+              {getItemTypeLabel() && <span className="text-[10px] text-muted-foreground font-normal ml-1">{getItemTypeLabel()}</span>}
+            </div>
+            {hasDiscount && (
+              <div className="text-[11px] text-muted-foreground line-through tabular-nums">{formatPrice(item.price)}</div>
+            )}
+          </div>
+
+          {/* Ações */}
+          <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+            <button className="cursor-pointer p-1.5 rounded-md hover:bg-[#F0EFEB] text-muted-foreground hover:text-primary transition-colors" onClick={handleCopyLink} title="Copiar link">
+              <Link className="h-3.5 w-3.5" />
+            </button>
+            <button className="cursor-pointer p-1.5 rounded-md hover:bg-[#F0EFEB] text-muted-foreground hover:text-primary transition-colors" onClick={handleDuplicate} disabled={isDuplicatingItem} title="Duplicar">
+              {isDuplicatingItem ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Copy className="h-3.5 w-3.5" />}
+            </button>
+            <button className="cursor-pointer p-1.5 rounded-md hover:bg-[#F0EFEB] text-muted-foreground hover:text-primary transition-colors" onClick={(e) => { e.stopPropagation(); setIsEditing(true); }} title="Editar">
+              <Edit2 className="h-3.5 w-3.5" />
+            </button>
+            <Switch
+              checked={item.active}
+              onCheckedChange={(checked) => toggleCatalogItemActive({ id: item.id.toString(), active: checked })}
+              className="scale-[0.7] origin-center"
+            />
+          </div>
+        </div>
+
+        <ItemDetailsModal id={item.id} isOpen={isDetailsOpen} onClose={() => setIsDetailsOpen(false)} />
+        <EditItemModal id={item.id.toString()} isOpen={isEditing} onOpenChange={setIsEditing} />
+      </>
+    );
+  }
+
+  // ── Modo grade (padrão) ────────────────────────────────────────────────────
   return (
     <>
       <div
@@ -162,7 +250,7 @@ export function ItemCard({ item }: ItemCardProps) {
             </button>
 
             {/* Container Ativo + Editar */}
-            <div 
+            <div
               className="bg-white/95 backdrop-blur-sm rounded-full py-1 px-2.5 flex items-center  border border-[#E5E2DD] gap-2"
               onClick={(e) => e.stopPropagation()}
             >
