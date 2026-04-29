@@ -67,7 +67,12 @@ export function createAdminCableWithToken() {
   const hasQuery = wsBase.includes('?')
   const cableUrl = `${wsBase.replace(/\/$/, '')}${wsBase.endsWith('/cable') || wsBase.endsWith('/cable/') ? '' : '/cable'}${hasQuery ? '&' : '?'}token=${token}`
 
-  return createConsumer(cableUrl)
+  try {
+    return createConsumer(cableUrl)
+  } catch (e) {
+    console.error('Failed to create ActionCable consumer:', e)
+    return null
+  }
 }
 
 export function useAdminActionCable() {
