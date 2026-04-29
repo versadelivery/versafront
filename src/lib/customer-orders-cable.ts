@@ -9,7 +9,12 @@ export function createCustomerOrdersCableWithToken() {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
     const cableUrl = apiUrl.replace('http', 'ws').replace('https', 'wss') + `/cable?token=${token}`
     console.log('🔗 URL do WebSocket:', cableUrl.replace(token, '***TOKEN***'))
-    return createConsumer(cableUrl)
+    try {
+      return createConsumer(cableUrl)
+    } catch (e) {
+      console.error('Failed to create ActionCable consumer:', e)
+      return null
+    }
   }
   console.warn('⚠️ Token do cliente não encontrado')
   return null
