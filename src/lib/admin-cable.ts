@@ -62,10 +62,8 @@ export function createAdminCableWithToken() {
   if (!token) return null
 
   const base = process.env.NEXT_PUBLIC_CABLE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-  // If base already points to ws(s), keep it; otherwise convert http(s) -> ws(s)
-  const wsBase = base.startsWith('ws') ? base : base.replace('http', 'ws').replace('https', 'wss')
-  const hasQuery = wsBase.includes('?')
-  const cableUrl = `${wsBase.replace(/\/$/, '')}${wsBase.endsWith('/cable') || wsBase.endsWith('/cable/') ? '' : '/cable'}${hasQuery ? '&' : '?'}token=${token}`
+  const host = base.replace(/^https?:\/\//, '').replace(/^wss?:\/\//, '').replace(/\/$/, '')
+  const cableUrl = `wss://${host}/cable?token=${token}`
 
   try {
     return createConsumer(cableUrl)
