@@ -21,7 +21,7 @@ export default function TermosPage() {
       <header className="sticky top-0 z-50 bg-white border-b border-[#E8E4DF]">
         <div className="max-w-[1200px] mx-auto px-6 sm:px-10 flex items-center h-16 gap-6">
           <Link href="/">
-            <Image src="/logo/logo-inline-primary.svg" alt="Versa Delivery" width={160} height={48} priority />
+            <Image src="/logo/logo-inline-primary.svg" alt="Versadelivery" width={160} height={48} priority />
           </Link>
           <div className="h-5 w-px bg-[#E8E4DF]" />
           <span className="text-sm font-medium text-[#858585]">Termos de Uso</span>
@@ -71,7 +71,7 @@ export default function TermosPage() {
 
             <div className="prose prose-gray max-w-none space-y-10 text-[#1B1B1B]">
               <p className="text-base leading-relaxed text-[#444]">
-                Bem-vindo à <strong>Versa Delivery</strong>. Ao se cadastrar e utilizar nossa
+                Bem-vindo à <strong>Versadelivery</strong>. Ao se cadastrar e utilizar nossa
                 plataforma, você concorda com os termos e condições descritos abaixo. Leia com
                 atenção antes de criar sua conta.
               </p>
@@ -81,7 +81,7 @@ export default function TermosPage() {
                   1. Aceitação dos Termos
                 </h2>
                 <p className="text-[#444] leading-relaxed">
-                  Ao acessar ou usar a plataforma Versa Delivery, você declara ter lido,
+                  Ao acessar ou usar a plataforma Versadelivery, você declara ter lido,
                   compreendido e aceito integralmente estes Termos de Uso, bem como nossa{" "}
                   <Link href="/privacidade" className="text-[#009246] hover:underline">
                     Política de Privacidade
@@ -98,7 +98,7 @@ export default function TermosPage() {
                   2. Uso da Plataforma
                 </h2>
                 <p className="text-[#444] leading-relaxed mb-3">
-                  A Versa Delivery é uma plataforma de gestão de delivery destinada a
+                  A Versadelivery é uma plataforma de gestão de delivery destinada a
                   estabelecimentos comerciais. Você se compromete a:
                 </p>
                 <ul className="space-y-2 text-[#444]">
@@ -124,14 +124,14 @@ export default function TermosPage() {
                   3. Cadastro e Conta
                 </h2>
                 <p className="text-[#444] leading-relaxed mb-3">
-                  Para utilizar os serviços da Versa Delivery, é necessário criar uma conta
+                  Para utilizar os serviços da Versadelivery, é necessário criar uma conta
                   fornecendo informações verdadeiras e completas. Você é responsável por:
                 </p>
                 <ul className="space-y-2 text-[#444]">
                   {[
                     "Manter a confidencialidade da sua senha e de suas credenciais de acesso;",
                     "Todas as atividades realizadas em sua conta;",
-                    "Notificar imediatamente a Versa Delivery em caso de uso não autorizado da sua conta;",
+                    "Notificar imediatamente a Versadelivery em caso de uso não autorizado da sua conta;",
                     "Garantir que as informações do estabelecimento (nome, CNPJ/CPF, e-mail) sejam precisas.",
                   ].map((item) => (
                     <li key={item} className="flex gap-2 leading-relaxed">
@@ -141,7 +141,7 @@ export default function TermosPage() {
                   ))}
                 </ul>
                 <p className="text-[#444] leading-relaxed mt-3">
-                  A Versa Delivery reserva o direito de recusar o cadastro ou encerrar contas
+                  A Versadelivery reserva o direito de recusar o cadastro ou encerrar contas
                   que violem estes Termos.
                 </p>
               </section>
@@ -159,7 +159,7 @@ export default function TermosPage() {
                   pela qualidade dos produtos ou serviços oferecidos aos seus clientes.
                 </p>
                 <p className="text-[#444] leading-relaxed">
-                  <strong>Da Versa Delivery:</strong> nos comprometemos a manter a
+                  <strong>Da Versadelivery:</strong> nos comprometemos a manter a
                   plataforma disponível e funcional, com esforços razoáveis de continuidade
                   do serviço, mas não garantimos disponibilidade ininterrupta, uma vez que
                   manutenções e atualizações podem ocorrer.
@@ -173,7 +173,7 @@ export default function TermosPage() {
                   5. Serviços e Pagamentos
                 </h2>
                 <p className="text-[#444] leading-relaxed mb-3">
-                  A Versa Delivery pode oferecer planos de assinatura pagos. Ao contratar
+                  A Versadelivery pode oferecer planos de assinatura pagos. Ao contratar
                   um plano, você concorda com:
                 </p>
                 <ul className="space-y-2 text-[#444]">
@@ -198,9 +198,9 @@ export default function TermosPage() {
                   6. Propriedade Intelectual
                 </h2>
                 <p className="text-[#444] leading-relaxed">
-                  Todos os elementos da plataforma Versa Delivery — incluindo marca, logotipo,
+                  Todos os elementos da plataforma Versadelivery — incluindo marca, logotipo,
                   design, código-fonte, textos e funcionalidades — são de propriedade exclusiva
-                  da Versa Delivery e protegidos pelas leis de propriedade intelectual
+                  da Versadelivery e protegidos pelas leis de propriedade intelectual
                   brasileiras e internacionais. É vedada a reprodução, distribuição ou
                   modificação de qualquer elemento sem autorização prévia e expressa.
                 </p>
@@ -213,7 +213,7 @@ export default function TermosPage() {
                   7. Limitação de Responsabilidade
                 </h2>
                 <p className="text-[#444] leading-relaxed">
-                  A Versa Delivery não se responsabiliza por danos indiretos, incidentais
+                  A Versadelivery não se responsabiliza por danos indiretos, incidentais
                   ou consequentes decorrentes do uso ou da impossibilidade de uso da
                   plataforma, por falhas de terceiros (operadoras de pagamento, provedores
                   de internet), ou por conteúdo gerado pelos próprios estabelecimentos
@@ -231,7 +231,7 @@ export default function TermosPage() {
                 <p className="text-[#444] leading-relaxed">
                   Qualquer das partes pode encerrar a relação contratual a qualquer momento.
                   O usuário pode solicitar o cancelamento da conta diretamente na plataforma
-                  ou pelo e-mail de suporte. A Versa Delivery pode suspender ou encerrar
+                  ou pelo e-mail de suporte. A Versadelivery pode suspender ou encerrar
                   contas que violem estes Termos, sem aviso prévio em casos de violação
                   grave. Ao encerrar a conta, os dados serão tratados conforme nossa{" "}
                   <Link href="/privacidade" className="text-[#009246] hover:underline">
@@ -248,7 +248,7 @@ export default function TermosPage() {
                   9. Alterações nos Termos
                 </h2>
                 <p className="text-[#444] leading-relaxed">
-                  A Versa Delivery pode atualizar estes Termos periodicamente. Alterações
+                  A Versadelivery pode atualizar estes Termos periodicamente. Alterações
                   relevantes serão comunicadas por e-mail ou por notificação na plataforma
                   com antecedência mínima de 15 dias. O uso continuado da plataforma após
                   o prazo de aviso implica aceitação dos novos termos.
@@ -297,7 +297,7 @@ export default function TermosPage() {
       <footer className="border-t border-[#E8E4DF] mt-16">
         <div className="max-w-[1200px] mx-auto px-6 sm:px-10 py-6 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-sm text-[#858585]">
-            &copy; {new Date().getFullYear()} Versa Delivery. Todos os direitos reservados.
+            &copy; {new Date().getFullYear()} Versadelivery. Todos os direitos reservados.
           </p>
           <div className="flex items-center gap-4 text-sm text-[#858585]">
             <Link href="/termos" className="hover:text-[#1B1B1B] transition-colors font-medium text-[#1B1B1B]">

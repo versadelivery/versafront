@@ -43,7 +43,7 @@ const Header = () => {
     >
       <div className="w-full px-6 sm:px-10 lg:px-14 flex items-center h-[96px]">
         <Link href="/" className="flex-shrink-0 mr-6 lg:mr-12">
-          <Image src={logo} alt="Versa Delivery" width={220} height={64} className="w-[180px] lg:w-[220px] h-auto" />
+          <Image src={logo} alt="Versadelivery" width={220} height={64} className="w-[180px] lg:w-[220px] h-auto" />
         </Link>
 
         <div className="hidden md:flex items-center gap-5 lg:gap-10">

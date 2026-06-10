@@ -59,7 +59,7 @@ const FAQ = () => {
             Perguntas frequentes
           </h2>
           <p className="text-lg text-[#474747]">
-            O que você precisa saber sobre o Versa Delivery
+            O que você precisa saber sobre o Versadelivery
           </p>
         </motion.div>
 
