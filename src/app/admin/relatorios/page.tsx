@@ -28,6 +28,7 @@ import VisitorsTab from "./components/visitors-tab";
 import DeliveryFeesTab from "./components/delivery-fees-tab";
 import CouponUsageTab from "./components/coupon-usage-tab";
 import WeeklySummaryTab from "./components/weekly-summary-tab";
+import OrdersByPaymentTab from "./components/orders-by-payment-tab";
 import StoreCreditReceivablesTab from "./components/store-credit-receivables-tab";
 
 const CATEGORIES = [
@@ -41,6 +42,7 @@ const CATEGORIES = [
       { key: "faturamento-mensal", label: "Mensal" },
       { key: "ticket-medio", label: "Ticket Médio" },
       { key: "formas-de-pagamento", label: "Pagamento" },
+      { key: "pedidos-por-pagamento", label: "Ped. por Pagamento" },
       { key: "descontos", label: "Descontos" },
       { key: "lucratividade", label: "Lucratividade" },
       { key: "extrato-caixa", label: "Extrato Caixa" },
@@ -91,6 +93,7 @@ const TAB_COMPONENTS: Record<string, React.ComponentType> = {
   "faturamento-mensal": MonthlyRevenueTab,
   "ticket-medio": AverageTicketTab,
   "formas-de-pagamento": PaymentMethodsTab,
+  "pedidos-por-pagamento": OrdersByPaymentTab,
   "vendas-por-item": SalesByItemTab,
   "vendas-por-horario": SalesByHourTab,
   "vendas-por-dia-semana": SalesByWeekdayTab,
