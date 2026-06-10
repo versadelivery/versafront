@@ -12,6 +12,14 @@ export interface Customer {
     blocked: boolean;
     orders_count: number;
     created_at: string;
+    store_credit_summary?: {
+      outstanding_amount: number;
+      open_orders_count: number;
+      paid_amount: number;
+      paid_orders_count: number;
+      oldest_open_order_at: string | null;
+      last_open_order_at: string | null;
+    };
   };
 }
 

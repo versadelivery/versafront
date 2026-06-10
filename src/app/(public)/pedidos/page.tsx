@@ -26,6 +26,7 @@ const getPaymentMethodLabel = (method: string) => {
     debit: "Débito",
     manual_pix: "PIX",
     cash: "Dinheiro",
+    store_credit: "Fiado/Crediário",
   };
   return map[method] ?? method;
 };

@@ -43,6 +43,7 @@ const paymentConfig: Record<string, { label: string; icon: React.ElementType }> 
   manual_pix: { label: "PIX",               icon: QrCode     },
   asaas_pix:  { label: "PIX",               icon: QrCode     },
   cash:       { label: "Dinheiro",          icon: Wallet     },
+  store_credit: { label: "Fiado/Crediário", icon: Wallet     },
 };
 
 function StatusBadge({ status }: { status: string }) {

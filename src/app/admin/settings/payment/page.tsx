@@ -45,6 +45,7 @@ const idToAttributeKey = {
   cash: 'cash',
   credit_card: 'credit',
   debit_card: 'debit',
+  store_credit: 'store_credit',
   pix: 'manual_pix'
 } as const;
 
@@ -115,6 +116,16 @@ export default function PaymentSettingsPage() {
           adjustmentType: attrs.debit_adjustment_type || "none",
           adjustmentValue: attrs.debit_adjustment_value || "0",
           valueType: attrs.debit_value_type || "fixed"
+        },
+        {
+          id: "store_credit",
+          name: "Fiado/Crediário",
+          description: "Cliente compra agora e acerta depois com o estabelecimento",
+          icon: <Wallet className="w-5 h-5 text-primary" />,
+          enabled: attrs.store_credit,
+          adjustmentType: attrs.store_credit_adjustment_type || "none",
+          adjustmentValue: attrs.store_credit_adjustment_value || "0",
+          valueType: attrs.store_credit_value_type || "fixed"
         },
         {
           id: "pix",
@@ -250,6 +261,7 @@ export default function PaymentSettingsPage() {
     const cash = getMethod("cash");
     const credit = getMethod("credit_card");
     const debit = getMethod("debit_card");
+    const storeCredit = getMethod("store_credit");
     const pix = getMethod("pix");
 
     await updatePaymentMethodsMutation.mutateAsync({
@@ -260,6 +272,7 @@ export default function PaymentSettingsPage() {
           cash: cash?.enabled || false,
           credit: credit?.enabled || false,
           debit: debit?.enabled || false,
+          store_credit: storeCredit?.enabled || false,
           manual_pix: asaasPix.enabled ? false : (pix?.enabled || false),
           manual_pix_payment_moment: manualPixConfig.paymentMoment,
           pix_key: manualPixConfig.pixKey || null,
@@ -272,6 +285,9 @@ export default function PaymentSettingsPage() {
           credit_adjustment_type: credit?.adjustmentType || "none",
           credit_adjustment_value: credit?.adjustmentValue || "0",
           credit_value_type: credit?.valueType || "fixed",
+          store_credit_adjustment_type: storeCredit?.adjustmentType || "none",
+          store_credit_adjustment_value: storeCredit?.adjustmentValue || "0",
+          store_credit_value_type: storeCredit?.valueType || "fixed",
           manual_pix_adjustment_type: pix?.adjustmentType || "none",
           manual_pix_adjustment_value: pix?.adjustmentValue || "0",
           manual_pix_value_type: pix?.valueType || "fixed",

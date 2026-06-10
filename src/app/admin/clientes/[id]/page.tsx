@@ -34,6 +34,7 @@ import {
   ClipboardList,
   Eye,
   Loader2,
+  Wallet,
 } from "lucide-react";
 import CustomerModal from "../components/customer-modal";
 import OrderDetailDialog from "../components/order-detail-dialog";
@@ -78,6 +79,7 @@ const paymentLabels: Record<string, string> = {
   debit: "Debito",
   credit: "Credito",
   manual_pix: "PIX",
+  store_credit: "Fiado/Crediário",
 };
 
 function formatCurrency(value: string | number) {
@@ -198,6 +200,9 @@ export default function CustomerDetailPage() {
     );
   }
 
+  const creditSummary = customer.attributes.store_credit_summary;
+  const hasOpenCredit = (creditSummary?.open_orders_count || 0) > 0;
+
   return (
     <div className="min-h-screen bg-[#FAF9F7]">
       {/* Header admin padrao */}
@@ -316,6 +321,40 @@ export default function CustomerDetailPage() {
           </div>
         </div>
 
+        <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+          <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
+            <Wallet className="h-4 w-4 text-primary" />
+            <h2 className="font-tomato text-base font-semibold text-gray-900">Crediário</h2>
+            <span className={`ml-auto inline-flex items-center px-2.5 py-1 rounded-md border text-sm font-semibold ${
+              hasOpenCredit ? "border-amber-400 text-amber-700" : "border-green-400 text-green-700"
+            }`}>
+              {hasOpenCredit ? "Em aberto" : "Sem dívida"}
+            </span>
+          </div>
+          <div className="px-5 py-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <p className="text-sm text-muted-foreground">Total em aberto</p>
+              <p className={`text-2xl font-bold ${hasOpenCredit ? "text-amber-700" : "text-gray-900"}`}>
+                {formatCurrency(creditSummary?.outstanding_amount || 0)}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Pedidos abertos</p>
+              <p className="text-2xl font-bold text-gray-900">{creditSummary?.open_orders_count || 0}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Já pago no fiado</p>
+              <p className="text-2xl font-bold text-gray-900">{formatCurrency(creditSummary?.paid_amount || 0)}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Última dívida</p>
+              <p className="text-sm font-medium text-gray-900">
+                {creditSummary?.last_open_order_at ? formatDate(creditSummary.last_open_order_at) : "—"}
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Histórico de pedidos */}
         <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
           <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
@@ -342,8 +381,10 @@ export default function CustomerDetailPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {orders.map((order) => (
-                  <TableRow key={order.id} className="border-b border-[#E5E2DD] hover:bg-[#FAF9F7]">
+                {orders.map((order) => {
+                  const isOpenCredit = order.attributes.payment_method === "store_credit" && !order.attributes.paid_at && order.attributes.status !== "cancelled";
+                  return (
+                  <TableRow key={order.id} className={`border-b border-[#E5E2DD] hover:bg-[#FAF9F7] ${isOpenCredit ? "bg-amber-50/60" : ""}`}>
                     <TableCell className="py-3 text-sm font-medium">
                       #{order.attributes.id}
                     </TableCell>
@@ -365,7 +406,12 @@ export default function CustomerDetailPage() {
                       </span>
                     </TableCell>
                     <TableCell className="py-3 text-sm hidden sm:table-cell">
-                      {paymentLabels[order.attributes.payment_method] || order.attributes.payment_method}
+                      <span>{paymentLabels[order.attributes.payment_method] || order.attributes.payment_method}</span>
+                      {isOpenCredit && (
+                        <span className="ml-2 inline-flex px-2 py-0.5 rounded-md border border-amber-300 text-amber-700 text-xs font-semibold">
+                          devendo
+                        </span>
+                      )}
                     </TableCell>
                     <TableCell className="py-3 text-sm text-right font-medium">
                       {formatCurrency(order.attributes.total_price)}
@@ -384,7 +430,8 @@ export default function CustomerDetailPage() {
                       </button>
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
           )}

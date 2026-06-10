@@ -299,7 +299,7 @@ function PixPaymentScreen({ pixCode, expiresAt, orderId, shopSlug, onPaymentConf
   )
 }
 
-type PaymentMethod = 'credit' | 'debit' | 'manual_pix' | 'asaas_pix' | 'cash'
+type PaymentMethod = 'credit' | 'debit' | 'manual_pix' | 'asaas_pix' | 'cash' | 'store_credit'
 
 interface CartItemWithExtras {
   id: string
@@ -329,6 +329,7 @@ const PAYMENT_LABELS: Record<PaymentMethod, { label: string; icon: React.ReactNo
   manual_pix: { label: 'PIX', icon: <QrCode className="h-4 w-4" /> },
   asaas_pix: { label: 'PIX', icon: <QrCode className="h-4 w-4" /> },
   cash: { label: 'Dinheiro', icon: <Wallet className="h-4 w-4" /> },
+  store_credit: { label: 'Fiado/Crediário', icon: <Wallet className="h-4 w-4" /> },
 }
 
 export default function CheckoutPage() {

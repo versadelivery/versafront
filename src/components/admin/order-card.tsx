@@ -41,7 +41,8 @@ const getPaymentMethodLabel = (method: string, manualPixPaymentMoment?: string) 
   const methodMap: Record<string, string> = {
     'credit': 'Cartão de Crédito',
     'debit': 'Cartão de Débito',
-    'cash': 'Dinheiro'
+    'cash': 'Dinheiro',
+    'store_credit': 'Fiado/Crediário'
   };
   return methodMap[method] || method;
 };
