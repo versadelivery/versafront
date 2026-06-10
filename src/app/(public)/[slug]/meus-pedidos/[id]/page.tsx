@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { ClientOrderData } from "@/lib/client-cable";
 import { formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import PedidosHeader from "../pedidos-header";
+import PedidosHeader from "../../../pedidos/pedidos-header";
 import {
   Truck,
   Store,
@@ -22,23 +22,9 @@ import {
   Copy,
   CheckCircle2,
   Clock,
-  PackageX,
 } from "lucide-react";
 import Link from "next/link";
 import PublicLoading from "@/components/public-loading";
-
-const CANCELLATION_REASON_LABELS: Record<string, string> = {
-  address_not_found: 'Endereço não localizado',
-  customer_absent: 'Cliente ausente / não atende',
-  customer_refused: 'Cliente recusou o pedido',
-  delivery_area_unsafe: 'Área de risco / insegura',
-  delivery_refused_no_payment: 'Pagamento não realizado na entrega',
-  client_requested: 'Cliente solicitou o cancelamento',
-  payment_rejected: 'Pagamento rejeitado',
-  out_of_stock: 'Produto fora de estoque',
-  delivery_unavailable: 'Entrega indisponível',
-  other: 'Outro motivo',
-};
 
 const statusConfig: Record<string, { label: string; dot: string; border: string; text: string; description: string }> = {
   received:       { label: "Recebido",    dot: "bg-amber-400",   border: "border-amber-300",   text: "text-amber-700",   description: "Seu pedido foi recebido e será processado em breve." },
@@ -89,9 +75,12 @@ const formatDate = (dateString: string) => {
   };
 };
 
-export default function OrderDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+export default function OrderDetailsPage() {
   const router = useRouter();
-  const { id } = React.use(params);
+  const params = useParams();
+  const slug = params.slug as string;
+  const id = params.id as string;
+
   const [orderData, setOrderData] = useState<ClientOrderData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -123,12 +112,8 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
     return () => clearInterval(interval);
   }, [id]);
 
-  const shopSlug = typeof window !== 'undefined'
-    ? (() => { try { return JSON.parse(localStorage.getItem('shop') || '{}')?.data?.attributes?.slug; } catch { return null; } })()
-    : null;
-
   const nav = (
-    <PedidosHeader backHref="/pedidos" backLabel="Meus Pedidos" />
+    <PedidosHeader backHref={`/${slug}/meus-pedidos`} backLabel="Meus Pedidos" />
   );
 
   if (isLoading) {
@@ -149,7 +134,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
             <p className="text-sm text-muted-foreground mb-4">
               {error ?? 'Pedido não encontrado.'}
             </p>
-            <Button onClick={() => router.push('/pedidos')} variant="outline" className="rounded-md">
+            <Button onClick={() => router.push(`/${slug}/meus-pedidos`)} variant="outline" className="rounded-md">
               Ver todos os pedidos
             </Button>
           </div>
@@ -200,18 +185,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
     asaas_pix_code: (orderData.attributes as any).asaas_pix_code ?? null,
     asaas_pix_expires_at: (orderData.attributes as any).asaas_pix_expires_at ?? null,
     paid_at: (orderData.attributes as any).paid_at ?? null,
-    cancellation_reason_type: (orderData.attributes as any).cancellation_reason_type ?? null,
-    cancellation_reason: (orderData.attributes as any).cancellation_reason ?? null,
   };
-
-  const CANCELLATION_ENUM_KEYS = new Set([
-    'client_requested', 'payment_rejected', 'out_of_stock', 'delivery_unavailable',
-    'other', 'address_not_found', 'customer_absent', 'customer_refused',
-    'delivery_area_unsafe', 'delivery_refused_no_payment',
-  ]);
-  const cancellationJustification = order.cancellation_reason && !CANCELLATION_ENUM_KEYS.has(order.cancellation_reason)
-    ? order.cancellation_reason
-    : null;
 
   const statusCfg = statusConfig[order.status] ?? statusConfig.received;
   const PaymentIcon = (paymentConfig[order.payment_method] ?? paymentConfig.cash).icon;
@@ -394,23 +368,6 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                 </InfoCard>
               )}
 
-              {/* Motivo do cancelamento */}
-              {order.status === 'cancelled' && order.cancellation_reason_type && (
-                <InfoCard title="Pedido cancelado">
-                  <div className="flex items-start gap-2">
-                    <PackageX className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-sm font-medium text-red-700">
-                        {CANCELLATION_REASON_LABELS[order.cancellation_reason_type] ?? order.cancellation_reason_type}
-                      </p>
-                      {cancellationJustification && (
-                        <p className="text-sm text-muted-foreground mt-1">{cancellationJustification}</p>
-                      )}
-                    </div>
-                  </div>
-                </InfoCard>
-              )}
-
               {/* PIX Manual */}
               {order.payment_method === 'manual_pix' && (
                 <InfoCard title="Pagamento PIX">
@@ -507,7 +464,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                       </Button>
                     )}
                     <Button
-                      onClick={() => router.push(`/pedidos/${order.id}`)}
+                      onClick={() => router.push(`/${slug}/meus-pedidos/${order.id}`)}
                       size="sm"
                       variant="outline"
                       className="w-full rounded-md gap-2 border-[#E5E2DD]"

@@ -121,6 +121,7 @@ const getPaymentMethodLabel = (method: string) => {
     manual_pix: 'PIX',
     asaas_pix: 'PIX Automático',
     cash: 'Dinheiro',
+    store_credit: 'Fiado/Crediário',
   };
   return methodMap[method] || method;
 };

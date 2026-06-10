@@ -9,6 +9,7 @@ export interface CatalogFiltersState {
   tags: TagKey[];
   itemType: ItemTypeFilter;
   discountOnly: boolean;
+  outOfStockIngredientOnly: boolean;
 }
 
 export const DEFAULT_FILTERS: CatalogFiltersState = {
@@ -16,4 +17,5 @@ export const DEFAULT_FILTERS: CatalogFiltersState = {
   tags: [],
   itemType: "all",
   discountOnly: false,
+  outOfStockIngredientOnly: false,
 };

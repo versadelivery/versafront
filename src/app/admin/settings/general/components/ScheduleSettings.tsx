@@ -1,13 +1,60 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CheckCircle, XCircle, AlertCircle, CopyCheck, ArrowDown } from "lucide-react";
 import { useSchedule, WeekSchedule, DayKey } from "../hooks/useSchedule";
+
+interface TimeInputProps {
+  id: string;
+  value: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+}
+
+function TimeInput({ id, value, onChange, disabled }: TimeInputProps) {
+  const [hours, minutes] = (value || "00:00").split(":").map((v) => v.padStart(2, "0"));
+
+  const handleHours = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/\D/g, "").slice(0, 2);
+    const clamped = Math.min(23, parseInt(raw || "0", 10)).toString().padStart(2, "0");
+    onChange(`${clamped}:${minutes}`);
+  };
+
+  const handleMinutes = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/\D/g, "").slice(0, 2);
+    const clamped = Math.min(59, parseInt(raw || "0", 10)).toString().padStart(2, "0");
+    onChange(`${hours}:${clamped}`);
+  };
+
+  return (
+    <div className="flex items-center h-9 rounded-md border border-[#E5E2DD] bg-white px-2 gap-0.5 w-full focus-within:ring-1 focus-within:ring-ring">
+      <input
+        id={id}
+        type="text"
+        inputMode="numeric"
+        value={hours}
+        onChange={handleHours}
+        disabled={disabled}
+        className="w-6 text-center text-sm bg-transparent outline-none tabular-nums disabled:opacity-50"
+        maxLength={2}
+      />
+      <span className="text-sm text-muted-foreground select-none">:</span>
+      <input
+        type="text"
+        inputMode="numeric"
+        value={minutes}
+        onChange={handleMinutes}
+        disabled={disabled}
+        className="w-6 text-center text-sm bg-transparent outline-none tabular-nums disabled:opacity-50"
+        maxLength={2}
+      />
+    </div>
+  );
+}
 
 // Ordem dos dias da semana (domingo = 0, sábado = 6)
 const DAYS_ORDER: DayKey[] = [
@@ -79,13 +126,11 @@ function ScheduleRow({
         <Label htmlFor={`${dayKey}-open`} className="sr-only">
           Abertura
         </Label>
-        <Input
+        <TimeInput
           id={`${dayKey}-open`}
-          type="time"
           value={daySchedule.open}
-          onChange={(e) => onChangeTime(dayKey, "open", e.target.value)}
+          onChange={(value) => onChangeTime(dayKey, "open", value)}
           disabled={!daySchedule.active}
-          className="h-9 text-sm rounded-md border-[#E5E2DD]"
         />
       </div>
 
@@ -94,13 +139,11 @@ function ScheduleRow({
         <Label htmlFor={`${dayKey}-close`} className="sr-only">
           Fechamento
         </Label>
-        <Input
+        <TimeInput
           id={`${dayKey}-close`}
-          type="time"
           value={daySchedule.close}
-          onChange={(e) => onChangeTime(dayKey, "close", e.target.value)}
+          onChange={(value) => onChangeTime(dayKey, "close", value)}
           disabled={!daySchedule.active}
-          className="h-9 text-sm rounded-md border-[#E5E2DD]"
         />
       </div>
 

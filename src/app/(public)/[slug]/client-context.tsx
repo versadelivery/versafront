@@ -23,6 +23,7 @@ interface ShopPaymentConfig {
   cash: boolean;
   debit: boolean;
   credit: boolean;
+  store_credit: boolean;
   manual_pix: boolean;
 }
 

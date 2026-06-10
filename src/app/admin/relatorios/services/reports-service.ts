@@ -152,6 +152,36 @@ export interface TopCustomersResponse {
   summary: TopCustomersSummary;
 }
 
+export interface StoreCreditReceivableOrder {
+  id: number;
+  date_label: string;
+  total_price: number;
+  status: string;
+}
+
+export interface StoreCreditReceivableCustomer {
+  customer_id: number | null;
+  name: string;
+  phone: string | null;
+  open_orders_count: number;
+  outstanding_amount: number;
+  oldest_order_at: string | null;
+  last_order_at: string | null;
+  orders: StoreCreditReceivableOrder[];
+}
+
+export interface StoreCreditReceivablesSummary {
+  total_outstanding: number;
+  total_customers: number;
+  total_open_orders: number;
+  average_debt_per_customer: number;
+}
+
+export interface StoreCreditReceivablesResponse {
+  customers: StoreCreditReceivableCustomer[];
+  summary: StoreCreditReceivablesSummary;
+}
+
 // Payment Methods
 export interface PaymentMethodEntry {
   key: string;
@@ -596,6 +626,16 @@ export const reportsService = {
     endDate: string
   ): Promise<TopCustomersResponse> => {
     const response = await api.get(API_ENDPOINTS.REPORTS.TOP_CUSTOMERS, {
+      params: { start_date: startDate, end_date: endDate },
+    });
+    return response.data;
+  },
+
+  getStoreCreditReceivables: async (
+    startDate: string,
+    endDate: string
+  ): Promise<StoreCreditReceivablesResponse> => {
+    const response = await api.get(API_ENDPOINTS.REPORTS.STORE_CREDIT_RECEIVABLES, {
       params: { start_date: startDate, end_date: endDate },
     });
     return response.data;

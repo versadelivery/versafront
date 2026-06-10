@@ -20,6 +20,7 @@ const paymentLabel: Record<string, string> = {
   credit: 'Crédito',
   manual_pix: 'Pix',
   asaas_pix: 'Pix',
+  store_credit: 'Fiado/Crediário',
 }
 
 function OrderCard({
@@ -172,8 +173,12 @@ export default function DeliveryPage() {
 
   const totalActive = ready.length + inTransit.length
 
-  const handleCancelOrder = async (orderId: string, reason: string, reasonType?: string) => {
-    cancelOrder({ orderId, reason, reasonType })
+  const handleCancelOrder = async (orderId: string, reasonType: string, justification?: string) => {
+    cancelOrder({
+      orderId,
+      reason: justification || reasonType,
+      reasonType,
+    })
     setSelectedOrder(null)
   }
 

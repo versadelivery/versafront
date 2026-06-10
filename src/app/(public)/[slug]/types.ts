@@ -41,7 +41,9 @@ export interface ShopData {
             cash: boolean;
             debit: boolean;
             credit: boolean;
+            store_credit: boolean;
             manual_pix: boolean;
+            asaas_pix: boolean;
           };
         };
       } | null;

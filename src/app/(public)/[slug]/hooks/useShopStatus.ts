@@ -189,7 +189,12 @@ export function useShopStatus(options?: UseShopStatusOptions) {
         };
 
         const status = calculateShopStatus(schedule);
-        setShopStatus(status);
+        // Trust the server's is_open value when available — local recalc may differ
+        // due to timezone edge cases or manual overrides on the backend
+        const isOpen = options.initialShopStatus !== undefined
+          ? options.initialShopStatus.is_open
+          : status.isOpen;
+        setShopStatus({ ...status, isOpen });
         setLoading(false);
         return;
       }
@@ -266,7 +271,7 @@ export function useShopStatus(options?: UseShopStatusOptions) {
   useEffect(() => {
     if (!options?.initialShopStatus && !options?.shopScheduleConfig) {
       fetchShopStatus();
-      
+
       const interval = setInterval(() => {
         fetchShopStatus();
       }, 60000); // Atualizar a cada minuto
@@ -276,6 +281,15 @@ export function useShopStatus(options?: UseShopStatusOptions) {
       fetchShopStatus();
     }
   }, []);
+
+  // Reagir a mudanças do is_open vindo da API (React Query → contexto → prop)
+  // Garante que fechar/abrir a loja no admin reflita sem recarregar a página
+  useEffect(() => {
+    if (options?.initialShopStatus?.is_open !== undefined) {
+      setShopStatus(prev => ({ ...prev, isOpen: options.initialShopStatus!.is_open }));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [options?.initialShopStatus?.is_open]);
 
   return {
     shopStatus,

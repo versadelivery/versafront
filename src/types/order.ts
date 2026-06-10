@@ -29,7 +29,7 @@ export interface CreateOrderRequest {
   order: {
     shop_id: number;
     withdrawal: boolean;
-    payment_method: 'manual_pix' | 'asaas_pix' | 'credit' | 'debit' | 'cash';
+    payment_method: 'manual_pix' | 'asaas_pix' | 'credit' | 'debit' | 'cash' | 'store_credit';
     customer_name?: string;
     customer_phone?: string;
     coupon_code?: string;
@@ -205,6 +205,17 @@ export interface CustomerOrderItem {
     price: string;
     total_price: string;
     item_type: string;
+    weight?: number | null;
+    selected_extras?: Array<{ id: string; name: string; price: number }>;
+    selected_prepare_methods?: Array<{ id: string; name: string }>;
+    selected_steps?: Array<{
+      id: string;
+      step_name: string;
+      option_name: string;
+      catalog_item_step_id: string;
+      catalog_item_step_option_id: string;
+    }>;
+    complements?: Array<{ id: string; name: string; price: number }>;
     catalog_item: {
       data: {
         id: string;
