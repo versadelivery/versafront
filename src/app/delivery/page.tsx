@@ -1,10 +1,12 @@
 "use client"
 
+import React, { useState } from 'react'
 import { useDeliveryOrders } from '@/hooks/use-delivery-orders'
 import { useAuth } from '@/hooks/use-auth'
 import { DeliveryOrder } from '@/services/delivery-orders-service'
-import { MapPin, Phone, Package, LogOut, RefreshCw, Truck, CheckCircle2 } from 'lucide-react'
+import { MapPin, Phone, Package, LogOut, RefreshCw, Truck, CheckCircle2, XSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import CancelOrderModal from '@/components/admin/cancel-order-modal'
 
 const statusLabel: Record<string, string> = {
   ready: 'Pronto para entrega',
@@ -24,10 +26,12 @@ const paymentLabel: Record<string, string> = {
 function OrderCard({
   order,
   onUpdateStatus,
+  onCancel,
   isUpdating,
 }: {
   order: DeliveryOrder
   onUpdateStatus: (orderId: string, status: 'left_for_delivery' | 'delivered') => void
+  onCancel: (order: DeliveryOrder) => void
   isUpdating: boolean
 }) {
   const { id, attributes: a } = order
@@ -96,14 +100,25 @@ function OrderCard({
       )}
 
       {a.status === 'left_for_delivery' && (
-        <Button
-          onClick={() => onUpdateStatus(id, 'delivered')}
-          disabled={isUpdating}
-          className="w-full bg-green-600 hover:bg-green-700 text-white gap-2"
-        >
-          <CheckCircle2 size={15} />
-          Marcar como Entregue
-        </Button>
+        <div className="flex flex-col gap-2">
+          <Button
+            onClick={() => onUpdateStatus(id, 'delivered')}
+            disabled={isUpdating}
+            className="w-full bg-green-600 hover:bg-green-700 text-white gap-2"
+          >
+            <CheckCircle2 size={15} />
+            Marcar como Entregue
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => onCancel(order)}
+            disabled={isUpdating}
+            className="w-full border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 gap-2"
+          >
+            <XSquare size={15} />
+            Não entregue
+          </Button>
+        </div>
       )}
     </div>
   )
@@ -114,12 +129,14 @@ function Section({
   color,
   orders,
   onUpdateStatus,
+  onCancel,
   isUpdating,
 }: {
   title: string
   color: string
   orders: DeliveryOrder[]
   onUpdateStatus: (orderId: string, status: 'left_for_delivery' | 'delivered') => void
+  onCancel: (order: DeliveryOrder) => void
   isUpdating: boolean
 }) {
   if (orders.length === 0) return null
@@ -138,6 +155,7 @@ function Section({
             key={order.id}
             order={order}
             onUpdateStatus={onUpdateStatus}
+            onCancel={onCancel}
             isUpdating={isUpdating}
           />
         ))}
@@ -148,10 +166,21 @@ function Section({
 
 export default function DeliveryPage() {
   const { user, logout } = useAuth()
-  const { ready, inTransit, delivered, isLoading, refetch, updateStatus, isUpdating } =
+  const { ready, inTransit, delivered, isLoading, refetch, updateStatus, cancelOrder, isUpdating } =
     useDeliveryOrders()
 
+  const [selectedOrder, setSelectedOrder] = useState<DeliveryOrder | null>(null)
+
   const totalActive = ready.length + inTransit.length
+
+  const handleCancelOrder = async (orderId: string, reasonType: string, justification?: string) => {
+    cancelOrder({
+      orderId,
+      reason: justification || reasonType,
+      reasonType,
+    })
+    setSelectedOrder(null)
+  }
 
   return (
     <div className="max-w-md mx-auto min-h-screen flex flex-col">
@@ -206,6 +235,7 @@ export default function DeliveryPage() {
               color="bg-green-500"
               orders={ready}
               onUpdateStatus={(orderId, status) => updateStatus({ orderId, status })}
+              onCancel={setSelectedOrder}
               isUpdating={isUpdating}
             />
             <Section
@@ -213,6 +243,7 @@ export default function DeliveryPage() {
               color="bg-indigo-500"
               orders={inTransit}
               onUpdateStatus={(orderId, status) => updateStatus({ orderId, status })}
+              onCancel={setSelectedOrder}
               isUpdating={isUpdating}
             />
             <Section
@@ -220,11 +251,23 @@ export default function DeliveryPage() {
               color="bg-gray-300"
               orders={delivered}
               onUpdateStatus={(orderId, status) => updateStatus({ orderId, status })}
+              onCancel={setSelectedOrder}
               isUpdating={isUpdating}
             />
           </>
         )}
       </div>
+
+      {selectedOrder && (
+        <CancelOrderModal
+          open={!!selectedOrder}
+          onOpenChange={(open) => !open && setSelectedOrder(null)}
+          orderId={selectedOrder.id}
+          customerName={selectedOrder.attributes.customer.name}
+          orderStatus={selectedOrder.attributes.status === 'left_for_delivery' ? 'saiu' : selectedOrder.attributes.status}
+          onCancelOrder={handleCancelOrder}
+        />
+      )}
     </div>
   )
 }
