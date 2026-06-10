@@ -7,6 +7,9 @@ const CLIENT_TOKEN_KEY = 'client_token'
 // Super Admin tokens
 const SUPER_ADMIN_TOKEN_KEY = 'super_admin_token'
 
+// Super Admin impersonation tokens
+const SUPER_ADMIN_IMPERSONATION_TOKEN_KEY = 'super_admin_impersonation_token'
+
 const safeLocalStorage = {
   getItem: (key: string): string | null => {
     if (typeof window === 'undefined') return null
@@ -45,3 +48,8 @@ export const removeUser = (): void => {
 export const getSuperAdminToken = (): string | null => safeLocalStorage.getItem(SUPER_ADMIN_TOKEN_KEY)
 export const setSuperAdminToken = (token: string): void => safeLocalStorage.setItem(SUPER_ADMIN_TOKEN_KEY, token)
 export const removeSuperAdminToken = (): void => safeLocalStorage.removeItem(SUPER_ADMIN_TOKEN_KEY)
+
+// Super Admin impersonation token functions
+export const getSuperAdminImpersonationToken = (): string | null => safeLocalStorage.getItem(SUPER_ADMIN_IMPERSONATION_TOKEN_KEY)
+export const setSuperAdminImpersonationToken = (token: string): void => safeLocalStorage.setItem(SUPER_ADMIN_IMPERSONATION_TOKEN_KEY, token)
+export const removeSuperAdminImpersonationToken = (): void => safeLocalStorage.removeItem(SUPER_ADMIN_IMPERSONATION_TOKEN_KEY)

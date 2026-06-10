@@ -1,22 +1,40 @@
 import api from "@/api/config"
-import { API_ENDPOINTS } from "@/api/routes"
+import { API_ENDPOINTS, API_BASE_URL } from "@/api/routes"
 import { LoginData, RegisterData } from "@/types/utils"
 
-export const loginUser = async (data: LoginData) => {
-  const response = await api.post(API_ENDPOINTS.LOGIN, data)
-
-  // O backend retorna um formato JSONAPI: { data: { id, attributes: { ... } }, token: "..." }
-  const userData = response.data.data
+const mapUserResponse = (payload: any) => {
+  const userData = payload.data
 
   return {
-    token: response.data.token,
+    token: payload.token,
     user: {
       ...userData.attributes,
       id: userData.id,
-      // O serializer aninha o shop em attributes.shop.data
-      shop: userData.attributes.shop?.data
-    }
+      shop: userData.attributes.shop?.data,
+    },
   }
+}
+
+export const loginUser = async (data: LoginData) => {
+  const response = await api.post(API_ENDPOINTS.LOGIN, data)
+  return mapUserResponse(response.data)
+}
+
+export const impersonateShop = async (shopId: string, token: string) => {
+  const response = await fetch(`${API_BASE_URL}/super_admins/shops/${shopId}/impersonate`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({}))
+    throw new Error(errorBody.error || "Erro ao impersonar merchant")
+  }
+
+  return mapUserResponse(await response.json())
 }
 
 export const registerShop = async (data: any) => {

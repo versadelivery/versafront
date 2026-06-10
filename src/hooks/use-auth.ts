@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { loginUser, registerShop } from '../services/auth-service'
 import { LoginData, LoginResponse, RegisterData, UserData } from '../types/utils'
-import { getToken, setToken, removeToken, removeUser } from '../lib/auth'
+import { getToken, setToken, removeToken, removeUser, removeSuperAdminImpersonationToken } from '../lib/auth'
 import { toast } from 'sonner'
 
 export function useAuth() {
@@ -72,6 +72,8 @@ export function useAuth() {
   const logout = () => {
     removeToken()
     removeUser()
+    removeSuperAdminImpersonationToken()
+    setUser(null)
     localStorage.removeItem('auth_user')
     toast.success('Você saiu da sua conta')
     router.push('/login')

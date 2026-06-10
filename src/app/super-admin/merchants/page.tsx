@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,10 +13,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Store, Loader2, CheckCircle, XCircle } from "lucide-react";
+import { Store, Loader2, CheckCircle, XCircle, LogIn } from "lucide-react";
 import { API_BASE_URL } from "@/api/routes";
-import { getSuperAdminToken } from "@/lib/auth";
+import {
+  getSuperAdminToken,
+  getSuperAdminImpersonationToken,
+  setSuperAdminImpersonationToken,
+  setToken,
+} from "@/lib/auth";
 import { toast } from "sonner";
+import { impersonateShop } from "@/services/auth-service";
 
 interface Shop {
   id: string;
@@ -37,6 +44,7 @@ interface Shop {
 }
 
 export default function MerchantsPage() {
+  const router = useRouter();
   const [shops, setShops] = useState<Shop[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadingShopId, setLoadingShopId] = useState<string | null>(null);
@@ -114,6 +122,28 @@ export default function MerchantsPage() {
       await fetchShops();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao desativar");
+    } finally {
+      setLoadingShopId(null);
+    }
+  };
+
+  const handleImpersonate = async (shopId: string) => {
+    setLoadingShopId(shopId);
+    try {
+      const superAdminToken = getSuperAdminToken();
+      const returnToken = getSuperAdminImpersonationToken();
+
+      if (!returnToken && superAdminToken) {
+        setSuperAdminImpersonationToken(superAdminToken);
+      }
+
+      const response = await impersonateShop(shopId, superAdminToken || "");
+      setToken(response.token);
+      localStorage.setItem('auth_user', JSON.stringify(response.user));
+      toast.success("Sessão aberta como a loja selecionada");
+      router.push('/admin');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao impersonar merchant");
     } finally {
       setLoadingShopId(null);
     }
@@ -212,38 +242,55 @@ export default function MerchantsPage() {
                         {new Date(shop.attributes.created_at).toLocaleDateString("pt-BR")}
                       </TableCell>
                       <TableCell className="text-right">
-                        {shop.attributes.approved ? (
+                        <div className="flex items-center justify-end gap-2">
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleDisapprove(shop.id)}
-                            disabled={loadingShopId === shop.id}
+                            onClick={() => handleImpersonate(shop.id)}
+                            disabled={loadingShopId === shop.id || !shop.attributes.owner}
                           >
                             {loadingShopId === shop.id ? (
                               <Loader2 className="h-4 w-4 animate-spin" />
                             ) : (
                               <>
-                                <XCircle className="h-4 w-4 mr-1" />
-                                Desativar
+                                <LogIn className="h-4 w-4 mr-1" />
+                                Entrar
                               </>
                             )}
                           </Button>
-                        ) : (
-                          <Button
-                            size="sm"
-                            onClick={() => handleApprove(shop.id)}
-                            disabled={loadingShopId === shop.id}
-                          >
-                            {loadingShopId === shop.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <>
-                                <CheckCircle className="h-4 w-4 mr-1" />
-                                Aprovar
-                              </>
-                            )}
-                          </Button>
-                        )}
+                          {shop.attributes.approved ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDisapprove(shop.id)}
+                              disabled={loadingShopId === shop.id}
+                            >
+                              {loadingShopId === shop.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <>
+                                  <XCircle className="h-4 w-4 mr-1" />
+                                  Desativar
+                                </>
+                              )}
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              onClick={() => handleApprove(shop.id)}
+                              disabled={loadingShopId === shop.id}
+                            >
+                              {loadingShopId === shop.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <>
+                                  <CheckCircle className="h-4 w-4 mr-1" />
+                                  Aprovar
+                                </>
+                              )}
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
