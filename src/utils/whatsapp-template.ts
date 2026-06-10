@@ -7,6 +7,7 @@ const PAYMENT_LABELS: Record<string, string> = {
     debit: 'Cartão de Débito',
     manual_pix: 'PIX',
     cash: 'Dinheiro',
+    store_credit: 'Fiado/Crediário',
 };
 
 const STATUS_LABELS: Record<string, string> = {

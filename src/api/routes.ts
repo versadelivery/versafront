@@ -64,6 +64,7 @@ export const API_ENDPOINTS = {
     AVERAGE_TICKET: "/reports/average_ticket",
     SALES_BY_ITEM: "/reports/sales_by_item",
     TOP_CUSTOMERS: "/reports/top_customers",
+    STORE_CREDIT_RECEIVABLES: "/reports/store_credit_receivables",
     PAYMENT_METHODS: "/reports/payment_methods",
     SALES_BY_HOUR: "/reports/sales_by_hour",
     SALES_BY_WEEKDAY: "/reports/sales_by_weekday",

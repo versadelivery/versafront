@@ -12,6 +12,7 @@ export type ShopPaymentConfig = {
       cash: boolean;
       debit: boolean;
       credit: boolean;
+      store_credit: boolean;
       manual_pix: boolean;
       manual_pix_payment_moment: ManualPixPaymentMoment;
       pix_key: string | null;
@@ -24,6 +25,9 @@ export type ShopPaymentConfig = {
       credit_adjustment_type: AdjustmentType;
       credit_adjustment_value: string;
       credit_value_type: ValueType;
+      store_credit_adjustment_type: AdjustmentType;
+      store_credit_adjustment_value: string;
+      store_credit_value_type: ValueType;
       manual_pix_adjustment_type: AdjustmentType;
       manual_pix_adjustment_value: string;
       manual_pix_value_type: ValueType;
