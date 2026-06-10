@@ -212,6 +212,7 @@ export interface OrderByPaymentMethodEntry {
   status_label: string;
   time_label: string;
   withdrawal: boolean;
+  paid_at: string | null;
 }
 
 export interface OrdersByPaymentMethodGroup {
