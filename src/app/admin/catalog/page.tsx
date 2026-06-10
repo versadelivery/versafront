@@ -9,7 +9,7 @@ import { useCatalogGroup } from "@/hooks/useCatalogGroup";
 import { useCatalogReorder } from "@/hooks/useCatalogReorder";
 import { ItemCard } from "@/components/admin/catalog/item-card";
 import { SortableItemCard } from "@/components/admin/catalog/sortable-item-card";
-import { ArrowLeft, Edit2, GripVertical, Loader2, Package, Plus } from "lucide-react";
+import { ArrowLeft, Edit2, GripVertical, LayoutGrid, LayoutList, Loader2, Package, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { DeleteConfirmation } from "@/components/ui/delete-confirmation";
@@ -91,6 +91,8 @@ function CatalogPage() {
   const [tab, setTab] = useState<"catalog" | "complements" | "ingredients">("catalog");
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<CatalogFiltersState>(DEFAULT_FILTERS);
+
+  const [adminLayout, setAdminLayout] = useState<'grid' | 'list'>('grid');
 
   const { isLoading, catalog, deleteCatalogGroup, isDeletingGroup, toggleCatalogGroupActive, toggleCatalogItemActive } = useCatalogGroup();
   const { reorderGroups, reorderItems } = useCatalogReorder();
@@ -233,14 +235,18 @@ function CatalogPage() {
 
     if (items.length === 0) return null;
 
+    const gridClass = adminLayout === 'list'
+      ? "flex flex-col gap-1.5"
+      : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3";
+
     // Se filtro ou busca ativa, renderiza sem drag
     if (isFiltering) {
       return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+        <div className={gridClass}>
           {items.map((raw: any) => {
             const node = raw?.data ? raw.data : raw;
             return (
-              <ItemCard key={node.id} item={buildItemProps(node, group.id)} />
+              <ItemCard key={node.id} item={buildItemProps(node, group.id)} layout={adminLayout} />
             );
           })}
         </div>
@@ -255,8 +261,8 @@ function CatalogPage() {
         collisionDetection={closestCenter}
         onDragEnd={handleItemDragEnd(group.id, allItems)}
       >
-        <SortableContext items={itemIds} strategy={rectSortingStrategy}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+        <SortableContext items={itemIds} strategy={adminLayout === 'list' ? verticalListSortingStrategy : rectSortingStrategy}>
+          <div className={gridClass}>
             {allItems.map((raw: any) => {
               const node = raw?.data ? raw.data : raw;
               const id = node.id?.toString();
@@ -265,6 +271,7 @@ function CatalogPage() {
                   key={id}
                   id={id}
                   item={buildItemProps(node, group.id)}
+                  layout={adminLayout}
                 />
               );
             })}
@@ -292,7 +299,26 @@ function CatalogPage() {
                 <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
                 <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900">Catálogo</h1>
               </div>
-              <div className="flex items-center gap-1 bg-[#F0EFEB] p-1 rounded-md">
+              <div className="flex items-center gap-3">
+                {tab === "catalog" && (
+                  <div className="hidden sm:flex items-center bg-[#F0EFEB] p-0.5 rounded-md border border-[#E5E2DD]">
+                    <button
+                      onClick={() => setAdminLayout('grid')}
+                      className={`p-1.5 rounded transition-colors cursor-pointer ${adminLayout === 'grid' ? 'bg-white text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                      title="Visualização em grade"
+                    >
+                      <LayoutGrid className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setAdminLayout('list')}
+                      className={`p-1.5 rounded transition-colors cursor-pointer ${adminLayout === 'list' ? 'bg-white text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                      title="Visualização em lista"
+                    >
+                      <LayoutList className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+                <div className="flex items-center gap-1 bg-[#F0EFEB] p-1 rounded-md">
                 <button
                   onClick={() => setTab("catalog")}
                   className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all cursor-pointer ${
@@ -323,6 +349,7 @@ function CatalogPage() {
                 >
                   Ingredientes
                 </button>
+                </div>
               </div>
             </div>
           </div>

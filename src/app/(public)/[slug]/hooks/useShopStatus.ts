@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export interface ShopStatus {
   isOpen: boolean;
@@ -23,21 +23,23 @@ export function useShopStatus(options?: UseShopStatusOptions) {
     todayOpen: options?.initialShopStatus?.today_open ?? null,
     todayClose: options?.initialShopStatus?.today_close ?? null,
   });
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
 
   useEffect(() => {
-    if (options?.initialShopStatus !== undefined) {
-      setShopStatus({
-        isOpen: options.initialShopStatus.is_open,
-        todayOpen: options.initialShopStatus.today_open ?? null,
-        todayClose: options.initialShopStatus.today_close ?? null,
-      });
-    }
+    if (options?.initialShopStatus === undefined) return;
+
+    setShopStatus({
+      isOpen: options.initialShopStatus.is_open,
+      todayOpen: options.initialShopStatus.today_open ?? null,
+      todayClose: options.initialShopStatus.today_close ?? null,
+    });
   }, [
     options?.initialShopStatus?.is_open,
     options?.initialShopStatus?.today_open,
     options?.initialShopStatus?.today_close,
   ]);
 
-  return { shopStatus, loading };
+  const refetch = useCallback(() => undefined, []);
+
+  return { shopStatus, loading, refetch };
 }

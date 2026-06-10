@@ -5,10 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, CreditCard, Wallet, QrCode, ArrowLeft, Percent, Zap, Eye, EyeOff, Info } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Loader2, CreditCard, Wallet, QrCode, ArrowLeft, Percent, Zap, Eye, EyeOff, Info, KeyRound, Truck, ShoppingBag } from "lucide-react";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 import { usePayment } from "./usePayment";
-import { AdjustmentType, ValueType } from "./payment-service";
+import { AdjustmentType, ValueType, ManualPixPaymentMoment, generatePixKeyOtp, updatePixKey } from "./payment-service";
 import { useShop } from "@/hooks/use-shop";
 import Link from "next/link";
 
@@ -34,10 +36,16 @@ interface AsaasPixConfig {
   expirationMinutes: string;
 }
 
+interface ManualPixConfig {
+  paymentMoment: ManualPixPaymentMoment;
+  pixKey: string;
+}
+
 const idToAttributeKey = {
   cash: 'cash',
   credit_card: 'credit',
   debit_card: 'debit',
+  store_credit: 'store_credit',
   pix: 'manual_pix'
 } as const;
 
@@ -62,8 +70,18 @@ export default function PaymentSettingsPage() {
     valueType: 'fixed',
     expirationMinutes: '30',
   });
+  const [manualPixConfig, setManualPixConfig] = useState<ManualPixConfig>({
+    paymentMoment: 'on_delivery',
+    pixKey: '',
+  });
   const [showApiKey, setShowApiKey] = useState(false);
   const [showWebhookToken, setShowWebhookToken] = useState(false);
+
+  // OTP modal state
+  const [otpModal, setOtpModal] = useState<{ open: boolean; pendingPixKey: string }>({ open: false, pendingPixKey: '' });
+  const [otpCode, setOtpCode] = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
 
   useEffect(() => {
     if (paymentMethodsData) {
@@ -100,6 +118,16 @@ export default function PaymentSettingsPage() {
           valueType: attrs.debit_value_type || "fixed"
         },
         {
+          id: "store_credit",
+          name: "Fiado/Crediário",
+          description: "Cliente compra agora e acerta depois com o estabelecimento",
+          icon: <Wallet className="w-5 h-5 text-primary" />,
+          enabled: attrs.store_credit,
+          adjustmentType: attrs.store_credit_adjustment_type || "none",
+          adjustmentValue: attrs.store_credit_adjustment_value || "0",
+          valueType: attrs.store_credit_value_type || "fixed"
+        },
+        {
           id: "pix",
           name: "PIX Manual",
           description: "Cliente envia comprovante para o estabelecimento",
@@ -111,6 +139,10 @@ export default function PaymentSettingsPage() {
           valueType: attrs.manual_pix_value_type || "fixed"
         }
       ]);
+      setManualPixConfig({
+        paymentMoment: attrs.manual_pix_payment_moment || 'on_delivery',
+        pixKey: attrs.pix_key || '',
+      });
       setServiceFee({
         enabled: attrs.service_fee_enabled ?? false,
         percentage: attrs.service_fee_percentage ?? "10",
@@ -186,6 +218,42 @@ export default function PaymentSettingsPage() {
     );
   };
 
+  const handleOpenPixKeyOtp = async (pixKey: string) => {
+    setOtpLoading(true);
+    try {
+      await generatePixKeyOtp();
+      setOtpModal({ open: true, pendingPixKey: pixKey });
+      setOtpCode('');
+      setOtpSent(true);
+      toast.success('Código OTP enviado para o e-mail do dono da loja.');
+    } catch {
+      toast.error('Erro ao enviar código OTP. Tente novamente.');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleConfirmPixKeyOtp = async () => {
+    if (otpCode.trim().length !== 6) {
+      toast.error('Digite o código de 6 dígitos.');
+      return;
+    }
+    setOtpLoading(true);
+    try {
+      await updatePixKey(otpModal.pendingPixKey, otpCode.trim());
+      setManualPixConfig(prev => ({ ...prev, pixKey: otpModal.pendingPixKey, paymentMoment: 'on_order' }));
+      setOtpModal({ open: false, pendingPixKey: '' });
+      setOtpCode('');
+      setOtpSent(false);
+      toast.success('Chave PIX salva com sucesso!');
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || 'Código inválido ou expirado.';
+      toast.error(msg);
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
   const handleSaveSettings = async () => {
     if (!paymentMethodsData) return;
 
@@ -193,6 +261,7 @@ export default function PaymentSettingsPage() {
     const cash = getMethod("cash");
     const credit = getMethod("credit_card");
     const debit = getMethod("debit_card");
+    const storeCredit = getMethod("store_credit");
     const pix = getMethod("pix");
 
     await updatePaymentMethodsMutation.mutateAsync({
@@ -203,7 +272,10 @@ export default function PaymentSettingsPage() {
           cash: cash?.enabled || false,
           credit: credit?.enabled || false,
           debit: debit?.enabled || false,
+          store_credit: storeCredit?.enabled || false,
           manual_pix: asaasPix.enabled ? false : (pix?.enabled || false),
+          manual_pix_payment_moment: manualPixConfig.paymentMoment,
+          pix_key: manualPixConfig.pixKey || null,
           cash_adjustment_type: cash?.adjustmentType || "none",
           cash_adjustment_value: cash?.adjustmentValue || "0",
           cash_value_type: cash?.valueType || "fixed",
@@ -213,6 +285,9 @@ export default function PaymentSettingsPage() {
           credit_adjustment_type: credit?.adjustmentType || "none",
           credit_adjustment_value: credit?.adjustmentValue || "0",
           credit_value_type: credit?.valueType || "fixed",
+          store_credit_adjustment_type: storeCredit?.adjustmentType || "none",
+          store_credit_adjustment_value: storeCredit?.adjustmentValue || "0",
+          store_credit_value_type: storeCredit?.valueType || "fixed",
           manual_pix_adjustment_type: pix?.adjustmentType || "none",
           manual_pix_adjustment_value: pix?.adjustmentValue || "0",
           manual_pix_value_type: pix?.valueType || "fixed",
@@ -233,6 +308,8 @@ export default function PaymentSettingsPage() {
 
   const hasChanges = paymentMethodsData && (() => {
     const attrs = paymentMethodsData.data.attributes;
+
+    if (manualPixConfig.paymentMoment !== (attrs.manual_pix_payment_moment || 'on_delivery')) return true;
 
     if (serviceFee.enabled !== (attrs.service_fee_enabled ?? false)) return true;
     if (String(serviceFee.percentage) !== String(attrs.service_fee_percentage ?? "10")) return true;
@@ -376,7 +453,8 @@ export default function PaymentSettingsPage() {
                 </div>
 
                 {method.enabled && (
-                  <div className="px-5 py-4 border-t border-[#E5E2DD] bg-[#FAF9F7]">
+                  <div className="px-5 py-4 border-t border-[#E5E2DD] bg-[#FAF9F7] space-y-4">
+                    {/* Ajuste de preço */}
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
                       <Select
                         value={method.adjustmentType}
@@ -434,6 +512,81 @@ export default function PaymentSettingsPage() {
                         </>
                       )}
                     </div>
+
+                    {/* Momento do pagamento PIX */}
+                    {method.id === 'pix' && (
+                      <div className="space-y-3">
+                        <Label className="text-sm font-medium text-gray-700 block">
+                          Quando o cliente paga?
+                        </Label>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setManualPixConfig(prev => ({ ...prev, paymentMoment: 'on_delivery' }))}
+                            disabled={isUpdating}
+                            className={`flex items-center gap-2 px-4 py-2.5 rounded-md border text-sm font-medium transition-colors cursor-pointer ${
+                              manualPixConfig.paymentMoment === 'on_delivery'
+                                ? 'bg-primary text-white border-primary'
+                                : 'bg-white text-gray-700 border-[#E5E2DD] hover:bg-[#F0EFEB]'
+                            }`}
+                          >
+                            <Truck className="w-4 h-4" />
+                            Na entrega (maquininha)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setManualPixConfig(prev => ({ ...prev, paymentMoment: 'on_order' }))}
+                            disabled={isUpdating}
+                            className={`flex items-center gap-2 px-4 py-2.5 rounded-md border text-sm font-medium transition-colors cursor-pointer ${
+                              manualPixConfig.paymentMoment === 'on_order'
+                                ? 'bg-primary text-white border-primary'
+                                : 'bg-white text-gray-700 border-[#E5E2DD] hover:bg-[#F0EFEB]'
+                            }`}
+                          >
+                            <ShoppingBag className="w-4 h-4" />
+                            Na realização do pedido
+                          </button>
+                        </div>
+
+                        {/* Chave PIX — só exibida quando on_order */}
+                        {manualPixConfig.paymentMoment === 'on_order' && (
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium text-gray-700 block">
+                              Chave PIX da loja <span className="text-red-500">*</span>
+                            </Label>
+                            <div className="flex gap-2">
+                              <Input
+                                type="text"
+                                value={manualPixConfig.pixKey}
+                                onChange={(e) => setManualPixConfig(prev => ({ ...prev, pixKey: e.target.value }))}
+                                disabled={isUpdating}
+                                placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória"
+                                className="flex-1 rounded-md border-[#E5E2DD] bg-white"
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled={isUpdating || otpLoading || !manualPixConfig.pixKey.trim()}
+                                onClick={() => handleOpenPixKeyOtp(manualPixConfig.pixKey)}
+                                className="rounded-md border-[#E5E2DD] cursor-pointer whitespace-nowrap"
+                              >
+                                {otpLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4 mr-1" />}
+                                {paymentMethodsData?.data.attributes.pix_key ? 'Atualizar chave' : 'Salvar chave'}
+                              </Button>
+                            </div>
+                            {paymentMethodsData?.data.attributes.pix_key && (
+                              <p className="text-xs text-muted-foreground">
+                                Chave atual: <span className="font-medium text-gray-700">{paymentMethodsData.data.attributes.pix_key}</span>
+                              </p>
+                            )}
+                            <p className="text-xs text-muted-foreground">
+                              A chave PIX requer confirmação via código enviado ao e-mail do dono da loja.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -642,6 +795,69 @@ export default function PaymentSettingsPage() {
           </div>
         )}
       </div>
+
+      {/* Modal OTP — confirmação de chave PIX */}
+      <Dialog open={otpModal.open} onOpenChange={(open) => { if (!otpLoading) { setOtpModal(prev => ({ ...prev, open })); setOtpCode(''); } }}>
+        <DialogContent className="sm:max-w-md rounded-md border border-[#E5E2DD]">
+          <DialogHeader>
+            <DialogTitle className="font-tomato text-base font-semibold">Confirmar chave PIX</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            {otpSent && (
+              <div className="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+                Código enviado para o e-mail do dono da loja. Válido por 10 minutos.
+              </div>
+            )}
+
+            <div>
+              <Label className="text-sm font-medium text-gray-700 mb-1.5 block">
+                Código de verificação (6 dígitos)
+              </Label>
+              <Input
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                disabled={otpLoading}
+                placeholder="000000"
+                className="rounded-md border-[#E5E2DD] text-center text-xl tracking-widest font-mono"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => handleOpenPixKeyOtp(otpModal.pendingPixKey)}
+              disabled={otpLoading}
+              className="text-xs text-primary underline cursor-pointer disabled:opacity-50"
+            >
+              Reenviar código
+            </button>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => { setOtpModal({ open: false, pendingPixKey: '' }); setOtpCode(''); }}
+              disabled={otpLoading}
+              className="rounded-md border-[#E5E2DD] cursor-pointer"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={handleConfirmPixKeyOtp}
+              disabled={otpLoading || otpCode.length !== 6}
+              className="rounded-md bg-primary text-white cursor-pointer"
+            >
+              {otpLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+              Confirmar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -66,7 +66,7 @@ export default function PDVPage() {
     reference: "",
   });
   const [orderType, setOrderType] = useState<"delivery" | "pickup" | "table">("delivery");
-  const [paymentMethod, setPaymentMethod] = useState<"cash" | "credit" | "debit" | "pix">("credit");
+  const [paymentMethod, setPaymentMethod] = useState<"cash" | "credit" | "debit" | "pix" | "store_credit">("credit");
   const [changeAmount, setChangeAmount] = useState("");
   const [notes, setNotes] = useState("");
   const [isProcessingOrder, setIsProcessingOrder] = useState(false);
@@ -173,7 +173,7 @@ export default function PDVPage() {
   const deliveryFee = calculateDeliveryFee();
   const minimumOrderValue = deliveryConfig?.minimum_order_value ?? 0;
 
-  const pdvPaymentMethodToApi = (m: "cash" | "credit" | "debit" | "pix") =>
+  const pdvPaymentMethodToApi = (m: "cash" | "credit" | "debit" | "pix" | "store_credit") =>
     m === "cash" ? "cash" : m === "pix" ? "manual_pix" : m;
 
   const calculatePdvPaymentAdjustment = (): number => {
@@ -191,8 +191,8 @@ export default function PDVPage() {
 
   const paymentAdjustment = calculatePdvPaymentAdjustment();
 
-  const getPaymentMethodLabel = (m: "cash" | "credit" | "debit" | "pix") =>
-    m === "cash" ? "Dinheiro" : m === "credit" ? "Crédito" : m === "debit" ? "Débito" : "PIX";
+  const getPaymentMethodLabel = (m: "cash" | "credit" | "debit" | "pix" | "store_credit") =>
+    m === "cash" ? "Dinheiro" : m === "credit" ? "Crédito" : m === "debit" ? "Débito" : m === "store_credit" ? "Fiado/Crediário" : "PIX";
 
   // Clique no item — abre modal se tiver opções ou for peso, senão adiciona direto
   const handleItemClick = (item: any) => {
@@ -388,12 +388,13 @@ export default function PDVPage() {
   // Métodos de pagamento disponíveis (dinâmico baseado na config da loja)
   const availablePaymentMethods = (() => {
     const attrs = paymentMethodsData?.data?.attributes;
-    const methods: { value: "cash" | "credit" | "debit" | "pix"; label: string }[] = [];
-    if (!attrs) return [{ value: "credit" as const, label: "Crédito" }, { value: "debit" as const, label: "Débito" }, { value: "cash" as const, label: "Dinheiro" }, { value: "pix" as const, label: "PIX" }];
+    const methods: { value: "cash" | "credit" | "debit" | "pix" | "store_credit"; label: string }[] = [];
+    if (!attrs) return [{ value: "credit" as const, label: "Crédito" }, { value: "debit" as const, label: "Débito" }, { value: "cash" as const, label: "Dinheiro" }, { value: "pix" as const, label: "PIX" }, { value: "store_credit" as const, label: "Fiado/Crediário" }];
     if (attrs.credit) methods.push({ value: "credit", label: "Crédito" });
     if (attrs.debit) methods.push({ value: "debit", label: "Débito" });
     if (attrs.cash) methods.push({ value: "cash", label: "Dinheiro" });
     if (attrs.manual_pix) methods.push({ value: "pix", label: "PIX" });
+    if (attrs.store_credit) methods.push({ value: "store_credit", label: "Fiado/Crediário" });
     return methods;
   })();
 
@@ -404,7 +405,7 @@ export default function PDVPage() {
     }
   }, [paymentMethodsData]);
 
-  const getAdjustmentLabel = (m: "cash" | "credit" | "debit" | "pix"): string => {
+  const getAdjustmentLabel = (m: "cash" | "credit" | "debit" | "pix" | "store_credit"): string => {
     const attrs = paymentMethodsData?.data?.attributes;
     if (!attrs) return "";
     const attrKey = pdvPaymentMethodToApi(m);
@@ -495,7 +496,7 @@ export default function PDVPage() {
           shop_id: Number(shopId) || 0,
           withdrawal: isTableOrder ? true : orderType === "pickup",
           payment_method:
-            paymentMethod === "pix" ? ("manual_pix" as const) : (paymentMethod as "cash" | "credit" | "debit"),
+            paymentMethod === "pix" ? ("manual_pix" as const) : (paymentMethod as "cash" | "credit" | "debit" | "store_credit"),
           customer_name: isTableOrder
             ? (selectedSession?.attributes.customer_name || `Mesa ${selectedSession?.attributes.table_number}`)
             : customerInfo.name.trim(),
