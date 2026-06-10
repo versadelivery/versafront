@@ -19,7 +19,7 @@ export function AuthLayout({ children, title }: AuthLayoutProps) {
           <div className="text-center mb-10">
             {/* <Image
               src="/logo/logo-inline-primary.svg"
-              alt="Versa Delivery"
+              alt="Versadelivery"
               width={180}
               height={48}
               className="mx-auto mb-8"

@@ -65,7 +65,7 @@ const About = () => {
                 <div className="relative">
                   <Image
                     src={cesta}
-                    alt="Produtos Versa Delivery"
+                    alt="Produtos Versadelivery"
                     className="relative rounded-2xl w-full max-w-[500px]"
                     width={500}
                     height={400}
@@ -96,7 +96,7 @@ const About = () => {
             <div className="relative">
               <Image
                 src={cesta}
-                alt="Produtos Versa Delivery"
+                alt="Produtos Versadelivery"
                 className="relative rounded-2xl w-full max-w-[400px]"
                 width={400}
                 height={320}

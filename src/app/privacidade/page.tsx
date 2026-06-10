@@ -21,7 +21,7 @@ export default function PrivacidadePage() {
       <header className="sticky top-0 z-50 bg-white border-b border-[#E8E4DF]">
         <div className="max-w-[1200px] mx-auto px-6 sm:px-10 flex items-center h-16 gap-6">
           <Link href="/">
-            <Image src="/logo/logo-inline-primary.svg" alt="Versa Delivery" width={160} height={48} priority />
+            <Image src="/logo/logo-inline-primary.svg" alt="Versadelivery" width={160} height={48} priority />
           </Link>
           <div className="h-5 w-px bg-[#E8E4DF]" />
           <span className="text-sm font-medium text-[#858585]">Política de Privacidade</span>
@@ -71,7 +71,7 @@ export default function PrivacidadePage() {
 
             <div className="space-y-10 text-[#1B1B1B]">
               <p className="text-base leading-relaxed text-[#444]">
-                A <strong>Versa Delivery</strong> está comprometida com a proteção dos seus
+                A <strong>Versadelivery</strong> está comprometida com a proteção dos seus
                 dados pessoais e com a transparência sobre como as informações são coletadas,
                 utilizadas e armazenadas. Esta política está em conformidade com a{" "}
                 <strong>Lei Geral de Proteção de Dados (LGPD — Lei nº 13.709/2018)</strong>.
@@ -262,7 +262,7 @@ export default function PrivacidadePage() {
                   8. Menores de Idade
                 </h2>
                 <p className="text-[#444] leading-relaxed">
-                  A plataforma Versa Delivery é destinada a pessoas jurídicas e pessoas
+                  A plataforma Versadelivery é destinada a pessoas jurídicas e pessoas
                   físicas maiores de 18 anos. Não coletamos intencionalmente dados de menores
                   de idade. Caso identifiquemos que dados de menores foram fornecidos sem
                   consentimento parental, procederemos com a exclusão imediata.
@@ -337,7 +337,7 @@ export default function PrivacidadePage() {
       <footer className="border-t border-[#E8E4DF] mt-16">
         <div className="max-w-[1200px] mx-auto px-6 sm:px-10 py-6 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-sm text-[#858585]">
-            &copy; {new Date().getFullYear()} Versa Delivery. Todos os direitos reservados.
+            &copy; {new Date().getFullYear()} Versadelivery. Todos os direitos reservados.
           </p>
           <div className="flex items-center gap-4 text-sm text-[#858585]">
             <Link href="/termos" className="hover:text-[#1B1B1B] transition-colors">
