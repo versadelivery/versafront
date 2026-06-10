@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { ClientOrderData } from "@/lib/client-cable";
 import { formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import PedidosHeader from "../pedidos-header";
+import PedidosHeader from "../../../pedidos/pedidos-header";
 import {
   Truck,
   Store,
@@ -75,9 +75,12 @@ const formatDate = (dateString: string) => {
   };
 };
 
-export default function OrderDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+export default function OrderDetailsPage() {
   const router = useRouter();
-  const { id } = React.use(params);
+  const params = useParams();
+  const slug = params.slug as string;
+  const id = params.id as string;
+
   const [orderData, setOrderData] = useState<ClientOrderData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -109,12 +112,8 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
     return () => clearInterval(interval);
   }, [id]);
 
-  const shopSlug = typeof window !== 'undefined'
-    ? (() => { try { return JSON.parse(localStorage.getItem('shop') || '{}')?.data?.attributes?.slug; } catch { return null; } })()
-    : null;
-
   const nav = (
-    <PedidosHeader backHref="/pedidos" backLabel="Meus Pedidos" />
+    <PedidosHeader backHref={`/${slug}/meus-pedidos`} backLabel="Meus Pedidos" />
   );
 
   if (isLoading) {
@@ -135,7 +134,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
             <p className="text-sm text-muted-foreground mb-4">
               {error ?? 'Pedido não encontrado.'}
             </p>
-            <Button onClick={() => router.push('/pedidos')} variant="outline" className="rounded-md">
+            <Button onClick={() => router.push(`/${slug}/meus-pedidos`)} variant="outline" className="rounded-md">
               Ver todos os pedidos
             </Button>
           </div>
@@ -465,7 +464,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                       </Button>
                     )}
                     <Button
-                      onClick={() => router.push(`/pedidos/${order.id}`)}
+                      onClick={() => router.push(`/${slug}/meus-pedidos/${order.id}`)}
                       size="sm"
                       variant="outline"
                       className="w-full rounded-md gap-2 border-[#E5E2DD]"

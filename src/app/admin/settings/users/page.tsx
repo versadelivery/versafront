@@ -47,7 +47,6 @@ export default function UsersManagementPage() {
   const getRoleBadgeStyle = (role: string) => {
     const styles: Record<string, string> = {
       owner: "bg-white border-red-400 text-red-700",
-      manager: "bg-white border-green-400 text-green-700",
       employee: "bg-white border-blue-400 text-blue-700",
       delivery_man: "bg-white border-purple-400 text-purple-700"
     };
@@ -57,7 +56,6 @@ export default function UsersManagementPage() {
   const getRoleLabel = (role: string) => {
     const labels: Record<string, string> = {
       owner: "Proprietário",
-      manager: "Gerente",
       employee: "Funcionário",
       delivery_man: "Entregador"
     };

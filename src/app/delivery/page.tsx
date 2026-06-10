@@ -18,6 +18,7 @@ const paymentLabel: Record<string, string> = {
   credit: 'Crédito',
   manual_pix: 'Pix',
   asaas_pix: 'Pix',
+  store_credit: 'Fiado/Crediário',
 }
 
 function OrderCard({

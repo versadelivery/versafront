@@ -29,6 +29,7 @@ import DeliveryFeesTab from "./components/delivery-fees-tab";
 import CouponUsageTab from "./components/coupon-usage-tab";
 import WeeklySummaryTab from "./components/weekly-summary-tab";
 import OrdersByPaymentTab from "./components/orders-by-payment-tab";
+import StoreCreditReceivablesTab from "./components/store-credit-receivables-tab";
 
 const CATEGORIES = [
   {
@@ -71,6 +72,7 @@ const CATEGORIES = [
     icon: Users,
     tabs: [
       { key: "top-clientes", label: "Top Clientes" },
+      { key: "crediario", label: "Crediário" },
       { key: "aquisicao-clientes", label: "Aquisição" },
     ],
   },
@@ -97,6 +99,7 @@ const TAB_COMPONENTS: Record<string, React.ComponentType> = {
   "vendas-por-dia-semana": SalesByWeekdayTab,
   "vendas-por-bairro": SalesByNeighborhoodTab,
   "top-clientes": TopCustomersTab,
+  "crediario": StoreCreditReceivablesTab,
   "vendas-por-canal": SalesByChannelTab,
   "aquisicao-clientes": CustomerAcquisitionTab,
   "descontos": DiscountedOrdersTab,

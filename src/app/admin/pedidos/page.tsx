@@ -198,7 +198,7 @@ export default function OrderManagement() {
   const [searchQuery, setSearchQuery] = useState('');
   const [quickSearchId, setQuickSearchId] = useState('');
   const [filterDeliveryType, setFilterDeliveryType] = useState<'all' | 'delivery' | 'pickup'>('all');
-  const [filterPaymentMethod, setFilterPaymentMethod] = useState<'all' | 'cash' | 'debit' | 'credit' | 'manual_pix'>('all');
+  const [filterPaymentMethod, setFilterPaymentMethod] = useState<'all' | 'cash' | 'debit' | 'credit' | 'manual_pix' | 'store_credit'>('all');
   const [filterStatus, setFilterStatus] = useState<'all' | Order['status']>('all');
   const [showFilters, setShowFilters] = useState(false);
   const [expandedColumns, setExpandedColumns] = useState<Record<string, boolean>>({
@@ -816,6 +816,7 @@ export default function OrderManagement() {
                     <SelectItem value="credit">Cartão de Crédito</SelectItem>
                     <SelectItem value="debit">Cartão de Débito</SelectItem>
                     <SelectItem value="cash">Dinheiro</SelectItem>
+                    <SelectItem value="store_credit">Fiado/Crediário</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

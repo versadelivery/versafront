@@ -15,6 +15,7 @@ import {
 import { useClient } from "../[slug]/client-context";
 import favicon from "@/public/logo/favicon.svg";
 import logoInlineBlack from "@/public/logo/logo-inline-black.svg";
+import { useState, useEffect } from "react";
 
 interface PedidosHeaderProps {
   backHref?: string;
@@ -27,17 +28,14 @@ export default function PedidosHeader({
 }: PedidosHeaderProps) {
   const { client, logout } = useClient();
 
-  const shopSlug =
-    typeof window !== "undefined"
-      ? (() => {
-          try {
-            return JSON.parse(localStorage.getItem("shop") || "{}")?.data
-              ?.attributes?.slug;
-          } catch {
-            return null;
-          }
-        })()
-      : null;
+  const [logoHref, setLogoHref] = useState("/");
+
+  useEffect(() => {
+    try {
+      const slug = JSON.parse(localStorage.getItem("shop") || "{}")?.data?.attributes?.slug;
+      if (slug) setLogoHref(`/${slug}`);
+    } catch {}
+  }, []);
 
   const getInitials = (name: string) =>
     name
@@ -46,8 +44,6 @@ export default function PedidosHeader({
       .join("")
       .toUpperCase()
       .slice(0, 2);
-
-  const logoHref = shopSlug ? `/${shopSlug}` : "/";
 
   return (
     <header className="sticky top-0 z-50 w-full bg-white border-b border-[#E5E2DD]">

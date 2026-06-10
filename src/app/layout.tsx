@@ -80,7 +80,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="pt-BR">
       <body
         suppressHydrationWarning
         className={`${inter.variable} ${tomatoGrotesk.variable} ${antarcticanMono.variable} antialiased bg-white`}

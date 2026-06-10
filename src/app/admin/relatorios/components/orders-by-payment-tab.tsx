@@ -39,6 +39,7 @@ const PAYMENT_LABELS: Record<string, string> = {
   credit: "Crédito",
   manual_pix: "PIX",
   asaas_pix: "PIX Online",
+  store_credit: "Fiado/Crediário",
 };
 
 const STATUS_LABELS: Record<string, string> = {
