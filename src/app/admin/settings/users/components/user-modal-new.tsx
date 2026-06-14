@@ -26,25 +26,20 @@ interface UserModalProps {
 }
 
 const userRoles = [
-  { 
-    value: "owner", 
-    label: "Proprietário", 
-    description: "Acesso total ao sistema" 
+  {
+    value: "owner",
+    label: "Proprietário",
+    description: "Acesso total ao sistema"
   },
-  { 
-    value: "manager", 
-    label: "Gerente", 
-    description: "Gerenciamento de pedidos e configurações" 
+  {
+    value: "employee",
+    label: "Funcionário",
+    description: "Acesso limitado para operações básicas"
   },
-  { 
-    value: "employee", 
-    label: "Funcionário", 
-    description: "Acesso limitado para operações básicas" 
-  },
-  { 
-    value: "delivery_man", 
-    label: "Entregador", 
-    description: "Gestão de entregas e pedidos" 
+  {
+    value: "delivery_man",
+    label: "Entregador",
+    description: "Gestão de entregas e pedidos"
   }
 ];
 
@@ -173,7 +168,6 @@ export default function UserModal({
   const getRoleColor = (role: string) => {
     const colors = {
       owner: "text-red-600",
-      manager: "text-emerald-600", 
       employee: "text-blue-600",
       delivery_man: "text-purple-600"
     };

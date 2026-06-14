@@ -1,6 +1,7 @@
 "use client"
 
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
+import { useParams } from 'next/navigation';
 import { useClient } from "../client-context";
 import { Store, Clock, Truck, Receipt, MapPin, Package, Megaphone } from 'lucide-react';
 import Image from 'next/image';
@@ -19,10 +20,26 @@ interface StoreHeaderProps {
 
 export default function StoreHeader({ shop: initialShop }: StoreHeaderProps) {
   const { shop: contextShop } = useClient();
+  const params = useParams();
+  const storeSlug = params?.slug as string;
   const [hasCustomerInfo, setHasCustomerInfo] = useState(false);
+  const stickyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setHasCustomerInfo(!!localStorage.getItem('customer_info'));
+  }, []);
+
+  // Publica altura real do header sticky como CSS var — o catalog nav usa como `top`
+  useEffect(() => {
+    const el = stickyRef.current;
+    if (!el) return;
+    const update = () => {
+      document.documentElement.style.setProperty('--store-header-height', `${el.offsetHeight}px`);
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
   }, []);
   const shopData = contextShop?.data ?? null;
   const attributes = shopData?.attributes || initialShop?.attributes || {};
@@ -52,33 +69,34 @@ export default function StoreHeader({ shop: initialShop }: StoreHeaderProps) {
 
   return (
     <>
-      {/* Banner promocional */}
-      {attributes.banner_active && attributes.banner_text && (
-        <div
-          className="w-full px-4 py-2 text-center text-sm font-medium z-40 sticky top-0"
+      {/* Banner + Nav header — sticky como uma unidade para não depender de altura fixa */}
+      <div ref={stickyRef} className="sticky top-0 z-40 w-full">
+        {/* Banner promocional */}
+        {attributes.banner_active && attributes.banner_text && (
+          <div
+            className="w-full px-4 py-2 text-center text-sm font-medium"
+            style={{
+              backgroundColor: headerColor || '#1F2937',
+              color: headerColor ? textColor : '#FFFFFF',
+              borderBottom: `1px solid ${borderColor}`,
+            }}
+          >
+            <div className="max-w-[1400px] mx-auto flex items-center justify-center gap-2">
+              <Megaphone className="w-4 h-4 flex-shrink-0" />
+              <span>{attributes.banner_text}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Nav header */}
+        <header
+          className="w-full"
           style={{
-            backgroundColor: headerColor || '#1F2937',
-            color: headerColor ? textColor : '#FFFFFF',
+            ...headerStyle,
+            ...(!headerColor ? { backgroundColor: '#FFFFFF' } : {}),
             borderBottom: `1px solid ${borderColor}`,
           }}
         >
-          <div className="max-w-[1400px] mx-auto flex items-center justify-center gap-2">
-            <Megaphone className="w-4 h-4 flex-shrink-0" />
-            <span>{attributes.banner_text}</span>
-          </div>
-        </div>
-      )}
-
-      {/* Nav header */}
-      <header
-        className="sticky z-40 w-full"
-        style={{
-          ...headerStyle,
-          ...(!headerColor ? { backgroundColor: '#FFFFFF' } : {}),
-          borderBottom: `1px solid ${borderColor}`,
-          top: attributes.banner_active && attributes.banner_text ? '37px' : '0px',
-        }}
-      >
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link href={`/${attributes.slug}`} className="md:hidden cursor-pointer">
@@ -107,7 +125,7 @@ export default function StoreHeader({ shop: initialShop }: StoreHeaderProps) {
               {hasCustomerInfo && (
                 <>
                   <Link
-                    href="/pedidos"
+                    href={`/${storeSlug}/meus-pedidos`}
                     className="hidden md:flex items-center gap-2 text-sm font-medium transition-colors cursor-pointer"
                     style={{ color: mutedColor }}
                   >
@@ -115,7 +133,7 @@ export default function StoreHeader({ shop: initialShop }: StoreHeaderProps) {
                     Meus Pedidos
                   </Link>
                   <Link
-                    href="/pedidos"
+                    href={`/${storeSlug}/meus-pedidos`}
                     className="md:hidden flex items-center justify-center h-10 w-10 rounded-md transition-colors cursor-pointer"
                     style={{ borderColor, color: mutedColor, borderWidth: '1px' }}
                   >
@@ -128,6 +146,7 @@ export default function StoreHeader({ shop: initialShop }: StoreHeaderProps) {
           </div>
         </div>
       </header>
+      </div>
 
       {/* Shop info */}
       <div
@@ -183,35 +202,44 @@ export default function StoreHeader({ shop: initialShop }: StoreHeaderProps) {
             </div>
           </div>
 
-          <div
-            className="flex flex-wrap items-center gap-5 sm:gap-10 mt-5 pt-5"
-            style={{ borderTop: `1px solid ${borderColor}` }}
-          >
-            <div className="flex items-center gap-2.5">
-              <Clock className="w-5 h-5 flex-shrink-0" style={{ color: mutedColor }} />
-              <div>
-                <p className="text-base font-semibold leading-none" style={{ color: textColor }}>30–45 min</p>
-                <p className="text-xs mt-1" style={{ color: mutedColor }}>Entrega</p>
-              </div>
+          {/* Mobile: linha compacta com separadores · / Desktop: blocos com ícone */}
+          <div className="mt-5 pt-5" style={{ borderTop: `1px solid ${borderColor}` }}>
+            {/* Mobile */}
+            <div className="flex items-center justify-center gap-3.5 sm:hidden">
+              <Clock className="w-3.5 h-3.5 flex-shrink-0" style={{ color: mutedColor }} />
+              <span className="text-xs font-semibold" style={{ color: textColor }}>30–45 min</span>
+              <span className="text-xs" style={{ color: mutedColor }}>·</span>
+              <Truck className="w-3.5 h-3.5 flex-shrink-0" style={{ color: mutedColor }} />
+              <span className="text-xs font-semibold" style={{ color: textColor }}>{deliveryFee()}</span>
+              <span className="text-xs" style={{ color: mutedColor }}>·</span>
+              <Receipt className="w-3.5 h-3.5 flex-shrink-0" style={{ color: mutedColor }} />
+              <span className="text-xs font-semibold" style={{ color: textColor }}>{minimumOrder()}</span>
             </div>
 
-            <div className="w-px h-8 hidden sm:block" style={{ backgroundColor: borderColor }} />
-
-            <div className="flex items-center gap-2.5">
-              <Truck className="w-5 h-5 flex-shrink-0" style={{ color: mutedColor }} />
-              <div>
-                <p className="text-base font-semibold leading-none" style={{ color: textColor }}>{deliveryFee()}</p>
-                <p className="text-xs mt-1" style={{ color: mutedColor }}>Taxa de entrega</p>
+            {/* Desktop */}
+            <div className="hidden sm:flex sm:items-center sm:gap-10">
+              <div className="flex items-center gap-2.5">
+                <Clock className="w-5 h-5 flex-shrink-0" style={{ color: mutedColor }} />
+                <div>
+                  <p className="text-base font-semibold leading-none" style={{ color: textColor }}>30–45 min</p>
+                  <p className="text-xs mt-1" style={{ color: mutedColor }}>Entrega</p>
+                </div>
               </div>
-            </div>
-
-            <div className="w-px h-8 hidden sm:block" style={{ backgroundColor: borderColor }} />
-
-            <div className="flex items-center gap-2.5">
-              <Receipt className="w-5 h-5 flex-shrink-0" style={{ color: mutedColor }} />
-              <div>
-                <p className="text-base font-semibold leading-none" style={{ color: textColor }}>{minimumOrder()}</p>
-                <p className="text-xs mt-1" style={{ color: mutedColor }}>Pedido minimo</p>
+              <div className="w-px h-8" style={{ backgroundColor: borderColor }} />
+              <div className="flex items-center gap-2.5">
+                <Truck className="w-5 h-5 flex-shrink-0" style={{ color: mutedColor }} />
+                <div>
+                  <p className="text-base font-semibold leading-none" style={{ color: textColor }}>{deliveryFee()}</p>
+                  <p className="text-xs mt-1" style={{ color: mutedColor }}>Taxa de entrega</p>
+                </div>
+              </div>
+              <div className="w-px h-8" style={{ backgroundColor: borderColor }} />
+              <div className="flex items-center gap-2.5">
+                <Receipt className="w-5 h-5 flex-shrink-0" style={{ color: mutedColor }} />
+                <div>
+                  <p className="text-base font-semibold leading-none" style={{ color: textColor }}>{minimumOrder()}</p>
+                  <p className="text-xs mt-1" style={{ color: mutedColor }}>Pedido mínimo</p>
+                </div>
               </div>
             </div>
           </div>

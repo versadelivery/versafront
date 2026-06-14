@@ -152,6 +152,36 @@ export interface TopCustomersResponse {
   summary: TopCustomersSummary;
 }
 
+export interface StoreCreditReceivableOrder {
+  id: number;
+  date_label: string;
+  total_price: number;
+  status: string;
+}
+
+export interface StoreCreditReceivableCustomer {
+  customer_id: number | null;
+  name: string;
+  phone: string | null;
+  open_orders_count: number;
+  outstanding_amount: number;
+  oldest_order_at: string | null;
+  last_order_at: string | null;
+  orders: StoreCreditReceivableOrder[];
+}
+
+export interface StoreCreditReceivablesSummary {
+  total_outstanding: number;
+  total_customers: number;
+  total_open_orders: number;
+  average_debt_per_customer: number;
+}
+
+export interface StoreCreditReceivablesResponse {
+  customers: StoreCreditReceivableCustomer[];
+  summary: StoreCreditReceivablesSummary;
+}
+
 // Payment Methods
 export interface PaymentMethodEntry {
   key: string;
@@ -171,6 +201,38 @@ export interface PaymentMethodsSummary {
 export interface PaymentMethodsResponse {
   data: PaymentMethodEntry[];
   summary: PaymentMethodsSummary;
+}
+
+// Orders by Payment Method (single day)
+export interface OrderByPaymentMethodEntry {
+  id: number;
+  customer_name: string;
+  total_price: number;
+  status: string;
+  status_label: string;
+  time_label: string;
+  withdrawal: boolean;
+  paid_at: string | null;
+}
+
+export interface OrdersByPaymentMethodGroup {
+  payment_method: string;
+  label: string;
+  color: string;
+  order_count: number;
+  total_revenue: number;
+  orders: OrderByPaymentMethodEntry[];
+}
+
+export interface OrdersByPaymentMethodSummary {
+  total_orders: number;
+  total_revenue: number;
+  date: string;
+}
+
+export interface OrdersByPaymentMethodResponse {
+  data: OrdersByPaymentMethodGroup[];
+  summary: OrdersByPaymentMethodSummary;
 }
 
 // Sales by Hour
@@ -570,6 +632,16 @@ export const reportsService = {
     return response.data;
   },
 
+  getStoreCreditReceivables: async (
+    startDate: string,
+    endDate: string
+  ): Promise<StoreCreditReceivablesResponse> => {
+    const response = await api.get(API_ENDPOINTS.REPORTS.STORE_CREDIT_RECEIVABLES, {
+      params: { start_date: startDate, end_date: endDate },
+    });
+    return response.data;
+  },
+
   getPaymentMethods: async (
     startDate: string,
     endDate: string
@@ -757,6 +829,15 @@ export const reportsService = {
   ): Promise<CouponUsageResponse> => {
     const response = await api.get(API_ENDPOINTS.REPORTS.COUPON_USAGE, {
       params: { start_date: startDate, end_date: endDate },
+    });
+    return response.data;
+  },
+
+  getOrdersByPaymentMethod: async (
+    date: string
+  ): Promise<OrdersByPaymentMethodResponse> => {
+    const response = await api.get(API_ENDPOINTS.REPORTS.ORDERS_BY_PAYMENT_METHOD, {
+      params: { date },
     });
     return response.data;
   },

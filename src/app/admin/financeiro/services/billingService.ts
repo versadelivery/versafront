@@ -20,7 +20,6 @@ export interface MonthlyCharge {
     days_until_due: number | null;
     asaas_invoice_url: string | null;
     asaas_pix_code: string | null;
-    asaas_boleto_url: string | null;
     created_at: string;
     updated_at: string;
   };

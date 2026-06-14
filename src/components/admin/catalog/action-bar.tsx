@@ -20,6 +20,7 @@ interface ActionBarProps {
   onTagsChange: (tags: TagKey[]) => void;
   onItemTypeChange: (value: ItemTypeFilter) => void;
   onDiscountOnlyChange: (value: boolean) => void;
+  onOutOfStockIngredientOnlyChange: (value: boolean) => void;
   onClearFilters: () => void;
 }
 
@@ -34,6 +35,7 @@ export function ActionBar({
   onTagsChange,
   onItemTypeChange,
   onDiscountOnlyChange,
+  onOutOfStockIngredientOnlyChange,
   onClearFilters,
 }: ActionBarProps) {
   return (
@@ -74,6 +76,7 @@ export function ActionBar({
         onTagsChange={onTagsChange}
         onItemTypeChange={onItemTypeChange}
         onDiscountOnlyChange={onDiscountOnlyChange}
+        onOutOfStockIngredientOnlyChange={onOutOfStockIngredientOnlyChange}
         onClearFilters={onClearFilters}
       />
     </div>

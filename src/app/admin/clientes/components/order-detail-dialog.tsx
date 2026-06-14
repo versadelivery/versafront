@@ -32,6 +32,7 @@ const paymentLabels: Record<string, string> = {
   credit: "Crédito",
   manual_pix: "PIX",
   asaas_pix: "PIX Automático",
+  store_credit: "Fiado/Crediário",
 };
 
 function formatCurrency(value: string | number) {

@@ -90,7 +90,7 @@ function AuthForm() {
         Voltar
       </Button>
       <div className="mb-2 text-center flex flex-col items-center">
-        <Image src={logoInline} width={260} alt="Versa Delivery" className="-mb-16" />
+        <Image src={logoInline} width={260} alt="Versadelivery" className="-mb-16" />
       </div>
       <div className="w-full max-w-lg space-y-6 bg-white px-8 rounded-xs flex flex-col items-center">
         <div className="text-center w-full">

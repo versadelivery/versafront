@@ -9,6 +9,7 @@ import {
   Truck,
   CheckCircle,
   XCircle,
+  PackageX,
   Copy,
   ArrowRight,
   MessageCircle,
@@ -34,12 +35,15 @@ import CancelOrderModal from './cancel-order-modal';
 import SelectDeliveryPersonModal from './select-delivery-person-modal';
 import { buildWhatsAppOrderMessage } from '@/utils/whatsapp-template';
 
-const getPaymentMethodLabel = (method: string) => {
+const getPaymentMethodLabel = (method: string, manualPixPaymentMoment?: string) => {
+  if (method === 'manual_pix') {
+    return manualPixPaymentMoment === 'on_order' ? 'PIX (no pedido)' : 'PIX (na entrega)';
+  }
   const methodMap: Record<string, string> = {
     'credit': 'Cartão de Crédito',
     'debit': 'Cartão de Débito',
-    'manual_pix': 'Pix',
-    'cash': 'Dinheiro'
+    'cash': 'Dinheiro',
+    'store_credit': 'Fiado/Crediário'
   };
   return methodMap[method] || method;
 };
@@ -120,7 +124,13 @@ export default function OrderCard({
   
   // Estado para controlar os modais
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showDeliveryFailedModal, setShowDeliveryFailedModal] = useState(false);
   const [showDeliveryPersonModal, setShowDeliveryPersonModal] = useState(false);
+
+  // Pedidos de retirada pulam o status 'saiu' e vão direto para 'entregue'
+  const effectiveNextStatus = (nextStatus === 'saiu' && order.deliveryType === 'pickup')
+    ? 'entregue' as Order['status']
+    : nextStatus;
 
   // Statuses onde o dropdown de entregador fica disponível (apenas para delivery)
   const showDeliveryDropdown = order.deliveryType === 'delivery' && ['recebidos', 'aceitos', 'em_analise', 'em_preparo', 'prontos'].includes(order.status);
@@ -151,10 +161,9 @@ export default function OrderCard({
     setShowCancelModal(true);
   };
 
-  const handleConfirmCancel = async (orderId: string, reason: string, justification?: string) => {
+  const handleConfirmCancel = async (orderId: string, reasonType: string, justification?: string) => {
     if (onCancelOrder) {
-      const fullReason = justification ? `${reason} - ${justification}` : reason;
-      await onCancelOrder(orderId, fullReason, reason);
+      await onCancelOrder(orderId, reasonType, justification);
     }
   };
 
@@ -256,7 +265,7 @@ export default function OrderCard({
             
             <div class="section">
               <div class="section-title">FORMA DE PAGAMENTO</div>
-              <p>${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}</p>
+              <p>${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '', order.socketData?.attributes?.manual_pix_payment_moment)}</p>
             </div>
             
             <div class="total">
@@ -308,7 +317,7 @@ ${order.socketData?.attributes?.items?.data?.map((item: any) => `
 `).join('') || 'Nenhum item'}
 
 💳 *FORMA DE PAGAMENTO*
-${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
+${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '', order.socketData?.attributes?.manual_pix_payment_moment)}
 
 💰 *TOTAL: R$ ${order.amount.toFixed(2)}*
     `.trim();
@@ -329,6 +338,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
   const rawPhone = order.socketData?.attributes?.customer?.data?.attributes?.cellphone;
   const customerPhone = rawPhone && rawPhone !== 'N/A' ? rawPhone : undefined;
   const paymentMethod = order.socketData?.attributes?.payment_method;
+  const manualPixPaymentMoment = order.socketData?.attributes?.manual_pix_payment_moment;
   const deliveryFee = order.socketData?.attributes?.delivery_fee ? parseFloat(order.socketData.attributes.delivery_fee) : 0;
   const couponCode = order.socketData?.attributes?.coupon_code;
   const discountAmount = parseFloat(order.socketData?.attributes?.discount_amount || '0');
@@ -429,7 +439,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
               {paymentMethod && (
                 <div className="flex items-center gap-1.5 text-gray-700">
                   <CreditCard className="w-3 h-3 text-gray-700" />
-                  <span>{getPaymentMethodLabel(paymentMethod)}</span>
+                  <span>{getPaymentMethodLabel(paymentMethod, manualPixPaymentMoment)}</span>
                 </div>
               )}
               {order.deliveryType === 'delivery' && deliveryFee > 0 && (
@@ -610,19 +620,19 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
           )}
 
           {/* Botão principal: avançar para o próximo status do fluxo */}
-          {nextStatus && !isEntregue && !isCancelled && (
+          {effectiveNextStatus && !isEntregue && !isCancelled && (
             <Button
               variant="ghost"
               className="w-full font-semibold rounded-xl bg-[#1B1B1B] text-white hover:bg-[#7ED957] hover:text-black transition-colors cursor-pointer"
               onClick={() => {
-                if (nextStatus === 'saiu') {
+                if (effectiveNextStatus === 'saiu') {
                   handleLeftForDelivery();
                 } else {
-                  onUpdateOrderStatus(order.id, nextStatus);
+                  onUpdateOrderStatus(order.id, effectiveNextStatus);
                 }
               }}
             >
-              {nextStatusLabels[nextStatus] || nextStatus.toUpperCase()}
+              {nextStatusLabels[effectiveNextStatus] || effectiveNextStatus.toUpperCase()}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           )}
@@ -640,6 +650,18 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
               onClick={() => onTogglePaymentStatus(order.id)}
             >
               PAGO {order.paymentStatus === 'paid' && <CheckCircle className="w-4 h-4 ml-1" />}
+            </Button>
+          )}
+
+          {/* Botão ENTREGA NÃO REALIZADA — aparece apenas para pedidos delivery que saíram para entrega */}
+          {order.status === 'saiu' && order.deliveryType === 'delivery' && !isCancelled && (
+            <Button
+              variant="ghost"
+              className="w-full font-semibold rounded-xl bg-orange-500 text-white hover:bg-orange-600 hover:text-white transition-colors cursor-pointer"
+              onClick={() => setShowDeliveryFailedModal(true)}
+            >
+              ENTREGA NÃO REALIZADA
+              <PackageX className="w-4 h-4 ml-1" />
             </Button>
           )}
 
@@ -673,6 +695,18 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '')}
       onOpenChange={setShowCancelModal}
       orderId={order.id}
       customerName={order.customerName}
+      orderStatus={order.status}
+      onCancelOrder={handleConfirmCancel}
+    />
+
+    {/* Modal de Entrega Não Realizada */}
+    <CancelOrderModal
+      open={showDeliveryFailedModal}
+      onOpenChange={setShowDeliveryFailedModal}
+      orderId={order.id}
+      customerName={order.customerName}
+      orderStatus={order.status}
+      mode="delivery_failed"
       onCancelOrder={handleConfirmCancel}
     />
 

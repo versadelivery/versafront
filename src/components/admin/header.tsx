@@ -12,12 +12,19 @@ import Image from "next/image";
 import logo_inline from "@/public/logo/logo-inline-black.svg";
 import favicon from "@/public/logo/favicon.svg";
 import Link from "next/link";
-import { useEffect, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAdminActionCable, AdminOrderData } from "@/lib/admin-cable";
 import { useRestaurantSounds } from "@/hooks/use-restaurant-sounds";
 import { SoundSettings } from "@/components/admin/sound-settings";
 import { CommandMenu } from "@/components/admin/command-menu";
 import { fixImageUrl } from "@/utils/image-url";
+import {
+  getSuperAdminImpersonationToken,
+  removeSuperAdminImpersonationToken,
+  removeToken,
+  setSuperAdminToken,
+} from "@/lib/auth";
+import { toast } from "sonner";
 
 export function Header() {
   const router = useRouter();
@@ -25,10 +32,35 @@ export function Header() {
   const { shop } = useShop();
   const { subscribeToAdminOrders } = useAdminActionCable();
   const { newOrder, updateSettings } = useRestaurantSounds();
+  const [isImpersonating, setIsImpersonating] = useState(false);
   const seenOrderIdsRef = useRef<Set<string>>(new Set());
   const initializedRef = useRef(false);
 
+  useEffect(() => {
+    setIsImpersonating(!!getSuperAdminImpersonationToken());
+  }, []);
+
+  const handleReturnToSuperAdmin = () => {
+    const returnToken = getSuperAdminImpersonationToken();
+
+    if (!returnToken) {
+      return;
+    }
+
+    setSuperAdminToken(returnToken);
+    removeSuperAdminImpersonationToken();
+    removeToken();
+    localStorage.removeItem('auth_user');
+    toast.success('Você voltou para o SuperAdmin');
+    router.push('/super-admin');
+  };
+
   const handleSignOut = async () => {
+    if (isImpersonating) {
+      handleReturnToSuperAdmin();
+      return;
+    }
+
     await logout();
   };
 
@@ -67,6 +99,16 @@ export function Header() {
 
   return (
     <header className="bg-white border-b border-[#E5E2DD]">
+      {isImpersonating && (
+        <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-amber-900">
+          <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-3">
+            <p className="text-sm font-medium">Sessão aberta como loja. O acesso ao SuperAdmin está preservado.</p>
+            <Button variant="outline" size="sm" onClick={handleReturnToSuperAdmin} className="border-amber-300 text-amber-900 hover:bg-amber-100">
+              Voltar ao SuperAdmin
+            </Button>
+          </div>
+        </div>
+      )}
       <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-18">
           <div className="flex items-center gap-4">

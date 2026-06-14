@@ -34,11 +34,6 @@ const userRoles = [
     description: "Acesso total ao sistema"
   },
   {
-    value: "manager",
-    label: "Gerente",
-    description: "Gerenciamento de pedidos e configurações"
-  },
-  {
     value: "employee",
     label: "Funcionário",
     description: "Acesso limitado para operações básicas"
@@ -195,7 +190,6 @@ export default function UserModal({
   const getRoleColor = (role: string) => {
     const colors: Record<string, string> = {
       owner: "text-red-600",
-      manager: "text-green-600",
       employee: "text-blue-600",
       delivery_man: "text-purple-600"
     };

@@ -59,7 +59,7 @@ export default function ShopUnavailable() {
               transition={{ duration: 0.6 }}
             >
               <div className="mx-auto lg:mx-0 -mb-12 flex items-center justify-center rounded-lg text-primary">
-                <Image src={logoHero} width={256} height={256} alt="Versa Delivery" />
+                <Image src={logoHero} width={256} height={256} alt="Versadelivery" />
               </div>
 
               <motion.div

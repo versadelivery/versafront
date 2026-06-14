@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { loginUser, registerShop } from '../services/auth-service'
 import { LoginData, LoginResponse, RegisterData, UserData } from '../types/utils'
-import { getToken, setToken, removeToken, removeUser } from '../lib/auth'
+import { getToken, setToken, removeToken, removeUser, removeSuperAdminImpersonationToken } from '../lib/auth'
 import { toast } from 'sonner'
 
 export function useAuth() {
@@ -52,7 +52,7 @@ export function useAuth() {
       setToken(response.token)
       setUser(response.user)
       localStorage.setItem('auth_user', JSON.stringify(response.user))
-      toast.success('Login realizado com sucesso')
+      toast.success('Você entrou na sua conta')
 
       if (response.user?.role === 'delivery_man') {
         router.push('/delivery')
@@ -72,8 +72,10 @@ export function useAuth() {
   const logout = () => {
     removeToken()
     removeUser()
+    removeSuperAdminImpersonationToken()
+    setUser(null)
     localStorage.removeItem('auth_user')
-    toast.success('Logout realizado com sucesso')
+    toast.success('Você saiu da sua conta')
     router.push('/login')
   }
 

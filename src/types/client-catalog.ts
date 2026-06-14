@@ -47,7 +47,9 @@ export interface ShopResponse {
             cash: boolean
             debit: boolean
             credit: boolean
+            store_credit: boolean
             manual_pix: boolean
+            asaas_pix: boolean
             cash_adjustment_type: string
             cash_adjustment_value: string
             cash_value_type: string
@@ -57,9 +59,15 @@ export interface ShopResponse {
             credit_adjustment_type: string
             credit_adjustment_value: string
             credit_value_type: string
+            store_credit_adjustment_type: string
+            store_credit_adjustment_value: string
+            store_credit_value_type: string
             manual_pix_adjustment_type: string
             manual_pix_adjustment_value: string
             manual_pix_value_type: string
+            asaas_pix_adjustment_type?: string
+            asaas_pix_adjustment_value?: string
+            asaas_pix_value_type?: string
           }
         }
       }
