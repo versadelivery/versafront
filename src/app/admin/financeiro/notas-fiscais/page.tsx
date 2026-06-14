@@ -3,13 +3,11 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, AlertTriangle, FileText, Download, RotateCcw, Package2 } from "lucide-react";
+import { Loader2, AlertTriangle, FileText, Download, RotateCcw, Package2, ArrowLeft } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 import api from "@/api/config";
 import { API_ENDPOINTS } from "@/api/routes";
 
@@ -87,8 +85,11 @@ export default function NotasFiscaisPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
+    <div className="space-y-4 py-6 max-w-3xl mx-auto min-h-[calc(100vh-6rem)]">
+      <div className="flex items-center gap-3">
+        <Link href="/admin/settings/fiscal" className="text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="h-5 w-5" />
+        </Link>
         <FileText className="h-5 w-5 text-indigo-600" />
         <h1 className="text-xl font-semibold">Histórico de NF-e</h1>
       </div>
@@ -104,94 +105,80 @@ export default function NotasFiscaisPage() {
           </CardContent>
         </Card>
       ) : (
-        <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Pedido</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Número NF-e</TableHead>
-                  <TableHead>Chave de Acesso</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.map((note) => {
-                  const a = note.attributes;
-                  return (
-                    <TableRow key={note.id}>
-                      <TableCell className="font-semibold text-muted-foreground">
-                        {a.order_number}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {formatDate(a.issued_at ?? a.created_at)}
-                      </TableCell>
-                      <TableCell>
-                        {a.nfe_number ? (
-                          <span className="font-mono text-sm">{a.nfe_number}</span>
+        <div className="space-y-3">
+          {data.map((note) => {
+            const a = note.attributes;
+            return (
+              <Card key={note.id}>
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="font-semibold">Pedido {a.order_number}</span>
+                      <span className={cn(
+                        "text-xs px-2 py-0.5 rounded-full font-medium",
+                        STATUS_STYLES[a.status] ?? "bg-gray-100 text-gray-600"
+                      )}>
+                        {a.status_label}
+                      </span>
+                    </div>
+                    <span className="text-sm text-muted-foreground">
+                      {formatDate(a.issued_at ?? a.created_at)}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
+                    {a.nfe_number && (
+                      <div>
+                        <span className="text-muted-foreground">Número: </span>
+                        <span className="font-mono">{a.nfe_number}</span>
+                      </div>
+                    )}
+                    {a.access_key && (
+                      <div className="min-w-0">
+                        <span className="text-muted-foreground">Chave: </span>
+                        <span className="font-mono text-xs break-all">{a.access_key}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {a.error_message && (
+                    <p className="text-sm text-red-500 bg-red-50 rounded px-3 py-2">
+                      {a.error_message}
+                    </p>
+                  )}
+
+                  <div className="flex items-center gap-2">
+                    {a.pdf_url && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => window.open(a.pdf_url!, "_blank")}
+                      >
+                        <Download className="h-3.5 w-3.5 mr-1" />
+                        PDF
+                      </Button>
+                    )}
+                    {a.status === "error" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={retryingId === note.id}
+                        onClick={() => retryMutation.mutate(note.id)}
+                      >
+                        {retryingId === note.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
                         ) : (
-                          <span className="text-muted-foreground">—</span>
+                          <RotateCcw className="h-3.5 w-3.5 mr-1" />
                         )}
-                      </TableCell>
-                      <TableCell>
-                        {a.access_key ? (
-                          <span className="font-mono text-xs text-muted-foreground truncate max-w-[200px] block" title={a.access_key}>
-                            {a.access_key.slice(0, 22)}…
-                          </span>
-                        ) : a.error_message ? (
-                          <span className="text-xs text-red-500 truncate max-w-[200px] block" title={a.error_message}>
-                            {a.error_message.slice(0, 40)}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <span className={cn(
-                          "text-xs px-2 py-0.5 rounded-full font-medium",
-                          STATUS_STYLES[a.status] ?? "bg-gray-100 text-gray-600"
-                        )}>
-                          {a.status_label}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          {a.pdf_url && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => window.open(a.pdf_url!, "_blank")}
-                            >
-                              <Download className="h-3.5 w-3.5 mr-1" />
-                              PDF
-                            </Button>
-                          )}
-                          {a.status === "error" && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              disabled={retryingId === note.id}
-                              onClick={() => retryMutation.mutate(note.id)}
-                            >
-                              {retryingId === note.id ? (
-                                <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
-                              ) : (
-                                <RotateCcw className="h-3.5 w-3.5 mr-1" />
-                              )}
-                              Reemitir
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                        Reemitir
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
       )}
     </div>
   );
