@@ -46,8 +46,6 @@ export default function FiscalSettingsPage() {
   const [buyerCityName, setBuyerCityName] = useState("");
   const [buyerStateUf, setBuyerStateUf] = useState("");
   const [buyerPostal, setBuyerPostal] = useState("");
-  const [buyerCpf, setBuyerCpf] = useState("");
-  const [buyerConsumidorCpfSet, setBuyerConsumidorCpfSet] = useState(false);
   const [stateTaxNumber, setStateTaxNumber] = useState("");
   const [municipalTaxNumber, setMunicipalTaxNumber] = useState("");
 
@@ -64,8 +62,6 @@ export default function FiscalSettingsPage() {
     setBuyerCityName(attr.buyer_address_city_name ?? "");
     setBuyerStateUf(attr.buyer_address_state ?? "");
     setBuyerPostal(attr.buyer_address_postal_code ?? "");
-    setBuyerConsumidorCpfSet(Boolean(attr.buyer_consumidor_cpf_set));
-    setBuyerCpf("");
     setStateTaxNumber(attr.state_tax_number ?? "");
     setMunicipalTaxNumber(attr.municipal_tax_number ?? "");
   }
@@ -81,7 +77,6 @@ export default function FiscalSettingsPage() {
     try {
       const apiTokenTrimmed = apiToken.trim();
       const webhookHmacTrimmed = webhookHmac.trim();
-      const buyerCpfTrimmed = buyerCpf.trim();
       const res = await api.put(API_ENDPOINTS.FISCAL.CONFIG, {
         enabled,
         api_token: apiTokenTrimmed ? apiTokenTrimmed : undefined,
@@ -94,7 +89,6 @@ export default function FiscalSettingsPage() {
         buyer_address_city_name: buyerCityName.trim() || undefined,
         buyer_address_state: buyerStateUf.trim() || undefined,
         buyer_address_postal_code: buyerPostal.trim() || undefined,
-        buyer_consumidor_cpf: buyerCpfTrimmed ? buyerCpfTrimmed : undefined,
         state_tax_number: stateTaxNumber.trim() || undefined,
         municipal_tax_number: municipalTaxNumber.trim() || undefined,
       });
@@ -103,7 +97,6 @@ export default function FiscalSettingsPage() {
       toast.success("Configurações fiscais salvas");
       setApiToken("");
       setWebhookHmac("");
-      setBuyerCpf("");
       await loadFiscalConfig();
     } catch {
       toast.error("Erro ao salvar configurações fiscais");
@@ -121,7 +114,7 @@ export default function FiscalSettingsPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="max-w-2xl mx-auto space-y-6 py-6">
       <div className="flex items-center gap-3">
         <Link href="/admin/settings" className="text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-5 w-5" />
@@ -318,22 +311,6 @@ export default function FiscalSettingsPage() {
                 maxLength={9}
               />
             </div>
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="buyer_cpf">CPF padrão do comprador (opcional)</Label>
-            <Input
-              id="buyer_cpf"
-              type="password"
-              value={buyerCpf}
-              onChange={(e) => setBuyerCpf(e.target.value)}
-              placeholder="Deixe em branco para usar CPF técnico interno ou para manter o atual"
-              autoComplete="off"
-            />
-            <p className="text-xs text-muted-foreground">
-              {buyerConsumidorCpfSet
-                ? "Há um CPF padrão salvo no servidor. Informe de novo apenas para trocar."
-                : "Sem CPF aqui, o sistema envia um CPF válido só para homologação/testes até você configurar o documento real do cliente."}
-            </p>
           </div>
         </div>
 
