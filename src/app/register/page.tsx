@@ -2,7 +2,8 @@
 
 import { AuthLayout } from "@/components/auth/auth-layout";
 import { AuthFormInput } from "@/components/auth/auth-form-input";
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { registerSchema, registerStep1Schema, registerStep3Schema, RegisterFormData } from "@/schemas/auth-schemas";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
@@ -125,10 +126,12 @@ const getApiErrorMessage = (error: unknown): string | null => {
   return null;
 };
 
-export default function Register() {
+function RegisterForm() {
   const { register } = useAuth();
+  const searchParams = useSearchParams();
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [referralCode, setReferralCode] = useState("");
   const [formData, setFormData] = useState<RegisterFormData>({
     shop: {
       name: "",
@@ -147,6 +150,11 @@ export default function Register() {
   });
   const [errors, setErrors] = useState<RegisterStateErrors>({});
   const [termsAccepted, setTermsAccepted] = useState(false);
+
+  useEffect(() => {
+    const ref = searchParams.get("ref");
+    if (ref) setReferralCode(ref.toUpperCase());
+  }, [searchParams]);
 
   const applyBackendErrors = (fieldErrors: RegisterStateErrors) => {
     if (!fieldErrors.shop && !fieldErrors.shop_user) {
@@ -255,7 +263,7 @@ export default function Register() {
     setErrors({});
     try {
       const validatedData = registerSchema.parse(formData);
-      await register(validatedData);
+      await register({ ...validatedData, referral_code: referralCode || undefined });
     } catch (error) {
       if (error instanceof z.ZodError) {
         const formattedErrors: Partial<RegisterFormData> = {};
@@ -314,6 +322,15 @@ export default function Register() {
             disabled={isLoading}
             label="Telefone"
             error={errors.shop?.cellphone}
+          />
+          <AuthFormInput
+            type="text"
+            name="referral_code"
+            placeholder="Ex: ABC12345 (opcional)"
+            value={referralCode}
+            onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+            disabled={isLoading}
+            label="Código de indicação (opcional)"
           />
           <button
             type="button"
@@ -472,5 +489,13 @@ export default function Register() {
         </Link>
       </p>
     </AuthLayout>
+  );
+}
+
+export default function Register() {
+  return (
+    <Suspense>
+      <RegisterForm />
+    </Suspense>
   );
 }

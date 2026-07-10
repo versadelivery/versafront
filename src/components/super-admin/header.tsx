@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { LogOut, User, LayoutDashboard, Store, DollarSign } from "lucide-react";
+import { LogOut, User, LayoutDashboard, Store, DollarSign, UserPlus } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { removeSuperAdminToken } from "@/lib/auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -23,6 +23,7 @@ export function SuperAdminHeader() {
     { href: "/super-admin", label: "Dashboard", icon: LayoutDashboard },
     { href: "/super-admin/merchants", label: "Lojas", icon: Store },
     { href: "/super-admin/billing", label: "Cobranças", icon: DollarSign },
+    { href: "/super-admin/commissions", label: "Indicações", icon: UserPlus },
   ];
 
   return (
