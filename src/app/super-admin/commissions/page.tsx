@@ -74,6 +74,7 @@ export default function SuperAdminCommissionsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [status, setStatus] = useState("all");
   const [creatingPayout, setCreatingPayout] = useState<string | null>(null);
+  const [releasingId, setReleasingId] = useState<string | null>(null);
 
   const token = getSuperAdminToken();
 
@@ -101,6 +102,26 @@ export default function SuperAdminCommissionsPage() {
   };
 
   useEffect(() => { fetchAll(); }, [status]);
+
+  const handleRelease = async (commissionId: string) => {
+    setReleasingId(commissionId);
+    try {
+      const res = await fetch(`${API_BASE_URL}/super_admins/commissions/${commissionId}/release`, {
+        method: "PATCH",
+        headers,
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error ?? "Erro ao liberar comissão");
+      }
+      toast.success("Comissão liberada antecipadamente");
+      fetchAll();
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setReleasingId(null);
+    }
+  };
 
   const handleCreatePayout = async (shopId: number, shopName: string) => {
     setCreatingPayout(String(shopId));
@@ -217,20 +238,36 @@ export default function SuperAdminCommissionsPage() {
                         <TableCell>{new Date(a.available_at).toLocaleDateString("pt-BR")}</TableCell>
                         <TableCell>{statusBadge(a.status, a.status_description)}</TableCell>
                         <TableCell>
-                          {isAvailable && shopId && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              disabled={creatingPayout === String(shopId)}
-                              onClick={() => handleCreatePayout(shopId, a.referrer_shop?.name ?? "")}
-                            >
-                              {creatingPayout === String(shopId) ? (
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                              ) : (
-                                "Registrar repasse"
-                              )}
-                            </Button>
-                          )}
+                          <div className="flex items-center gap-2">
+                            {a.status === "pending" && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={releasingId === c.id}
+                                onClick={() => handleRelease(c.id)}
+                              >
+                                {releasingId === c.id ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  "Liberar antecipado"
+                                )}
+                              </Button>
+                            )}
+                            {isAvailable && shopId && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={creatingPayout === String(shopId)}
+                                onClick={() => handleCreatePayout(shopId, a.referrer_shop?.name ?? "")}
+                              >
+                                {creatingPayout === String(shopId) ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  "Registrar repasse"
+                                )}
+                              </Button>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
