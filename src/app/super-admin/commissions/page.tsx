@@ -35,7 +35,7 @@ interface CommissionAttributes {
   available_at: string;
   created_at: string;
   referred_shop: { id: number; name: string; charge_amount: string };
-  referrer_shop?: { id: number; name: string };
+  referrer_shop: { id: number; name: string };
 }
 
 interface Commission {
@@ -193,6 +193,7 @@ export default function SuperAdminCommissionsPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Período</TableHead>
+                    <TableHead>Quem recebe</TableHead>
                     <TableHead>Loja indicada</TableHead>
                     <TableHead>Mensalidade</TableHead>
                     <TableHead>Comissão</TableHead>
@@ -205,11 +206,12 @@ export default function SuperAdminCommissionsPage() {
                   {commissions.map((c) => {
                     const a = c.attributes;
                     const isAvailable = a.status === "available";
-                    const shopId = a.referred_shop?.id;
+                    const shopId = a.referrer_shop?.id;
                     return (
                       <TableRow key={c.id}>
                         <TableCell>{a.reference_period}</TableCell>
-                        <TableCell className="font-medium">{a.referred_shop?.name}</TableCell>
+                        <TableCell className="font-semibold">{a.referrer_shop?.name}</TableCell>
+                        <TableCell className="text-muted-foreground">{a.referred_shop?.name}</TableCell>
                         <TableCell>{formatCurrency(a.base_amount)}</TableCell>
                         <TableCell className="font-semibold text-green-700">{formatCurrency(a.amount)}</TableCell>
                         <TableCell>{new Date(a.available_at).toLocaleDateString("pt-BR")}</TableCell>
@@ -220,7 +222,7 @@ export default function SuperAdminCommissionsPage() {
                               size="sm"
                               variant="outline"
                               disabled={creatingPayout === String(shopId)}
-                              onClick={() => handleCreatePayout(shopId, a.referred_shop?.name ?? "")}
+                              onClick={() => handleCreatePayout(shopId, a.referrer_shop?.name ?? "")}
                             >
                               {creatingPayout === String(shopId) ? (
                                 <Loader2 className="h-3 w-3 animate-spin" />
