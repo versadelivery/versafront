@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Store, Loader2, CheckCircle, XCircle, LogIn } from "lucide-react";
+import { Store, Loader2, CheckCircle, XCircle, LogIn, UserPlus } from "lucide-react";
 import { API_BASE_URL } from "@/api/routes";
 import {
   getSuperAdminToken,
@@ -39,6 +39,10 @@ interface Shop {
     owner: {
       name: string;
       email: string;
+    } | null;
+    referred_by: {
+      id: number;
+      name: string;
     } | null;
   };
 }
@@ -206,6 +210,7 @@ export default function MerchantsPage() {
                     <TableHead>Nome</TableHead>
                     <TableHead>Proprietário</TableHead>
                     <TableHead>Telefone</TableHead>
+                    <TableHead>Indicada por</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Criado em</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
@@ -228,6 +233,16 @@ export default function MerchantsPage() {
                         )}
                       </TableCell>
                       <TableCell>{shop.attributes.cellphone}</TableCell>
+                      <TableCell>
+                        {shop.attributes.referred_by ? (
+                          <div className="flex items-center gap-1.5 text-sm">
+                            <UserPlus className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                            <span className="text-emerald-700 font-medium">{shop.attributes.referred_by.name}</span>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 text-sm">—</span>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <div className="flex gap-2 flex-wrap">
                           <Badge variant={shop.attributes.approved ? "default" : "secondary"}>

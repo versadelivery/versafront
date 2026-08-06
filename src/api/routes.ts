@@ -56,6 +56,15 @@ export const API_ENDPOINTS = {
   CASH_REGISTER_CLOSE: "/cash_registers/close",
   CASH_REGISTER_MANUAL_ENTRY: "/cash_registers/manual_entry",
 
+  // Reseller / Referrals
+  RESELLER: {
+    REFERRALS: "/referrals",
+    COMMISSIONS: "/commissions",
+    COMMISSIONS_SUMMARY: "/commissions/summary",
+    PAYOUTS: "/commission_payouts",
+    CONFIG: "/shop_reseller_config",
+  },
+
   // Reports
   REPORTS: {
     WEEKLY_SUMMARY: "/reports/weekly_summary",
