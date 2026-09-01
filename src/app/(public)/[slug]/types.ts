@@ -17,10 +17,13 @@ export interface ShopData {
       shop_delivery_config: {
         data: {
           attributes: {
-            delivery_fee_kind: 'to_be_agreed' | 'fixed' | 'per_neighborhood';
+            delivery_fee_kind: 'to_be_agreed' | 'fixed' | 'per_neighborhood' | 'per_km';
             amount: number;
             min_value_free_delivery: number | null;
             minimum_order_value: number | null;
+            price_per_km: number | null;
+            base_fee: number | null;
+            max_delivery_distance_km: number | null;
             shop_delivery_neighborhoods: {
               data: Array<{
                 id: string;

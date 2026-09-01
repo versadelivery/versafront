@@ -21,8 +21,8 @@ export function useDelivery() {
       queryClient.invalidateQueries({ queryKey: ["delivery-config"] });
       toast.success("Configuração de entrega atualizada com sucesso!");
     },
-    onError: () => {
-      toast.error("Erro ao atualizar configuração de entrega");
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.error || "Erro ao atualizar configuração de entrega");
     },
   });
 

@@ -46,6 +46,7 @@ import { useDelivery } from "@/hooks/use-delivery";
 import { toast } from "sonner";
 import { deliveryService } from "@/services/delivery-service";
 import { useQueryClient } from "@tanstack/react-query";
+import ShopLocationMap from "./shop-location-map";
 
 type Neighborhood = {
   id: string;
@@ -92,6 +93,9 @@ export default function DeliverySettingsPage() {
   const [fixedFee, setFixedFee] = useState<string>("");
   const [hasFreeDelivery, setHasFreeDelivery] = useState<boolean>(false);
   const [freeDeliveryThreshold, setFreeDeliveryThreshold] = useState<string>("");
+  const [pricePerKm, setPricePerKm] = useState<string>("");
+  const [baseFee, setBaseFee] = useState<string>("");
+  const [maxDeliveryDistanceKm, setMaxDeliveryDistanceKm] = useState<string>("");
   const [bulkAdjustValue, setBulkAdjustValue] = useState<string>("");
   const [minOrderValue, setMinOrderValue] = useState<string>("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -103,6 +107,7 @@ export default function DeliverySettingsPage() {
     fixedFee?: string;
     freeDeliveryThreshold?: string;
     minOrderValue?: string;
+    pricePerKm?: string;
     neighborhoodName?: string;
     neighborhoodValue?: string;
     neighborhoodFreeDeliveryThreshold?: string;
@@ -118,6 +123,9 @@ export default function DeliverySettingsPage() {
       setHasFreeDelivery(deliveryConfig.min_value_free_delivery !== null);
       setFreeDeliveryThreshold(deliveryConfig.min_value_free_delivery ? formatApiValue(deliveryConfig.min_value_free_delivery) : "");
       setMinOrderValue(deliveryConfig.minimum_order_value ? formatApiValue(deliveryConfig.minimum_order_value) : "");
+      setPricePerKm(deliveryConfig.price_per_km ? formatApiValue(deliveryConfig.price_per_km) : "");
+      setBaseFee(deliveryConfig.base_fee ? formatApiValue(deliveryConfig.base_fee) : "");
+      setMaxDeliveryDistanceKm(deliveryConfig.max_delivery_distance_km ? String(deliveryConfig.max_delivery_distance_km) : "");
     }
   }, [deliveryConfig]);
 
@@ -254,16 +262,23 @@ export default function DeliverySettingsPage() {
       newErrors.freeDeliveryThreshold = "O valor mínimo para frete grátis deve ser maior que o valor da taxa";
     }
 
+    if (deliveryType === "per_km" && parseCurrencyInput(baseFee) === 0 && parseCurrencyInput(pricePerKm) === 0) {
+      newErrors.pricePerKm = "Informe a taxa base ou o valor por km";
+    }
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
 
     updateDeliveryConfig({
-      delivery_fee_kind: deliveryType as "to_be_agreed" | "fixed" | "per_neighborhood",
+      delivery_fee_kind: deliveryType as "to_be_agreed" | "fixed" | "per_neighborhood" | "per_km",
       amount: parseCurrencyInput(fixedFee),
       min_value_free_delivery: hasFreeDelivery ? parseCurrencyInput(freeDeliveryThreshold) : null,
-      minimum_order_value: parseCurrencyInput(minOrderValue)
+      minimum_order_value: parseCurrencyInput(minOrderValue),
+      price_per_km: deliveryType === "per_km" ? parseCurrencyInput(pricePerKm) : null,
+      base_fee: deliveryType === "per_km" ? parseCurrencyInput(baseFee) : null,
+      max_delivery_distance_km: deliveryType === "per_km" && maxDeliveryDistanceKm ? parseFloat(maxDeliveryDistanceKm) : null
     });
   };
 
@@ -274,6 +289,9 @@ export default function DeliverySettingsPage() {
       setHasFreeDelivery(deliveryConfig.min_value_free_delivery !== null);
       setFreeDeliveryThreshold(deliveryConfig.min_value_free_delivery ? formatApiValue(deliveryConfig.min_value_free_delivery) : "");
       setMinOrderValue(deliveryConfig.minimum_order_value ? formatApiValue(deliveryConfig.minimum_order_value) : "");
+      setPricePerKm(deliveryConfig.price_per_km ? formatApiValue(deliveryConfig.price_per_km) : "");
+      setBaseFee(deliveryConfig.base_fee ? formatApiValue(deliveryConfig.base_fee) : "");
+      setMaxDeliveryDistanceKm(deliveryConfig.max_delivery_distance_km ? String(deliveryConfig.max_delivery_distance_km) : "");
     }
     setErrors({});
   };
@@ -310,6 +328,8 @@ export default function DeliverySettingsPage() {
       </div>
 
       <div className="max-w-[1920px] mx-auto px-4 sm:px-6 py-6 space-y-6">
+        <ShopLocationMap />
+
         {/* Valor Minimo do Pedido */}
         <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
           <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
@@ -375,6 +395,7 @@ export default function DeliverySettingsPage() {
                 <SelectContent className="rounded-md border-[#E5E2DD]">
                   <SelectItem value="fixed">Taxa de Entrega Fixa</SelectItem>
                   <SelectItem value="per_neighborhood">Taxa por Bairro</SelectItem>
+                  <SelectItem value="per_km">Taxa por Distância (km)</SelectItem>
                   <SelectItem value="to_be_agreed">Taxa a combinar</SelectItem>
                 </SelectContent>
               </Select>
@@ -481,6 +502,135 @@ export default function DeliverySettingsPage() {
                 <p className="text-sm text-muted-foreground">
                   O valor da entrega será combinado diretamente com o cliente.
                 </p>
+              </div>
+            ) : deliveryType === "per_km" ? (
+              <div className="space-y-5">
+                <div className="flex items-start gap-3 p-4 bg-[#FAF9F7] rounded-md border border-[#E5E2DD]">
+                  <Info className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-muted-foreground">
+                    A distância é calculada em linha reta entre a loja e o endereço do cliente (não considera rotas de trânsito real).
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="baseFee" className="text-sm font-medium flex items-center gap-2">
+                      <DollarSign className="w-3.5 h-3.5" />
+                      Taxa base (R$)
+                    </Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+                        R$
+                      </span>
+                      <Input
+                        id="baseFee"
+                        type="text"
+                        inputMode="decimal"
+                        value={baseFee}
+                        onChange={(e) => {
+                          setBaseFee(formatCurrencyInput(e.target.value));
+                          if (errors.pricePerKm) setErrors(prev => ({ ...prev, pricePerKm: "" }));
+                        }}
+                        placeholder="0,00"
+                        className={`h-10 text-sm border-[#E5E2DD] rounded-md bg-white pl-10 ${errors.pricePerKm ? "border-red-400" : ""}`}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="pricePerKm" className="text-sm font-medium flex items-center gap-2">
+                      <MapPin className="w-3.5 h-3.5" />
+                      Valor por km (R$)
+                    </Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+                        R$
+                      </span>
+                      <Input
+                        id="pricePerKm"
+                        type="text"
+                        inputMode="decimal"
+                        value={pricePerKm}
+                        onChange={(e) => {
+                          setPricePerKm(formatCurrencyInput(e.target.value));
+                          if (errors.pricePerKm) setErrors(prev => ({ ...prev, pricePerKm: "" }));
+                        }}
+                        placeholder="0,00"
+                        className={`h-10 text-sm border-[#E5E2DD] rounded-md bg-white pl-10 ${errors.pricePerKm ? "border-red-400" : ""}`}
+                      />
+                    </div>
+                  </div>
+                </div>
+                {errors.pricePerKm && (
+                  <p className="text-sm text-red-600 flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    {errors.pricePerKm}
+                  </p>
+                )}
+
+                <div className="space-y-1.5 max-w-xs">
+                  <Label htmlFor="maxDeliveryDistanceKm" className="text-sm font-medium">Raio máximo de entrega (km)</Label>
+                  <Input
+                    id="maxDeliveryDistanceKm"
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    inputMode="decimal"
+                    value={maxDeliveryDistanceKm}
+                    onKeyDown={blockInvalidChars}
+                    onChange={(e) => setMaxDeliveryDistanceKm(e.target.value)}
+                    placeholder="Deixe em branco para ilimitado"
+                    className="h-10 text-sm border-[#E5E2DD] rounded-md bg-white"
+                  />
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-[#FAF9F7] rounded-md border border-[#E5E2DD]">
+                    <div className="flex items-center gap-3">
+                      <Gift className="w-4 h-4 text-primary flex-shrink-0" />
+                      <div className="space-y-0.5">
+                        <Label htmlFor="freeDeliveryKm" className="text-sm font-medium">Taxa Gratuita</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Ative para oferecer taxa gratuita a partir de um valor mínimo do pedido
+                        </p>
+                      </div>
+                    </div>
+                    <Switch
+                      id="freeDeliveryKm"
+                      checked={hasFreeDelivery}
+                      onCheckedChange={setHasFreeDelivery}
+                    />
+                  </div>
+
+                  {hasFreeDelivery && (
+                    <div className="space-y-1.5 pl-1">
+                      <Label htmlFor="freeDeliveryThresholdKm" className="text-sm font-medium flex items-center gap-2">
+                        <Package className="w-3.5 h-3.5" />
+                        Valor Mínimo para Taxa Gratuita
+                      </Label>
+                      <div className="space-y-1.5 max-w-md">
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+                            R$
+                          </span>
+                          <Input
+                            id="freeDeliveryThresholdKm"
+                            type="text"
+                            inputMode="decimal"
+                            value={freeDeliveryThreshold}
+                            onChange={(e) => setFreeDeliveryThreshold(formatCurrencyInput(e.target.value))}
+                            placeholder="Ex: 50,00"
+                            className="h-10 text-sm border-[#E5E2DD] rounded-md bg-white pl-10"
+                          />
+                        </div>
+                        <p className="text-sm text-muted-foreground flex items-center gap-1">
+                          <Info className="w-3.5 h-3.5 flex-shrink-0" />
+                          A taxa de entrega será gratuita quando o valor do pedido for igual ou maior que este valor
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             ) : (
               <div className="space-y-5">

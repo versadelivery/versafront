@@ -26,6 +26,8 @@ export interface ShopAttributes {
   default_delivery_person_id?: number | string | null;
   default_delivery_person_name?: string | null;
   order_flow?: string[];
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export interface ShopResponse {
