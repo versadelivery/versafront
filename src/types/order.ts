@@ -40,6 +40,8 @@ export interface CreateOrderRequest {
       complement?: string;
       reference?: string;
       shop_delivery_neighborhood_id?: number;
+      latitude?: number;
+      longitude?: number;
     };
     items: OrderItem[];
   };

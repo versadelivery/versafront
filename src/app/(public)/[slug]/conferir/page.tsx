@@ -3,7 +3,7 @@
 import {
   CreditCard, Wallet, QrCode, Truck, ChevronDown, ChevronUp,
   Plus, Minus, X, CheckCircle2, Store, Clock, AlertTriangle,
-  ChevronLeft, ShoppingCart, Package, User, Phone, Tag, Loader2, Copy, ExternalLink
+  ChevronLeft, ShoppingCart, Package, User, Phone, Tag, Loader2, Copy, ExternalLink, MapPin
 } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import { toast } from "sonner"
@@ -14,12 +14,14 @@ import { Separator } from '@/components/ui/separator'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useCart } from '../cart/cart-context'
 import { useParams, useRouter } from 'next/navigation'
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
+import dynamic from 'next/dynamic'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CreateOrderRequest, Order } from '@/types/order'
 import { createOrder } from '@/services/order-service'
 import { validateCoupon, ValidateCouponData } from '@/services/coupon-validate-service'
 import { useShopBySlug } from '../use-slug'
+import { deliveryService, cepService } from '@/services/delivery-service'
 import { formatPrice } from '../format-price'
 import { useShopStatusContext } from '@/contexts/ShopStatusContext'
 import Image from 'next/image'
@@ -27,6 +29,8 @@ import favicon from "@/public/logo/favicon.svg"
 import logoInlineBlack from "@/public/logo/logo-inline-black.svg"
 import Link from 'next/link'
 import PublicLoading from '@/components/public-loading'
+
+const DeliveryPinMap = dynamic(() => import('./delivery-pin-map'), { ssr: false })
 
 type DeliveryOption = 'delivery' | 'pickup'
 
@@ -343,6 +347,11 @@ export default function CheckoutPage() {
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('credit')
   const [deliveryOption, setDeliveryOption] = useState<DeliveryOption>('delivery')
+  const [checkoutStep, setCheckoutStep] = useState<'location' | 'details'>('location')
+  const [cep, setCep] = useState('')
+  const [cepStatus, setCepStatus] = useState<'idle' | 'loading' | 'found' | 'found_no_street' | 'not_found'>('idle')
+  const [cepCity, setCepCity] = useState<string | null>(null)
+  const [cepState, setCepState] = useState<string | null>(null)
   const [address, setAddress] = useState('')
   const [complement, setComplement] = useState('')
   const [reference, setReference] = useState('')
@@ -418,6 +427,206 @@ export default function CheckoutPage() {
   const shopDeliveryConfig = shopData?.data?.attributes?.shop_delivery_config?.data?.attributes || null
   const shopPaymentConfig = shopData?.data?.attributes?.shop_payment_config?.data?.attributes || null
   const shop = shopData
+  // Loja usa taxa por distância: o checkout ganha um step dedicado pra confirmar localização
+  // (mapa + endereço) antes do resto do formulário. Demais modalidades de entrega seguem
+  // exatamente como antes, sem step, pra não arriscar regressão nelas.
+  const usesLocationStep = shopDeliveryConfig?.delivery_fee_kind === 'per_km'
+  const shopLatitude = shopData?.data?.attributes?.latitude ?? null
+  const shopLongitude = shopData?.data?.attributes?.longitude ?? null
+
+  const [quoteState, setQuoteState] = useState<{
+    loading: boolean
+    fee: number | null
+    distanceKm: number | null
+    deliverable: boolean | null
+    error: string | null
+    latitude: number | null
+    longitude: number | null
+  }>({ loading: false, fee: null, distanceKm: null, deliverable: null, error: null, latitude: null, longitude: null })
+  // O pino nasce em cima da loja (antes de qualquer cotação) e passa a refletir a cotação
+  // assim que o cliente digita um endereço ou arrasta o mapa.
+  const mapLatitude = quoteState.latitude ?? shopLatitude
+  const mapLongitude = quoteState.longitude ?? shopLongitude
+  const quoteDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Set right before programmatically overwriting `address` from the pin's reverse-geocoded
+  // location, so the address-typing effect below doesn't treat it as a new user edit and fire
+  // a redundant (and possibly drifting) forward-geocode quote on top of the one we just got.
+  const skipNextAddressQuoteRef = useRef(false)
+
+  const [addressSuggestions, setAddressSuggestions] = useState<{ label: string; latitude: number; longitude: number }[]>([])
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false)
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false)
+  const suggestionsDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Same idea as skipNextAddressQuoteRef, but for the suggestions dropdown: set right before
+  // programmatically overwriting `address` (CEP fill, pin reverse-geocode, picking a suggestion)
+  // so the dropdown doesn't reopen itself right after.
+  const skipNextSuggestionsFetchRef = useRef(false)
+
+  // Shared by both the map drag and the suggestions dropdown — actually hits the quote endpoint.
+  // Map drag wraps this in a debounce (below); picking a suggestion calls it directly since a
+  // click is already a single deliberate action, not a rapid-fire gesture.
+  const fetchQuoteForCoords = async (lat: number, lng: number) => {
+    setQuoteState(prev => ({ ...prev, loading: true, error: null }))
+    try {
+      const result = await deliveryService.getDeliveryQuote(storeSlug, { latitude: lat, longitude: lng, order_total: totalPrice })
+      setQuoteState({
+        loading: false,
+        fee: result.delivery_fee,
+        distanceKm: result.distance_km,
+        deliverable: result.deliverable,
+        error: result.deliverable ? null : 'Endereço fora da área de entrega',
+        latitude: result.latitude,
+        longitude: result.longitude
+      })
+      if (result.resolved_address) {
+        skipNextAddressQuoteRef.current = true
+        skipNextSuggestionsFetchRef.current = true
+        setAddress(result.resolved_address)
+      }
+    } catch (error: any) {
+      setQuoteState(prev => ({
+        ...prev,
+        loading: false,
+        deliverable: false,
+        error: error?.response?.data?.error || 'Não foi possível calcular o frete para esse ponto'
+      }))
+    }
+  }
+
+  const mapMoveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Só busca a cotação depois que o mapa "assenta" por um instante — evita bater no limite de
+  // tentativas da API quando o cliente ainda está ajustando o pino (vários pequenos arrastos
+  // seguidos disparariam uma cotação a cada um, sem isso).
+  const handleMapCenterChange = (lat: number, lng: number) => {
+    if (mapMoveDebounceRef.current) clearTimeout(mapMoveDebounceRef.current)
+    setQuoteState(prev => ({ ...prev, loading: true, error: null }))
+    mapMoveDebounceRef.current = setTimeout(() => {
+      fetchQuoteForCoords(lat, lng)
+    }, 700)
+  }
+
+  const handleSelectSuggestion = (suggestion: { label: string; latitude: number; longitude: number }) => {
+    skipNextAddressQuoteRef.current = true
+    skipNextSuggestionsFetchRef.current = true
+    setAddress(suggestion.label)
+    setSuggestionsOpen(false)
+    setAddressSuggestions([])
+    fetchQuoteForCoords(suggestion.latitude, suggestion.longitude)
+  }
+
+  // Sugestões de endereço (autocomplete) enquanto o cliente digita — ajuda tanto ele (não precisa
+  // digitar o endereço inteiro certinho) quanto o mapa (a coordenada vem direto da sugestão
+  // escolhida, sem depender de geocodificação por chute do texto livre).
+  useEffect(() => {
+    if (!usesLocationStep || deliveryOption !== 'delivery') return
+    if (skipNextSuggestionsFetchRef.current) {
+      skipNextSuggestionsFetchRef.current = false
+      setSuggestionsOpen(false)
+      return
+    }
+    if (suggestionsDebounceRef.current) clearTimeout(suggestionsDebounceRef.current)
+
+    const trimmed = address.trim()
+    if (trimmed.length < 5) {
+      setAddressSuggestions([])
+      setSuggestionsOpen(false)
+      return
+    }
+
+    suggestionsDebounceRef.current = setTimeout(async () => {
+      setSuggestionsLoading(true)
+      try {
+        // Com CEP informado, restringe as sugestões à cidade/UF dele — evita ruas de mesmo nome
+        // em outras cidades aparecendo como opção.
+        const cityState = cepCity && cepState ? { city: cepCity, state: cepState } : undefined
+        const result = await deliveryService.getAddressSuggestions(storeSlug, trimmed, cityState)
+        setAddressSuggestions(result)
+        setSuggestionsOpen(result.length > 0)
+      } catch {
+        setAddressSuggestions([])
+      } finally {
+        setSuggestionsLoading(false)
+      }
+    }, 400)
+
+    return () => { if (suggestionsDebounceRef.current) clearTimeout(suggestionsDebounceRef.current) }
+  }, [address, usesLocationStep, deliveryOption, storeSlug, cepCity, cepState])
+
+  // Preenche rua/bairro a partir do CEP (ViaCEP) pra poupar digitação — o número da casa e a
+  // confirmação exata da localização continuam por conta do campo de endereço + do pino no mapa.
+  useEffect(() => {
+    const digits = cep.replace(/\D/g, '')
+    if (digits.length !== 8) {
+      setCepStatus('idle')
+      setCepCity(null)
+      setCepState(null)
+      return
+    }
+
+    setCepStatus('loading')
+    const timeout = setTimeout(async () => {
+      try {
+        const result = await cepService.lookup(digits)
+        // Em cidades pequenas o CEP é único pra cidade inteira: o ViaCEP acha a cidade mas
+        // devolve logradouro/bairro em branco (não é erro — só não tem rua específica).
+        setCepStatus(result.address ? 'found' : 'found_no_street')
+        setCepCity(result.city)
+        setCepState(result.state)
+        if (result.address && !address.trim()) setAddress(result.address)
+        if (result.neighborhood && !selectedNeighborhood.trim()) setSelectedNeighborhood(result.neighborhood)
+      } catch {
+        setCepStatus('not_found')
+        setCepCity(null)
+        setCepState(null)
+      }
+    }, 500)
+
+    return () => clearTimeout(timeout)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cep])
+
+  useEffect(() => {
+    if (shopDeliveryConfig?.delivery_fee_kind !== 'per_km' || deliveryOption !== 'delivery') return
+    if (skipNextAddressQuoteRef.current) {
+      skipNextAddressQuoteRef.current = false
+      return
+    }
+    if (quoteDebounceRef.current) clearTimeout(quoteDebounceRef.current)
+
+    const trimmed = address.trim()
+    if (trimmed.length < 8) {
+      setQuoteState({ loading: false, fee: null, distanceKm: null, deliverable: null, error: null, latitude: null, longitude: null })
+      return
+    }
+
+    setQuoteState(prev => ({ ...prev, loading: true, error: null }))
+    quoteDebounceRef.current = setTimeout(async () => {
+      try {
+        const result = await deliveryService.getDeliveryQuote(storeSlug, { address: trimmed, order_total: totalPrice })
+        setQuoteState({
+          loading: false,
+          fee: result.delivery_fee,
+          distanceKm: result.distance_km,
+          deliverable: result.deliverable,
+          error: result.deliverable ? null : 'Endereço fora da área de entrega',
+          latitude: result.latitude,
+          longitude: result.longitude
+        })
+      } catch (error: any) {
+        setQuoteState({
+          loading: false,
+          fee: null,
+          distanceKm: null,
+          deliverable: false,
+          error: error?.response?.data?.error || 'Não foi possível calcular o frete para esse endereço',
+          latitude: null,
+          longitude: null
+        })
+      }
+    }, 800)
+
+    return () => { if (quoteDebounceRef.current) clearTimeout(quoteDebounceRef.current) }
+  }, [address, shopDeliveryConfig?.delivery_fee_kind, deliveryOption, totalPrice, storeSlug])
 
   // Recalcular desconto do cupom quando totalPrice mudar
   useEffect(() => {
@@ -586,7 +795,11 @@ export default function CheckoutPage() {
 
 
   const calculateDeliveryFee = () => {
-    if (deliveryOption !== 'delivery' || !selectedNeighborhood) return 0
+    if (deliveryOption !== 'delivery') return 0
+    if (shopDeliveryConfig?.delivery_fee_kind === 'per_km') {
+      return quoteState.deliverable === false ? 0 : (quoteState.fee ?? 0)
+    }
+    if (!selectedNeighborhood) return 0
     if (shopDeliveryConfig?.delivery_fee_kind === 'fixed') {
       const minFree = Number(shopDeliveryConfig.min_value_free_delivery) || 0
       if (minFree > 0 && totalPrice >= minFree) return 0
@@ -731,6 +944,10 @@ export default function CheckoutPage() {
       toast.error(firstError)
       return
     }
+    if (deliveryOption === 'delivery' && isUndeliverableByDistance) {
+      toast.error(quoteState.error || 'Endereço fora da área de entrega')
+      return
+    }
     setFieldErrors({})
 
     setIsSubmitting(true)
@@ -759,7 +976,11 @@ export default function CheckoutPage() {
           neighborhood: neighborhoodName,
           complement,
           reference,
-          ...(neighborhoodId && { shop_delivery_neighborhood_id: Number(neighborhoodId) })
+          ...(neighborhoodId && { shop_delivery_neighborhood_id: Number(neighborhoodId) }),
+          ...(shopDeliveryConfig?.delivery_fee_kind === 'per_km' && quoteState.latitude !== null && quoteState.longitude !== null && {
+            latitude: quoteState.latitude,
+            longitude: quoteState.longitude
+          })
         },
         items: cartItems.map(item => ({
           catalog_item_id: Number(item.id),
@@ -874,6 +1095,16 @@ export default function CheckoutPage() {
 
   const deliveryFeeDisplay = () => {
     if (deliveryOption !== 'delivery') return null
+    if (shopDeliveryConfig?.delivery_fee_kind === 'per_km') {
+      if (quoteState.loading) return 'Calculando frete...'
+      if (quoteState.error) return null
+      if (quoteState.fee === 0 && quoteState.deliverable) return 'Grátis'
+      if (quoteState.fee !== null && quoteState.fee > 0) {
+        const distanceLabel = quoteState.distanceKm !== null ? ` (${quoteState.distanceKm.toFixed(1)} km)` : ''
+        return `R$ ${quoteState.fee.toFixed(2).replace('.', ',')}${distanceLabel}`
+      }
+      return null
+    }
     const fee = calculateDeliveryFee()
     if (shopDeliveryConfig?.delivery_fee_kind === 'to_be_agreed') return 'A combinar'
     if (fee === 0 && selectedNeighborhood) return 'Grátis'
@@ -884,6 +1115,17 @@ export default function CheckoutPage() {
   const minOrderValue = Number(shopDeliveryConfig?.minimum_order_value) || 0
   const effectiveValue = (totalPrice || 0) - (couponDiscount || 0) + (paymentAdjustment || 0)
   const isBelowMinOrder = deliveryOption === 'delivery' && minOrderValue > 0 && effectiveValue < minOrderValue
+  const isPerKmMode = shopDeliveryConfig?.delivery_fee_kind === 'per_km'
+  const isUndeliverableByDistance = deliveryOption === 'delivery' && isPerKmMode &&
+    (quoteState.loading || quoteState.deliverable === false || !!quoteState.error)
+  const canContinueFromLocation = deliveryOption === 'pickup' || (
+    !!address.trim() &&
+    !!selectedNeighborhood.trim() &&
+    quoteState.deliverable === true &&
+    !quoteState.loading &&
+    quoteState.latitude !== null &&
+    quoteState.longitude !== null
+  )
 
   if (isLoadingShop || isLoading) {
     return <PublicLoading />
@@ -932,9 +1174,257 @@ export default function CheckoutPage() {
     )
   }
 
-  const canSubmit = !isSubmitting && isShopOpen && !shopStatusLoading && !isBelowMinOrder && !noPaymentMethods &&
+  const canSubmit = !isSubmitting && isShopOpen && !shopStatusLoading && !isBelowMinOrder && !isUndeliverableByDistance && !noPaymentMethods &&
     (deliveryOption === 'pickup' || !!address.trim()) &&
     (guestName.trim().length >= 3 && guestPhone.replace(/\D/g, '').length >= 10)
+
+  // Loja com taxa por km: primeiro confirma localização (mapa + endereço) num step dedicado,
+  // só depois mostra o restante do checkout (identificação, itens, pagamento).
+  if (usesLocationStep && checkoutStep === 'location') {
+    return (
+      <div className="min-h-screen bg-[#FAF9F7]">
+        <header className="sticky top-0 z-50 w-full bg-white border-b border-[#E5E2DD]">
+          <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center h-16">
+              <button
+                onClick={() => router.back()}
+                className="cursor-pointer flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors mr-auto"
+              >
+                <ChevronLeft className="h-5 w-5" />
+                <span className="text-sm font-medium hidden sm:block">Voltar</span>
+              </button>
+              <Link href={`/${storeSlug}`} className="md:hidden cursor-pointer">
+                <Image src={favicon} alt="Versa" width={90} height={90} priority />
+              </Link>
+              <Link href={`/${storeSlug}`} className="hidden md:block cursor-pointer">
+                <Image src={logoInlineBlack} alt="Versa" width={180} height={56} priority />
+              </Link>
+            </div>
+          </div>
+        </header>
+
+        <div className="max-w-[1400px] mx-auto px-4 py-6 sm:py-8">
+        <div className="flex flex-col lg:flex-row gap-6">
+
+          {/* ── Left column ── */}
+          <div className="flex-1 min-w-0 space-y-4">
+          <div>
+            <h1 className="font-tomato text-xl font-bold text-gray-900">Onde vamos entregar?</h1>
+            <p className="text-sm text-muted-foreground mt-1">Confirme o endereço e o ponto exato de entrega antes de continuar.</p>
+          </div>
+
+          <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+            <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
+              <Truck className="h-4 w-4 text-primary" />
+              <h2 className="font-tomato text-base font-semibold text-gray-900">Entrega</h2>
+            </div>
+
+            <div className="px-5 py-4 space-y-4">
+              <div className="flex bg-gray-100 rounded-md p-1 gap-1">
+                <button
+                  onClick={() => setDeliveryOption('delivery')}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-all cursor-pointer ${
+                    deliveryOption === 'delivery'
+                      ? 'bg-white text-gray-900 border border-[#E5E2DD]'
+                      : 'text-muted-foreground hover:text-gray-700'
+                  }`}
+                >
+                  <Truck className="h-4 w-4" />
+                  Entrega
+                </button>
+                <button
+                  onClick={() => setDeliveryOption('pickup')}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-all cursor-pointer ${
+                    deliveryOption === 'pickup'
+                      ? 'bg-white text-gray-900 border border-[#E5E2DD]'
+                      : 'text-muted-foreground hover:text-gray-700'
+                  }`}
+                >
+                  <Store className="h-4 w-4" />
+                  Retirada
+                </button>
+              </div>
+
+              {deliveryOption === 'delivery' && (
+                <div className="space-y-3">
+                  <div>
+                    <Label htmlFor="cep" className="text-sm font-medium text-gray-700 mb-1.5 block">CEP (opcional)</Label>
+                    <Input
+                      id="cep"
+                      inputMode="numeric"
+                      placeholder="00000-000"
+                      value={cep}
+                      onChange={(e) => {
+                        const digits = e.target.value.replace(/\D/g, '').slice(0, 8)
+                        setCep(digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits)
+                      }}
+                      className="border-[#E5E2DD] focus:border-primary/40 text-sm max-w-[180px]"
+                    />
+                    {cepStatus === 'loading' && <p className="text-xs text-muted-foreground mt-1">Buscando CEP...</p>}
+                    {cepStatus === 'found' && (
+                      <p className="text-xs text-green-600 mt-1">
+                        Endereço preenchido{cepCity ? ` · ${cepCity}${cepState ? ` - ${cepState}` : ''}` : ''}, confira o número da casa
+                      </p>
+                    )}
+                    {cepStatus === 'found_no_street' && (
+                      <p className="text-xs text-amber-600 mt-1">
+                        CEP de {cepCity ? `${cepCity}${cepState ? ` - ${cepState}` : ''}` : 'a cidade'} encontrado, mas sem rua específica — preencha o endereço manualmente
+                      </p>
+                    )}
+                    {cepStatus === 'not_found' && <p className="text-xs text-red-500 mt-1">CEP não encontrado, preencha o endereço manualmente</p>}
+                  </div>
+
+                  <div className="relative">
+                    <Label htmlFor="address" className="text-sm font-medium text-gray-700 mb-1.5 block">Endereço <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="address"
+                      placeholder="Rua, número"
+                      value={address}
+                      autoComplete="off"
+                      onChange={(e) => { setAddress(e.target.value); setFieldErrors(prev => ({ ...prev, address: '' })) }}
+                      onFocus={() => { if (addressSuggestions.length > 0) setSuggestionsOpen(true) }}
+                      onBlur={() => { setTimeout(() => setSuggestionsOpen(false), 150) }}
+                      maxLength={70}
+                      className={`border-[#E5E2DD] focus:border-primary/40 text-sm ${fieldErrors.address ? 'border-red-400 focus:border-red-400' : ''}`}
+                    />
+                    {fieldErrors.address && <p className="text-sm text-red-500 mt-1">{fieldErrors.address}</p>}
+                    {suggestionsLoading && (
+                      <p className="text-xs text-muted-foreground mt-1">Buscando endereços...</p>
+                    )}
+                    {suggestionsOpen && addressSuggestions.length > 0 && (
+                      <ul className="absolute z-30 bottom-full left-0 right-0 mb-1 w-full bg-white border border-[#E5E2DD] rounded-md shadow-md overflow-hidden max-h-56 overflow-y-auto">
+                        {addressSuggestions.map((s, i) => (
+                          <li key={`${s.label}-${i}`}>
+                            <button
+                              type="button"
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={() => handleSelectSuggestion(s)}
+                              className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-[#FAF9F7] flex items-center gap-2 cursor-pointer"
+                            >
+                              <MapPin className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                              <span className="truncate">{s.label}</span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+
+                  {mapLatitude !== null && mapLongitude !== null && (
+                    <div className="space-y-1.5 rounded-md border border-primary/20 bg-primary/5 p-2.5">
+                      <p className="text-xs font-medium text-gray-700 flex items-center gap-1">
+                        <MapPin className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                        Mova o mapa até o pino ficar exatamente no local da entrega
+                      </p>
+                      <DeliveryPinMap
+                        latitude={mapLatitude}
+                        longitude={mapLongitude}
+                        shopLatitude={shopLatitude}
+                        shopLongitude={shopLongitude}
+                        onCenterChange={handleMapCenterChange}
+                      />
+                      {quoteState.loading && (
+                        <p className="text-xs text-muted-foreground">Calculando frete...</p>
+                      )}
+                      {!quoteState.loading && quoteState.distanceKm !== null && quoteState.deliverable && (
+                        <p className="text-xs font-medium text-gray-700">
+                          {quoteState.distanceKm.toFixed(1)} km · {quoteState.fee === 0 ? 'Grátis' : `R$ ${(quoteState.fee ?? 0).toFixed(2).replace('.', ',')}`}
+                        </p>
+                      )}
+                      {!quoteState.loading && quoteState.error && (
+                        <p className="text-xs font-medium text-red-600">{quoteState.error}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        O endereço e o frete são recalculados automaticamente ao parar de mover o mapa
+                      </p>
+                    </div>
+                  )}
+
+                  <div>
+                    <Label htmlFor="neighborhood" className="text-sm font-medium text-gray-700 mb-1.5 block">Bairro <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="neighborhood"
+                      placeholder="Bairro"
+                      value={selectedNeighborhood}
+                      onChange={(e) => { setSelectedNeighborhood(e.target.value); setFieldErrors(prev => ({ ...prev, neighborhood: '' })) }}
+                      className={`text-sm ${fieldErrors.neighborhood ? 'border-red-400 focus:border-red-400' : 'border-[#E5E2DD] focus:border-primary/40'}`}
+                    />
+                    {fieldErrors.neighborhood && <p className="text-sm text-red-500 mt-1">{fieldErrors.neighborhood}</p>}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="complement" className="text-sm font-medium text-gray-700 mb-1.5 block">Complemento</Label>
+                      <Input
+                        id="complement"
+                        placeholder="Apto, bloco..."
+                        value={complement}
+                        onChange={(e) => setComplement(e.target.value)}
+                        className="border-[#E5E2DD] focus:border-primary/40 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="reference" className="text-sm font-medium text-gray-700 mb-1.5 block">Referência</Label>
+                      <Input
+                        id="reference"
+                        placeholder="Perto do..."
+                        value={reference}
+                        onChange={(e) => setReference(e.target.value)}
+                        className="border-[#E5E2DD] focus:border-primary/40 text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {deliveryOption === 'pickup' && (
+                <div className="flex items-start gap-2.5 border border-[#E5E2DD] rounded-md px-4 py-3">
+                  <Store className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-gray-700">
+                    Você retirará o pedido diretamente no estabelecimento. Sem taxa de entrega.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <button
+            onClick={() => setCheckoutStep('details')}
+            disabled={!canContinueFromLocation}
+            className={`w-full py-3.5 rounded-md text-base font-semibold transition-all flex items-center justify-center gap-2 ${
+              canContinueFromLocation
+                ? 'bg-primary text-white hover:bg-primary/90 active:scale-[0.98] cursor-pointer'
+                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+            }`}
+          >
+            Continuar
+          </button>
+          </div>
+
+          {/* ── Right column (sticky cart preview) ── */}
+          <div className="hidden lg:block w-[380px] flex-shrink-0">
+            <div className="sticky top-[73px]">
+              <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+                <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
+                  <ShoppingCart className="h-4 w-4 text-primary" />
+                  <h2 className="font-tomato text-base font-semibold text-gray-900">Seu pedido</h2>
+                </div>
+                <div className="px-5 py-4 space-y-1.5">
+                  <div className="flex justify-between text-sm text-gray-600">
+                    <span>{cartItems.reduce((s, i) => s + i.quantity, 0)} {cartItems.reduce((s, i) => s + i.quantity, 0) === 1 ? 'item' : 'itens'}</span>
+                    <span className="font-semibold text-gray-900">R$ {totalPrice.toFixed(2).replace('.', ',')}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">A taxa de entrega será calculada depois de confirmar o endereço.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-[#FAF9F7]">
@@ -1244,111 +1734,166 @@ export default function CheckoutPage() {
               </div>
 
               <div className="px-5 py-4 space-y-4">
-                {/* Toggle delivery/pickup */}
-                <div className="flex bg-gray-100 rounded-md p-1 gap-1">
-                  <button
-                    onClick={() => setDeliveryOption('delivery')}
-                    className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-all cursor-pointer ${
-                      deliveryOption === 'delivery'
-                        ? 'bg-white text-gray-900 border border-[#E5E2DD]'
-                        : 'text-muted-foreground hover:text-gray-700'
-                    }`}
-                  >
-                    <Truck className="h-4 w-4" />
-                    Entrega
-                  </button>
-                  <button
-                    onClick={() => setDeliveryOption('pickup')}
-                    className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-all cursor-pointer ${
-                      deliveryOption === 'pickup'
-                        ? 'bg-white text-gray-900 border border-[#E5E2DD]'
-                        : 'text-muted-foreground hover:text-gray-700'
-                    }`}
-                  >
-                    <Store className="h-4 w-4" />
-                    Retirada
-                  </button>
-                </div>
-
-                {deliveryOption === 'delivery' && (
-                  <div className="space-y-3">
-                    <div>
-                      <Label htmlFor="address" className="text-sm font-medium text-gray-700 mb-1.5 block">Endereço <span className="text-red-500">*</span></Label>
-                      <Input
-                        id="address"
-                        placeholder="Rua, número"
-                        value={address}
-                        onChange={(e) => { setAddress(e.target.value); setFieldErrors(prev => ({ ...prev, address: '' })) }}
-                        maxLength={70}
-                        className={`border-[#E5E2DD] focus:border-primary/40 text-sm ${fieldErrors.address ? 'border-red-400 focus:border-red-400' : ''}`}
-                      />
-                      {fieldErrors.address && <p className="text-sm text-red-500 mt-1">{fieldErrors.address}</p>}
+                {!usesLocationStep && (
+                  <>
+                    {/* Toggle delivery/pickup */}
+                    <div className="flex bg-gray-100 rounded-md p-1 gap-1">
+                      <button
+                        onClick={() => setDeliveryOption('delivery')}
+                        className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-all cursor-pointer ${
+                          deliveryOption === 'delivery'
+                            ? 'bg-white text-gray-900 border border-[#E5E2DD]'
+                            : 'text-muted-foreground hover:text-gray-700'
+                        }`}
+                      >
+                        <Truck className="h-4 w-4" />
+                        Entrega
+                      </button>
+                      <button
+                        onClick={() => setDeliveryOption('pickup')}
+                        className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-all cursor-pointer ${
+                          deliveryOption === 'pickup'
+                            ? 'bg-white text-gray-900 border border-[#E5E2DD]'
+                            : 'text-muted-foreground hover:text-gray-700'
+                        }`}
+                      >
+                        <Store className="h-4 w-4" />
+                        Retirada
+                      </button>
                     </div>
 
-                    <div>
-                      <Label htmlFor="neighborhood" className="text-sm font-medium text-gray-700 mb-1.5 block">Bairro <span className="text-red-500">*</span></Label>
-                      {shopDeliveryConfig?.delivery_fee_kind === 'per_neighborhood' ? (
-                        <>
-                          <select
-                            id="neighborhood"
-                            value={selectedNeighborhood}
-                            onChange={(e) => { setSelectedNeighborhood(e.target.value); setFieldErrors(prev => ({ ...prev, neighborhood: '' })) }}
-                            className={`w-full rounded-md border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 ${fieldErrors.neighborhood ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : 'border-[#E5E2DD] focus:border-primary/40 focus:ring-primary/20'}`}
-                          >
-                            <option value="">Selecione o bairro</option>
-                            {shopDeliveryConfig?.shop_delivery_neighborhoods.data.map((nb: any) => (
-                              <option key={nb.id} value={nb.id}>
-                                {nb.attributes.name} · R$ {Number(nb.attributes.amount).toFixed(2).replace('.', ',')}
-                              </option>
-                            ))}
-                          </select>
-                          {fieldErrors.neighborhood && <p className="text-sm text-red-500 mt-1">{fieldErrors.neighborhood}</p>}
-                        </>
-                      ) : (
-                        <>
+                    {deliveryOption === 'delivery' && (
+                      <div className="space-y-3">
+                        <div>
+                          <Label htmlFor="cep" className="text-sm font-medium text-gray-700 mb-1.5 block">CEP (opcional)</Label>
                           <Input
-                            id="neighborhood"
-                            placeholder="Bairro"
-                            value={selectedNeighborhood}
-                            onChange={(e) => { setSelectedNeighborhood(e.target.value); setFieldErrors(prev => ({ ...prev, neighborhood: '' })) }}
-                            className={`text-sm ${fieldErrors.neighborhood ? 'border-red-400 focus:border-red-400' : 'border-[#E5E2DD] focus:border-primary/40'}`}
+                            id="cep"
+                            inputMode="numeric"
+                            placeholder="00000-000"
+                            value={cep}
+                            onChange={(e) => {
+                              const digits = e.target.value.replace(/\D/g, '').slice(0, 8)
+                              setCep(digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits)
+                            }}
+                            className="border-[#E5E2DD] focus:border-primary/40 text-sm max-w-[180px]"
                           />
-                          {fieldErrors.neighborhood && <p className="text-sm text-red-500 mt-1">{fieldErrors.neighborhood}</p>}
-                        </>
-                      )}
-                    </div>
+                          {cepStatus === 'loading' && <p className="text-xs text-muted-foreground mt-1">Buscando CEP...</p>}
+                          {cepStatus === 'found' && <p className="text-xs text-green-600 mt-1">Endereço preenchido, confira o número da casa</p>}
+                          {cepStatus === 'found_no_street' && <p className="text-xs text-amber-600 mt-1">CEP da cidade encontrado, mas sem rua específica — preencha o endereço manualmente</p>}
+                          {cepStatus === 'not_found' && <p className="text-xs text-red-500 mt-1">CEP não encontrado, preencha o endereço manualmente</p>}
+                        </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <Label htmlFor="complement" className="text-sm font-medium text-gray-700 mb-1.5 block">Complemento</Label>
-                        <Input
-                          id="complement"
-                          placeholder="Apto, bloco..."
-                          value={complement}
-                          onChange={(e) => setComplement(e.target.value)}
-                          className="border-[#E5E2DD] focus:border-primary/40 text-sm"
-                        />
+                        <div>
+                          <Label htmlFor="address" className="text-sm font-medium text-gray-700 mb-1.5 block">Endereço <span className="text-red-500">*</span></Label>
+                          <Input
+                            id="address"
+                            placeholder="Rua, número"
+                            value={address}
+                            onChange={(e) => { setAddress(e.target.value); setFieldErrors(prev => ({ ...prev, address: '' })) }}
+                            maxLength={70}
+                            className={`border-[#E5E2DD] focus:border-primary/40 text-sm ${fieldErrors.address ? 'border-red-400 focus:border-red-400' : ''}`}
+                          />
+                          {fieldErrors.address && <p className="text-sm text-red-500 mt-1">{fieldErrors.address}</p>}
+                        </div>
+
+                        <div>
+                          <Label htmlFor="neighborhood" className="text-sm font-medium text-gray-700 mb-1.5 block">Bairro <span className="text-red-500">*</span></Label>
+                          {shopDeliveryConfig?.delivery_fee_kind === 'per_neighborhood' ? (
+                            <>
+                              <select
+                                id="neighborhood"
+                                value={selectedNeighborhood}
+                                onChange={(e) => { setSelectedNeighborhood(e.target.value); setFieldErrors(prev => ({ ...prev, neighborhood: '' })) }}
+                                className={`w-full rounded-md border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 ${fieldErrors.neighborhood ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : 'border-[#E5E2DD] focus:border-primary/40 focus:ring-primary/20'}`}
+                              >
+                                <option value="">Selecione o bairro</option>
+                                {shopDeliveryConfig?.shop_delivery_neighborhoods.data.map((nb: any) => (
+                                  <option key={nb.id} value={nb.id}>
+                                    {nb.attributes.name} · R$ {Number(nb.attributes.amount).toFixed(2).replace('.', ',')}
+                                  </option>
+                                ))}
+                              </select>
+                              {fieldErrors.neighborhood && <p className="text-sm text-red-500 mt-1">{fieldErrors.neighborhood}</p>}
+                            </>
+                          ) : (
+                            <>
+                              <Input
+                                id="neighborhood"
+                                placeholder="Bairro"
+                                value={selectedNeighborhood}
+                                onChange={(e) => { setSelectedNeighborhood(e.target.value); setFieldErrors(prev => ({ ...prev, neighborhood: '' })) }}
+                                className={`text-sm ${fieldErrors.neighborhood ? 'border-red-400 focus:border-red-400' : 'border-[#E5E2DD] focus:border-primary/40'}`}
+                              />
+                              {fieldErrors.neighborhood && <p className="text-sm text-red-500 mt-1">{fieldErrors.neighborhood}</p>}
+                            </>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <Label htmlFor="complement" className="text-sm font-medium text-gray-700 mb-1.5 block">Complemento</Label>
+                            <Input
+                              id="complement"
+                              placeholder="Apto, bloco..."
+                              value={complement}
+                              onChange={(e) => setComplement(e.target.value)}
+                              className="border-[#E5E2DD] focus:border-primary/40 text-sm"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="reference" className="text-sm font-medium text-gray-700 mb-1.5 block">Referência</Label>
+                            <Input
+                              id="reference"
+                              placeholder="Perto do..."
+                              value={reference}
+                              onChange={(e) => setReference(e.target.value)}
+                              className="border-[#E5E2DD] focus:border-primary/40 text-sm"
+                            />
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <Label htmlFor="reference" className="text-sm font-medium text-gray-700 mb-1.5 block">Referência</Label>
-                        <Input
-                          id="reference"
-                          placeholder="Perto do..."
-                          value={reference}
-                          onChange={(e) => setReference(e.target.value)}
-                          className="border-[#E5E2DD] focus:border-primary/40 text-sm"
-                        />
+                    )}
+
+                    {deliveryOption === 'pickup' && (
+                      <div className="flex items-start gap-2.5 border border-[#E5E2DD] rounded-md px-4 py-3">
+                        <Store className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                        <p className="text-sm text-gray-700">
+                          Você retirará o pedido diretamente no estabelecimento. Sem taxa de entrega.
+                        </p>
                       </div>
-                    </div>
-                  </div>
+                    )}
+                  </>
                 )}
 
-                {deliveryOption === 'pickup' && (
-                  <div className="flex items-start gap-2.5 border border-[#E5E2DD] rounded-md px-4 py-3">
-                    <Store className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-gray-700">
-                      Você retirará o pedido diretamente no estabelecimento. Sem taxa de entrega.
-                    </p>
+                {usesLocationStep && (
+                  <div className="flex items-start justify-between gap-3 rounded-md border border-[#E5E2DD] bg-[#FAF9F7] px-4 py-3">
+                    <div className="flex items-start gap-2.5 min-w-0">
+                      {deliveryOption === 'pickup' ? (
+                        <Store className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                      ) : (
+                        <Truck className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                      )}
+                      <div className="min-w-0">
+                        {deliveryOption === 'pickup' ? (
+                          <p className="text-sm text-gray-700">Retirada no estabelecimento</p>
+                        ) : (
+                          <>
+                            <p className="text-sm font-medium text-gray-900 truncate">{address}</p>
+                            {quoteState.distanceKm !== null && quoteState.deliverable && (
+                              <p className="text-sm text-muted-foreground">
+                                {quoteState.distanceKm.toFixed(1)} km · {quoteState.fee === 0 ? 'Grátis' : `R$ ${(quoteState.fee ?? 0).toFixed(2).replace('.', ',')}`}
+                              </p>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setCheckoutStep('location')}
+                      className="text-sm font-medium text-primary hover:underline flex-shrink-0 cursor-pointer"
+                    >
+                      Alterar
+                    </button>
                   </div>
                 )}
               </div>
@@ -1440,6 +1985,8 @@ export default function CheckoutPage() {
                 cartItems={cartItems}
                 isBelowMinOrder={isBelowMinOrder}
                 minOrderValue={minOrderValue}
+                isUndeliverableByDistance={isUndeliverableByDistance}
+                quoteError={quoteState.error}
                 isSubmitting={isSubmitting}
                 isShopOpen={isShopOpen}
                 shopStatusLoading={shopStatusLoading}
@@ -1475,6 +2022,8 @@ export default function CheckoutPage() {
                 cartItems={cartItems}
                 isBelowMinOrder={isBelowMinOrder}
                 minOrderValue={minOrderValue}
+                isUndeliverableByDistance={isUndeliverableByDistance}
+                quoteError={quoteState.error}
                 isSubmitting={isSubmitting}
                 isShopOpen={isShopOpen}
                 shopStatusLoading={shopStatusLoading}
@@ -1503,6 +2052,8 @@ interface OrderSummaryProps {
   cartItems: CartItemWithExtras[]
   isBelowMinOrder: boolean
   minOrderValue: number
+  isUndeliverableByDistance?: boolean
+  quoteError?: string | null
   isSubmitting: boolean
   isShopOpen: boolean
   shopStatusLoading: boolean
@@ -1516,7 +2067,8 @@ interface OrderSummaryProps {
 
 function OrderSummary({
   totalPrice, deliveryOption, deliveryFeeDisplay, calculateTotal,
-  cartItems, isBelowMinOrder, minOrderValue, isSubmitting, isShopOpen,
+  cartItems, isBelowMinOrder, minOrderValue, isUndeliverableByDistance = false, quoteError,
+  isSubmitting, isShopOpen,
   shopStatusLoading, canSubmit, onSubmit, couponDiscount = 0, appliedCouponCode,
   paymentAdjustment = 0, paymentMethodLabel
 }: OrderSummaryProps) {
@@ -1588,6 +2140,15 @@ function OrderSummary({
             <AlertTriangle className="h-3.5 w-3.5 text-amber-500 flex-shrink-0 mt-0.5" />
             <p className="text-sm text-amber-700">
               Mínimo para entrega: R$ {minOrderValue.toFixed(2).replace('.', ',')}. Faltam R$ {(minOrderValue - effectiveValue).toFixed(2).replace('.', ',')}.
+            </p>
+          </div>
+        )}
+
+        {isUndeliverableByDistance && quoteError && (
+          <div className="flex items-start gap-2 bg-white border border-red-400 rounded-md px-3 py-2.5">
+            <AlertTriangle className="h-3.5 w-3.5 text-red-500 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-red-600">
+              {quoteError}
             </p>
           </div>
         )}
