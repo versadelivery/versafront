@@ -31,8 +31,11 @@ import {
   Minus,
   Search,
   Loader2,
+  Navigation,
 } from 'lucide-react';
 import { getCatalog } from '@/api/requests/catalog/requests';
+import { RouteMap } from '@/components/map/route-map';
+import { DeliveryRoute, getOrderDeliveryRoute } from '@/services/geocoding-service';
 import { ItemOptionsDialog } from '@/app/admin/pdv/item-options-dialog';
 
 interface OrderItem {
@@ -70,9 +73,15 @@ interface OrderDetailsModalProps {
     delivery_fee?: number;
     address?: {
       address: string;
+      number?: string;
       neighborhood: string;
       complement?: string;
       reference?: string;
+      latitude?: number | null;
+      longitude?: number | null;
+      distance_km?: number | null;
+      duration_minutes?: number | null;
+      delivery_fee_kind?: string | null;
     };
     items: OrderItem[];
     shop: { name: string; phone: string };
@@ -189,6 +198,30 @@ export default function OrderDetailsModal({
   const isSavingRef = useRef(false);
   const lastSyncedOrderRef = useRef(order);
 
+  const mapsUrl = order.address?.latitude != null && order.address?.longitude != null
+    ? `https://www.google.com/maps/search/?api=1&query=${order.address.latitude},${order.address.longitude}`
+    : null;
+
+  // O trajeto é buscado sob demanda, ao abrir o pedido: o traçado é só apoio
+  // visual e não faz parte do snapshot gravado na compra.
+  const hasRoute = order.address?.latitude != null && order.address?.longitude != null;
+  const [route, setRoute] = useState<DeliveryRoute | null>(null);
+  const [routeError, setRouteError] = useState(false);
+
+  useEffect(() => {
+    if (!open || !hasRoute) return;
+
+    let cancelled = false;
+    setRoute(null);
+    setRouteError(false);
+
+    getOrderDeliveryRoute(order.id)
+      .then((data) => { if (!cancelled) setRoute(data); })
+      .catch(() => { if (!cancelled) setRouteError(true); });
+
+    return () => { cancelled = true; };
+  }, [open, hasRoute, order.id]);
+
   useEffect(() => {
     if (isSavingRef.current) {
       const prevIds = lastSyncedOrderRef.current.items.map((i: any) => i.id).sort().join(',');
@@ -225,9 +258,12 @@ export default function OrderDetailsModal({
       }
 
       if (editedOrder.address) {
-        const origAddress = order.address || {};
+        const origAddress: Partial<NonNullable<typeof order.address>> = order.address ?? {};
         if ((editedOrder.address.address || '') !== (origAddress.address || '')) {
           changes.address = { ...changes.address, address: editedOrder.address.address };
+        }
+        if ((editedOrder.address.number || '') !== (origAddress.number || '')) {
+          changes.address = { ...changes.address, number: editedOrder.address.number };
         }
         if ((editedOrder.address.neighborhood || '') !== (origAddress.neighborhood || '')) {
           changes.address = { ...changes.address, neighborhood: editedOrder.address.neighborhood };
@@ -469,10 +505,12 @@ Forma de pagamento: ${paymentLabel}
 ${
   !order.withdrawal && order.address
     ? `
-Endereço: ${order.address.address}
+Endereço: ${order.address.address}${order.address.number ? `, ${order.address.number}` : ''}
 Bairro: ${order.address.neighborhood}
 ${order.address.complement ? `Complemento: ${order.address.complement}` : ''}
 ${order.address.reference ? `Referencia: ${order.address.reference}` : ''}
+${order.address.distance_km != null ? `Distancia: ${Number(order.address.distance_km).toFixed(1).replace('.', ',')} km` : ''}
+${mapsUrl ? `Localizacao: ${mapsUrl}` : ''}
 `
     : ''
 }
@@ -523,7 +561,7 @@ ${order.items.map((item) => `${item.quantity}x ${item.name} - ${formatCurrency(i
         updated.customer = { ...updated.customer, [field]: newValue };
       } else if (
         type === 'customer' &&
-        (field === 'address' || field === 'neighborhood' || field === 'complement' || field === 'reference')
+        (field === 'address' || field === 'number' || field === 'neighborhood' || field === 'complement' || field === 'reference')
       ) {
         updated.address = { ...(updated.address || {}), [field]: newValue };
       } else if (type === 'shop' && (field === 'name' || field === 'phone')) {
@@ -764,6 +802,14 @@ ${order.items.map((item) => `${item.quantity}x ${item.name} - ${formatCurrency(i
                           />
                         </div>
                         <div className="flex items-center justify-between py-1.5">
+                          <span className="text-sm text-muted-foreground">Numero</span>
+                          <Input
+                            className="h-8 w-48 text-sm border-[#E5E2DD] rounded-md bg-white text-right"
+                            value={editedOrder.address?.number || ''}
+                            onChange={(e) => handleInputChange('customer', 'number', e.target.value)}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between py-1.5">
                           <span className="text-sm text-muted-foreground">Complemento</span>
                           <Input
                             className="h-8 w-48 text-sm border-[#E5E2DD] rounded-md bg-white text-right"
@@ -783,6 +829,9 @@ ${order.items.map((item) => `${item.quantity}x ${item.name} - ${formatCurrency(i
                     ) : (
                       <>
                         <InfoRow label="Rua" value={editedOrder.address?.address || ''} />
+                        {editedOrder.address?.number && (
+                          <InfoRow label="Numero" value={editedOrder.address.number} />
+                        )}
                         <InfoRow label="Bairro" value={editedOrder.address?.neighborhood || ''} />
                         {editedOrder.address?.complement && (
                           <InfoRow label="Complemento" value={editedOrder.address.complement} />
@@ -790,9 +839,65 @@ ${order.items.map((item) => `${item.quantity}x ${item.name} - ${formatCurrency(i
                         {editedOrder.address?.reference && (
                           <InfoRow label="Referencia" value={editedOrder.address.reference} />
                         )}
+                        {editedOrder.address?.delivery_fee_kind === 'per_km' && (
+                          <InfoRow label="Taxa calculada por" value="Quilometragem" />
+                        )}
+                        {editedOrder.address?.distance_km != null && (
+                          <InfoRow
+                            label="Distancia da rota"
+                            value={`${Number(editedOrder.address.distance_km).toFixed(1).replace('.', ',')} km`}
+                          />
+                        )}
+                        {editedOrder.address?.duration_minutes != null && (
+                          <InfoRow
+                            label="Tempo estimado"
+                            value={`${editedOrder.address.duration_minutes} min`}
+                          />
+                        )}
                       </>
                     )}
                   </div>
+
+                  {hasRoute && !isEditingMode && (
+                    <div className="mt-3">
+                      {route ? (
+                        <>
+                          <RouteMap
+                            origin={route.origin}
+                            destination={route.destination}
+                            geometry={route.geometry}
+                            className="h-[200px] w-full"
+                          />
+                          <p className="mt-1.5 text-center text-xs text-muted-foreground">
+                            Trajeto da loja ate o cliente
+                            {route.duration_minutes != null && ` · ~${route.duration_minutes} min`}
+                          </p>
+                        </>
+                      ) : routeError ? (
+                        <div className="flex h-[200px] items-center justify-center rounded-md border border-[#E5E2DD] bg-[#FAF9F7] px-4 text-center">
+                          <p className="text-sm text-muted-foreground">
+                            Nao foi possivel carregar o trajeto agora.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="flex h-[200px] items-center justify-center rounded-md border border-[#E5E2DD] bg-[#FAF9F7]">
+                          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {mapsUrl && (
+                    <a
+                      href={mapsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-3 flex items-center justify-center gap-2 rounded-md border border-[#E5E2DD] py-2 text-sm font-medium text-gray-700 hover:bg-[#FAF9F7]"
+                    >
+                      <Navigation className="h-3.5 w-3.5 text-primary" />
+                      Abrir localizacao no mapa
+                    </a>
+                  )}
                 </SectionCard>
               )}
 
