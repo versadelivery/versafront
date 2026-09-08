@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -16,18 +16,53 @@ interface TimeInputProps {
 }
 
 function TimeInput({ id, value, onChange, disabled }: TimeInputProps) {
-  const [hours, minutes] = (value || "00:00").split(":").map((v) => v.padStart(2, "0"));
+  const [initialHours, initialMinutes] = (value || "00:00").split(":");
+
+  // Enquanto o usuário digita, o campo mostra um rascunho livre (sem
+  // padStart) — só assim dá para escrever o segundo dígito. Formatar a cada
+  // tecla (como "2" -> "02") empurra o cursor pro fim e faz o dígito seguinte
+  // ser descartado, travando o campo depois da primeira tecla.
+  const [hoursDraft, setHoursDraft] = useState(initialHours ?? "00");
+  const [minutesDraft, setMinutesDraft] = useState(initialMinutes ?? "00");
+  const lastCommittedRef = useRef(value);
+
+  // Ressincroniza quando o valor muda por uma ação externa ao próprio campo
+  // (carregar da API, "copiar p/todos", "copiar p/baixo") — nunca por causa
+  // da digitação, que já mantém o rascunho atualizado.
+  useEffect(() => {
+    if (value === lastCommittedRef.current) return;
+    const [h, m] = (value || "00:00").split(":");
+    setHoursDraft(h ?? "00");
+    setMinutesDraft(m ?? "00");
+    lastCommittedRef.current = value;
+  }, [value]);
+
+  const commit = (h: string, m: string) => {
+    const paddedHours = Math.min(23, parseInt(h || "0", 10)).toString().padStart(2, "0");
+    const paddedMinutes = Math.min(59, parseInt(m || "0", 10)).toString().padStart(2, "0");
+    const next = `${paddedHours}:${paddedMinutes}`;
+    lastCommittedRef.current = next;
+    onChange(next);
+  };
 
   const handleHours = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value.replace(/\D/g, "").slice(0, 2);
-    const clamped = Math.min(23, parseInt(raw || "0", 10)).toString().padStart(2, "0");
-    onChange(`${clamped}:${minutes}`);
+    setHoursDraft(raw);
+    commit(raw, minutesDraft);
+  };
+
+  const handleHoursBlur = () => {
+    setHoursDraft(Math.min(23, parseInt(hoursDraft || "0", 10)).toString().padStart(2, "0"));
   };
 
   const handleMinutes = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value.replace(/\D/g, "").slice(0, 2);
-    const clamped = Math.min(59, parseInt(raw || "0", 10)).toString().padStart(2, "0");
-    onChange(`${hours}:${clamped}`);
+    setMinutesDraft(raw);
+    commit(hoursDraft, raw);
+  };
+
+  const handleMinutesBlur = () => {
+    setMinutesDraft(Math.min(59, parseInt(minutesDraft || "0", 10)).toString().padStart(2, "0"));
   };
 
   return (
@@ -36,8 +71,10 @@ function TimeInput({ id, value, onChange, disabled }: TimeInputProps) {
         id={id}
         type="text"
         inputMode="numeric"
-        value={hours}
+        value={hoursDraft}
         onChange={handleHours}
+        onBlur={handleHoursBlur}
+        onFocus={(e) => e.target.select()}
         disabled={disabled}
         className="w-6 text-center text-sm bg-transparent outline-none tabular-nums disabled:opacity-50"
         maxLength={2}
@@ -46,8 +83,10 @@ function TimeInput({ id, value, onChange, disabled }: TimeInputProps) {
       <input
         type="text"
         inputMode="numeric"
-        value={minutes}
+        value={minutesDraft}
         onChange={handleMinutes}
+        onBlur={handleMinutesBlur}
+        onFocus={(e) => e.target.select()}
         disabled={disabled}
         className="w-6 text-center text-sm bg-transparent outline-none tabular-nums disabled:opacity-50"
         maxLength={2}
