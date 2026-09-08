@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { deliveryService, DeliveryNeighborhood, DeliveryConfig } from "../services/delivery-service";
+import { deliveryService, DeliveryNeighborhood, DeliveryConfigInput } from "../services/delivery-service";
 import { toast } from "sonner";
 
 export function useDelivery() {
@@ -14,15 +14,16 @@ export function useDelivery() {
   });
 
   const { mutate: updateDeliveryConfig, isPending: isUpdatingConfig } = useMutation({
-    mutationFn: async (data: Omit<DeliveryConfig, "id" | "neighborhoods">) => {
+    mutationFn: async (data: DeliveryConfigInput) => {
       return deliveryService.updateDeliveryConfig(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["delivery-config"] });
       toast.success("Configuração de entrega atualizada com sucesso!");
     },
-    onError: () => {
-      toast.error("Erro ao atualizar configuração de entrega");
+    onError: (error: unknown) => {
+      const message = (error as { response?: { data?: { error?: string } } })?.response?.data?.error;
+      toast.error(message || "Erro ao atualizar configuração de entrega");
     },
   });
 
@@ -62,6 +63,7 @@ export function useDelivery() {
   return {
     deliveryConfig,
     neighborhoods: deliveryConfig?.neighborhoods || [],
+    distanceTiers: deliveryConfig?.distanceTiers || [],
     isLoading: isLoadingConfig,
     updateDeliveryConfig,
     createNeighborhood,
