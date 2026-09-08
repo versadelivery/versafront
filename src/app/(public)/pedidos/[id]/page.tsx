@@ -174,10 +174,14 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
     },
     address: {
       address: orderData.attributes.address?.data?.attributes?.address ?? '',
+      number: orderData.attributes.address?.data?.attributes?.number ?? '',
       neighborhood: (orderData.attributes.address?.data?.attributes?.shop_delivery_neighborhood as any)?.data?.attributes?.name
                     ?? orderData.attributes.address?.data?.attributes?.neighborhood ?? '',
       complement: orderData.attributes.address?.data?.attributes?.complement ?? '',
       reference: orderData.attributes.address?.data?.attributes?.reference ?? '',
+      distance_km: orderData.attributes.address?.data?.attributes?.distance_km
+        ? parseFloat(orderData.attributes.address.data.attributes.distance_km)
+        : null,
     },
     discount_amount: parseFloat((orderData.attributes as any).discount_amount ?? '0'),
     payment_adjustment_amount: parseFloat((orderData.attributes as any).payment_adjustment_amount ?? '0'),
@@ -353,7 +357,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                   <div className="flex items-start gap-2">
                     <MapPin className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
                     <div className="text-base space-y-0.5">
-                      <p className="font-medium text-foreground">{order.address.address}</p>
+                      <p className="font-medium text-foreground">{order.address.address}{order.address.number && `, ${order.address.number}`}</p>
                       {order.address.neighborhood && (
                         <p className="text-muted-foreground">{order.address.neighborhood}</p>
                       )}
@@ -362,6 +366,11 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                       )}
                       {order.address.reference && (
                         <p className="text-sm text-muted-foreground mt-1">Ref: {order.address.reference}</p>
+                      )}
+                      {order.address.distance_km !== null && (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {order.address.distance_km.toFixed(1).replace('.', ',')} km da loja
+                        </p>
                       )}
                     </div>
                   </div>

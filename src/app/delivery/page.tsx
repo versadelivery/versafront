@@ -3,7 +3,7 @@
 import { useDeliveryOrders } from '@/hooks/use-delivery-orders'
 import { useAuth } from '@/hooks/use-auth'
 import { DeliveryOrder } from '@/services/delivery-orders-service'
-import { MapPin, Phone, Package, LogOut, RefreshCw, Truck, CheckCircle2 } from 'lucide-react'
+import { MapPin, Phone, Package, LogOut, RefreshCw, Truck, CheckCircle2, Navigation } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 const statusLabel: Record<string, string> = {
@@ -61,10 +61,26 @@ function OrderCard({
         <div className="flex items-start gap-2 text-sm text-gray-600 bg-gray-50 rounded-lg p-2">
           <MapPin size={14} className="mt-0.5 shrink-0 text-gray-400" />
           <div>
-            <p>{addr.address}</p>
+            <p>{addr.address}{addr.number && `, ${addr.number}`}</p>
             {addr.neighborhood && <p className="text-xs text-gray-400">{addr.neighborhood}</p>}
             {addr.complement && <p className="text-xs text-gray-400">{addr.complement}</p>}
             {addr.reference && <p className="text-xs text-gray-400">Ref: {addr.reference}</p>}
+            {addr.distance_km && (
+              <p className="text-xs text-gray-400">
+                {Number(addr.distance_km).toFixed(1).replace('.', ',')} km da loja
+              </p>
+            )}
+            {addr.latitude && addr.longitude && (
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${addr.latitude},${addr.longitude}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-green-600 hover:underline"
+              >
+                <Navigation size={12} />
+                Traçar rota
+              </a>
+            )}
           </div>
         </div>
       )}

@@ -27,6 +27,7 @@ import favicon from "@/public/logo/favicon.svg"
 import logoInlineBlack from "@/public/logo/logo-inline-black.svg"
 import Link from 'next/link'
 import PublicLoading from '@/components/public-loading'
+import { KmDeliveryAddress, KmDeliveryState, emptyKmDeliveryState } from '@/components/map/km-delivery-address'
 
 type DeliveryOption = 'delivery' | 'pickup'
 
@@ -352,6 +353,7 @@ export default function CheckoutPage() {
   const [cartItems, setCartItems] = useState<CartItemWithExtras[]>([])
   const [isExpanded, setIsExpanded] = useState<Record<string, boolean>>({})
   const [selectedNeighborhood, setSelectedNeighborhood] = useState<string>('')
+  const [kmDelivery, setKmDelivery] = useState<KmDeliveryState>(emptyKmDeliveryState)
   const [order, setOrder] = useState<Order | null>(null)
   const [itemObservations, setItemObservations] = useState<Record<string, string>>({})
   const [guestName, setGuestName] = useState(() => {
@@ -418,6 +420,7 @@ export default function CheckoutPage() {
   const shopDeliveryConfig = shopData?.data?.attributes?.shop_delivery_config?.data?.attributes || null
   const shopPaymentConfig = shopData?.data?.attributes?.shop_payment_config?.data?.attributes || null
   const shop = shopData
+  const isKmDelivery = shopDeliveryConfig?.delivery_fee_kind === 'per_km'
 
   // Recalcular desconto do cupom quando totalPrice mudar
   useEffect(() => {
@@ -475,6 +478,20 @@ export default function CheckoutPage() {
           if (data.address.reference && !reference) setReference(data.address.reference)
           if (data.address.shop_delivery_neighborhood_id && !selectedNeighborhood) {
             setSelectedNeighborhood(String(data.address.shop_delivery_neighborhood_id))
+          }
+          // Cliente recorrente já tem uma localização confirmada: reaproveita o pin
+          // em vez de obrigar a refazer a busca no mapa.
+          if (data.address.latitude && data.address.longitude) {
+            setKmDelivery(prev => ({
+              ...prev,
+              address: prev.address || data.address.address || '',
+              number: prev.number || data.address.number || '',
+              neighborhood: prev.neighborhood || data.address.neighborhood || '',
+              complement: prev.complement || data.address.complement || '',
+              reference: prev.reference || data.address.reference || '',
+              latitude: prev.latitude ?? Number(data.address.latitude),
+              longitude: prev.longitude ?? Number(data.address.longitude),
+            }))
           }
         }
       })
@@ -586,7 +603,10 @@ export default function CheckoutPage() {
 
 
   const calculateDeliveryFee = () => {
-    if (deliveryOption !== 'delivery' || !selectedNeighborhood) return 0
+    if (deliveryOption !== 'delivery') return 0
+    // Valor apenas informativo: o backend recalcula a taxa na criação do pedido.
+    if (isKmDelivery) return kmDelivery.quote?.amount ?? 0
+    if (!selectedNeighborhood) return 0
     if (shopDeliveryConfig?.delivery_fee_kind === 'fixed') {
       const minFree = Number(shopDeliveryConfig.min_value_free_delivery) || 0
       if (minFree > 0 && totalPrice >= minFree) return 0
@@ -712,11 +732,24 @@ export default function CheckoutPage() {
       errors.guestPhone = 'Telefone inválido'
     }
     if (deliveryOption === 'delivery') {
-      if (!address.trim()) errors.address = 'Endereço é obrigatório'
-      if (shopDeliveryConfig?.delivery_fee_kind === 'per_neighborhood' && !selectedNeighborhood) {
-        errors.neighborhood = 'Selecione um bairro'
-      } else if (!selectedNeighborhood.trim()) {
-        errors.neighborhood = 'Bairro é obrigatório'
+      if (isKmDelivery) {
+        if (!kmDelivery.address.trim()) errors.address = 'Endereço é obrigatório'
+        if (!kmDelivery.number.trim()) errors.number = 'Número é obrigatório'
+        if (!kmDelivery.neighborhood.trim()) errors.neighborhood = 'Bairro é obrigatório'
+        if (kmDelivery.latitude === null || kmDelivery.longitude === null) {
+          errors.address = 'Confirme a localização da entrega no mapa'
+        } else if (kmDelivery.error) {
+          errors.address = kmDelivery.error
+        } else if (!kmDelivery.quote) {
+          errors.address = 'Aguarde o cálculo da taxa de entrega'
+        }
+      } else {
+        if (!address.trim()) errors.address = 'Endereço é obrigatório'
+        if (shopDeliveryConfig?.delivery_fee_kind === 'per_neighborhood' && !selectedNeighborhood) {
+          errors.neighborhood = 'Selecione um bairro'
+        } else if (!selectedNeighborhood.trim()) {
+          errors.neighborhood = 'Bairro é obrigatório'
+        }
       }
     }
     if (paymentMethod === 'cash' && changeFor) {
@@ -754,13 +787,23 @@ export default function CheckoutPage() {
         customer_name: guestName.trim(),
         customer_phone: guestPhone.replace(/\D/g, ''),
         ...(appliedCoupon && { coupon_code: appliedCoupon.code }),
-        address: {
-          address,
-          neighborhood: neighborhoodName,
-          complement,
-          reference,
-          ...(neighborhoodId && { shop_delivery_neighborhood_id: Number(neighborhoodId) })
-        },
+        address: isKmDelivery
+          ? {
+              address: kmDelivery.address,
+              number: kmDelivery.number,
+              neighborhood: kmDelivery.neighborhood,
+              complement: kmDelivery.complement,
+              reference: kmDelivery.reference,
+              latitude: kmDelivery.latitude ?? undefined,
+              longitude: kmDelivery.longitude ?? undefined
+            }
+          : {
+              address,
+              neighborhood: neighborhoodName,
+              complement,
+              reference,
+              ...(neighborhoodId && { shop_delivery_neighborhood_id: Number(neighborhoodId) })
+            },
         items: cartItems.map(item => ({
           catalog_item_id: Number(item.id),
           quantity: item.quantity,
@@ -874,8 +917,15 @@ export default function CheckoutPage() {
 
   const deliveryFeeDisplay = () => {
     if (deliveryOption !== 'delivery') return null
-    const fee = calculateDeliveryFee()
     if (shopDeliveryConfig?.delivery_fee_kind === 'to_be_agreed') return 'A combinar'
+    if (isKmDelivery) {
+      if (kmDelivery.isCalculating) return 'Calculando...'
+      if (!kmDelivery.quote) return null
+      return kmDelivery.quote.amount === 0
+        ? 'Grátis'
+        : `R$ ${kmDelivery.quote.amount.toFixed(2).replace('.', ',')}`
+    }
+    const fee = calculateDeliveryFee()
     if (fee === 0 && selectedNeighborhood) return 'Grátis'
     if (fee > 0) return `R$ ${fee.toFixed(2).replace('.', ',')}`
     return null
@@ -932,8 +982,14 @@ export default function CheckoutPage() {
     )
   }
 
+  const hasValidDeliveryAddress = deliveryOption === 'pickup'
+    || (isKmDelivery
+      ? !!kmDelivery.address.trim() && !!kmDelivery.number.trim() && !!kmDelivery.neighborhood.trim()
+        && !!kmDelivery.quote && !kmDelivery.isCalculating && !kmDelivery.error
+      : !!address.trim())
+
   const canSubmit = !isSubmitting && isShopOpen && !shopStatusLoading && !isBelowMinOrder && !noPaymentMethods &&
-    (deliveryOption === 'pickup' || !!address.trim()) &&
+    hasValidDeliveryAddress &&
     (guestName.trim().length >= 3 && guestPhone.replace(/\D/g, '').length >= 10)
 
   return (
@@ -1270,7 +1326,19 @@ export default function CheckoutPage() {
                   </button>
                 </div>
 
-                {deliveryOption === 'delivery' && (
+                {deliveryOption === 'delivery' && isKmDelivery && (
+                  <KmDeliveryAddress
+                    shopId={String(shop?.data.id)}
+                    storeLatitude={shopDeliveryConfig?.latitude != null ? Number(shopDeliveryConfig.latitude) : null}
+                    storeLongitude={shopDeliveryConfig?.longitude != null ? Number(shopDeliveryConfig.longitude) : null}
+                    itemsTotal={totalPrice}
+                    value={kmDelivery}
+                    onChange={setKmDelivery}
+                    fieldErrors={fieldErrors}
+                  />
+                )}
+
+                {deliveryOption === 'delivery' && !isKmDelivery && (
                   <div className="space-y-3">
                     <div>
                       <Label htmlFor="address" className="text-sm font-medium text-gray-700 mb-1.5 block">Endereço <span className="text-red-500">*</span></Label>
