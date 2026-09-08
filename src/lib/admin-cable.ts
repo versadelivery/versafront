@@ -2,6 +2,23 @@ import { createConsumer } from "@rails/actioncable"
 import { getToken } from "./auth"
 import { useEffect, useRef, useState, useCallback } from "react"
 
+export interface AdminOrderAddressAttributes {
+  id: number
+  address: string
+  number: string | null
+  complement: string | null
+  neighborhood: string | null
+  reference: string | null
+  latitude: string | null
+  longitude: string | null
+  store_latitude: string | null
+  store_longitude: string | null
+  distance_km: string | null
+  duration_minutes: number | null
+  delivery_fee_kind: string | null
+  shop_delivery_neighborhood: unknown
+}
+
 export interface AdminOrderData {
   id: string
   type: string
@@ -26,7 +43,7 @@ export interface AdminOrderData {
       data: any[]
     }
     address: {
-      data: any | null
+      data: { id: string; type: string; attributes: AdminOrderAddressAttributes } | null
     }
     shop: {
       data: {

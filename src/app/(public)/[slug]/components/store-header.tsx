@@ -56,6 +56,13 @@ export default function StoreHeader({ shop: initialShop }: StoreHeaderProps) {
       return `R$ ${Number(config.amount).toFixed(2).replace('.', ',')}`;
     }
     if (config.delivery_fee_kind === 'per_neighborhood') return 'Por bairro';
+    if (config.delivery_fee_kind === 'per_km') {
+      const tiers: Array<{ attributes: { amount: string } }> =
+        config.shop_delivery_distance_tiers?.data ?? [];
+      const amounts = tiers.map((tier) => Number(tier.attributes.amount));
+      if (amounts.length === 0) return 'A combinar';
+      return `A partir de R$ ${Math.min(...amounts).toFixed(2).replace('.', ',')}`;
+    }
     return 'A combinar';
   };
 
