@@ -1123,9 +1123,15 @@ export default function OrderManagement() {
                 : (rawNeighborhood as any)?.data?.attributes?.name || '';
               return {
                 address: addrAttrs.address,
+                number: addrAttrs.number ?? undefined,
                 neighborhood: addrAttrs.neighborhood || neighborhoodFallback,
-                complement: addrAttrs.complement,
-                reference: addrAttrs.reference,
+                complement: addrAttrs.complement ?? undefined,
+                reference: addrAttrs.reference ?? undefined,
+                latitude: addrAttrs.latitude != null ? Number(addrAttrs.latitude) : null,
+                longitude: addrAttrs.longitude != null ? Number(addrAttrs.longitude) : null,
+                distance_km: addrAttrs.distance_km != null ? Number(addrAttrs.distance_km) : null,
+                duration_minutes: addrAttrs.duration_minutes ?? null,
+                delivery_fee_kind: addrAttrs.delivery_fee_kind ?? null,
               };
             })() : undefined,
             items: selectedOrder.socketData.attributes.items.data.map(item => ({

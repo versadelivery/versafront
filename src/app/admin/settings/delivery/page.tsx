@@ -38,14 +38,25 @@ import {
   Info,
   Loader2,
   ShoppingCart,
+  Route,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { DeleteConfirmation } from "@/components/ui/delete-confirmation";
 import { Switch } from "@/components/ui/switch";
 import { useDelivery } from "@/hooks/use-delivery";
+import { useShop } from "@/hooks/use-shop";
 import { toast } from "sonner";
-import { deliveryService } from "@/services/delivery-service";
+import { deliveryService, DeliveryFeeKind } from "@/services/delivery-service";
 import { useQueryClient } from "@tanstack/react-query";
+import { formatCurrencyInput, formatCurrencyValue as formatApiValue, parseCurrencyInput } from "@/utils/format-price";
+import { StoreLocation, StoreLocationPicker } from "./components/store-location-picker";
+import {
+  DistanceTiersEditor,
+  TierDraft,
+  draftsToTiers,
+  tiersToDrafts,
+  validateDrafts,
+} from "./components/distance-tiers-editor";
 
 type Neighborhood = {
   id: string;
@@ -53,26 +64,6 @@ type Neighborhood = {
   value: number;
   hasFreeDelivery: boolean;
   freeDeliveryThreshold: number;
-};
-
-const formatCurrencyInput = (value: string): string => {
-  const digits = value.replace(/\D/g, '');
-  if (!digits) return '';
-  const number = parseInt(digits, 10) / 100;
-  return number.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-};
-
-const formatApiValue = (value: number): string => {
-  return value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-};
-
-const parseCurrencyInput = (value: string): number => {
-  if (!value) return 0;
-  return parseFloat(value.replace(/\./g, '').replace(',', '.')) || 0;
-};
-
-const blockInvalidChars = (e: React.KeyboardEvent<HTMLInputElement>) => {
-  if (['-', '+', 'e', 'E'].includes(e.key)) e.preventDefault();
 };
 
 export default function DeliverySettingsPage() {
@@ -87,6 +78,7 @@ export default function DeliverySettingsPage() {
     isUpdating
   } = useDelivery();
   const queryClient = useQueryClient();
+  const { shop } = useShop();
 
   const [deliveryType, setDeliveryType] = useState<string>("to_be_agreed");
   const [fixedFee, setFixedFee] = useState<string>("");
@@ -106,8 +98,14 @@ export default function DeliverySettingsPage() {
     neighborhoodName?: string;
     neighborhoodValue?: string;
     neighborhoodFreeDeliveryThreshold?: string;
+    storeLocation?: string;
+    distanceTiers?: string;
+    maxDeliveryDistance?: string;
   }>({});
   const [savedDeliveryType, setSavedDeliveryType] = useState<string>("to_be_agreed");
+  const [storeLocation, setStoreLocation] = useState<StoreLocation>({ latitude: null, longitude: null, address: "" });
+  const [tierDrafts, setTierDrafts] = useState<TierDraft[]>([]);
+  const [maxDeliveryDistance, setMaxDeliveryDistance] = useState<string>("");
 
   useEffect(() => {
     if (deliveryConfig) {
@@ -118,6 +116,15 @@ export default function DeliverySettingsPage() {
       setHasFreeDelivery(deliveryConfig.min_value_free_delivery !== null);
       setFreeDeliveryThreshold(deliveryConfig.min_value_free_delivery ? formatApiValue(deliveryConfig.min_value_free_delivery) : "");
       setMinOrderValue(deliveryConfig.minimum_order_value ? formatApiValue(deliveryConfig.minimum_order_value) : "");
+      setStoreLocation({
+        latitude: deliveryConfig.latitude,
+        longitude: deliveryConfig.longitude,
+        address: deliveryConfig.location_address || "",
+      });
+      setTierDrafts(tiersToDrafts(deliveryConfig.distanceTiers));
+      setMaxDeliveryDistance(
+        deliveryConfig.max_delivery_distance_km !== null ? String(deliveryConfig.max_delivery_distance_km) : ""
+      );
     }
   }, [deliveryConfig]);
 
@@ -250,20 +257,48 @@ export default function DeliverySettingsPage() {
       newErrors.minOrderValue = "Valor mínimo não pode ser negativo";
     }
 
-    if (hasFreeDelivery && parseCurrencyInput(freeDeliveryThreshold) <= parseCurrencyInput(fixedFee)) {
+    if (deliveryType === "fixed" && hasFreeDelivery && parseCurrencyInput(freeDeliveryThreshold) <= parseCurrencyInput(fixedFee)) {
       newErrors.freeDeliveryThreshold = "O valor mínimo para frete grátis deve ser maior que o valor da taxa";
+    }
+
+    if (deliveryType === "per_km" && hasFreeDelivery && parseCurrencyInput(freeDeliveryThreshold) <= 0) {
+      newErrors.freeDeliveryThreshold = "Informe o valor mínimo para a taxa gratuita";
+    }
+
+    const parsedMaxDistance = maxDeliveryDistance ? parseFloat(maxDeliveryDistance.replace(",", ".")) : null;
+
+    if (deliveryType === "per_km") {
+      if (storeLocation.latitude === null || storeLocation.longitude === null) {
+        newErrors.storeLocation = "Defina a localização da loja no mapa antes de salvar";
+      }
+
+      const tiersError = validateDrafts(tierDrafts);
+      if (tiersError) newErrors.distanceTiers = tiersError;
+
+      if (parsedMaxDistance !== null && (!Number.isFinite(parsedMaxDistance) || parsedMaxDistance <= 0)) {
+        newErrors.maxDeliveryDistance = "A distância máxima deve ser maior que zero";
+      }
     }
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      const firstError = Object.values(newErrors)[0];
+      if (firstError) toast.error(firstError);
       return;
     }
 
+    setErrors({});
+
     updateDeliveryConfig({
-      delivery_fee_kind: deliveryType as "to_be_agreed" | "fixed" | "per_neighborhood",
+      delivery_fee_kind: deliveryType as DeliveryFeeKind,
       amount: parseCurrencyInput(fixedFee),
       min_value_free_delivery: hasFreeDelivery ? parseCurrencyInput(freeDeliveryThreshold) : null,
-      minimum_order_value: parseCurrencyInput(minOrderValue)
+      minimum_order_value: parseCurrencyInput(minOrderValue),
+      latitude: storeLocation.latitude,
+      longitude: storeLocation.longitude,
+      location_address: storeLocation.address || null,
+      max_delivery_distance_km: deliveryType === "per_km" ? parsedMaxDistance : null,
+      ...(deliveryType === "per_km" && { distance_tiers: draftsToTiers(tierDrafts) })
     });
   };
 
@@ -274,6 +309,15 @@ export default function DeliverySettingsPage() {
       setHasFreeDelivery(deliveryConfig.min_value_free_delivery !== null);
       setFreeDeliveryThreshold(deliveryConfig.min_value_free_delivery ? formatApiValue(deliveryConfig.min_value_free_delivery) : "");
       setMinOrderValue(deliveryConfig.minimum_order_value ? formatApiValue(deliveryConfig.minimum_order_value) : "");
+      setStoreLocation({
+        latitude: deliveryConfig.latitude,
+        longitude: deliveryConfig.longitude,
+        address: deliveryConfig.location_address || "",
+      });
+      setTierDrafts(tiersToDrafts(deliveryConfig.distanceTiers));
+      setMaxDeliveryDistance(
+        deliveryConfig.max_delivery_distance_km !== null ? String(deliveryConfig.max_delivery_distance_km) : ""
+      );
     }
     setErrors({});
   };
@@ -375,6 +419,7 @@ export default function DeliverySettingsPage() {
                 <SelectContent className="rounded-md border-[#E5E2DD]">
                   <SelectItem value="fixed">Taxa de Entrega Fixa</SelectItem>
                   <SelectItem value="per_neighborhood">Taxa por Bairro</SelectItem>
+                  <SelectItem value="per_km">Taxa por Quilometragem</SelectItem>
                   <SelectItem value="to_be_agreed">Taxa a combinar</SelectItem>
                 </SelectContent>
               </Select>
@@ -481,6 +526,126 @@ export default function DeliverySettingsPage() {
                 <p className="text-sm text-muted-foreground">
                   O valor da entrega será combinado diretamente com o cliente.
                 </p>
+              </div>
+            ) : deliveryType === "per_km" ? (
+              <div className="space-y-8">
+                <div className="space-y-4">
+                  <h3 className="font-tomato text-sm font-semibold text-gray-900 flex items-center gap-2">
+                    <MapPin className="w-3.5 h-3.5 text-primary" />
+                    Localização da loja
+                  </h3>
+                  {shop?.id ? (
+                    <StoreLocationPicker
+                      shopId={shop.id}
+                      value={storeLocation}
+                      onChange={(location) => {
+                        setStoreLocation(location);
+                        if (errors.storeLocation) setErrors(prev => ({ ...prev, storeLocation: "" }));
+                      }}
+                      error={errors.storeLocation}
+                    />
+                  ) : (
+                    <div className="flex h-[320px] items-center justify-center rounded-md border border-[#E5E2DD] bg-[#FAF9F7]">
+                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="font-tomato text-sm font-semibold text-gray-900 flex items-center gap-2">
+                    <Route className="w-3.5 h-3.5 text-primary" />
+                    Faixas de quilometragem
+                  </h3>
+                  <DistanceTiersEditor
+                    drafts={tierDrafts}
+                    onChange={(drafts) => {
+                      setTierDrafts(drafts);
+                      if (errors.distanceTiers) setErrors(prev => ({ ...prev, distanceTiers: "" }));
+                    }}
+                    error={errors.distanceTiers}
+                  />
+                </div>
+
+                <div className="space-y-1.5 max-w-xs">
+                  <Label htmlFor="maxDeliveryDistance" className="text-sm font-medium flex items-center gap-2">
+                    <Truck className="w-3.5 h-3.5" />
+                    Distância máxima de atendimento
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="maxDeliveryDistance"
+                      type="text"
+                      inputMode="decimal"
+                      value={maxDeliveryDistance}
+                      onChange={(e) => {
+                        setMaxDeliveryDistance(e.target.value.replace(/[^\d.,]/g, ""));
+                        if (errors.maxDeliveryDistance) setErrors(prev => ({ ...prev, maxDeliveryDistance: "" }));
+                      }}
+                      placeholder="Sem limite"
+                      className={`h-10 text-sm border-[#E5E2DD] rounded-md bg-white pr-10 ${errors.maxDeliveryDistance ? "border-red-400" : ""}`}
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">km</span>
+                  </div>
+                  {errors.maxDeliveryDistance && (
+                    <p className="text-sm text-red-600 flex items-center gap-1">
+                      <AlertCircle className="w-3.5 h-3.5" />
+                      {errors.maxDeliveryDistance}
+                    </p>
+                  )}
+                  <p className="text-sm text-muted-foreground flex items-center gap-1">
+                    <Info className="w-3.5 h-3.5 flex-shrink-0" />
+                    Endereços além desta distância recebem um aviso de fora da área de entrega. Deixe em branco para não limitar.
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-[#FAF9F7] rounded-md border border-[#E5E2DD]">
+                    <div className="flex items-center gap-3">
+                      <Gift className="w-4 h-4 text-primary flex-shrink-0" />
+                      <div className="space-y-0.5">
+                        <Label htmlFor="freeDeliveryKm" className="text-sm font-medium">Taxa Gratuita</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Ative para zerar a taxa a partir de um valor mínimo, independente da distância
+                        </p>
+                      </div>
+                    </div>
+                    <Switch
+                      id="freeDeliveryKm"
+                      checked={hasFreeDelivery}
+                      onCheckedChange={setHasFreeDelivery}
+                    />
+                  </div>
+
+                  {hasFreeDelivery && (
+                    <div className="space-y-1.5 max-w-md pl-1">
+                      <Label htmlFor="freeDeliveryThresholdKm" className="text-sm font-medium flex items-center gap-2">
+                        <Package className="w-3.5 h-3.5" />
+                        Valor Mínimo para Taxa Gratuita
+                      </Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">R$</span>
+                        <Input
+                          id="freeDeliveryThresholdKm"
+                          type="text"
+                          inputMode="decimal"
+                          value={freeDeliveryThreshold}
+                          onChange={(e) => {
+                            setFreeDeliveryThreshold(formatCurrencyInput(e.target.value));
+                            if (errors.freeDeliveryThreshold) setErrors(prev => ({ ...prev, freeDeliveryThreshold: "" }));
+                          }}
+                          placeholder="Ex: 50,00"
+                          className={`h-10 text-sm border-[#E5E2DD] rounded-md bg-white pl-10 ${errors.freeDeliveryThreshold ? "border-red-400" : ""}`}
+                        />
+                      </div>
+                      {errors.freeDeliveryThreshold && (
+                        <p className="text-sm text-red-600 flex items-center gap-1">
+                          <AlertCircle className="w-3.5 h-3.5" />
+                          {errors.freeDeliveryThreshold}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             ) : (
               <div className="space-y-5">

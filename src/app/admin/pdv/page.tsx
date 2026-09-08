@@ -22,6 +22,7 @@ import { useAdminActionCable } from "@/lib/admin-cable";
 import { useShop } from "@/hooks/use-shop";
 import { usePayment } from "@/app/admin/settings/payment/usePayment";
 import { useDelivery } from "@/hooks/use-delivery";
+import { KmDeliveryAddress, KmDeliveryState, emptyKmDeliveryState } from "@/components/map/km-delivery-address";
 import { ItemOptionsDialog } from "./item-options-dialog";
 import { tableService, Table, TableSession, CloseTableSessionPayload } from "@/app/admin/mesas/services/table-service";
 import CloseTableModal from "@/app/admin/mesas/components/close-table-modal";
@@ -80,6 +81,7 @@ export default function PDVPage() {
   const [openSessions, setOpenSessions] = useState<TableSession[]>([]);
   const [selectedTableSessionId, setSelectedTableSessionId] = useState<string | null>(null);
   const [selectedNeighborhoodId, setSelectedNeighborhoodId] = useState<string>("");
+  const [kmDelivery, setKmDelivery] = useState<KmDeliveryState>(emptyKmDeliveryState);
   const { shop } = useShop();
   const shopId = shop?.id;
   const { paymentMethodsData } = usePayment();
@@ -151,10 +153,13 @@ export default function PDVPage() {
   const cartTotal = cart.reduce((t, item) => t + item.totalPrice, 0);
 
   const isPerNeighborhood = deliveryConfig?.delivery_fee_kind === "per_neighborhood";
+  const isPerKm = deliveryConfig?.delivery_fee_kind === "per_km";
   const neighborhoods = deliveryConfig?.neighborhoods ?? [];
 
   const calculateDeliveryFee = (): number => {
     if (orderType !== "delivery") return 0;
+    // Valor apenas informativo: o backend recalcula a taxa ao criar o pedido.
+    if (isPerKm) return kmDelivery.quote?.amount ?? 0;
     if (deliveryConfig?.delivery_fee_kind === "fixed") {
       const minFree = deliveryConfig.min_value_free_delivery ?? 0;
       if (minFree > 0 && cartTotal >= minFree) return 0;
@@ -443,16 +448,35 @@ export default function PDVPage() {
       }
 
       if (orderType === "delivery") {
-        if (!customerInfo.address.trim()) {
-          errors.address = "Endereço é obrigatório";
-        }
-        if (isPerNeighborhood) {
-          if (!selectedNeighborhoodId) {
-            errors.neighborhood = "Selecione um bairro";
+        if (isPerKm) {
+          if (!kmDelivery.address.trim()) {
+            errors.address = "Endereço é obrigatório";
+          }
+          if (!kmDelivery.number.trim()) {
+            errors.number = "Número é obrigatório";
+          }
+          if (!kmDelivery.neighborhood.trim()) {
+            errors.neighborhood = "Bairro é obrigatório";
+          }
+          if (kmDelivery.latitude === null || kmDelivery.longitude === null) {
+            errors.address = "Confirme a localização da entrega no mapa";
+          } else if (kmDelivery.error) {
+            errors.address = kmDelivery.error;
+          } else if (!kmDelivery.quote) {
+            errors.address = "Aguarde o cálculo da taxa de entrega";
           }
         } else {
-          if (!customerInfo.neighborhood.trim()) {
-            errors.neighborhood = "Bairro é obrigatório";
+          if (!customerInfo.address.trim()) {
+            errors.address = "Endereço é obrigatório";
+          }
+          if (isPerNeighborhood) {
+            if (!selectedNeighborhoodId) {
+              errors.neighborhood = "Selecione um bairro";
+            }
+          } else {
+            if (!customerInfo.neighborhood.trim()) {
+              errors.neighborhood = "Bairro é obrigatório";
+            }
           }
         }
       }
@@ -502,17 +526,27 @@ export default function PDVPage() {
           customer_phone: isTableOrder ? undefined : customerInfo.phone.replace(/\D/g, "") || undefined,
           ...(appliedCoupon && { coupon_code: appliedCoupon.code }),
           ...(selectedTableSessionId && { table_session_id: Number(selectedTableSessionId) }),
-          address: {
-            address: isTableOrder ? "" : customerInfo.address,
-            neighborhood: isTableOrder ? "" : (isPerNeighborhood
-              ? (neighborhoods.find((n) => n.id === selectedNeighborhoodId)?.name ?? "")
-              : customerInfo.neighborhood),
-            complement: isTableOrder ? "" : customerInfo.complement,
-            reference: isTableOrder ? "" : customerInfo.reference,
-            ...(isPerNeighborhood && selectedNeighborhoodId && !isTableOrder && {
-              shop_delivery_neighborhood_id: Number(selectedNeighborhoodId),
-            }),
-          },
+          address: isPerKm && !isTableOrder
+            ? {
+                address: kmDelivery.address,
+                number: kmDelivery.number,
+                neighborhood: kmDelivery.neighborhood,
+                complement: kmDelivery.complement,
+                reference: kmDelivery.reference,
+                latitude: kmDelivery.latitude ?? undefined,
+                longitude: kmDelivery.longitude ?? undefined,
+              }
+            : {
+                address: isTableOrder ? "" : customerInfo.address,
+                neighborhood: isTableOrder ? "" : (isPerNeighborhood
+                  ? (neighborhoods.find((n) => n.id === selectedNeighborhoodId)?.name ?? "")
+                  : customerInfo.neighborhood),
+                complement: isTableOrder ? "" : customerInfo.complement,
+                reference: isTableOrder ? "" : customerInfo.reference,
+                ...(isPerNeighborhood && selectedNeighborhoodId && !isTableOrder && {
+                  shop_delivery_neighborhood_id: Number(selectedNeighborhoodId),
+                }),
+              },
           items: cart.map((item) => ({
             catalog_item_id: parseInt(item.id.split("-")[0]),
             quantity: item.quantity,
@@ -542,6 +576,7 @@ export default function PDVPage() {
         if (!isTableOrder) {
           setCustomerInfo({ name: "", phone: "", address: "", neighborhood: "", complement: "", reference: "" });
           setSelectedNeighborhoodId("");
+          setKmDelivery(emptyKmDeliveryState);
           setSelectedTableSessionId(null);
         }
         // Refresh tables and sessions after order creation
@@ -1049,6 +1084,18 @@ export default function PDVPage() {
                         <span className="font-medium">Grátis</span>
                       </div>
                     )}
+                    {orderType === "delivery" && isPerKm && deliveryFee === 0 && kmDelivery.quote && (
+                      <div className="flex justify-between items-center text-sm text-green-600">
+                        <span>Taxa de entrega:</span>
+                        <span className="font-medium">Grátis</span>
+                      </div>
+                    )}
+                    {orderType === "delivery" && isPerKm && kmDelivery.isCalculating && (
+                      <div className="flex justify-between items-center text-sm text-muted-foreground">
+                        <span>Taxa de entrega:</span>
+                        <span className="font-medium">Calculando...</span>
+                      </div>
+                    )}
                     {paymentAdjustment !== 0 && (
                       <div className={`flex justify-between items-center text-sm ${paymentAdjustment < 0 ? "text-green-600" : "text-orange-600"}`}>
                         <span>{paymentAdjustment < 0 ? "Desc." : "Acresc."} {getPaymentMethodLabel(paymentMethod)}:</span>
@@ -1288,7 +1335,19 @@ export default function PDVPage() {
                 </div>
               </div>
 
-              {orderType === "delivery" && (
+              {orderType === "delivery" && isPerKm && shopId && (
+                <KmDeliveryAddress
+                  shopId={shopId}
+                  storeLatitude={deliveryConfig?.latitude ?? null}
+                  storeLongitude={deliveryConfig?.longitude ?? null}
+                  itemsTotal={cartTotal}
+                  value={kmDelivery}
+                  onChange={setKmDelivery}
+                  fieldErrors={formErrors}
+                />
+              )}
+
+              {orderType === "delivery" && !isPerKm && (
                 <>
                   <div className="space-y-1.5">
                     <Label htmlFor="address" className="text-sm">Endereço <span className="text-red-500">*</span></Label>

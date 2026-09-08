@@ -239,9 +239,10 @@ export default function OrderCard({
               <p><strong>Nome:</strong> ${order.customerName}</p>
               <p><strong>Telefone:</strong> ${order.socketData?.attributes?.customer?.data?.attributes?.cellphone || 'N/A'}</p>
               ${order.deliveryType === 'delivery' && order.socketData?.attributes?.address?.data ? `
-                <p><strong>Endereço:</strong> ${order.socketData.attributes.address.data.attributes.address}</p>
+                <p><strong>Endereço:</strong> ${order.socketData.attributes.address.data.attributes.address}${order.socketData.attributes.address.data.attributes.number ? `, ${order.socketData.attributes.address.data.attributes.number}` : ''}</p>
                 <p><strong>Bairro:</strong> ${order.socketData.attributes.address.data.attributes.neighborhood}</p>
                 ${order.socketData.attributes.address.data.attributes.complement ? `<p><strong>Complemento:</strong> ${order.socketData.attributes.address.data.attributes.complement}</p>` : ''}
+                ${order.socketData.attributes.address.data.attributes.distance_km != null ? `<p><strong>Distância:</strong> ${Number(order.socketData.attributes.address.data.attributes.distance_km).toFixed(1).replace('.', ',')} km</p>` : ''}
               ` : '<p><strong>Tipo:</strong> Retirada na loja</p>'}
             </div>
             
@@ -297,9 +298,11 @@ Nome: ${order.customerName}
 Telefone: ${order.socketData?.attributes?.customer?.data?.attributes?.cellphone || 'N/A'}
 ${order.deliveryType === 'delivery' && order.socketData?.attributes?.address?.data ? `
 📍 *ENDEREÇO*
-${order.socketData.attributes.address.data.attributes.address}
+${order.socketData.attributes.address.data.attributes.address}${order.socketData.attributes.address.data.attributes.number ? `, ${order.socketData.attributes.address.data.attributes.number}` : ''}
 Bairro: ${order.socketData.attributes.address.data.attributes.neighborhood}
 ${order.socketData.attributes.address.data.attributes.complement ? `Complemento: ${order.socketData.attributes.address.data.attributes.complement}` : ''}
+${order.socketData.attributes.address.data.attributes.distance_km != null ? `Distância: ${Number(order.socketData.attributes.address.data.attributes.distance_km).toFixed(1).replace('.', ',')} km` : ''}
+${order.socketData.attributes.address.data.attributes.latitude != null ? `Localização: https://www.google.com/maps/search/?api=1&query=${order.socketData.attributes.address.data.attributes.latitude},${order.socketData.attributes.address.data.attributes.longitude}` : ''}
 ` : '*TIPO: Retirada na loja*'}
 
 🛒 *ITENS*
@@ -465,11 +468,20 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '', orde
               <div className="flex items-start gap-1.5 text-xs text-gray-700">
                 <MapPin className="w-3 h-3 text-gray-700 mt-0.5 flex-shrink-0" />
                 <div className="min-w-0">
-                  <div className="truncate">{address.address}</div>
+                  <div className="truncate">
+                    {address.address}
+                    {address.number && `, ${address.number}`}
+                  </div>
                   {address.complement && (
                     <div className="text-gray-700 truncate">{address.complement}</div>
                   )}
                   <div className="text-gray-700 truncate">{address.neighborhood}</div>
+                  {address.distance_km != null && (
+                    <div className="text-gray-700">
+                      {Number(address.distance_km).toFixed(1).replace('.', ',')} km
+                      {address.duration_minutes != null && ` · ~${address.duration_minutes} min`}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
