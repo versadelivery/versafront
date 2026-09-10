@@ -503,4 +503,14 @@ export const adminSections: AdminSection[] = [
     keywords: ["fluxo", "pedidos", "status", "pipeline", "colunas", "etapas", "order flow"],
     group: "Configurações",
   },
+  {
+    id: "indicacoes",
+    title: "Programa de Indicações",
+    description: "Indique outros lojistas e ganhe 12% de comissão sobre as mensalidades",
+    href: "/admin/indicacoes",
+    icon: UserPlus,
+    iconBgColor: "bg-emerald-500",
+    keywords: ["indicacao", "comissao", "revendedor", "revenda", "indicar", "referral", "ganhar"],
+    group: "Páginas",
+  },
 ]
