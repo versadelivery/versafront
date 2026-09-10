@@ -5,6 +5,7 @@ const dashboardSectionIds = [
   "catalogo",
   "clientes",
   "financeiro",
+  "indicacoes",
   "settings",
   "marketing",
   "relatorios",
