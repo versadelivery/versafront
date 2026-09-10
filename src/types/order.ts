@@ -1,9 +1,12 @@
 export interface OrderAddress {
   address: string;
+  number?: string;
   neighborhood: string;
   complement?: string;
   reference?: string;
   shop_delivery_neighborhood_id?: number;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface OrderItem {
@@ -36,10 +39,13 @@ export interface CreateOrderRequest {
     table_session_id?: number;
     address: {
       address: string;
+      number?: string;
       neighborhood: string;
       complement?: string;
       reference?: string;
       shop_delivery_neighborhood_id?: number;
+      latitude?: number;
+      longitude?: number;
     };
     items: OrderItem[];
   };
@@ -149,10 +155,16 @@ export interface ActionCableOrderData {
         attributes: {
           id: number
           address: string
+          number: string | null
           complement: string
           neighborhood: string
           reference: string
           shop_delivery_neighborhood: string | null
+          latitude: string | null
+          longitude: string | null
+          distance_km: string | null
+          duration_minutes: number | null
+          delivery_fee_kind: string | null
         }
       }
     }
@@ -299,10 +311,16 @@ export interface CustomerOrder {
         attributes: {
           id: number;
           address: string;
+          number: string | null;
           complement: string;
           neighborhood: string;
           reference: string;
           shop_delivery_neighborhood: string | null;
+          latitude: string | null;
+          longitude: string | null;
+          distance_km: string | null;
+          duration_minutes: number | null;
+          delivery_fee_kind: string | null;
         };
       } | null;
     };

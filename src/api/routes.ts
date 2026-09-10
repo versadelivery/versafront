@@ -20,6 +20,11 @@ export const API_ENDPOINTS = {
 
   // Delivery person
   DELIVERY_ORDERS: "/delivery/orders",
+
+  // Geocoding e taxa por quilometragem
+  GEOCODING_AUTOCOMPLETE: "/geocoding/autocomplete",
+  GEOCODING_REVERSE: "/geocoding/reverse",
+  DELIVERY_QUOTES: "/delivery_quotes",
   
   // Order Flow Config
   ORDER_FLOW_CONFIG: "/shop_order_flow_configs",
