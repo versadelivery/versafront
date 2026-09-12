@@ -13,6 +13,23 @@ import {
 
 const faqItems = [
   {
+    question: "Quais são as faixas de preço?",
+    answer: (
+      <>
+        <p>A mensalidade é definida pelo faturamento mensal da loja na plataforma:</p>
+        <ul className="mt-3 list-disc space-y-1 pl-5">
+          <li>Até R$ 799,99: grátis.</li>
+          <li>De R$ 800,00 a R$ 2.999,99: R$ 39,00/mês.</li>
+          <li>De R$ 3.000,00 a R$ 7.999,99: R$ 79,00/mês.</li>
+          <li>De R$ 8.000,00 a R$ 19.999,99: R$ 129,00/mês.</li>
+          <li>De R$ 20.000,00 a R$ 49.999,99: R$ 199,00/mês.</li>
+          <li>De R$ 50.000,00 a R$ 119.999,99: R$ 279,00/mês.</li>
+          <li>A partir de R$ 120.000,00: R$ 349,00/mês.</li>
+        </ul>
+      </>
+    ),
+  },
+  {
     question: "Como o Versa se adapta ao meu negócio?",
     answer:
       "O Versa foi feito pra ser flexível. Você personaliza produtos, métodos de entrega, horários, áreas de cobertura e muito mais. A plataforma se adapta ao seu modelo, não o contrário.",
@@ -35,7 +52,7 @@ const faqItems = [
   {
     question: "Tem comissão sobre as vendas?",
     answer:
-      "Não. O Versa funciona com planos mensais fixos, sem comissão sobre vendas. Todo o faturamento vai direto pra você.",
+      "Não. A VersaDelivery cobra uma mensalidade conforme a faixa de faturamento, sem comissão percentual sobre as vendas.",
   },
 ];
 
@@ -59,7 +76,7 @@ const FAQ = () => {
             Perguntas frequentes
           </h2>
           <p className="text-lg text-[#474747]">
-            O que você precisa saber sobre o Versa Delivery
+            O que você precisa saber sobre o VersaDelivery
           </p>
         </motion.div>
 

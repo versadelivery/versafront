@@ -11,6 +11,15 @@ import Footer from "@/components/landing/footer";
 export default function Home() {
   return (
     <main className="min-h-screen bg-[#FFFDF6]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "VersaDelivery",
+          url: "https://www.versadelivery.com.br/",
+        }) }}
+      />
       <Header />
       <Hero />
       <About />
