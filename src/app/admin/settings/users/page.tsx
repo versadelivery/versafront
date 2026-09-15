@@ -23,6 +23,17 @@ import {
 import Link from "next/link";
 import UserModal from "./components/user-modal";
 import { useUsers } from "./hooks/useUsers";
+import { getPresetByPermissions } from "@/lib/permissions";
+
+const permissionProfileLabels: Record<string, string> = {
+  garcom: "Garçom",
+  cozinheiro: "Cozinheiro",
+  caixa: "Caixa",
+  atendimento: "Atendimento",
+  estoque: "Estoque",
+  gerente: "Gerente",
+  custom: "Personalizado",
+};
 
 export default function UsersManagementPage() {
   const {
@@ -62,6 +73,17 @@ export default function UsersManagementPage() {
     return labels[role] || role;
   };
 
+  const getPermissionProfile = (user: any) => {
+    const permissions = user.attributes.permissions || [];
+    const profile = user.attributes.permission_profile || getPresetByPermissions(permissions);
+    return permissionProfileLabels[profile] || "Personalizado";
+  };
+
+  const getPermissionCount = (user: any) => {
+    const permissions = user.attributes.permissions || [];
+    return permissions.length;
+  };
+
   const handleCreateUser = () => {
     setSelectedUser(null);
     setIsEditing(false);
@@ -97,7 +119,6 @@ export default function UsersManagementPage() {
 
   return (
     <div className="min-h-screen bg-[#FAF9F7]">
-      {/* Header admin padrao */}
       <div className="bg-white border-b border-[#E5E2DD]">
         <div className="max-w-[1920px] mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-16">
@@ -123,11 +144,9 @@ export default function UsersManagementPage() {
         </div>
       </div>
 
-      {/* Conteudo */}
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* SectionCard: Usuarios */}
         <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
-          <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center justify-between">
+          <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-primary" />
               <h2 className="font-tomato text-base font-semibold text-gray-900">Usuários</h2>
@@ -144,7 +163,6 @@ export default function UsersManagementPage() {
             </div>
           </div>
 
-          {/* Tabela */}
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -153,13 +171,14 @@ export default function UsersManagementPage() {
                   <TableHead className="font-medium text-sm text-muted-foreground py-3">E-mail</TableHead>
                   <TableHead className="font-medium text-sm text-muted-foreground py-3">Nome</TableHead>
                   <TableHead className="font-medium text-sm text-muted-foreground py-3">Tipo</TableHead>
+                  <TableHead className="font-medium text-sm text-muted-foreground py-3">Acesso</TableHead>
                   <TableHead className="font-medium text-sm text-muted-foreground py-3 text-center">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredUsers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
+                    <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
                       <div className="flex flex-col items-center gap-2">
                         <Users className="h-8 w-8 text-gray-300" />
                         <p className="text-sm">Nenhum usuário encontrado</p>
@@ -185,6 +204,16 @@ export default function UsersManagementPage() {
                         <span className={`inline-flex items-center px-2.5 py-1 rounded-md border text-sm font-medium ${getRoleBadgeStyle(user.attributes.role)}`}>
                           {getRoleLabel(user.attributes.role)}
                         </span>
+                      </TableCell>
+                      <TableCell className="py-3.5">
+                        <div className="flex flex-col gap-1">
+                          <Badge variant="outline" className="w-fit border-[#E5E2DD] bg-[#FAF9F7] text-xs font-medium">
+                            {getPermissionProfile(user)}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {getPermissionCount(user)} permissões
+                          </span>
+                        </div>
                       </TableCell>
                       <TableCell className="py-3.5 text-center">
                         <div className="flex items-center justify-center gap-2">
@@ -215,7 +244,6 @@ export default function UsersManagementPage() {
             </Table>
           </div>
 
-          {/* Rodape */}
           {filteredUsers.length > 0 && (
             <div className="px-5 py-3 border-t border-[#E5E2DD] flex items-center justify-between text-sm text-muted-foreground">
               <span>Mostrando {filteredUsers.length} de {users.length} usuários</span>
@@ -225,7 +253,6 @@ export default function UsersManagementPage() {
         </div>
       </div>
 
-      {/* Modal de usuario */}
       <UserModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

@@ -523,4 +523,14 @@ export const adminSections: AdminSection[] = [
     keywords: ["nfe", "nota fiscal", "historico", "danfe", "xml", "emitidas"],
     group: "Páginas",
   },
+  {
+    id: "indicacoes",
+    title: "Programa de Indicações",
+    description: "Indique outros lojistas e ganhe 12% de comissão sobre as mensalidades",
+    href: "/admin/indicacoes",
+    icon: UserPlus,
+    iconBgColor: "bg-emerald-500",
+    keywords: ["indicacao", "comissao", "revendedor", "revenda", "indicar", "referral", "ganhar"],
+    group: "Páginas",
+  },
 ]

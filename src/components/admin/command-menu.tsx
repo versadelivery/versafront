@@ -3,14 +3,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react"
 import { useRouter } from "next/navigation"
 import { Search } from "lucide-react"
-import { adminSections, type AdminSection } from "@/lib/admin-sections"
+import { type AdminSection } from "@/lib/admin-sections"
+import { getVisibleAdminSections } from "@/lib/permissions"
 import { cn } from "@/lib/utils"
 
 function normalize(text: string): string {
   return text
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[̀-ͯ]/g, "")
 }
 
 function matchesQuery(section: AdminSection, query: string): boolean {
@@ -30,7 +31,11 @@ function useIsMac() {
   return useSyncExternalStore(subscribe, getIsMac, () => true)
 }
 
-export function CommandMenu() {
+interface CommandMenuProps {
+  permissions?: string[] | null
+}
+
+export function CommandMenu({ permissions }: CommandMenuProps) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState("")
   const [selectedIndex, setSelectedIndex] = useState(0)
@@ -40,10 +45,12 @@ export function CommandMenu() {
   const modKey = isMac ? "⌘" : "Ctrl+"
   const router = useRouter()
 
+  const visibleSections = useMemo(() => getVisibleAdminSections(permissions), [permissions])
+
   const filtered = useMemo(() => {
-    if (!query.trim()) return adminSections
-    return adminSections.filter((s) => matchesQuery(s, query))
-  }, [query])
+    if (!query.trim()) return visibleSections
+    return visibleSections.filter((s) => matchesQuery(s, query))
+  }, [query, visibleSections])
 
   const grouped = useMemo(() => {
     const map = new Map<string, AdminSection[]>()
@@ -55,7 +62,7 @@ export function CommandMenu() {
     return map
   }, [filtered])
 
-  const flatList = useMemo(() => filtered, [filtered])
+  const flatList = filtered
 
   const openMenu = useCallback(() => {
     setOpen(true)
@@ -77,7 +84,6 @@ export function CommandMenu() {
     [closeMenu, router]
   )
 
-  // Atalho global ⌘K / Ctrl+K
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
@@ -94,14 +100,12 @@ export function CommandMenu() {
     return () => document.removeEventListener("keydown", handleKeyDown)
   }, [])
 
-  // Focus no input ao abrir
   useEffect(() => {
     if (open) {
       requestAnimationFrame(() => inputRef.current?.focus())
     }
   }, [open])
 
-  // Scroll para o item selecionado
   useEffect(() => {
     if (!listRef.current) return
     const items = listRef.current.querySelectorAll("[data-command-item]")
@@ -109,12 +113,19 @@ export function CommandMenu() {
     item?.scrollIntoView({ block: "nearest" })
   }, [selectedIndex])
 
-  // Reset index quando a query muda
   useEffect(() => {
     setSelectedIndex(0)
   }, [query])
 
   function handleKeyDown(e: React.KeyboardEvent) {
+    if (!flatList.length) {
+      if (e.key === "Escape") {
+        e.preventDefault()
+        closeMenu()
+      }
+      return
+    }
+
     if (e.key === "ArrowDown") {
       e.preventDefault()
       setSelectedIndex((prev) => (prev + 1) % flatList.length)
@@ -147,19 +158,16 @@ export function CommandMenu() {
 
   return (
     <>
-      {/* Overlay */}
       <div
         className="fixed inset-0 z-50 bg-black/50 animate-in fade-in-0 duration-150"
         onClick={closeMenu}
       />
 
-      {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] px-4">
         <div
           className="w-full max-w-lg bg-white rounded-md border border-[#E5E2DD] animate-in fade-in-0 zoom-in-95 duration-150 overflow-hidden"
           onKeyDown={handleKeyDown}
         >
-          {/* Input */}
           <div className="flex items-center gap-3 px-4 border-b border-[#E5E2DD]">
             <Search className="h-4.5 w-4.5 text-muted-foreground shrink-0" />
             <input
@@ -174,7 +182,6 @@ export function CommandMenu() {
             </kbd>
           </div>
 
-          {/* Resultados */}
           <div ref={listRef} className="max-h-[320px] overflow-y-auto p-2">
             {flatList.length === 0 ? (
               <div className="py-8 text-center text-sm text-muted-foreground">

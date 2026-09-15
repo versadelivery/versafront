@@ -1,20 +1,18 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { LogOut, User } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/hooks/use-auth";
-
-
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useShop } from "@/hooks/use-shop";
 import Image from "next/image";
+import Link from "next/link";
 import logo_inline from "@/public/logo/logo-inline-black.svg";
 import favicon from "@/public/logo/favicon.svg";
-import Link from "next/link";
-import { useEffect, useState, useRef } from "react";
 import { useAdminActionCable, AdminOrderData } from "@/lib/admin-cable";
+import { useAuth } from "@/hooks/use-auth";
 import { useRestaurantSounds } from "@/hooks/use-restaurant-sounds";
+import { useShop } from "@/hooks/use-shop";
 import { SoundSettings } from "@/components/admin/sound-settings";
 import { CommandMenu } from "@/components/admin/command-menu";
 import { fixImageUrl } from "@/utils/image-url";
@@ -28,7 +26,7 @@ import { toast } from "sonner";
 
 export function Header() {
   const router = useRouter();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const { shop } = useShop();
   const { subscribeToAdminOrders } = useAdminActionCable();
   const { newOrder, updateSettings } = useRestaurantSounds();
@@ -121,7 +119,7 @@ export function Header() {
           </div>
 
           <div className="flex items-center gap-5">
-            <CommandMenu />
+            <CommandMenu permissions={user?.permissions} />
             <div className="hidden md:block">
               <SoundSettings onSettingsChange={updateSettings} />
             </div>

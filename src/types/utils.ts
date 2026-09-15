@@ -144,6 +144,8 @@ export interface UserData {
   email: string;
   name: string;
   role: string;
+  permissions?: string[];
+  permission_profile?: string;
   shop: {
     id: string;
     type: string;
