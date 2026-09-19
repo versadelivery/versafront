@@ -1,5 +1,5 @@
 import api from "@/api/config"
-import { API_ENDPOINTS } from "@/api/routes"
+import { API_ENDPOINTS, API_BASE_URL } from "@/api/routes"
 import { LoginData, RegisterData } from "@/types/utils"
 
 export const loginUser = async (data: LoginData) => {
@@ -16,6 +16,33 @@ export const loginUser = async (data: LoginData) => {
       // O serializer aninha o shop em attributes.shop.data
       shop: userData.attributes.shop?.data
     }
+  }
+}
+
+export const impersonateShop = async (shopId: string, token: string) => {
+  const response = await fetch(`${API_BASE_URL}/super_admins/shops/${shopId}/impersonate`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({}))
+    throw new Error(errorBody.error || "Erro ao impersonar merchant")
+  }
+
+  const payload = await response.json()
+  const userData = payload.data
+
+  return {
+    token: payload.token,
+    user: {
+      ...userData.attributes,
+      id: userData.id,
+      shop: userData.attributes.shop?.data,
+    },
   }
 }
 
