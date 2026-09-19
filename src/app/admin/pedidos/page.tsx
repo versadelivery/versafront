@@ -22,7 +22,9 @@ import {
   ArrowLeft,
   Search,
   Filter,
-  X
+  X,
+  UtensilsCrossed,
+  Users
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
@@ -39,7 +41,7 @@ import { useAdminActionCable, AdminOrderData } from '@/lib/admin-cable';
 import OrderCard from '@/components/admin/order-card';
 import { useRestaurantSounds } from '@/hooks/use-restaurant-sounds';
 import { useShop } from '@/hooks/use-shop';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 // Controle de som foi movido para o Header global da administração
 
 interface Order {
@@ -253,8 +255,6 @@ export default function OrderManagement() {
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
-
-  const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = subscribeToAdminOrders((socketOrders: AdminOrderData[]) => {
@@ -711,14 +711,34 @@ export default function OrderManagement() {
               </h1>
             </div>
 
-            <Button
-              onClick={() => window.location.href = '/admin/pdv'}
-              className="flex items-center gap-2 bg-primary hover:bg-primary/90 rounded-md h-9 text-sm"
-            >
-              <SquarePen className="h-4 w-4" />
-              <span className="hidden sm:inline">Novo Pedido</span>
-              <span className="sm:hidden">PDV</span>
-            </Button>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/admin/mesas"
+                aria-label="Gerenciar mesas"
+                title="Gerenciar mesas"
+                className="inline-flex h-9 items-center gap-2 rounded-md border border-[#E5E2DD] px-3 text-sm font-medium text-gray-700 transition-colors hover:border-primary/50 hover:text-primary"
+              >
+                <UtensilsCrossed className="h-4 w-4" />
+                <span className="hidden sm:inline">Mesas</span>
+              </Link>
+              <Link
+                href="/admin/settings/users"
+                aria-label="Gerenciar garçons"
+                title="Gerenciar garçons"
+                className="inline-flex h-9 items-center gap-2 rounded-md border border-[#E5E2DD] px-3 text-sm font-medium text-gray-700 transition-colors hover:border-primary/50 hover:text-primary"
+              >
+                <Users className="h-4 w-4" />
+                <span className="hidden sm:inline">Garçons</span>
+              </Link>
+              <Button
+                onClick={() => window.location.href = '/admin/pdv'}
+                className="flex items-center gap-2 bg-primary hover:bg-primary/90 rounded-md h-9 text-sm"
+              >
+                <SquarePen className="h-4 w-4" />
+                <span className="hidden sm:inline">Novo Pedido</span>
+                <span className="sm:hidden">PDV</span>
+              </Button>
+            </div>
           </div>
         </div>
       </div>
