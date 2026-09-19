@@ -12,11 +12,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Camera, Info, Loader2, Power } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 import { useCatalogGroup } from "@/hooks/useCatalogGroup";
 import { DeleteConfirmation } from "@/components/ui/delete-confirmation";
 import Image from "next/image";
 import { fixImageUrl } from "@/utils/image-url";
+import { useCatalogCategories } from "@/hooks/useCatalogCategories";
 import {
   Tooltip,
   TooltipContent,
@@ -48,6 +50,8 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [active, setActive] = useState(true);
+  const [categoryId, setCategoryId] = useState("none");
+  const { categories } = useCatalogCategories();
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -69,6 +73,7 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
       setPriority(attrs.priority?.toString() || "1");
       setImagePreview(attrs.image_url || null);
       setActive(attrs.active ?? true);
+      setCategoryId(attrs.catalog_category_id?.toString() || "none");
 
     }
   }, [isOpen, catalogGroup, isEditing]);
@@ -80,6 +85,7 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
     setImageFile(null);
     setImagePreview(null);
     setActive(true);
+    setCategoryId("none");
 
     setErrors({});
   };
@@ -151,6 +157,7 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
     formData.append("description", description.trim());
     formData.append("priority", priority || "1");
     formData.append("active", active.toString());
+    formData.append("catalog_category_id", categoryId === "none" ? "" : categoryId);
 
 
     if (imageFile) {
@@ -262,7 +269,7 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
                   <label className="text-sm font-medium text-foreground mb-1.5 block">
                     Descrição *
                   </label>
-                  <Textarea
+          <Textarea
                     value={description}
                     onChange={(e) => {
                       setDescription(e.target.value);
@@ -273,7 +280,20 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
                     maxLength={200}
                     disabled={isLoading}
                     className={errors.description ? "border-destructive" : ""}
-                  />
+          />
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-gray-700">Categoria</label>
+            <Select value={categoryId} onValueChange={setCategoryId}>
+              <SelectTrigger><SelectValue placeholder="Sem categoria" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Sem categoria</SelectItem>
+                {categories.map((category: any) => (
+                  <SelectItem key={category.id} value={String(category.id)}>{category.attributes.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
                   {errors.description && (
                     <p className="text-xs text-destructive mt-1">{errors.description}</p>
                   )}

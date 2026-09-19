@@ -42,6 +42,7 @@ export interface CatalogGroupAttributes {
   name: string;
   description?: string;
   priority?: number;
+  catalog_category_id?: string | number | null;
   image_url?: string;
   items: {
     data: CatalogItem[];

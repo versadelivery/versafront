@@ -9,12 +9,14 @@ import { useCatalogGroup } from "@/hooks/useCatalogGroup";
 import { useCatalogReorder } from "@/hooks/useCatalogReorder";
 import { ItemCard } from "@/components/admin/catalog/item-card";
 import { SortableItemCard } from "@/components/admin/catalog/sortable-item-card";
-import { ArrowLeft, Edit2, GripVertical, LayoutGrid, LayoutList, Loader2, Package, Plus } from "lucide-react";
+import { ArrowLeft, Edit2, GripVertical, LayoutGrid, LayoutList, Loader2, Package, Plus, Tags, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { DeleteConfirmation } from "@/components/ui/delete-confirmation";
 import { ComplementManagement } from "@/components/admin/catalog/complement-management";
 import { IngredientManagement } from "@/components/admin/catalog/ingredient-management";
+import { CategoryModal } from "@/components/admin/catalog/category-modal";
+import { useCatalogCategories } from "@/hooks/useCatalogCategories";
 import {
   DndContext,
   closestCenter,
@@ -91,11 +93,14 @@ function CatalogPage() {
   const [tab, setTab] = useState<"catalog" | "complements" | "ingredients">("catalog");
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<CatalogFiltersState>(DEFAULT_FILTERS);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<any | null>(null);
 
   const [adminLayout, setAdminLayout] = useState<'grid' | 'list'>('grid');
 
   const { isLoading, catalog, deleteCatalogGroup, isDeletingGroup, toggleCatalogGroupActive, toggleCatalogItemActive } = useCatalogGroup();
   const { reorderGroups, reorderItems } = useCatalogReorder();
+  const { categories, deleteCategory } = useCatalogCategories();
 
   const groups = catalog?.data || [];
   const hasActiveFilters = filters.status !== "all" || filters.tags.length > 0 || filters.itemType !== "all" || filters.discountOnly || filters.outOfStockIngredientOnly;
@@ -143,6 +148,11 @@ function CatalogPage() {
   const handleCloseGroupModal = () => {
     setIsGroupModalOpen(false);
     setEditingGroup(null);
+  };
+
+  const handleEditCategory = (category: any) => {
+    setEditingCategory(category);
+    setIsCategoryModalOpen(true);
   };
 
   const handleGroupDragEnd = (event: DragEndEvent) => {
@@ -373,6 +383,34 @@ function CatalogPage() {
                 onOutOfStockIngredientOnlyChange={handleOutOfStockIngredientOnlyChange}
                 onClearFilters={handleClearFilters}
               />
+
+              <div className="mb-4 rounded-md border border-[#E5E2DD] bg-white p-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <Tags className="h-4 w-4 text-primary" />
+                    <div>
+                      <p className="text-sm font-semibold">Categorias</p>
+                      <p className="text-xs text-muted-foreground">Organize grupos e itens por categoria. Categorias não possuem imagem.</p>
+                    </div>
+                  </div>
+                  <Button size="sm" variant="outline" className="gap-2" onClick={() => { setEditingCategory(null); setIsCategoryModalOpen(true); }}>
+                    <Plus className="h-4 w-4" /> Nova categoria
+                  </Button>
+                </div>
+                {categories.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {categories.map((category: any) => (
+                      <div key={category.id} className="flex items-center gap-2 rounded-md border border-[#E5E2DD] px-3 py-1.5 text-sm">
+                        <span>{category.attributes.name}</span>
+                        <button type="button" onClick={() => handleEditCategory(category)} aria-label={`Editar ${category.attributes.name}`}><Edit2 className="h-3.5 w-3.5 text-muted-foreground" /></button>
+                        <button type="button" onClick={() => window.confirm(`Remover a categoria ${category.attributes.name}?`) && deleteCategory(category.id)} aria-label={`Remover ${category.attributes.name}`}><Trash2 className="h-3.5 w-3.5 text-destructive" /></button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <CategoryModal open={isCategoryModalOpen} onOpenChange={(open) => { setIsCategoryModalOpen(open); if (!open) setEditingCategory(null); }} category={editingCategory} />
 
               <GroupModal
                 isOpen={isGroupModalOpen}

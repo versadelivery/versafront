@@ -97,6 +97,28 @@ export default function ClientStoreContent({ shop: initialShop }: ClientStoreCon
       return pa - pb;
     });
 
+  const rawCategories: any = shop?.data.attributes.catalog_categories;
+  const normalizedCategories: any[] = Array.isArray(rawCategories)
+    ? rawCategories
+    : (Array.isArray(rawCategories?.data) ? rawCategories.data : []);
+  const categorySections = normalizedCategories
+    .map((category: any) => {
+      const categoryGroups = groups
+        .filter((group: any) => String(group.attributes?.catalog_category_id || '') === String(category.id))
+        .map((group: any) => ({ ...group, __categoryName: category.attributes.name, __categoryId: category.id }));
+      return { ...category, attributes: { ...category.attributes, groups: categoryGroups } };
+    })
+    .filter((category: any) => category.attributes.groups.length > 0);
+  const uncategorizedGroups = normalizedCategories.length > 0
+    ? groups.filter((group: any) => !group.attributes?.catalog_category_id).map((group: any) => ({ ...group, __categoryName: 'Outros', __categoryId: 'uncategorized' }))
+    : [];
+  const displayGroups = normalizedCategories.length > 0
+    ? [...categorySections.flatMap((category: any) => category.attributes.groups), ...uncategorizedGroups]
+    : groups;
+  const navigationCategories = normalizedCategories.length > 0
+    ? [...categorySections, ...(uncategorizedGroups.length > 0 ? [{ id: 'uncategorized', attributes: { name: 'Outros' } }] : [])]
+    : displayGroups;
+
   // Deep link: ?item=<id> abre o modal do produto
   const itemIdParam = searchParams.get('item');
 
@@ -145,7 +167,7 @@ export default function ClientStoreContent({ shop: initialShop }: ClientStoreCon
           <div className="flex flex-col lg:flex-row lg:items-center lg:gap-8 py-3 lg:py-2.5">
             <div className="order-2 lg:order-1 lg:flex-1 min-w-0 mt-2.5 lg:mt-0 overflow-x-hidden">
               <CategoryNavigation
-                categories={groups}
+                categories={navigationCategories}
                 activeCategory={activeCategory}
                 onChange={setActiveCategory}
                 accentColor={accentColor}
@@ -182,7 +204,7 @@ export default function ClientStoreContent({ shop: initialShop }: ClientStoreCon
         <ReviewsSection slug={slug} accentColor={accentColor} />
 
         <ProductGrid
-          categories={groups}
+          categories={displayGroups}
           activeCategory={activeCategory}
           searchQuery={searchQuery}
           onClearSearch={handleClearSearch}
