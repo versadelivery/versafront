@@ -715,9 +715,9 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="rounded-lg sm:max-w-[640px] p-0 bg-white max-h-[90vh] flex flex-col overflow-hidden">
+        <DialogContent className="w-[calc(100vw-1rem)] max-w-[640px] rounded-lg p-0 bg-white max-h-[calc(100dvh-1rem)] flex flex-col overflow-hidden">
         {/* Header */}
-        <DialogHeader className="px-6 pt-6 pb-4 border-b border-gray-100">
+        <DialogHeader className="px-4 sm:px-6 pt-5 sm:pt-6 pb-4 border-b border-gray-100">
           <DialogTitle className="font-tomato text-lg font-semibold">Editar Item</DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
             Edite as informações do item
@@ -725,7 +725,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
         </DialogHeader>
 
         {/* Formulário */}
-        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+        <div className="flex-1 min-w-0 overflow-y-auto px-4 sm:px-6 py-5 space-y-5">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Dados do Item</p>
 
           <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">
