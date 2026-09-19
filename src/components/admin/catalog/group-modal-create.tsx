@@ -157,7 +157,7 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
     formData.append("description", description.trim());
     formData.append("priority", priority || "1");
     formData.append("active", active.toString());
-    if (categoryId !== "none") formData.append("catalog_category_id", categoryId);
+    formData.append("catalog_category_id", categoryId === "none" ? "" : categoryId);
 
 
     if (imageFile) {
