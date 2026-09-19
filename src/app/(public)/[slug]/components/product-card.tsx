@@ -73,16 +73,16 @@ const ProductCard = memo(function ProductCard({ item, index, layout = 'grid', gr
   if (layout === 'list') {
     return wrapWithModal(
           <div
-            className={`group relative rounded-md hover:shadow-sm transition-all duration-200 flex flex-row h-[112px] sm:h-[144px] overflow-hidden ${isUnavailable ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+            className={`group relative rounded-md hover:shadow-sm transition-all duration-200 flex flex-row min-h-[112px] sm:min-h-[144px] overflow-hidden ${isUnavailable ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
             style={{
               backgroundColor: cardBg,
               border: `1px solid ${theme.border}`,
             }}
           >
             {/* Content left */}
-            <div className="p-3 sm:p-4 flex flex-col flex-1 min-w-0 justify-center">
+            <div className="p-3 sm:p-4 flex flex-col flex-1 min-w-0 justify-start">
               <h3
-                className="font-medium text-sm sm:text-base leading-snug line-clamp-2 mb-1"
+                  className="font-medium text-sm sm:text-base leading-snug line-clamp-2 mb-1 break-words"
                 style={{ color: theme.text }}
               >
                 {attributes.name}
@@ -98,7 +98,7 @@ const ProductCard = memo(function ProductCard({ item, index, layout = 'grid', gr
               )}
 
               {hasCustomization && (
-                <p className="text-[11px] sm:text-xs text-primary font-medium mb-2">Personalizavel</p>
+                <p className="text-[11px] sm:text-xs text-primary font-medium mb-2">Personalizável</p>
               )}
 
               <div>
@@ -120,7 +120,7 @@ const ProductCard = memo(function ProductCard({ item, index, layout = 'grid', gr
             </div>
 
             {/* Image right */}
-            <div className="relative w-28 sm:w-36 h-28 sm:h-36 flex-shrink-0 overflow-hidden" style={{ backgroundColor: theme.subtleBg }}>
+            <div className="relative w-28 sm:w-36 min-h-[112px] sm:min-h-[144px] self-stretch flex-shrink-0 overflow-hidden" style={{ backgroundColor: theme.subtleBg }}>
               {hasImage ? (
                 <img
                   src={attributes.image_url!}
