@@ -48,7 +48,9 @@ export default function ProductGrid({ categories, activeCategory, searchQuery, o
     });
   };
 
-  const filteredCategories = categories.map(group => ({
+  const filteredCategories = categories
+    .filter((group: any) => activeCategory === 'all' || group.__categoryName === activeCategory || group.attributes?.name === activeCategory)
+    .map(group => ({
     ...group,
     items: normalizeItems(group.attributes.items).filter((item: CatalogItem) =>
       isItemActiveToday(item) && (
@@ -96,15 +98,18 @@ export default function ProductGrid({ categories, activeCategory, searchQuery, o
 
   return (
     <div className="space-y-10">
-      {filteredCategories.map((group) => {
+      {filteredCategories.map((group, index) => {
         const isCollapsed = collapsedGroups.has(group.id);
 
         return (
-          <section
-            key={group.id}
-            id={group.attributes.name.toLowerCase().replace(/\s+/g, '-')}
-            className="scroll-mt-40"
-          >
+          <div key={group.id}>
+            {(group as any).__categoryName && (index === 0 || (filteredCategories[index - 1] as any).__categoryName !== (group as any).__categoryName) && (
+              <h2 className="font-tomato text-xl font-bold mb-4" style={{ color: bgTheme.text }}>{(group as any).__categoryName}</h2>
+            )}
+            <section
+              id={group.attributes.name.toLowerCase().replace(/\s+/g, '-')}
+              className="scroll-mt-40"
+            >
             <div
               className="flex items-center justify-between mb-5 cursor-pointer select-none"
               onClick={() => toggleGroup(group.id)}
@@ -155,7 +160,8 @@ export default function ProductGrid({ categories, activeCategory, searchQuery, o
                 </motion.div>
               )}
             </AnimatePresence>
-          </section>
+            </section>
+          </div>
         );
       })}
     </div>

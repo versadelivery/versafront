@@ -136,6 +136,19 @@ export interface ShopResponse {
           }
         }>
       }
+      catalog_categories?: {
+        data: Array<{
+          id: string
+          type: string
+          attributes: {
+            name: string
+            description?: string | null
+            priority: number
+            active: boolean
+            groups: { data: Array<any> }
+          }
+        }>
+      }
     }
   }
 }
@@ -206,4 +219,4 @@ export interface Item {
     }
   }
   isFavorite?: boolean
-} 
+}
