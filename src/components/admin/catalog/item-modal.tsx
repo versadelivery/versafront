@@ -536,9 +536,9 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="rounded-lg sm:max-w-[640px] p-0 bg-white max-h-[90vh] flex flex-col overflow-hidden">
+      <DialogContent className="w-[calc(100vw-1rem)] max-w-[640px] rounded-lg p-0 bg-white max-h-[calc(100dvh-1rem)] flex flex-col overflow-hidden">
         {/* Header */}
-        <DialogHeader className="px-6 pt-6 pb-4 border-b border-gray-100">
+        <DialogHeader className="px-4 sm:px-6 pt-5 sm:pt-6 pb-4 border-b border-gray-100">
           <DialogTitle className="font-tomato text-lg font-semibold">Novo Item</DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
             Adicione um novo item ao catálogo
@@ -546,7 +546,7 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
         </DialogHeader>
 
         {/* Formulário */}
-        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+        <div className="flex-1 min-w-0 overflow-y-auto px-4 sm:px-6 py-5 space-y-5">
           {/* SEÇÃO: DADOS BÁSICOS */}
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Dados do Item</p>
 
