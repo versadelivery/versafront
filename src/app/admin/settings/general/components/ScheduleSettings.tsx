@@ -16,41 +16,15 @@ interface TimeInputProps {
 }
 
 function TimeInput({ id, value, onChange, disabled }: TimeInputProps) {
-  const [hours, minutes] = (value || "00:00").split(":").map((v) => v.padStart(2, "0"));
-
-  const handleHours = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = e.target.value.replace(/\D/g, "").slice(0, 2);
-    const clamped = Math.min(23, parseInt(raw || "0", 10)).toString().padStart(2, "0");
-    onChange(`${clamped}:${minutes}`);
-  };
-
-  const handleMinutes = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = e.target.value.replace(/\D/g, "").slice(0, 2);
-    const clamped = Math.min(59, parseInt(raw || "0", 10)).toString().padStart(2, "0");
-    onChange(`${hours}:${clamped}`);
-  };
-
   return (
-    <div className="flex items-center h-9 rounded-md border border-[#E5E2DD] bg-white px-2 gap-0.5 w-full focus-within:ring-1 focus-within:ring-ring">
+    <div className="flex items-center h-9 rounded-md border border-[#E5E2DD] bg-white px-2 w-full focus-within:ring-1 focus-within:ring-ring">
       <input
         id={id}
-        type="text"
-        inputMode="numeric"
-        value={hours}
-        onChange={handleHours}
+        type="time"
+        value={value || "00:00"}
+        onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className="w-6 text-center text-sm bg-transparent outline-none tabular-nums disabled:opacity-50"
-        maxLength={2}
-      />
-      <span className="text-sm text-muted-foreground select-none">:</span>
-      <input
-        type="text"
-        inputMode="numeric"
-        value={minutes}
-        onChange={handleMinutes}
-        disabled={disabled}
-        className="w-6 text-center text-sm bg-transparent outline-none tabular-nums disabled:opacity-50"
-        maxLength={2}
+        className="w-full min-w-0 text-center text-sm bg-transparent outline-none tabular-nums disabled:opacity-50"
       />
     </div>
   );
@@ -102,14 +76,14 @@ function ScheduleRow({
   const dayLabel = DAY_LABELS[dayKey];
 
   return (
-    <div className="grid grid-cols-12 gap-4 items-center py-3">
+    <div className="grid grid-cols-2 sm:grid-cols-12 gap-3 sm:gap-4 items-center py-3">
       {/* Dia da semana */}
-      <div className="col-span-2">
+      <div className="col-span-1 sm:col-span-2 min-w-0">
         <span className="text-sm font-medium text-gray-900">{dayLabel}</span>
       </div>
 
       {/* Switch Aberto/Fechado */}
-      <div className="col-span-2 flex items-center gap-2">
+      <div className="col-span-1 sm:col-span-2 flex items-center gap-2 min-w-0">
         <Switch
           checked={daySchedule.active}
           onCheckedChange={(checked) => onToggleActive(dayKey, checked)}
@@ -122,7 +96,7 @@ function ScheduleRow({
       </div>
 
       {/* Horário de Abertura */}
-      <div className="col-span-2">
+      <div className="col-span-1 sm:col-span-2 min-w-0">
         <Label htmlFor={`${dayKey}-open`} className="sr-only">
           Abertura
         </Label>
@@ -135,7 +109,7 @@ function ScheduleRow({
       </div>
 
       {/* Horário de Fechamento */}
-      <div className="col-span-2">
+      <div className="col-span-1 sm:col-span-2 min-w-0">
         <Label htmlFor={`${dayKey}-close`} className="sr-only">
           Fechamento
         </Label>
@@ -148,7 +122,7 @@ function ScheduleRow({
       </div>
 
       {/* Botões de Copiar */}
-      <div className="col-span-4 flex gap-2">
+      <div className="col-span-2 sm:col-span-4 flex flex-wrap gap-2 min-w-0">
         {/* Copiar para todos - só aparece no primeiro dia */}
         {isFirstDay && (
           <Button
@@ -281,6 +255,33 @@ export default function ScheduleSettings() {
   const handleSave = async () => {
     if (!localSchedule || !hasChanges) return;
 
+    for (const day of DAYS_ORDER) {
+      const daySchedule = localSchedule[day];
+      if (!daySchedule.active) continue;
+
+      const open = daySchedule.open.match(/^(\d{2}):(\d{2})$/);
+      const close = daySchedule.close.match(/^(\d{2}):(\d{2})$/);
+      const openMinutes = open ? Number(open[1]) * 60 + Number(open[2]) : -1;
+      const closeMinutes = close ? Number(close[1]) * 60 + Number(close[2]) : -1;
+
+      if (
+        !open ||
+        !close ||
+        Number(open[1]) > 23 ||
+        Number(open[2]) > 59 ||
+        Number(close[1]) > 23 ||
+        Number(close[2]) > 59
+      ) {
+        setSaveError(`Informe horários válidos para ${DAY_LABELS[day]}.`);
+        return;
+      }
+
+      if (closeMinutes <= openMinutes) {
+        setSaveError(`O fechamento deve ser depois da abertura em ${DAY_LABELS[day]}.`);
+        return;
+      }
+    }
+
     try {
       setSaveError(null);
       await updateSchedule(localSchedule);
@@ -296,23 +297,23 @@ export default function ScheduleSettings() {
   if (!localSchedule) {
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-12 gap-4 items-center py-2 border-b border-[#E5E2DD]">
-          <Skeleton className="h-4 col-span-2" />
-          <Skeleton className="h-4 col-span-2" />
-          <Skeleton className="h-4 col-span-2" />
-          <Skeleton className="h-4 col-span-2" />
-          <Skeleton className="h-4 col-span-4" />
+        <div className="grid grid-cols-2 sm:grid-cols-12 gap-3 sm:gap-4 items-center py-2 border-b border-[#E5E2DD]">
+          <Skeleton className="h-4 col-span-1 sm:col-span-2" />
+          <Skeleton className="h-4 col-span-1 sm:col-span-2" />
+          <Skeleton className="h-4 col-span-1 sm:col-span-2" />
+          <Skeleton className="h-4 col-span-1 sm:col-span-2" />
+          <Skeleton className="h-4 col-span-2 sm:col-span-4" />
         </div>
         {DAYS_ORDER.map((day) => (
-          <div key={day} className="grid grid-cols-12 gap-4 items-center py-3">
-            <Skeleton className="h-4 col-span-2" />
-            <div className="col-span-2 flex items-center gap-2">
+          <div key={day} className="grid grid-cols-2 sm:grid-cols-12 gap-3 sm:gap-4 items-center py-3">
+            <Skeleton className="h-4 col-span-1 sm:col-span-2" />
+            <div className="col-span-1 sm:col-span-2 flex items-center gap-2">
               <Skeleton className="h-6 w-10 rounded-full" />
               <Skeleton className="h-4 w-12" />
             </div>
-            <Skeleton className="h-9 col-span-2 rounded-md" />
-            <Skeleton className="h-9 col-span-2 rounded-md" />
-            <div className="col-span-4 flex gap-2">
+            <Skeleton className="h-9 col-span-1 sm:col-span-2 rounded-md" />
+            <Skeleton className="h-9 col-span-1 sm:col-span-2 rounded-md" />
+            <div className="col-span-2 sm:col-span-4 flex gap-2">
               <Skeleton className="h-8 w-24 rounded-md" />
             </div>
           </div>
@@ -340,20 +341,20 @@ export default function ScheduleSettings() {
       )}
 
       {/* Cabeçalho da tabela */}
-      <div className="grid grid-cols-12 gap-4 items-center py-2 border-b border-[#E5E2DD]">
-        <div className="col-span-2">
+      <div className="grid grid-cols-2 sm:grid-cols-12 gap-3 sm:gap-4 items-center py-2 border-b border-[#E5E2DD]">
+        <div className="col-span-1 sm:col-span-2">
           <span className="text-sm font-medium text-muted-foreground">Dia</span>
         </div>
-        <div className="col-span-2">
+        <div className="col-span-1 sm:col-span-2">
           <span className="text-sm font-medium text-muted-foreground">Status</span>
         </div>
-        <div className="col-span-2">
+        <div className="col-span-1 sm:col-span-2">
           <span className="text-sm font-medium text-muted-foreground">Abertura</span>
         </div>
-        <div className="col-span-2">
+        <div className="col-span-1 sm:col-span-2">
           <span className="text-sm font-medium text-muted-foreground">Fechamento</span>
         </div>
-        <div className="col-span-4">
+        <div className="col-span-2 sm:col-span-4">
           <span className="text-sm font-medium text-muted-foreground">Ações</span>
         </div>
       </div>
