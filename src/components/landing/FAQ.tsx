@@ -52,7 +52,12 @@ const faqItems = [
   {
     question: "Tem comissão sobre as vendas?",
     answer:
-      "Não. A VersaDelivery cobra uma mensalidade conforme a faixa de faturamento, sem comissão percentual sobre as vendas.",
+      "Não há comissão sobre as vendas da sua própria loja. A VersaDelivery cobra uma mensalidade conforme a faixa de faturamento.",
+  },
+  {
+    question: "Como funciona o programa de indicações?",
+    answer:
+      "Lojistas podem indicar outras lojas usando um link exclusivo. Quando uma loja indicada paga a mensalidade, o indicador recebe 12% desse valor como comissão. Essa comissão é do programa de indicações e não é uma taxa sobre as vendas.",
   },
 ];
 

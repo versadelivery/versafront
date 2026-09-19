@@ -11,6 +11,7 @@ const dashboardSectionIds = [
   "relatorios",
   "suporte",
   "caixa",
+  "indicacoes",
 ]
 
 export const dashboardCards = dashboardSectionIds
