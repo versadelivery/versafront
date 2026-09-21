@@ -7,42 +7,57 @@ export type ShopFetchResult =
   | { status: 'error' };
 
 export async function fetchShopBySlugServer(slug: string): Promise<ShopFetchResult> {
-  try {
-    // Use internal Docker network URL for server-side, fallback to public URL
-    const apiUrl = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  const isDev = process.env.NODE_ENV === 'development';
+  const apiUrls = Array.from(new Set([
+    process.env.INTERNAL_API_URL,
+    process.env.NEXT_PUBLIC_API_URL,
+    'http://localhost:3001',
+  ].filter(Boolean))) as string[];
 
-    const isDev = process.env.NODE_ENV === 'development';
+  let lastError: unknown;
 
-    const baseOptions: RequestInit & { next?: { revalidate?: number; tags?: string[] } } = {
-      headers: {
-        "Content-Type": "application/json",
-        "ngrok-skip-browser-warning": "true",
-      },
-    };
+  for (const apiUrl of apiUrls) {
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        const response = await fetch(`${apiUrl}/customers/shops/${slug}`, {
+          headers: {
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true",
+          },
+          signal: AbortSignal.timeout(10_000),
+          ...(isDev
+            ? { cache: 'no-store' as const }
+            : { next: { revalidate: 60, tags: [`shop-${slug}`] } })
+        });
 
-    const response = await fetch(`${apiUrl}/customers/shops/${slug}?_t=${Date.now()}`, {
-      ...baseOptions,
-      ...(isDev
-        ? { cache: 'no-store' as const }
-        : { next: { revalidate: 60, tags: [`shop-${slug}`] } })
-    });
+        if (response.ok) {
+          const data = await response.json();
+          return { status: 'success', data };
+        }
 
-    if (!response.ok) {
-      if (response.status === 404) {
-        return { status: 'not_found' };
+        if (response.status === 403) {
+          return { status: 'unavailable' };
+        }
+
+        // A private Railway URL can become stale while the public URL is still
+        // healthy. Try the next configured URL before treating the shop as absent.
+        if (response.status === 404 && apiUrl === apiUrls[apiUrls.length - 1]) {
+          return { status: 'not_found' };
+        }
+
+        lastError = new Error(`Failed to fetch shop from ${apiUrl}: ${response.status}`);
+      } catch (error) {
+        lastError = error;
       }
-      if (response.status === 403) {
-        return { status: 'unavailable' };
+
+      if (attempt === 0) {
+        await new Promise((resolve) => setTimeout(resolve, 250));
       }
-      throw new Error(`Failed to fetch shop: ${response.status}`);
     }
-
-    const data = await response.json();
-    return { status: 'success', data };
-  } catch (error) {
-    console.error('Error fetching shop by slug:', error);
-    return { status: 'error' };
   }
+
+  console.error('Error fetching shop by slug:', lastError);
+  return { status: 'error' };
 }
 
 // Function to get all shop slugs for static generation (optional)
