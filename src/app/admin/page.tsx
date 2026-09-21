@@ -8,8 +8,20 @@ import bannerImg from "../../../public/img/hero-admin.jpg";
 import { useShop } from "@/hooks/use-shop";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Info } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useState } from "react";
 import { useSchedule, WeekSchedule } from "@/app/admin/settings/general/hooks/useSchedule";
+
+const PRICING_TIERS = [
+  ['Verde', 'Até R$ 799,99', 'Grátis'],
+  ['Amarelo', 'R$ 800 a R$ 2.999,99', 'R$ 29/mês'],
+  ['Azul', 'R$ 3.000 a R$ 7.999,99', 'R$ 59/mês'],
+  ['Branco', 'R$ 8.000 a R$ 19.999,99', 'R$ 99/mês'],
+  ['Prata', 'R$ 20.000 a R$ 49.999,99', 'R$ 149/mês'],
+  ['Ouro', 'R$ 50.000 a R$ 119.999,99', 'R$ 219/mês'],
+  ['Black', 'A partir de R$ 120.000', 'R$ 299/mês'],
+] as const;
 
 export default function AdminDashboard() {
   const { shop, isLoading } = useShop();
@@ -138,6 +150,31 @@ export default function AdminDashboard() {
                   {shop.billing_status.amount === 0
                     ? 'Grátis'
                     : `R$ ${shop.billing_status.amount}/mês`}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        aria-label="Ver tabela de faixas de preço"
+                        className="ml-auto inline-flex h-5 w-5 items-center justify-center rounded-full text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <Info className="h-3.5 w-3.5" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" align="end" className="bg-background text-foreground border border-border p-3 shadow-lg">
+                      <div className="w-[280px]">
+                        <p className="font-semibold text-sm mb-2">Faixas de mensalidade</p>
+                        <div className="space-y-1.5">
+                          {PRICING_TIERS.map(([name, revenue, price]) => (
+                            <div key={name} className="grid grid-cols-[64px_1fr_auto] gap-2 text-[11px] items-center">
+                              <span className="font-medium">{name}</span>
+                              <span className="text-muted-foreground">{revenue}</span>
+                              <span className="font-medium whitespace-nowrap">{price}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
                 </p>
               )}
             </div>
