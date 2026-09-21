@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 
 export default function SupportPage() {
-  const phoneNumber = "(11) 99999-9999";
+  const phoneNumber = "+55 (85) 99152-0090";
 
   const faqs = [
     {

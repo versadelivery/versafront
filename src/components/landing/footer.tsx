@@ -56,11 +56,11 @@ const Footer = () => {
             </p>
             <div className="space-y-3">
               <a
-                href="tel:+5511999999999"
+                href="tel:+5585991520090"
                 className="flex items-center gap-2 text-[#858585] hover:text-white transition-colors text-sm"
               >
                 <Phone className="w-4 h-4 text-[#009246]" />
-                +55 (11) 9999-9999
+                +55 (85) 99152-0090
               </a>
               <a
                 href="mailto:contato@versadelivery.com.br"
