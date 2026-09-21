@@ -1,6 +1,7 @@
 import { UICatalogItem } from "./catalog";
 
 export interface CatalogItemAttributes {
+  prepare_methods_limit?: number | null;
   name: string;
   description?: string;
   item_type?: string;

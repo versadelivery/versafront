@@ -21,6 +21,7 @@ interface CatalogGroup {
     description: string;
     priority: number;
     image_url: string | null;
+    prepare_methods_limit?: number | null;
     items: {
       data: CatalogItem[];
     };

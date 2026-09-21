@@ -181,7 +181,16 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
     Number(attributes.price_with_discount) < Number(attributes.price);
   const hasExtras = attributes.extra.data.length > 0;
   const hasMethods = attributes.prepare_method.data.length > 0;
+  const prepareMethodsLimit = attributes.prepare_methods_limit ?? null;
   const hasSteps = attributes.steps.data.length > 0;
+
+  const togglePrepareMethod = (methodId: string) => {
+    setSelectedMethods(prev => {
+      if (prev.includes(methodId)) return prev.filter(id => id !== methodId);
+      if (prepareMethodsLimit !== null && prev.length >= prepareMethodsLimit) return prev;
+      return [...prev, methodId];
+    });
+  };
 
   const discountPercent = hasDiscount
     ? Math.round(((attributes.price - (attributes.price_with_discount || 0)) / attributes.price) * 100)
@@ -467,17 +476,13 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
                       Opcional
                     </span>
                   </div>
-                  <p className="text-sm text-gray-400 mb-4">Selecione como deseja</p>
+                  <p className="text-sm text-gray-400 mb-4">{prepareMethodsLimit ? `Selecione até ${prepareMethodsLimit} modo(s)` : 'Selecione como deseja'}</p>
                   <div className="space-y-0">
                     {attributes.prepare_method.data.map((method, idx) => (
                       <div
                         key={method.id}
                         onClick={() =>
-                          setSelectedMethods(prev =>
-                            prev.includes(method.id)
-                              ? prev.filter(id => id !== method.id)
-                              : [...prev, method.id]
-                          )
+                          togglePrepareMethod(method.id)
                         }
                         className={`flex items-center gap-3 py-3.5 cursor-pointer ${
                           idx < attributes.prepare_method.data.length - 1 ? 'border-b border-[#E5E2DD]' : ''

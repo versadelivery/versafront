@@ -80,6 +80,7 @@ export interface CatalogItem {
     max_weight: number | null;
     priority: number;
     image_url: string | null;
+    prepare_methods_limit?: number | null;
     cost?: number | null;
     ncm_code?: string | null;
     highlight?: boolean;

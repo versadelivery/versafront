@@ -82,6 +82,7 @@ export interface Item {
 }
 
 export interface CatalogItemAttributes {
+  prepare_methods_limit?: number | null;
   name: string;
   active: boolean;
   description: string;

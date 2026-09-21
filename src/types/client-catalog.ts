@@ -68,6 +68,7 @@ export interface ShopResponse {
         current_time?: string
         timezone?: string
       }
+      shop_hours?: Record<string, string | boolean | null>
       catalog_groups: {
         data: Array<{
           id: string
@@ -93,6 +94,7 @@ export interface ShopResponse {
                   max_weight: string | null
                   priority: number
                   image_url: string | null
+                  prepare_methods_limit?: number | null
                   extra: {
                     data: Array<{
                       id: string
@@ -180,6 +182,7 @@ export interface Item {
     max_weight: string | null
     priority: number
     image_url: string | null
+    prepare_methods_limit?: number | null
     extra: {
       data: Array<{
         id: string
