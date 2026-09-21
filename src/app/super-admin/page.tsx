@@ -86,12 +86,12 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 const TIER_LABELS: Record<string, string> = {
   free: "Grátis (< R$800)",
-  tier_39: "R$39/mês",
-  tier_79: "R$79/mês",
-  tier_129: "R$129/mês",
-  tier_199: "R$199/mês",
-  tier_279: "R$279/mês",
-  tier_349: "R$349/mês",
+  tier_29: "R$29/mês",
+  tier_59: "R$59/mês",
+  tier_99: "R$99/mês",
+  tier_149: "R$149/mês",
+  tier_219: "R$219/mês",
+  tier_299: "R$299/mês",
 };
 
 function formatCurrency(value: number) {

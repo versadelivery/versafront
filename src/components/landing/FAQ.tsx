@@ -19,12 +19,12 @@ const faqItems = [
         <p>A mensalidade é definida pelo faturamento mensal da loja na plataforma:</p>
         <ul className="mt-3 list-disc space-y-1 pl-5">
           <li>Até R$ 799,99: grátis.</li>
-          <li>De R$ 800,00 a R$ 2.999,99: R$ 39,00/mês.</li>
-          <li>De R$ 3.000,00 a R$ 7.999,99: R$ 79,00/mês.</li>
-          <li>De R$ 8.000,00 a R$ 19.999,99: R$ 129,00/mês.</li>
-          <li>De R$ 20.000,00 a R$ 49.999,99: R$ 199,00/mês.</li>
-          <li>De R$ 50.000,00 a R$ 119.999,99: R$ 279,00/mês.</li>
-          <li>A partir de R$ 120.000,00: R$ 349,00/mês.</li>
+          <li>De R$ 800,00 a R$ 2.999,99: R$ 29,00/mês.</li>
+          <li>De R$ 3.000,00 a R$ 7.999,99: R$ 59,00/mês.</li>
+          <li>De R$ 8.000,00 a R$ 19.999,99: R$ 99,00/mês.</li>
+          <li>De R$ 20.000,00 a R$ 49.999,99: R$ 149,00/mês.</li>
+          <li>De R$ 50.000,00 a R$ 119.999,99: R$ 219,00/mês.</li>
+          <li>A partir de R$ 120.000,00: R$ 299,00/mês.</li>
         </ul>
       </>
     ),
