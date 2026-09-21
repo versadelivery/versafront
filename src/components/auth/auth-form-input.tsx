@@ -28,6 +28,10 @@ export function AuthFormInput({
           value={value}
           onChange={onChange}
           placeholder={placeholder}
+          autoCapitalize={type === "email" ? "none" : undefined}
+          autoCorrect={type === "email" ? "off" : undefined}
+          spellCheck={type === "email" ? false : undefined}
+          autoComplete={type === "email" ? "email" : undefined}
           className={`w-full px-4 py-3.5 rounded-xl border bg-white text-[#1B1B1B] placeholder:text-[#858585] transition-colors outline-none focus:border-[#009246] focus:ring-1 focus:ring-[#009246] ${
             error ? "border-red-400" : "border-[#E8E4DF]"
           } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
