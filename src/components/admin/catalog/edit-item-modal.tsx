@@ -113,6 +113,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
   // Estados - Modos de Preparo
   const [hasPrepareMethods, setHasPrepareMethods] = useState(false);
   const [prepareMethods, setPrepareMethods] = useState<PrepareMethod[]>([{ name: '' }]);
+  const [prepareMethodsLimit, setPrepareMethodsLimit] = useState('');
 
   // Estados - Etapas
   const [hasSteps, setHasSteps] = useState(false);
@@ -246,6 +247,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
         setHasPrepareMethods(false);
         setPrepareMethods([{ name: '' }]);
       }
+      setPrepareMethodsLimit(item.prepare_methods_limit ? String(item.prepare_methods_limit) : '');
 
       // Etapas
       if (item.steps?.data?.length > 0) {
@@ -610,6 +612,8 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
           formData.append(`catalog_item_prepare_methods_attributes[${index}][_destroy]`, 'true');
         });
       }
+
+      formData.append('prepare_methods_limit', hasPrepareMethods && prepareMethodsLimit ? prepareMethodsLimit : '');
 
       // Etapas
       if (hasSteps) {
@@ -1120,6 +1124,8 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
           {hasPrepareMethods && (
             <div className="space-y-2">
               <p className="text-xs text-muted-foreground">Campos vazios serão ignorados ao salvar</p>
+              <Input type="number" min="1" value={prepareMethodsLimit} onChange={(e) => setPrepareMethodsLimit(e.target.value)} placeholder="Ilimitado (opcional)" aria-label="Limite de modos de preparo" />
+              <p className="text-xs text-muted-foreground">Deixe vazio para permitir qualquer quantidade; informe um número para limitar as escolhas.</p>
               {prepareMethods.map((method, index) => (
                 <div key={method.id || index} className="flex items-center gap-2">
                   <Input

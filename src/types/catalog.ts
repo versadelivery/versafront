@@ -13,6 +13,7 @@ export interface Product {
   max_weight: string;
   priority: number;
   image_url: string;
+  prepare_methods_limit?: number | null;
   active?: boolean;
 }
 
@@ -58,6 +59,7 @@ export interface CatalogItem {
     priority: string;
     price_with_discount?: string;
     image_url?: string;
+    prepare_methods_limit?: number | null;
   };
 }
 

@@ -187,6 +187,7 @@ export default function StoreHeader({ shop: initialShop }: StoreHeaderProps) {
                 <ShopStatus
                   shopStatusData={attributes.shop_status}
                   shopScheduleConfig={
+                    attributes.shop_hours ||
                     attributes.shop_schedule_config?.data?.attributes ||
                     attributes.shop_schedule_config
                   }

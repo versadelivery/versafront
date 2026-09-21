@@ -66,7 +66,9 @@ export default function AdminDashboard() {
     return false;
   };
 
-  const isReallyOpenNow = isWithinHours();
+  // O status do servidor é a fonte de verdade usada para aceitar pedidos.
+  // O cálculo local fica apenas como fallback enquanto a loja ainda carrega.
+  const isReallyOpenNow = shop?.shop_status?.is_open ?? isWithinHours();
 
   const toggleTodayOpen = async () => {
     if (!schedule) return;

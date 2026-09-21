@@ -26,6 +26,12 @@ export interface ShopAttributes {
   default_delivery_person_id?: number | string | null;
   default_delivery_person_name?: string | null;
   order_flow?: string[];
+  shop_status?: {
+    is_open: boolean;
+    current_time?: string;
+    today_open?: string | null;
+    today_close?: string | null;
+  };
 }
 
 export interface ShopResponse {
@@ -63,4 +69,4 @@ export const shopService = {
     
     return response.data;
   },
-}; 
+};
