@@ -32,6 +32,13 @@ export interface ShopAttributes {
     today_open?: string | null;
     today_close?: string | null;
   };
+  billing_status?: {
+    tier: string;
+    name: string;
+    amount: number;
+    color: string;
+    monthly_revenue: number;
+  };
 }
 
 export interface ShopResponse {

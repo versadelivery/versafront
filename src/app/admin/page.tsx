@@ -126,6 +126,20 @@ export default function AdminDashboard() {
                   })()}
                 </p>
               )}
+              {shop?.billing_status && (
+                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                  <span
+                    className="inline-block h-2 w-2 rounded-full"
+                    style={{ backgroundColor: shop.billing_status.color }}
+                    aria-hidden="true"
+                  />
+                  Faixa: <span className="font-medium text-foreground">{shop.billing_status.name}</span>
+                  {' - '}
+                  {shop.billing_status.amount === 0
+                    ? 'Grátis'
+                    : `R$ ${shop.billing_status.amount}/mês`}
+                </p>
+              )}
             </div>
             <Button
               size="sm"
