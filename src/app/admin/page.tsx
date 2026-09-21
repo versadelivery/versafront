@@ -102,7 +102,7 @@ export default function AdminDashboard() {
     <>
       <AdminBanner bannerImg={bannerImg}>
         {/* Overlay control placed over the banner for stronger visual hierarchy */}
-        <div className="absolute right-6 top-6 z-30">
+        <div className="absolute right-6 top-6 z-30 flex flex-col items-end gap-2">
           <div className="bg-background/80 backdrop-blur-sm rounded-lg p-3 shadow-md border border-border flex items-center gap-3">
             <div className="min-w-[120px]">
               <div className="flex items-center gap-2">
@@ -138,45 +138,6 @@ export default function AdminDashboard() {
                   })()}
                 </p>
               )}
-              {shop?.billing_status && (
-                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                  <span
-                    className="inline-block h-2 w-2 rounded-full"
-                    style={{ backgroundColor: shop.billing_status.color }}
-                    aria-hidden="true"
-                  />
-                  Faixa: <span className="font-medium text-foreground">{shop.billing_status.name}</span>
-                  {' - '}
-                  {shop.billing_status.amount === 0
-                    ? 'Grátis'
-                    : `R$ ${shop.billing_status.amount}/mês`}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        type="button"
-                        aria-label="Ver tabela de faixas de preço"
-                        className="ml-auto inline-flex h-5 w-5 items-center justify-center rounded-full text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      >
-                        <Info className="h-3.5 w-3.5" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="right" align="end" className="bg-background text-foreground border border-border p-3 shadow-lg">
-                      <div className="w-[280px]">
-                        <p className="font-semibold text-sm mb-2">Faixas de mensalidade</p>
-                        <div className="space-y-1.5">
-                          {PRICING_TIERS.map(([name, revenue, price]) => (
-                            <div key={name} className="grid grid-cols-[64px_1fr_auto] gap-2 text-[11px] items-center">
-                              <span className="font-medium">{name}</span>
-                              <span className="text-muted-foreground">{revenue}</span>
-                              <span className="font-medium whitespace-nowrap">{price}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </TooltipContent>
-                  </Tooltip>
-                </p>
-              )}
             </div>
             <Button
               size="sm"
@@ -188,6 +149,45 @@ export default function AdminDashboard() {
               {isToggling || isUpdatingSchedule ? '...' : isActiveToday ? 'Desativar Hoje' : 'Ativar Hoje'}
             </Button>
           </div>
+          {shop?.billing_status && (
+            <div className="bg-background/80 backdrop-blur-sm rounded-lg px-3 py-2 shadow-md border border-border flex items-center gap-1 text-xs text-muted-foreground">
+              <span
+                className="inline-block h-2 w-2 rounded-full"
+                style={{ backgroundColor: shop.billing_status.color }}
+                aria-hidden="true"
+              />
+              Faixa: <span className="font-medium text-foreground">{shop.billing_status.name}</span>
+              {' - '}
+              {shop.billing_status.amount === 0
+                ? 'Grátis'
+                : `R$ ${shop.billing_status.amount}/mês`}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label="Ver tabela de faixas de preço"
+                    className="ml-2 inline-flex h-5 w-5 items-center justify-center rounded-full text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <Info className="h-3.5 w-3.5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right" align="end" className="bg-background text-foreground border border-border p-3 shadow-lg">
+                  <div className="w-[280px]">
+                    <p className="font-semibold text-sm mb-2">Faixas de mensalidade</p>
+                    <div className="space-y-1.5">
+                      {PRICING_TIERS.map(([name, revenue, price]) => (
+                        <div key={name} className="grid grid-cols-[64px_1fr_auto] gap-2 text-[11px] items-center">
+                          <span className="font-medium">{name}</span>
+                          <span className="text-muted-foreground">{revenue}</span>
+                          <span className="font-medium whitespace-nowrap">{price}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          )}
         </div>
       </AdminBanner>
       <div className="max-w-2xl mx-auto px-4 -mt-10 z-20 relative border-none">
