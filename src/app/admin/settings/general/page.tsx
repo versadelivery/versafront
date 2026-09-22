@@ -312,6 +312,9 @@ export default function GeneralSettingsPage() {
                         <SelectItem value="emporio">Empório</SelectItem>
                         <SelectItem value="mercado">Mercado</SelectItem>
                         <SelectItem value="conveniencia">Conveniência</SelectItem>
+                        <SelectItem value="hortifruti">Hortifrútis</SelectItem>
+                        <SelectItem value="frigorifico">Frigorífico</SelectItem>
+                        <SelectItem value="acougue">Açougue</SelectItem>
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground">

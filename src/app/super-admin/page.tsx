@@ -82,6 +82,9 @@ const CATEGORY_LABELS: Record<string, string> = {
   emporio: "Empório",
   mercado: "Mercado",
   conveniencia: "Conveniência",
+  hortifruti: "Hortifrútis",
+  frigorifico: "Frigorífico",
+  acougue: "Açougue",
 };
 
 const TIER_LABELS: Record<string, string> = {
