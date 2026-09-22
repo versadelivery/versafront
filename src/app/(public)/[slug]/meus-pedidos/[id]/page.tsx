@@ -166,6 +166,7 @@ export default function OrderDetailsPage() {
     shop: {
       name: orderData.attributes.shop?.data?.attributes?.name ?? '—',
       phone: orderData.attributes.shop?.data?.attributes?.cellphone ?? '',
+      address: orderData.attributes.shop?.data?.attributes?.address ?? '',
     },
     customer: {
       name: orderData.attributes.customer?.data?.attributes?.name ?? '—',
@@ -343,7 +344,12 @@ export default function OrderDetailsPage() {
                     <Store className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
                     <div>
                       <p className="text-base font-medium text-foreground">{order.shop.name}</p>
-                      <p className="text-sm text-muted-foreground mt-0.5">Retire no estabelecimento quando estiver pronto.</p>
+                      {order.shop.address ? (
+                        <p className="text-sm text-foreground mt-0.5">{order.shop.address}</p>
+                      ) : (
+                        <p className="text-sm text-muted-foreground mt-0.5">Endereço da loja não informado.</p>
+                      )}
+                      <p className="text-sm text-muted-foreground mt-1">Retire no estabelecimento quando estiver pronto.</p>
                     </div>
                   </div>
                 </InfoCard>

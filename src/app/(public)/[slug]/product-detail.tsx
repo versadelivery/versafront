@@ -382,6 +382,65 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
               </div>
             )}
 
+            {/* Steps / Options (radio) */}
+            {hasSteps &&
+              attributes.steps.data.map(step => (
+                <div key={step.id} className="border-t-[6px] border-[#E5E2DD]">
+                  <div className="px-5 py-4">
+                    <div className="mb-1">
+                      <h3 className="font-tomato text-base font-bold text-gray-900">{step.attributes.name}</h3>
+                    </div>
+                    <p className="text-sm text-gray-400 mb-4">Selecione 1 opção</p>
+                    <div className="space-y-0">
+                      {step.attributes.options.data.map((option, idx) => (
+                        <label
+                          key={option.id}
+                          onClick={() => setSelectedOptions(prev => ({ ...prev, [step.id]: option.id }))}
+                          className={`flex items-center gap-3 py-3.5 cursor-pointer ${
+                            idx < step.attributes.options.data.length - 1 ? 'border-b border-[#E5E2DD]' : ''
+                          }`}
+                        >
+                          <DDRadio checked={selectedOptions[step.id] === option.id} />
+                          <span className="text-sm text-gray-900">{option.attributes.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ))
+            }
+
+            {/* Prepare Methods */}
+            {hasMethods && (
+              <div className="border-t-[6px] border-[#E5E2DD]">
+                <div className="px-5 py-4">
+                  <div className="flex items-center justify-between mb-1">
+                    <h3 className="font-tomato text-base font-bold text-gray-900">Modo de Preparo</h3>
+                    <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-md">
+                      Opcional
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-400 mb-4">{prepareMethodsLimit ? `Selecione até ${prepareMethodsLimit} modo(s)` : 'Selecione como deseja'}</p>
+                  <div className="space-y-0">
+                    {attributes.prepare_method.data.map((method, idx) => (
+                      <div
+                        key={method.id}
+                        onClick={() =>
+                          togglePrepareMethod(method.id)
+                        }
+                        className={`flex items-center gap-3 py-3.5 cursor-pointer ${
+                          idx < attributes.prepare_method.data.length - 1 ? 'border-b border-[#E5E2DD]' : ''
+                        }`}
+                      >
+                        <DDCheckbox checked={selectedMethods.includes(method.id)} />
+                        <span className="text-sm text-gray-900">{method.attributes.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Extras */}
             {hasExtras && (
               <div className="border-t-[6px] border-[#E5E2DD]">
@@ -459,65 +518,6 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
                             </span>
                           )}
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ))
-            }
-
-            {/* Prepare Methods */}
-            {hasMethods && (
-              <div className="border-t-[6px] border-[#E5E2DD]">
-                <div className="px-5 py-4">
-                  <div className="flex items-center justify-between mb-1">
-                    <h3 className="font-tomato text-base font-bold text-gray-900">Modo de Preparo</h3>
-                    <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-md">
-                      Opcional
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-400 mb-4">{prepareMethodsLimit ? `Selecione até ${prepareMethodsLimit} modo(s)` : 'Selecione como deseja'}</p>
-                  <div className="space-y-0">
-                    {attributes.prepare_method.data.map((method, idx) => (
-                      <div
-                        key={method.id}
-                        onClick={() =>
-                          togglePrepareMethod(method.id)
-                        }
-                        className={`flex items-center gap-3 py-3.5 cursor-pointer ${
-                          idx < attributes.prepare_method.data.length - 1 ? 'border-b border-[#E5E2DD]' : ''
-                        }`}
-                      >
-                        <DDCheckbox checked={selectedMethods.includes(method.id)} />
-                        <span className="text-sm text-gray-900">{method.attributes.name}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Steps / Options (radio) */}
-            {hasSteps &&
-              attributes.steps.data.map(step => (
-                <div key={step.id} className="border-t-[6px] border-[#E5E2DD]">
-                  <div className="px-5 py-4">
-                    <div className="mb-1">
-                      <h3 className="font-tomato text-base font-bold text-gray-900">{step.attributes.name}</h3>
-                    </div>
-                    <p className="text-sm text-gray-400 mb-4">Selecione 1 opção</p>
-                    <div className="space-y-0">
-                      {step.attributes.options.data.map((option, idx) => (
-                        <label
-                          key={option.id}
-                          onClick={() => setSelectedOptions(prev => ({ ...prev, [step.id]: option.id }))}
-                          className={`flex items-center gap-3 py-3.5 cursor-pointer ${
-                            idx < step.attributes.options.data.length - 1 ? 'border-b border-[#E5E2DD]' : ''
-                          }`}
-                        >
-                          <DDRadio checked={selectedOptions[step.id] === option.id} />
-                          <span className="text-sm text-gray-900">{option.attributes.name}</span>
-                        </label>
                       ))}
                     </div>
                   </div>

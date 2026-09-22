@@ -241,10 +241,14 @@ export function ItemOptionsDialog({
     );
   };
 
+  const prepareMethodsLimit: number | null = item?.attributes?.prepare_methods_limit ?? null;
+
   const toggleMethod = (id: string) => {
-    setSelectedMethodIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
+    setSelectedMethodIds((prev) => {
+      if (prev.includes(id)) return prev.filter((x) => x !== id);
+      if (prepareMethodsLimit !== null && prev.length >= prepareMethodsLimit) return prev;
+      return [...prev, id];
+    });
   };
 
   const toggleSharedComplement = (optionId: string) => {
@@ -403,90 +407,6 @@ export function ItemOptionsDialog({
               </>
             )}
 
-            {/* Extras */}
-            {extras.length > 0 && (
-              <>
-                <hr className="border-[#E5E2DD]" />
-                <section className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Plus className="h-4 w-4 text-primary" />
-                    <h3 className="text-sm font-semibold text-gray-900">Adicionais</h3>
-                    <span className="text-xs text-muted-foreground">— selecione quantos quiser</span>
-                  </div>
-                  <div className="space-y-2">
-                    {extras.map((extra: any) => {
-                      const isSelected = selectedExtraIds.includes(extra.id);
-                      const price = parseFloat(extra.attributes.price || "0");
-                      return (
-                        <label
-                          key={extra.id}
-                          htmlFor={`extra-${extra.id}`}
-                          className={`flex items-center gap-3 p-3 rounded-md border cursor-pointer transition-colors ${
-                            isSelected
-                              ? "border-primary bg-white"
-                              : "border-[#E5E2DD] bg-white hover:border-primary/40"
-                          }`}
-                        >
-                          <Checkbox
-                            id={`extra-${extra.id}`}
-                            checked={isSelected}
-                            onCheckedChange={() => toggleExtra(extra.id)}
-                          />
-                          <span className="flex-1 text-sm font-medium text-gray-900">
-                            {extra.attributes.name}
-                          </span>
-                          {price > 0 && (
-                            <span className="text-sm font-semibold text-green-600">
-                              +{formatPrice(price)}
-                            </span>
-                          )}
-                        </label>
-                      );
-                    })}
-                  </div>
-                </section>
-              </>
-            )}
-
-            {/* Modo de preparo */}
-            {methods.length > 0 && (
-              <>
-                <hr className="border-[#E5E2DD]" />
-                <section className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <ChefHat className="h-4 w-4 text-primary" />
-                    <h3 className="text-sm font-semibold text-gray-900">Modo de preparo</h3>
-                    <span className="text-xs text-muted-foreground">— selecione quantos quiser</span>
-                  </div>
-                  <div className="space-y-2">
-                    {methods.map((method: any) => {
-                      const isSelected = selectedMethodIds.includes(method.id);
-                      return (
-                        <label
-                          key={method.id}
-                          htmlFor={`method-${method.id}`}
-                          className={`flex items-center gap-3 p-3 rounded-md border cursor-pointer transition-colors ${
-                            isSelected
-                              ? "border-primary bg-white"
-                              : "border-[#E5E2DD] bg-white hover:border-primary/40"
-                          }`}
-                        >
-                          <Checkbox
-                            id={`method-${method.id}`}
-                            checked={isSelected}
-                            onCheckedChange={() => toggleMethod(method.id)}
-                          />
-                          <span className="flex-1 text-sm font-medium text-gray-900">
-                            {method.attributes.name}
-                          </span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </section>
-              </>
-            )}
-
             {/* Etapas (steps) */}
             {steps.map((step: any) => {
               const opts: any[] = step.attributes?.options?.data ?? [];
@@ -538,6 +458,96 @@ export function ItemOptionsDialog({
                 </div>
               );
             })}
+
+            {/* Modo de preparo */}
+            {methods.length > 0 && (
+              <>
+                <hr className="border-[#E5E2DD]" />
+                <section className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <ChefHat className="h-4 w-4 text-primary" />
+                    <h3 className="text-sm font-semibold text-gray-900">Modo de preparo</h3>
+                    <span className="text-xs text-muted-foreground">
+                      — {prepareMethodsLimit ? `selecione até ${prepareMethodsLimit}` : 'selecione quantos quiser'}
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    {methods.map((method: any) => {
+                      const isSelected = selectedMethodIds.includes(method.id);
+                      const limitReached = prepareMethodsLimit !== null && selectedMethodIds.length >= prepareMethodsLimit && !isSelected;
+                      return (
+                        <label
+                          key={method.id}
+                          htmlFor={`method-${method.id}`}
+                          className={`flex items-center gap-3 p-3 rounded-md border transition-colors ${
+                            limitReached ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                          } ${
+                            isSelected
+                              ? "border-primary bg-white"
+                              : "border-[#E5E2DD] bg-white hover:border-primary/40"
+                          }`}
+                        >
+                          <Checkbox
+                            id={`method-${method.id}`}
+                            checked={isSelected}
+                            disabled={limitReached}
+                            onCheckedChange={() => toggleMethod(method.id)}
+                          />
+                          <span className="flex-1 text-sm font-medium text-gray-900">
+                            {method.attributes.name}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </section>
+              </>
+            )}
+
+            {/* Extras */}
+            {extras.length > 0 && (
+              <>
+                <hr className="border-[#E5E2DD]" />
+                <section className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Plus className="h-4 w-4 text-primary" />
+                    <h3 className="text-sm font-semibold text-gray-900">Adicionais</h3>
+                    <span className="text-xs text-muted-foreground">— selecione quantos quiser</span>
+                  </div>
+                  <div className="space-y-2">
+                    {extras.map((extra: any) => {
+                      const isSelected = selectedExtraIds.includes(extra.id);
+                      const price = parseFloat(extra.attributes.price || "0");
+                      return (
+                        <label
+                          key={extra.id}
+                          htmlFor={`extra-${extra.id}`}
+                          className={`flex items-center gap-3 p-3 rounded-md border cursor-pointer transition-colors ${
+                            isSelected
+                              ? "border-primary bg-white"
+                              : "border-[#E5E2DD] bg-white hover:border-primary/40"
+                          }`}
+                        >
+                          <Checkbox
+                            id={`extra-${extra.id}`}
+                            checked={isSelected}
+                            onCheckedChange={() => toggleExtra(extra.id)}
+                          />
+                          <span className="flex-1 text-sm font-medium text-gray-900">
+                            {extra.attributes.name}
+                          </span>
+                          {price > 0 && (
+                            <span className="text-sm font-semibold text-green-600">
+                              +{formatPrice(price)}
+                            </span>
+                          )}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </section>
+              </>
+            )}
 
             {/* Complementos Compartilhados */}
             {sharedComplements.length > 0 && (

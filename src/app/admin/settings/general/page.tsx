@@ -360,6 +360,9 @@ export default function GeneralSettingsPage() {
                     placeholder="Major Barreto, 1602"
                     className="h-10 rounded-md border-[#E5E2DD]"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Exibido para clientes que escolherem retirada no estabelecimento
+                  </p>
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="email" className="flex items-center gap-2 text-sm font-medium">

@@ -265,43 +265,6 @@ export function ItemDetailsModal({ id, isOpen, onClose }: ItemDetailsModalProps)
               </div>
             )}
 
-            {/* Adicionais */}
-            {hasExtras && (
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <Plus className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-semibold">Adicionais</span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {attrs.extra!.data.map((extra: any, index: number) => (
-                    <div key={extra.id || index} className="px-3 py-2 rounded-md border border-[#E5E2DD] bg-white">
-                      <span className="text-sm font-medium">{extra.attributes.name}</span>
-                      {Number(extra.attributes.price) > 0 && (
-                        <span className="text-xs text-primary ml-1.5">+ {formatPrice(parseFloat(extra.attributes.price))}</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Modos de Preparo */}
-            {hasPrepareMethods && (
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <ChefHat className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-semibold">Modos de Preparo</span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {attrs.prepare_method!.data.map((method: any, index: number) => (
-                    <div key={method.id || index} className="px-3 py-2 rounded-md border border-[#E5E2DD] bg-white">
-                      <span className="text-sm font-medium">{method.attributes.name}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* Etapas */}
             {hasSteps && (
               <div>
@@ -327,6 +290,46 @@ export function ItemDetailsModal({ id, isOpen, onClose }: ItemDetailsModalProps)
                           </div>
                         )}
                       </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Modos de Preparo */}
+            {hasPrepareMethods && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <ChefHat className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold">Modos de Preparo</span>
+                  {(attrs as any).prepare_methods_limit && (
+                    <span className="text-xs text-muted-foreground font-normal">(limite: {(attrs as any).prepare_methods_limit})</span>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {attrs.prepare_method!.data.map((method: any, index: number) => (
+                    <div key={method.id || index} className="px-3 py-2 rounded-md border border-[#E5E2DD] bg-white">
+                      <span className="text-sm font-medium">{method.attributes.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Adicionais */}
+            {hasExtras && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Plus className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold">Adicionais</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {attrs.extra!.data.map((extra: any, index: number) => (
+                    <div key={extra.id || index} className="px-3 py-2 rounded-md border border-[#E5E2DD] bg-white">
+                      <span className="text-sm font-medium">{extra.attributes.name}</span>
+                      {Number(extra.attributes.price) > 0 && (
+                        <span className="text-xs text-primary ml-1.5">+ {formatPrice(parseFloat(extra.attributes.price))}</span>
+                      )}
                     </div>
                   ))}
                 </div>

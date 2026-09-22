@@ -1075,79 +1075,6 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
 
           <hr className="border-gray-100" />
 
-          {/* SEÇÃO: ADICIONAIS */}
-          <div className="flex items-center justify-between rounded-lg p-3 bg-muted/40">
-            <span className="text-sm font-medium">Possui adicionais?</span>
-            <Switch checked={hasExtras} onCheckedChange={setHasExtras} />
-          </div>
-
-          {hasExtras && (
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">Campos vazios serão ignorados ao salvar</p>
-              {extras.map((extra, index) => (
-                <div key={extra.id || index} className="flex items-center gap-2">
-                  <Input
-                    value={extra.name}
-                    onChange={(e) => handleExtraChange(index, 'name', e.target.value)}
-                    placeholder="Nome do adicional"
-                    className="flex-[2]"
-                  />
-                  <div className="relative flex-1">
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">R$</span>
-                    <Input
-                      value={extra.price}
-                      onChange={(e) => handleExtraChange(index, 'price', formatPrice(e.target.value))}
-                      placeholder="0,00"
-                      className="pl-8"
-                    />
-                  </div>
-                  <Button type="button" variant="ghost" size="icon" className="h-9 w-9 shrink-0" onClick={() => handleRemoveExtra(index)} disabled={extras.length <= 1}>
-                    <Trash2 className={`h-4 w-4 ${extras.length <= 1 ? 'text-muted-foreground/30' : 'text-destructive'}`} />
-                  </Button>
-                </div>
-              ))}
-              <button type="button" onClick={handleAddExtra} className="w-full border border-dashed border-gray-300 rounded-lg py-2 flex items-center justify-center gap-1.5 text-sm text-primary hover:bg-muted/30 transition-colors">
-                <Plus className="h-4 w-4" /> Adicionar
-              </button>
-              {errors.extras && <p className="text-xs text-destructive">{errors.extras}</p>}
-            </div>
-          )}
-
-          <hr className="border-gray-100" />
-
-          {/* SEÇÃO: MODOS DE PREPARO */}
-          <div className="flex items-center justify-between rounded-lg p-3 bg-muted/40">
-            <span className="text-sm font-medium">Possui modos de preparo?</span>
-            <Switch checked={hasPrepareMethods} onCheckedChange={setHasPrepareMethods} />
-          </div>
-
-          {hasPrepareMethods && (
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">Campos vazios serão ignorados ao salvar</p>
-              <Input type="number" min="1" value={prepareMethodsLimit} onChange={(e) => setPrepareMethodsLimit(e.target.value)} placeholder="Ilimitado (opcional)" aria-label="Limite de modos de preparo" />
-              <p className="text-xs text-muted-foreground">Deixe vazio para permitir qualquer quantidade; informe um número para limitar as escolhas.</p>
-              {prepareMethods.map((method, index) => (
-                <div key={method.id || index} className="flex items-center gap-2">
-                  <Input
-                    value={method.name}
-                    onChange={(e) => handlePrepareMethodChange(index, e.target.value)}
-                    placeholder="Ex: Mal passado, Ao ponto..."
-                    className="flex-1"
-                  />
-                  <Button type="button" variant="ghost" size="icon" className="h-9 w-9 shrink-0" onClick={() => handleRemovePrepareMethod(index)} disabled={prepareMethods.length <= 1}>
-                    <Trash2 className={`h-4 w-4 ${prepareMethods.length <= 1 ? 'text-muted-foreground/30' : 'text-destructive'}`} />
-                  </Button>
-                </div>
-              ))}
-              <button type="button" onClick={handleAddPrepareMethod} className="w-full border border-dashed border-gray-300 rounded-lg py-2 flex items-center justify-center gap-1.5 text-sm text-primary hover:bg-muted/30 transition-colors">
-                <Plus className="h-4 w-4" /> Adicionar
-              </button>
-              {errors.prepareMethods && <p className="text-xs text-destructive">{errors.prepareMethods}</p>}
-            </div>
-          )}
-
-          <hr className="border-gray-100" />
-
           {/* SEÇÃO: ETAPAS */}
           <div className="flex items-center justify-between rounded-lg p-3 bg-muted/40">
             <span className="text-sm font-medium">Possui etapas de montagem?</span>
@@ -1197,6 +1124,79 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
                 <Plus className="h-4 w-4" /> Nova etapa
               </button>
               {errors.steps && <p className="text-xs text-destructive">{errors.steps}</p>}
+            </div>
+          )}
+
+          <hr className="border-gray-100" />
+
+          {/* SEÇÃO: MODOS DE PREPARO */}
+          <div className="flex items-center justify-between rounded-lg p-3 bg-muted/40">
+            <span className="text-sm font-medium">Possui modos de preparo?</span>
+            <Switch checked={hasPrepareMethods} onCheckedChange={setHasPrepareMethods} />
+          </div>
+
+          {hasPrepareMethods && (
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">Campos vazios serão ignorados ao salvar</p>
+              <Input type="number" min="1" value={prepareMethodsLimit} onChange={(e) => setPrepareMethodsLimit(e.target.value)} placeholder="Ilimitado (opcional)" aria-label="Limite de modos de preparo" />
+              <p className="text-xs text-muted-foreground">Deixe vazio para permitir qualquer quantidade; informe um número para limitar as escolhas (ex: picanha com 1 modo de preparo entre peça inteira, bife, grelha/churrasco ou cubos).</p>
+              {prepareMethods.map((method, index) => (
+                <div key={method.id || index} className="flex items-center gap-2">
+                  <Input
+                    value={method.name}
+                    onChange={(e) => handlePrepareMethodChange(index, e.target.value)}
+                    placeholder="Ex: Mal passado, Ao ponto..."
+                    className="flex-1"
+                  />
+                  <Button type="button" variant="ghost" size="icon" className="h-9 w-9 shrink-0" onClick={() => handleRemovePrepareMethod(index)} disabled={prepareMethods.length <= 1}>
+                    <Trash2 className={`h-4 w-4 ${prepareMethods.length <= 1 ? 'text-muted-foreground/30' : 'text-destructive'}`} />
+                  </Button>
+                </div>
+              ))}
+              <button type="button" onClick={handleAddPrepareMethod} className="w-full border border-dashed border-gray-300 rounded-lg py-2 flex items-center justify-center gap-1.5 text-sm text-primary hover:bg-muted/30 transition-colors">
+                <Plus className="h-4 w-4" /> Adicionar
+              </button>
+              {errors.prepareMethods && <p className="text-xs text-destructive">{errors.prepareMethods}</p>}
+            </div>
+          )}
+
+          <hr className="border-gray-100" />
+
+          {/* SEÇÃO: ADICIONAIS */}
+          <div className="flex items-center justify-between rounded-lg p-3 bg-muted/40">
+            <span className="text-sm font-medium">Possui adicionais?</span>
+            <Switch checked={hasExtras} onCheckedChange={setHasExtras} />
+          </div>
+
+          {hasExtras && (
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">Campos vazios serão ignorados ao salvar</p>
+              {extras.map((extra, index) => (
+                <div key={extra.id || index} className="flex items-center gap-2">
+                  <Input
+                    value={extra.name}
+                    onChange={(e) => handleExtraChange(index, 'name', e.target.value)}
+                    placeholder="Nome do adicional"
+                    className="flex-[2]"
+                  />
+                  <div className="relative flex-1">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">R$</span>
+                    <Input
+                      value={extra.price}
+                      onChange={(e) => handleExtraChange(index, 'price', formatPrice(e.target.value))}
+                      placeholder="0,00"
+                      className="pl-8"
+                    />
+                  </div>
+                  <Button type="button" variant="ghost" size="icon" className="h-9 w-9 shrink-0" onClick={() => handleRemoveExtra(index)} disabled={extras.length <= 1}>
+                    <Trash2 className={`h-4 w-4 ${extras.length <= 1 ? 'text-muted-foreground/30' : 'text-destructive'}`} />
+                  </Button>
+                </div>
+              ))}
+              <button type="button" onClick={handleAddExtra} className="w-full border border-dashed border-gray-300 rounded-lg py-2 flex items-center justify-center gap-1.5 text-sm text-primary hover:bg-muted/30 transition-colors">
+                <Plus className="h-4 w-4" /> Adicionar
+              </button>
+              {errors.extras && <p className="text-xs text-destructive">{errors.extras}</p>}
             </div>
           )}
         </div>
