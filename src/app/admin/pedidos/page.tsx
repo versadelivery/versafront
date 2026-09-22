@@ -42,6 +42,7 @@ import OrderCard from '@/components/admin/order-card';
 import { useRestaurantSounds } from '@/hooks/use-restaurant-sounds';
 import { useShop } from '@/hooks/use-shop';
 import Link from 'next/link';
+import api from '@/api/config';
 // Controle de som foi movido para o Header global da administração
 
 interface Order {
@@ -245,6 +246,7 @@ export default function OrderManagement() {
   const seenOrderIdsRef = useRef<Set<string>>(new Set());
   const overdueAlertedRef = useRef<Set<string>>(new Set());
   const isInitialLoadRef = useRef(true);
+  const socketReceivedRef = useRef(false);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -258,6 +260,7 @@ export default function OrderManagement() {
 
   useEffect(() => {
     const unsubscribe = subscribeToAdminOrders((socketOrders: AdminOrderData[]) => {
+      socketReceivedRef.current = true;
       
       // Verificar se algum pedido está sendo atualizado no momento
       const hasUpdatingOrders = Object.keys(isUpdatingRef.current).some(
@@ -346,10 +349,25 @@ export default function OrderManagement() {
       setIsLoading(false);
     });
 
-    // Timeout para parar o loading se não receber dados em 10 segundos
+    // O Cable é usado para atualizações em tempo real, mas a listagem inicial
+    // não pode depender exclusivamente da assinatura do socket.
+    api.get('/orders').then((response) => {
+      if (socketReceivedRef.current) return;
+      const initialOrders = (response.data?.data || []) as AdminOrderData[];
+      const convertedOrders = initialOrders.map(convertSocketDataToOrder);
+      socketOrdersCache.current = new Map(convertedOrders.map(order => [order.id, order]));
+      convertedOrders.forEach(order => seenOrderIdsRef.current.add(order.id));
+      isInitialLoadRef.current = false;
+      setOrders(convertedOrders);
+      setIsLoading(false);
+    }).catch(() => {
+      // O timeout abaixo mantém a tela utilizável mesmo sem API ou Cable.
+    });
+
+    // Timeout de segurança para não deixar a tela presa indefinidamente.
     const timeout = setTimeout(() => {
       setIsLoading(false);
-    }, 10000);
+    }, 5000);
 
     return () => {
       unsubscribe();
