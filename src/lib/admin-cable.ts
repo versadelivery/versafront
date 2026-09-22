@@ -288,18 +288,17 @@ export function useAdminActionCable() {
         };
       }
 
-      // A API REST mantém as ações operacionais disponíveis enquanto o Cable
-      // reconecta ou quando a assinatura é rejeitada pelo navegador.
-      if (!subscriptionRef.current || !subscriptionRef.current.send) {
-        const restData = updateData.data || {};
-        api.patch(`/orders/${orderId}`, { order: restData })
-          .then(() => resolve(true))
-          .catch((error) => {
-            console.error('❌ Falha ao atualizar pedido pela API:', error);
-            resolve(false);
-          });
-        return;
-      }
+      // A persistência das ações operacionais passa pela API; o Cable fica
+      // responsável por distribuir a atualização para as outras telas.
+      const restData = { ...(updateData.data || {}) };
+      if (status === 'left_for_delivery' || status === 'delivered') restData.status = status;
+      api.patch(`/orders/${orderId}`, { order: restData })
+        .then(() => resolve(true))
+        .catch((error) => {
+          console.error('❌ Falha ao persistir pedido pela API:', error);
+          resolve(false);
+        });
+      return;
 
       console.log('📤 Enviando dados via websocket:', updateData);
 
