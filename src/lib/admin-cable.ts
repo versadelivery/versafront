@@ -291,7 +291,9 @@ export function useAdminActionCable() {
       // A persistência das ações operacionais passa pela API; o Cable fica
       // responsável por distribuir a atualização para as outras telas.
       const restData = { ...(updateData.data || {}) };
-      if (status === 'left_for_delivery' || status === 'delivered') restData.status = status;
+      if (status === 'cancelled' || status === 'left_for_delivery' || status === 'delivered') {
+        restData.status = status;
+      }
       api.patch(`/orders/${orderId}`, { order: restData })
         .then(() => resolve(true))
         .catch((error) => {
