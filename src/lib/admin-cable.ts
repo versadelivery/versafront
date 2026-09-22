@@ -1,5 +1,6 @@
 import { createConsumer } from "@rails/actioncable"
 import { getToken } from "./auth"
+import api from "@/api/config"
 import { useEffect, useRef, useState, useCallback } from "react"
 
 export interface AdminOrderData {
@@ -241,12 +242,6 @@ export function useAdminActionCable() {
     console.log('🔄 updateOrder chamado:', { orderId, status, paid_at, deliveryPerson, cancellationReason });
     
     return new Promise((resolve, reject) => {
-      if (!subscriptionRef.current || !subscriptionRef.current.send) {
-        console.error('❌ Subscription não está ativa');
-        resolve(false);
-        return;
-      }
-
       let event = "update_order";
       let updateData: any = {
         event: event,
@@ -291,6 +286,19 @@ export function useAdminActionCable() {
             id: orderId
           }
         };
+      }
+
+      // A API REST mantém as ações operacionais disponíveis enquanto o Cable
+      // reconecta ou quando a assinatura é rejeitada pelo navegador.
+      if (!subscriptionRef.current || !subscriptionRef.current.send) {
+        const restData = updateData.data || {};
+        api.patch(`/orders/${orderId}`, { order: restData })
+          .then(() => resolve(true))
+          .catch((error) => {
+            console.error('❌ Falha ao atualizar pedido pela API:', error);
+            resolve(false);
+          });
+        return;
       }
 
       console.log('📤 Enviando dados via websocket:', updateData);
