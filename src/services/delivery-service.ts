@@ -14,6 +14,9 @@ export interface DeliveryConfig {
   min_value_free_delivery: number | null;
   minimum_order_value: number | null;
   neighborhoods: DeliveryNeighborhood[];
+  pickup_adjustment_type: "none" | "discount" | "surcharge";
+  pickup_adjustment_value: number;
+  pickup_value_type: "fixed" | "percentage";
 }
 
 interface ApiDeliveryConfig {
@@ -25,6 +28,9 @@ interface ApiDeliveryConfig {
       amount: number;
       min_value_free_delivery: string | null;
       minimum_order_value: string | null;
+      pickup_adjustment_type?: "none" | "discount" | "surcharge";
+      pickup_adjustment_value?: number | string;
+      pickup_value_type?: "fixed" | "percentage";
       shop_delivery_neighborhoods: {
         data: Array<{
           id: string;
@@ -51,6 +57,9 @@ export const deliveryService = {
       amount: data.attributes.amount,
       min_value_free_delivery: (data.attributes.min_value_free_delivery !== null && data.attributes.min_value_free_delivery !== undefined) ? parseFloat(data.attributes.min_value_free_delivery.toString()) : null,
       minimum_order_value: (data.attributes.minimum_order_value !== null && data.attributes.minimum_order_value !== undefined) ? parseFloat(data.attributes.minimum_order_value.toString()) : null,
+      pickup_adjustment_type: data.attributes.pickup_adjustment_type || "none",
+      pickup_adjustment_value: parseFloat(String(data.attributes.pickup_adjustment_value || 0)),
+      pickup_value_type: data.attributes.pickup_value_type || "fixed",
       neighborhoods: data.attributes.shop_delivery_neighborhoods.data.map(n => ({
         id: n.id,
         name: n.attributes.name,

@@ -368,7 +368,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                 </InfoCard>
               )}
 
-              {/* PIX Manual */}
+              {/* PIX Direto */}
               {order.payment_method === 'manual_pix' && (
                 <InfoCard title="Pagamento PIX">
                   <p className="text-sm text-muted-foreground mb-3">

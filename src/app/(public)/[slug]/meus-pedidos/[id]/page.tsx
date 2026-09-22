@@ -367,7 +367,7 @@ export default function OrderDetailsPage() {
                 </InfoCard>
               )}
 
-              {/* PIX Manual */}
+              {/* PIX Direto */}
               {order.payment_method === 'manual_pix' && (
                 <InfoCard title="Pagamento PIX">
                   <p className="text-sm text-muted-foreground mb-3">

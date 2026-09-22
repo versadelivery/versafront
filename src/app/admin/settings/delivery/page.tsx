@@ -94,6 +94,9 @@ export default function DeliverySettingsPage() {
   const [freeDeliveryThreshold, setFreeDeliveryThreshold] = useState<string>("");
   const [bulkAdjustValue, setBulkAdjustValue] = useState<string>("");
   const [minOrderValue, setMinOrderValue] = useState<string>("");
+  const [pickupAdjustmentType, setPickupAdjustmentType] = useState<"none" | "discount" | "surcharge">("none");
+  const [pickupAdjustmentValue, setPickupAdjustmentValue] = useState<string>("");
+  const [pickupValueType, setPickupValueType] = useState<"fixed" | "percentage">("fixed");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [currentNeighborhood, setCurrentNeighborhood] = useState<Neighborhood | null>(null);
@@ -118,6 +121,9 @@ export default function DeliverySettingsPage() {
       setHasFreeDelivery(deliveryConfig.min_value_free_delivery !== null);
       setFreeDeliveryThreshold(deliveryConfig.min_value_free_delivery ? formatApiValue(deliveryConfig.min_value_free_delivery) : "");
       setMinOrderValue(deliveryConfig.minimum_order_value ? formatApiValue(deliveryConfig.minimum_order_value) : "");
+      setPickupAdjustmentType(deliveryConfig.pickup_adjustment_type || "none");
+      setPickupAdjustmentValue(deliveryConfig.pickup_adjustment_value ? formatApiValue(deliveryConfig.pickup_adjustment_value) : "");
+      setPickupValueType(deliveryConfig.pickup_value_type || "fixed");
     }
   }, [deliveryConfig]);
 
@@ -270,6 +276,9 @@ export default function DeliverySettingsPage() {
       amount: parseCurrencyInput(fixedFee),
       min_value_free_delivery: hasFreeDelivery ? parseCurrencyInput(freeDeliveryThreshold) : null,
       minimum_order_value: parseCurrencyInput(minOrderValue)
+      , pickup_adjustment_type: pickupAdjustmentType
+      , pickup_adjustment_value: pickupAdjustmentType === "none" ? 0 : parseCurrencyInput(pickupAdjustmentValue)
+      , pickup_value_type: pickupValueType
     });
   };
 
@@ -351,6 +360,17 @@ export default function DeliverySettingsPage() {
                 </p>
               )}
             </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+          <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
+            <ShoppingCart className="h-4 w-4 text-primary" />
+            <h2 className="font-tomato text-base font-semibold text-gray-900">Ajuste para retirada</h2>
+          </div>
+          <div className="px-5 py-5 grid gap-4 sm:grid-cols-3">
+            <div><Label className="text-sm mb-1.5 block">Tipo</Label><Select value={pickupAdjustmentType} onValueChange={(v: any) => setPickupAdjustmentType(v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">Nenhum</SelectItem><SelectItem value="discount">Desconto</SelectItem><SelectItem value="surcharge">Acréscimo</SelectItem></SelectContent></Select></div>
+            {pickupAdjustmentType !== "none" && <><div><Label className="text-sm mb-1.5 block">Formato</Label><Select value={pickupValueType} onValueChange={(v: any) => setPickupValueType(v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="fixed">R$ (fixo)</SelectItem><SelectItem value="percentage">% (percentual)</SelectItem></SelectContent></Select></div><div><Label className="text-sm mb-1.5 block">Valor</Label><Input value={pickupAdjustmentValue} onChange={e => setPickupAdjustmentValue(formatCurrencyInput(e.target.value))} inputMode="decimal" placeholder="0,00" /></div></>}
           </div>
         </div>
 
