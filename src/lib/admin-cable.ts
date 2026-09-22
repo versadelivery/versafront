@@ -62,8 +62,9 @@ export function createAdminCableWithToken() {
   if (!token) return null
 
   const base = process.env.NEXT_PUBLIC_CABLE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-  const host = base.replace(/^https?:\/\//, '').replace(/^wss?:\/\//, '').replace(/\/$/, '')
-  const cableUrl = `wss://${host}/cable?token=${token}`
+  const parsed = new URL(base.includes('://') ? base : `https://${base}`)
+  const protocol = parsed.protocol === 'http:' ? 'ws:' : 'wss:'
+  const cableUrl = `${protocol}//${parsed.host}${parsed.pathname === '/' ? '' : parsed.pathname.replace(/\/$/, '')}/cable?token=${encodeURIComponent(token)}`
 
   try {
     return createConsumer(cableUrl)
@@ -109,7 +110,8 @@ export function useAdminActionCable() {
         channel: "OrderAdminChannel",
       },
       {
-        received: (payload: any) => {
+        received: (rawPayload: any) => {
+          const payload = typeof rawPayload === 'string' ? JSON.parse(rawPayload) : rawPayload
           if (!payload?.event) return
 
           // Evento inicial
@@ -314,7 +316,7 @@ export function useAdminActionCable() {
         console.error('❌ Erro ao enviar dados via websocket:', error);
         
         // Se houver erro, tentar reconectar
-        if (cableRef.current) {
+      if (cableRef.current) {
           console.log('🔄 Tentando reconectar...');
           try {
             cableRef.current.disconnect();

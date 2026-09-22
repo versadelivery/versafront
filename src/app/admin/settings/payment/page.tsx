@@ -118,7 +118,7 @@ export default function PaymentSettingsPage() {
         },
         {
           id: "pix",
-          name: "PIX Manual",
+          name: "PIX Direto",
           description: "Cliente envia comprovante para o estabelecimento",
           icon: <QrCode className="w-5 h-5 text-primary" />,
           // if asaas_pix is active, manual_pix is forced off
@@ -528,7 +528,7 @@ export default function PaymentSettingsPage() {
                             }`}
                           >
                             <ShoppingBag className="w-4 h-4" />
-                            Na realização do pedido
+                            Na realização do pedido (online)
                           </button>
                         </div>
 
@@ -582,12 +582,12 @@ export default function PaymentSettingsPage() {
                 <div className="flex items-center gap-3">
                   <Zap className="w-5 h-5 text-primary" />
                   <div>
-                    <h3 className="font-tomato text-base font-semibold text-gray-900">PIX Automático (ASAAS)</h3>
+                    <h3 className="font-tomato text-base font-semibold text-gray-900">PIX Automático</h3>
                     <p className="text-sm text-muted-foreground">
                       Gera QR Code PIX automaticamente via sua conta ASAAS
                     </p>
                     {asaasPix.enabled && paymentMethods.find(m => m.id === 'pix')?.enabled && (
-                      <p className="text-xs text-amber-600 mt-0.5">PIX Manual será desativado ao salvar</p>
+                      <p className="text-xs text-amber-600 mt-0.5">PIX Direto será desativado ao salvar</p>
                     )}
                   </div>
                 </div>
