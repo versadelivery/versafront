@@ -653,6 +653,20 @@ export default function CheckoutPage() {
 
   const paymentAdjustment = calculatePaymentAdjustment()
 
+  const calculatePickupAdjustment = (): number => {
+    if (deliveryOption !== 'pickup' || !shopDeliveryConfig) return 0
+    const adjustmentType = shopDeliveryConfig.pickup_adjustment_type as string
+    if (!adjustmentType || adjustmentType === 'none') return 0
+    const value = Number(shopDeliveryConfig.pickup_adjustment_value) || 0
+    if (value <= 0) return 0
+    const amount = shopDeliveryConfig.pickup_value_type === 'percentage'
+      ? (totalPrice || 0) * (value / 100)
+      : value
+    return adjustmentType === 'discount' ? -amount : amount
+  }
+
+  const pickupAdjustment = calculatePickupAdjustment()
+
   const getPaymentAdjustmentBadge = (method: PaymentMethod): { label: string; color: string } | null => {
     if (!shopPaymentConfig) return null
     const attrKey = method
@@ -671,7 +685,7 @@ export default function CheckoutPage() {
   }
 
   const calculateTotal = () => {
-    const total = (totalPrice || 0) + (calculateDeliveryFee() || 0) - (couponDiscount || 0) + (paymentAdjustment || 0)
+    const total = (totalPrice || 0) + (calculateDeliveryFee() || 0) - (couponDiscount || 0) + (paymentAdjustment || 0) + pickupAdjustment
     return isNaN(total) ? 0 : Math.max(total, 0)
   }
 
@@ -1346,9 +1360,15 @@ export default function CheckoutPage() {
                 {deliveryOption === 'pickup' && (
                   <div className="flex items-start gap-2.5 border border-[#E5E2DD] rounded-md px-4 py-3">
                     <Store className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-gray-700">
-                      Você retirará o pedido diretamente no estabelecimento. Sem taxa de entrega.
-                    </p>
+                    <div className="text-sm text-gray-700">
+                      <p>Você retirará o pedido diretamente no estabelecimento.</p>
+                      {shop?.data?.attributes?.address ? (
+                        <p className="mt-1 font-medium text-gray-900">{shop.data.attributes.address}</p>
+                      ) : (
+                        <p className="mt-1 text-muted-foreground">Endereço da loja não informado.</p>
+                      )}
+                      <p className="mt-1 text-xs text-muted-foreground">Sem taxa de entrega.</p>
+                    </div>
                   </div>
                 )}
               </div>
@@ -1448,6 +1468,7 @@ export default function CheckoutPage() {
                 couponDiscount={couponDiscount}
                 appliedCouponCode={appliedCoupon?.code}
                 paymentAdjustment={paymentAdjustment}
+                pickupAdjustment={pickupAdjustment}
                 paymentMethodLabel={PAYMENT_LABELS[paymentMethod].label}
               />
             </div>
@@ -1483,6 +1504,7 @@ export default function CheckoutPage() {
                 couponDiscount={couponDiscount}
                 appliedCouponCode={appliedCoupon?.code}
                 paymentAdjustment={paymentAdjustment}
+                pickupAdjustment={pickupAdjustment}
                 paymentMethodLabel={PAYMENT_LABELS[paymentMethod].label}
               />
             </div>
@@ -1511,6 +1533,7 @@ interface OrderSummaryProps {
   couponDiscount?: number
   appliedCouponCode?: string
   paymentAdjustment?: number
+  pickupAdjustment?: number
   paymentMethodLabel?: string
 }
 
@@ -1518,7 +1541,7 @@ function OrderSummary({
   totalPrice, deliveryOption, deliveryFeeDisplay, calculateTotal,
   cartItems, isBelowMinOrder, minOrderValue, isSubmitting, isShopOpen,
   shopStatusLoading, canSubmit, onSubmit, couponDiscount = 0, appliedCouponCode,
-  paymentAdjustment = 0, paymentMethodLabel
+  paymentAdjustment = 0, pickupAdjustment = 0, paymentMethodLabel
 }: OrderSummaryProps) {
   const totalDiscount = cartItems.reduce((sum, item) => {
     if (item.priceWithDiscount) {
@@ -1572,6 +1595,13 @@ function OrderSummary({
                 {paymentAdjustment < 0 ? '- ' : '+ '}
                 R$ {Math.abs(paymentAdjustment).toFixed(2).replace('.', ',')}
               </span>
+            </div>
+          )}
+
+          {pickupAdjustment !== 0 && (
+            <div className={`flex justify-between ${pickupAdjustment < 0 ? 'text-green-600' : 'text-orange-600'}`}>
+              <span>{pickupAdjustment < 0 ? 'Desconto na retirada' : 'Acréscimo na retirada'}</span>
+              <span>{pickupAdjustment < 0 ? '- ' : '+ '}R$ {Math.abs(pickupAdjustment).toFixed(2).replace('.', ',')}</span>
             </div>
           )}
         </div>

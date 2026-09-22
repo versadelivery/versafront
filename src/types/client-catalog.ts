@@ -6,6 +6,7 @@ export interface ShopResponse {
       cellphone: string
       name: string
       slug: string
+      address?: string | null
       image_url?: string | null
       welcome_message?: string | null
       banner_text?: string | null
@@ -25,6 +26,9 @@ export interface ShopResponse {
             amount: number
             min_value_free_delivery: string | null
             minimum_order_value: number | null
+            pickup_adjustment_type?: 'none' | 'discount' | 'surcharge'
+            pickup_adjustment_value?: number | string
+            pickup_value_type?: 'fixed' | 'percentage'
             shop_delivery_neighborhoods: {
               data: Array<{
                 id: string
