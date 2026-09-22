@@ -355,7 +355,7 @@ export default function OrderManagement() {
       unsubscribe();
       clearTimeout(timeout);
     };
-  }, []); // Remover dependência subscribeToAdminOrders
+  }, [subscribeToAdminOrders]);
 
   // Alerta sonoro para pedidos atrasados (preparo e entrega)
   useEffect(() => {

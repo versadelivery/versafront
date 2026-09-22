@@ -76,24 +76,38 @@ export function createAdminCableWithToken() {
 
 export function useAdminActionCable() {
   const [isConnected, setIsConnected] = useState(false)
+  const [cableReady, setCableReady] = useState(false)
   const cableRef = useRef<any>(null)
   const subscriptionRef = useRef<any>(null)
   // pending confirmations: orderId -> array of pending promises waiting server confirmation
   const pendingConfirmationsRef = useRef<Record<string, Array<any>>>({});
 
   useEffect(() => {
-    const token = getToken()
-    if (token) {
+    let disposed = false
+    let retryTimer: ReturnType<typeof setTimeout> | undefined
+    const connect = () => {
+      if (disposed || cableRef.current) return
+      const token = getToken()
+      if (!token) {
+        retryTimer = setTimeout(connect, 250)
+        return
+      }
       const cable = createAdminCableWithToken()
       if (cable) {
         cableRef.current = cable
+        setCableReady(true)
         setIsConnected(true)
       }
     }
+    connect()
 
     return () => {
+      disposed = true
+      if (retryTimer) clearTimeout(retryTimer)
       if (cableRef.current) {
         cableRef.current.disconnect()
+        cableRef.current = null
+        setCableReady(false)
         setIsConnected(false)
       }
     }
@@ -221,7 +235,7 @@ export function useAdminActionCable() {
       }
       subscriptionRef.current = null
     }
-  }, [])  // Array vazio para memoizar a função
+  }, [cableReady])
 
   const updateOrder = useCallback((orderId: string, status?: string, paid_at?: boolean, deliveryPerson?: string, cancellationReason?: string): Promise<boolean> => {
     console.log('🔄 updateOrder chamado:', { orderId, status, paid_at, deliveryPerson, cancellationReason });
