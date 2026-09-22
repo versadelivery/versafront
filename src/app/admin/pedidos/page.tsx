@@ -591,7 +591,7 @@ export default function OrderManagement() {
 
     try {
       // Enviar cancelamento via websocket
-      const success = await updateOrder(orderId, 'cancelled', undefined, undefined, reasonType || reason);
+      const success = await updateOrder(orderId, 'cancelled', undefined, undefined, reason, reasonType);
       
       if (success) {
       } else {
