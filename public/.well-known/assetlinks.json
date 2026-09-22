@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.versadelivery.app",
+      "sha256_cert_fingerprints": [
+        "65:9B:71:BB:8E:24:30:63:54:50:DD:AD:1C:7F:2D:11:75:2F:EC:23:0D:7F:F4:19:3A:16:23:D0:AD:77:F7:04"
+      ]
+    }
+  }
+]
