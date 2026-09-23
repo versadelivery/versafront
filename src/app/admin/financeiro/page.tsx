@@ -199,7 +199,7 @@ export default function FinanceiroPage() {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="all" className="w-full">
-              <TabsList className="mb-4">
+              <TabsList className="mb-4 max-w-full overflow-x-auto flex-nowrap [&::-webkit-scrollbar]:hidden">
                 <TabsTrigger value="all">
                   Todas ({charges.length})
                 </TabsTrigger>

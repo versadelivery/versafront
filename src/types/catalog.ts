@@ -103,12 +103,14 @@ export interface UICatalogItem {
         type: string;
         attributes: {
           name: string;
+          required?: boolean;
           options: {
             data: Array<{
               id: string;
               type: string;
               attributes: {
                 name: string;
+                price?: string;
               };
             }>;
           };

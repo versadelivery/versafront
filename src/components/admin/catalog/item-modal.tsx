@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import Image from "next/image";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Camera, Loader2, Plus, Trash2, Boxes, Egg } from "lucide-react";
+import { Camera, Loader2, Plus, Trash2, Boxes, Egg, Copy } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useCatalogGroup } from "@/hooks/useCatalogGroup";
 import { useCatalogComplement } from "@/hooks/useCatalogComplement";
@@ -36,10 +36,12 @@ interface PrepareMethod {
 
 interface StepOption {
   name: string;
+  price: string;
 }
 
 interface Step {
   name: string;
+  required: boolean;
   options: StepOption[];
 }
 
@@ -105,7 +107,7 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
 
   // Estados - Etapas
   const [hasSteps, setHasSteps] = useState(false);
-  const [steps, setSteps] = useState<Step[]>([{ name: '', options: [{ name: '' }] }]);
+  const [steps, setSteps] = useState<Step[]>([{ name: '', required: true, options: [{ name: '', price: '' }] }]);
 
   // Estados - Tags Visuais
   const [newTag, setNewTag] = useState(false);
@@ -185,7 +187,7 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
     setPrepareMethods([{ name: '' }]);
     setPrepareMethodsLimit('');
     setHasSteps(false);
-    setSteps([{ name: '', options: [{ name: '' }] }]);
+    setSteps([{ name: '', required: true, options: [{ name: '', price: '' }] }]);
     setNewTag(false);
     setBestSellerTag(false);
     setHighlight(false);
@@ -237,10 +239,14 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
       newErrors.group = 'Selecione um grupo';
     }
 
+    const hasRequiredStep = hasSteps && steps.some((s) => s.name.trim() !== '' && s.required);
+
     if (!price) {
       newErrors.price = 'Preço é obrigatório';
-    } else if (priceNumber <= 0) {
-      newErrors.price = 'Preço deve ser maior que zero';
+    } else if (priceNumber < 0) {
+      newErrors.price = 'Preço não pode ser negativo';
+    } else if (priceNumber === 0 && !hasRequiredStep) {
+      newErrors.price = 'Preço deve ser maior que zero (ou adicione uma etapa de montagem obrigatória)';
     }
 
     // Validação de desconto
@@ -384,7 +390,7 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
   // =============================================================================
 
   const handleAddStep = () => {
-    setSteps([...steps, { name: '', options: [{ name: '' }] }]);
+    setSteps([...steps, { name: '', required: true, options: [{ name: '', price: '' }] }]);
     markDirty();
   };
 
@@ -395,6 +401,19 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
     }
   };
 
+  const handleDuplicateStep = (index: number) => {
+    const original = steps[index];
+    const duplicated: Step = {
+      name: original.name ? `${original.name} (cópia)` : '',
+      required: original.required,
+      options: original.options.map((option) => ({ ...option })),
+    };
+    const newSteps = [...steps];
+    newSteps.splice(index + 1, 0, duplicated);
+    setSteps(newSteps);
+    markDirty();
+  };
+
   const handleStepNameChange = (index: number, value: string) => {
     const newSteps = [...steps];
     newSteps[index] = { ...newSteps[index], name: value };
@@ -402,9 +421,16 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
     markDirty();
   };
 
+  const handleStepRequiredChange = (index: number, required: boolean) => {
+    const newSteps = [...steps];
+    newSteps[index] = { ...newSteps[index], required };
+    setSteps(newSteps);
+    markDirty();
+  };
+
   const handleAddStepOption = (stepIndex: number) => {
     const newSteps = [...steps];
-    newSteps[stepIndex].options.push({ name: '' });
+    newSteps[stepIndex].options.push({ name: '', price: '' });
     setSteps(newSteps);
     markDirty();
   };
@@ -418,9 +444,9 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
     }
   };
 
-  const handleStepOptionChange = (stepIndex: number, optionIndex: number, value: string) => {
+  const handleStepOptionChange = (stepIndex: number, optionIndex: number, field: 'name' | 'price', value: string) => {
     const newSteps = [...steps];
-    newSteps[stepIndex].options[optionIndex] = { name: value };
+    newSteps[stepIndex].options[optionIndex] = { ...newSteps[stepIndex].options[optionIndex], [field]: value };
     setSteps(newSteps);
     markDirty();
   };
@@ -505,8 +531,10 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
         if (validOptions.length === 0) return;
 
         formData.append(`catalog_item_steps_attributes[${stepIndex}][name]`, step.name.trim());
+        formData.append(`catalog_item_steps_attributes[${stepIndex}][required]`, step.required.toString());
         validOptions.forEach((option, optionIndex) => {
           formData.append(`catalog_item_steps_attributes[${stepIndex}][catalog_item_step_options_attributes][${optionIndex}][name]`, option.name.trim());
+          formData.append(`catalog_item_steps_attributes[${stepIndex}][catalog_item_step_options_attributes][${optionIndex}][price]`, (parseFloat(option.price.replace(',', '.')) || 0).toString());
         });
         stepIndex++;
       });
@@ -914,11 +942,27 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
                       variant="ghost"
                       size="icon"
                       className="h-9 w-9 shrink-0"
+                      onClick={() => handleDuplicateStep(stepIndex)}
+                      title="Duplicar etapa"
+                    >
+                      <Copy className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 shrink-0"
                       onClick={() => handleRemoveStep(stepIndex)}
                       disabled={steps.length <= 1}
                     >
                       <Trash2 className={`h-4 w-4 ${steps.length <= 1 ? 'text-muted-foreground/30' : 'text-destructive'}`} />
                     </Button>
+                  </div>
+
+                  {/* Obrigatória ou opcional */}
+                  <div className="flex items-center justify-between rounded-md px-2.5 py-1.5 bg-white border border-gray-200">
+                    <span className="text-xs font-medium text-muted-foreground">Etapa obrigatória</span>
+                    <Switch checked={step.required} onCheckedChange={(v) => handleStepRequiredChange(stepIndex, v)} />
                   </div>
 
                   {/* Opções da etapa */}
@@ -929,10 +973,19 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
                         <span className="text-muted-foreground text-sm">•</span>
                         <Input
                           value={option.name}
-                          onChange={(e) => handleStepOptionChange(stepIndex, optionIndex, e.target.value)}
+                          onChange={(e) => handleStepOptionChange(stepIndex, optionIndex, 'name', e.target.value)}
                           placeholder="Nome da opção"
                           className="flex-1 h-8 text-sm"
                         />
+                        <div className="relative w-24 shrink-0">
+                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">R$</span>
+                          <Input
+                            value={option.price}
+                            onChange={(e) => handleStepOptionChange(stepIndex, optionIndex, 'price', formatPrice(e.target.value))}
+                            placeholder="0,00"
+                            className="pl-7 h-8 text-sm"
+                          />
+                        </div>
                         <Button
                           type="button"
                           variant="ghost"

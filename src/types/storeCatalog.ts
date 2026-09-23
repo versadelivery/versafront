@@ -76,6 +76,7 @@ interface CatalogItemStep {
   type: string;
   attributes: {
     name: string;
+    required?: boolean;
     options: {
       data: CatalogItemStepOption[];
     };
@@ -87,5 +88,6 @@ interface CatalogItemStepOption {
   type: string;
   attributes: {
     name: string;
+    price?: string;
   };
 }

@@ -279,12 +279,20 @@ export function ItemDetailsModal({ id, isOpen, onClose }: ItemDetailsModalProps)
                         {index + 1}
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm font-semibold">{step.attributes.name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-semibold">{step.attributes.name}</p>
+                          <span className="text-[10px] font-semibold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                            {step.attributes.required === false ? 'OPCIONAL' : 'OBRIGATÓRIA'}
+                          </span>
+                        </div>
                         {step.attributes.options?.data?.length > 0 && (
                           <div className="mt-1.5 space-y-0.5">
                             {step.attributes.options.data.map((option: any, optIndex: number) => (
-                              <p key={option.id || optIndex} className="text-xs text-muted-foreground">
-                                • {option.attributes.name}
+                              <p key={option.id || optIndex} className="text-xs text-muted-foreground flex justify-between">
+                                <span>• {option.attributes.name}</span>
+                                {Number(option.attributes.price) > 0 && (
+                                  <span className="text-primary font-medium">+ {formatPrice(parseFloat(option.attributes.price))}</span>
+                                )}
                               </p>
                             ))}
                           </div>

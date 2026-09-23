@@ -155,7 +155,7 @@ export function ItemOptionsDialog({
       const steps: any[] = item.attributes?.steps?.data ?? [];
       steps.forEach((step: any) => {
         const opts: any[] = step.attributes?.options?.data ?? [];
-        if (opts.length > 0) initOptions[step.id] = opts[0].id;
+        if (step.attributes?.required !== false && opts.length > 0) initOptions[step.id] = opts[0].id;
       });
       setSelectedOptions(initOptions);
       setObservation("");
@@ -231,9 +231,19 @@ export function ItemOptionsDialog({
     }, 0);
   }, [selectedSharedComplementIds, sharedComplements]);
 
+  const stepsTotal = useMemo(() => {
+    return steps.reduce((sum, step: any) => {
+      const selectedOptionId = selectedOptions[step.id];
+      if (!selectedOptionId) return sum;
+      const opts: any[] = step.attributes?.options?.data ?? [];
+      const option = opts.find((o: any) => o.id === selectedOptionId);
+      return sum + parseFloat(option?.attributes?.price || "0");
+    }, 0);
+  }, [selectedOptions, steps]);
+
   const totalPrice = isWeightBased
-    ? basePrice * weight + extrasTotal + complementsTotal
-    : basePrice + extrasTotal + complementsTotal;
+    ? basePrice * weight + extrasTotal + complementsTotal + stepsTotal
+    : basePrice + extrasTotal + complementsTotal + stepsTotal;
 
   const toggleExtra = (id: string) => {
     setSelectedExtraIds((prev) =>
@@ -411,6 +421,7 @@ export function ItemOptionsDialog({
             {steps.map((step: any) => {
               const opts: any[] = step.attributes?.options?.data ?? [];
               if (opts.length === 0) return null;
+              const isRequired = step.attributes?.required !== false;
               return (
                 <div key={step.id}>
                   <hr className="border-[#E5E2DD] mb-5" />
@@ -418,7 +429,7 @@ export function ItemOptionsDialog({
                     <div className="flex items-center gap-2">
                       <ListChecks className="h-4 w-4 text-primary" />
                       <h3 className="text-sm font-semibold text-gray-900">{step.attributes.name}</h3>
-                      <span className="text-xs text-muted-foreground">— escolha uma opção</span>
+                      <span className="text-xs text-muted-foreground">— {isRequired ? 'obrigatório' : 'opcional'}</span>
                     </div>
                     <RadioGroup
                       value={selectedOptions[step.id] ?? ""}
@@ -433,6 +444,7 @@ export function ItemOptionsDialog({
                       {opts.map((option: any) => {
                         const isSelected =
                           selectedOptions[step.id] === option.id;
+                        const optionPrice = parseFloat(option.attributes.price || "0");
                         return (
                           <label
                             key={option.id}
@@ -450,6 +462,11 @@ export function ItemOptionsDialog({
                             <span className="flex-1 text-sm font-medium text-gray-900">
                               {option.attributes.name}
                             </span>
+                            {optionPrice > 0 && (
+                              <span className="text-sm font-semibold text-green-600">
+                                +{formatPrice(optionPrice)}
+                              </span>
+                            )}
                           </label>
                         );
                       })}
@@ -628,9 +645,9 @@ export function ItemOptionsDialog({
             <span className="text-xl font-bold text-primary">
               {formatPrice(totalPrice)}
             </span>
-            {(extrasTotal > 0 || complementsTotal > 0) && (
+            {(extrasTotal > 0 || complementsTotal > 0 || stepsTotal > 0) && (
               <span className="text-xs text-green-600">
-                (+{formatPrice(extrasTotal + complementsTotal)})
+                (+{formatPrice(extrasTotal + complementsTotal + stepsTotal)})
               </span>
             )}
           </div>

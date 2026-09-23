@@ -149,6 +149,7 @@ export interface CatalogItemStep {
   type: string;
   attributes: {
     name: string;
+    required?: boolean;
     options: {
       data: CatalogItemStepOption[];
     };

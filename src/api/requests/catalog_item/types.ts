@@ -3,6 +3,7 @@ interface CatalogItemStepOption {
   type: 'catalog_item_step_option';
   attributes: {
     name: string;
+    price?: string;
   };
 }
 
@@ -11,6 +12,7 @@ interface CatalogItemStep {
   type: 'catalog_item_step';
   attributes: {
     name: string;
+    required?: boolean;
     options: {
       data: CatalogItemStepOption[];
     };

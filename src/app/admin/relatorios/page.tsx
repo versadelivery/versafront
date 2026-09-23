@@ -174,9 +174,9 @@ export default function RelatoriosPage() {
         </div>
 
         <Tabs value={currentTab} onValueChange={handleTabChange}>
-          <TabsList className="w-full justify-start">
+          <TabsList className="w-full justify-start overflow-x-auto flex-nowrap [&::-webkit-scrollbar]:hidden">
             {activeCategory.tabs.map((tab) => (
-              <TabsTrigger key={tab.key} value={tab.key}>
+              <TabsTrigger key={tab.key} value={tab.key} className="shrink-0">
                 {tab.label}
               </TabsTrigger>
             ))}

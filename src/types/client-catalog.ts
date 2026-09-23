@@ -124,12 +124,14 @@ export interface ShopResponse {
                       type: string
                       attributes: {
                         name: string
+                        required?: boolean
                         options: {
                           data: Array<{
                             id: string
                             type: string
                             attributes: {
                               name: string
+                              price?: string
                             }
                           }>
                         }
@@ -212,12 +214,14 @@ export interface Item {
         type: string
         attributes: {
           name: string
+          required?: boolean
           options: {
             data: Array<{
               id: string
               type: string
               attributes: {
                 name: string
+                price?: string
               }
             }>
           }

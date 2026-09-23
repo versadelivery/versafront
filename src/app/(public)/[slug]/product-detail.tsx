@@ -165,7 +165,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(() => {
     const init: Record<string, string> = {};
     product.attributes.steps.data.forEach(step => {
-      if (step.attributes.options.data.length > 0) {
+      if (step.attributes.required !== false && step.attributes.options.data.length > 0) {
         init[step.id] = step.attributes.options.data[0].id;
       }
     });
@@ -218,8 +218,16 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
       });
     });
 
+    attributes.steps.data.forEach(step => {
+      const selectedOptionId = selectedOptions[step.id];
+      if (!selectedOptionId) return;
+      const option = step.attributes.options.data.find(o => o.id === selectedOptionId);
+      const optionPrice = parseFloat(option?.attributes.price || '0');
+      if (!isNaN(optionPrice)) total += optionPrice;
+    });
+
     return total;
-  }, [hasDiscount, attributes, isWeightBased, weight, quantity, selectedExtras, selectedSharedComplements]);
+  }, [hasDiscount, attributes, isWeightBased, weight, quantity, selectedExtras, selectedSharedComplements, selectedOptions]);
 
   const resetState = () => {
     setQuantity(1);
@@ -230,7 +238,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
     setSelectedOptions(() => {
       const init: Record<string, string> = {};
       product.attributes.steps.data.forEach(step => {
-        if (step.attributes.options.data.length > 0) {
+        if (step.attributes.required !== false && step.attributes.options.data.length > 0) {
           init[step.id] = step.attributes.options.data[0].id;
         }
       });
@@ -384,30 +392,53 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
 
             {/* Steps / Options (radio) */}
             {hasSteps &&
-              attributes.steps.data.map(step => (
-                <div key={step.id} className="border-t-[6px] border-[#E5E2DD]">
-                  <div className="px-5 py-4">
-                    <div className="mb-1">
-                      <h3 className="font-tomato text-base font-bold text-gray-900">{step.attributes.name}</h3>
-                    </div>
-                    <p className="text-sm text-gray-400 mb-4">Selecione 1 opção</p>
-                    <div className="space-y-0">
-                      {step.attributes.options.data.map((option, idx) => (
-                        <label
-                          key={option.id}
-                          onClick={() => setSelectedOptions(prev => ({ ...prev, [step.id]: option.id }))}
-                          className={`flex items-center gap-3 py-3.5 cursor-pointer ${
-                            idx < step.attributes.options.data.length - 1 ? 'border-b border-[#E5E2DD]' : ''
-                          }`}
-                        >
-                          <DDRadio checked={selectedOptions[step.id] === option.id} />
-                          <span className="text-sm text-gray-900">{option.attributes.name}</span>
-                        </label>
-                      ))}
+              attributes.steps.data.map(step => {
+                const isRequired = step.attributes.required !== false;
+                return (
+                  <div key={step.id} className="border-t-[6px] border-[#E5E2DD]">
+                    <div className="px-5 py-4">
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className="font-tomato text-base font-bold text-gray-900">{step.attributes.name}</h3>
+                        <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-md">
+                          {isRequired ? 'Obrigatório' : 'Opcional'}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-400 mb-4">Selecione 1 opção</p>
+                      <div className="space-y-0">
+                        {step.attributes.options.data.map((option, idx) => {
+                          const optionPrice = parseFloat(option.attributes.price || '0');
+                          return (
+                            <label
+                              key={option.id}
+                              onClick={() => setSelectedOptions(prev => {
+                                if (!isRequired && prev[step.id] === option.id) {
+                                  const next = { ...prev };
+                                  delete next[step.id];
+                                  return next;
+                                }
+                                return { ...prev, [step.id]: option.id };
+                              })}
+                              className={`flex items-center justify-between gap-3 py-3.5 cursor-pointer ${
+                                idx < step.attributes.options.data.length - 1 ? 'border-b border-[#E5E2DD]' : ''
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <DDRadio checked={selectedOptions[step.id] === option.id} />
+                                <span className="text-sm text-gray-900">{option.attributes.name}</span>
+                              </div>
+                              {optionPrice > 0 && (
+                                <span className="text-sm text-gray-500 ml-3 flex-shrink-0">
+                                  +{formatPrice(optionPrice)}
+                                </span>
+                              )}
+                            </label>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             }
 
             {/* Prepare Methods */}

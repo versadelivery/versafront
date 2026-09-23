@@ -79,7 +79,7 @@ export default function BillingCard({ charge, onViewPayment }: BillingCardProps)
 
           {/* Valores */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <div className="flex items-center gap-6">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
               {/* Faturamento */}
               <div className="flex items-center gap-2">
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
