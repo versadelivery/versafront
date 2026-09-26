@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Package } from "lucide-react";
 import { formatPrice } from "@/utils/format-price";
+import { calculateAssemblyPrice } from "@/utils/assembly-pricing";
 
 const ITEM_H = 44;
 const VISIBLE = 5;
@@ -231,15 +232,10 @@ export function ItemOptionsDialog({
     }, 0);
   }, [selectedSharedComplementIds, sharedComplements]);
 
-  const stepsTotal = useMemo(() => {
-    return steps.reduce((sum, step: any) => {
-      const selectedOptionId = selectedOptions[step.id];
-      if (!selectedOptionId) return sum;
-      const opts: any[] = step.attributes?.options?.data ?? [];
-      const option = opts.find((o: any) => o.id === selectedOptionId);
-      return sum + parseFloat(option?.attributes?.price || "0");
-    }, 0);
-  }, [selectedOptions, steps]);
+  const stepsTotal = useMemo(
+    () => calculateAssemblyPrice(steps, selectedOptions, item?.attributes?.assembly_pricing_mode || 'sum'),
+    [selectedOptions, steps, item]
+  );
 
   const totalPrice = isWeightBased
     ? basePrice * weight + extrasTotal + complementsTotal + stepsTotal

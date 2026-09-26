@@ -11,6 +11,7 @@ import { CatalogItem } from "./types";
 import { formatPrice } from "./format-price";
 import { Minus, Plus, Utensils, X, Info } from "lucide-react";
 import { useCart } from "./cart/cart-context";
+import { calculateAssemblyPrice } from "@/utils/assembly-pricing";
 
 const ITEM_H = 44;
 const VISIBLE = 5;
@@ -195,6 +196,9 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
   const discountPercent = hasDiscount
     ? Math.round(((attributes.price - (attributes.price_with_discount || 0)) / attributes.price) * 100)
     : 0;
+  const baseDisplayPrice = hasDiscount ? attributes.price_with_discount! : attributes.price;
+  const startingPrice = Number(attributes.starting_price ?? baseDisplayPrice);
+  const hasStartingPrice = startingPrice > Number(baseDisplayPrice) && attributes.steps.data.length > 0;
 
   const calculatedPrice = useMemo(() => {
     const basePrice = hasDiscount ? attributes.price_with_discount! : attributes.price;
@@ -218,13 +222,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
       });
     });
 
-    attributes.steps.data.forEach(step => {
-      const selectedOptionId = selectedOptions[step.id];
-      if (!selectedOptionId) return;
-      const option = step.attributes.options.data.find(o => o.id === selectedOptionId);
-      const optionPrice = parseFloat(option?.attributes.price || '0');
-      if (!isNaN(optionPrice)) total += optionPrice;
-    });
+    total += calculateAssemblyPrice(attributes.steps.data, selectedOptions, attributes.assembly_pricing_mode || 'sum');
 
     return total;
   }, [hasDiscount, attributes, isWeightBased, weight, quantity, selectedExtras, selectedSharedComplements, selectedOptions]);
@@ -331,7 +329,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
 
             <div className="flex items-baseline gap-2.5 mt-2">
               <span className="text-base font-medium text-gray-900">
-                {formatPrice(hasDiscount ? attributes.price_with_discount! : attributes.price)}
+                {hasStartingPrice ? `A partir de ${formatPrice(startingPrice)}` : formatPrice(hasDiscount ? attributes.price_with_discount! : attributes.price)}
               </span>
               {hasDiscount && (
                 <span className="text-sm text-gray-400 line-through">

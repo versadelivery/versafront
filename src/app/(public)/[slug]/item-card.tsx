@@ -33,6 +33,9 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onClick, className }) => {
     : 0;
 
   const hasImage = !!attributes.image_url;
+  const baseDisplayPrice = hasDiscount ? Number(attributes.price_with_discount) : Number(attributes.price);
+  const startingPrice = Number(attributes.starting_price ?? baseDisplayPrice);
+  const hasStartingPrice = startingPrice > baseDisplayPrice && (attributes.steps?.data?.length ?? 0) > 0;
 
   return (
     <>
@@ -126,7 +129,11 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onClick, className }) => {
               </div>
 
               <div className="mt-auto">
-                {hasDiscount ? (
+                {hasStartingPrice ? (
+                  <span className="text-primary font-bold text-lg sm:text-xl">
+                    A partir de {formatPrice(startingPrice)}
+                  </span>
+                ) : hasDiscount ? (
                   <div className="flex items-end gap-1 sm:gap-2">
                     <span className="text-primary font-bold text-lg sm:text-xl">
                       {formatPrice(Number(attributes.price_with_discount))}
