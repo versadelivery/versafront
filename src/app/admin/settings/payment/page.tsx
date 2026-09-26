@@ -23,6 +23,7 @@ interface PaymentMethod {
   adjustmentType: AdjustmentType;
   adjustmentValue: string;
   valueType: ValueType;
+  supportsAdjustment?: boolean;
 }
 
 interface AsaasPixConfig {
@@ -119,13 +120,14 @@ export default function PaymentSettingsPage() {
         },
         {
           id: "food_voucher",
-          name: "Vale alimentação",
-          description: "Pagamento com cartão de vale alimentação",
+          name: "Vale alimentação / refeição",
+          description: "Pagamento com cartão de vale alimentação ou refeição",
           icon: <Wallet className="w-5 h-5 text-primary" />,
           enabled: attrs.food_voucher,
           adjustmentType: "none",
           adjustmentValue: "0",
           valueType: "fixed"
+          ,supportsAdjustment: false
         },
         {
           id: "pix",
@@ -455,6 +457,8 @@ export default function PaymentSettingsPage() {
                 {method.enabled && (
                   <div className="px-5 py-4 border-t border-[#E5E2DD] bg-[#FAF9F7] space-y-4">
                     {/* Ajuste de preço */}
+                    {method.supportsAdjustment !== false && (
+                    <>
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
                       <Select
                         value={method.adjustmentType}
@@ -512,6 +516,8 @@ export default function PaymentSettingsPage() {
                         </>
                       )}
                     </div>
+                    </>
+                    )}
 
                     {/* Momento do pagamento PIX */}
                     {method.id === 'pix' && (
