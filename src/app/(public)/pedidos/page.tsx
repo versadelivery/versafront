@@ -27,6 +27,7 @@ const getPaymentMethodLabel = (method: string) => {
     manual_pix: "PIX",
     cash: "Dinheiro",
     food_voucher: "Vale alimentação / refeição",
+    store_credit: "Fiado (a receber)",
   };
   return map[method] ?? method;
 };

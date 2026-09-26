@@ -124,10 +124,19 @@ export default function PaymentSettingsPage() {
           description: "Pagamento com cartão de vale alimentação ou refeição",
           icon: <Wallet className="w-5 h-5 text-primary" />,
           enabled: attrs.food_voucher,
-          adjustmentType: "none",
-          adjustmentValue: "0",
-          valueType: "fixed"
-          ,supportsAdjustment: false
+          adjustmentType: attrs.food_voucher_adjustment_type || "none",
+          adjustmentValue: attrs.food_voucher_adjustment_value || "0",
+          valueType: attrs.food_voucher_value_type || "fixed"
+        },
+        {
+          id: "store_credit",
+          name: "Fiado (a receber)",
+          description: "Registra o valor para recebimento posterior",
+          icon: <Wallet className="w-5 h-5 text-primary" />,
+          enabled: attrs.store_credit,
+          adjustmentType: attrs.store_credit_adjustment_type || "none",
+          adjustmentValue: attrs.store_credit_adjustment_value || "0",
+          valueType: attrs.store_credit_value_type || "fixed"
         },
         {
           id: "pix",
@@ -265,6 +274,7 @@ export default function PaymentSettingsPage() {
     const debit = getMethod("debit_card");
     const pix = getMethod("pix");
     const foodVoucher = getMethod("food_voucher");
+    const storeCredit = getMethod("store_credit");
 
     await updatePaymentMethodsMutation.mutateAsync({
       data: {
@@ -275,6 +285,13 @@ export default function PaymentSettingsPage() {
           credit: credit?.enabled || false,
           debit: debit?.enabled || false,
           food_voucher: foodVoucher?.enabled || false,
+          food_voucher_adjustment_type: foodVoucher?.adjustmentType || "none",
+          food_voucher_adjustment_value: foodVoucher?.adjustmentValue || "0",
+          food_voucher_value_type: foodVoucher?.valueType || "fixed",
+          store_credit: storeCredit?.enabled || false,
+          store_credit_adjustment_type: storeCredit?.adjustmentType || "none",
+          store_credit_adjustment_value: storeCredit?.adjustmentValue || "0",
+          store_credit_value_type: storeCredit?.valueType || "fixed",
           manual_pix: asaasPix.enabled ? false : (pix?.enabled || false),
           manual_pix_payment_moment: manualPixConfig.paymentMoment,
           pix_key: manualPixConfig.pixKey || null,
@@ -323,9 +340,6 @@ export default function PaymentSettingsPage() {
     if (asaasPix.expirationMinutes !== String(attrs.asaas_pix_expiration_minutes ?? 30)) return true;
 
     return paymentMethods.some(method => {
-      if (method.id === 'food_voucher') {
-        return method.enabled !== attrs[method.id];
-      }
       const attrKey = idToAttributeKey[method.id as keyof typeof idToAttributeKey];
       if (method.enabled !== attrs[attrKey]) return true;
       const adjTypeKey = `${attrKey}_adjustment_type` as keyof typeof attrs;

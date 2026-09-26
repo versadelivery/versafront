@@ -13,6 +13,13 @@ export type ShopPaymentConfig = {
       debit: boolean;
       credit: boolean;
       food_voucher: boolean;
+      food_voucher_adjustment_type: AdjustmentType;
+      food_voucher_adjustment_value: string;
+      food_voucher_value_type: ValueType;
+      store_credit: boolean;
+      store_credit_adjustment_type: AdjustmentType;
+      store_credit_adjustment_value: string;
+      store_credit_value_type: ValueType;
       manual_pix: boolean;
       manual_pix_payment_moment: ManualPixPaymentMoment;
       pix_key: string | null;
