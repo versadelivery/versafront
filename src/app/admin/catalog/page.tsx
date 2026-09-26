@@ -198,6 +198,7 @@ function CatalogPage() {
     item_type: node.attributes.item_type as "unit" | "weight_per_kg" | "weight_per_g",
     price: node.attributes.price,
     price_with_discount: node.attributes.price_with_discount as number,
+    starting_price: node.attributes.starting_price as number,
     measure_interval: node.attributes.measure_interval as number,
     min_weight: node.attributes.min_weight as number,
     max_weight: node.attributes.max_weight as number,
