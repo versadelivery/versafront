@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CheckCircle, XCircle, AlertCircle, CopyCheck, ArrowDown } from "lucide-react";
+import { CheckCircle, XCircle, AlertCircle, CopyCheck, ArrowDown, Plus, Trash2 } from "lucide-react";
 import { useSchedule, WeekSchedule, DayKey } from "../hooks/useSchedule";
 
 interface TimeInputProps {
@@ -55,7 +55,9 @@ interface ScheduleRowProps {
   dayKey: DayKey;
   schedule: WeekSchedule;
   onToggleActive: (day: DayKey, active: boolean) => void;
-  onChangeTime: (day: DayKey, field: "open" | "close", value: string) => void;
+  onChangeTime: (day: DayKey, field: "open" | "close" | "secondOpen" | "secondClose", value: string) => void;
+  onAddSecondPeriod: (day: DayKey) => void;
+  onRemoveSecondPeriod: (day: DayKey) => void;
   onCopyToAll: (day: DayKey) => void;
   onCopyDown: (day: DayKey) => void;
   isFirstDay: boolean;
@@ -67,6 +69,8 @@ function ScheduleRow({
   schedule,
   onToggleActive,
   onChangeTime,
+  onAddSecondPeriod,
+  onRemoveSecondPeriod,
   onCopyToAll,
   onCopyDown,
   isFirstDay,
@@ -151,6 +155,32 @@ function ScheduleRow({
           </Button>
         )}
       </div>
+
+      {daySchedule.active && (
+        <div className="col-span-2 sm:col-span-12 sm:pl-[33.333%]">
+          {daySchedule.secondOpen && daySchedule.secondClose ? (
+            <div className="flex items-end gap-3 rounded-md bg-[#F7F6F3] p-3">
+              <div className="grid flex-1 grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor={`${dayKey}-second-open`} className="mb-1 block text-xs text-muted-foreground">2ª abertura</Label>
+                  <TimeInput id={`${dayKey}-second-open`} value={daySchedule.secondOpen} onChange={(value) => onChangeTime(dayKey, "secondOpen", value)} />
+                </div>
+                <div>
+                  <Label htmlFor={`${dayKey}-second-close`} className="mb-1 block text-xs text-muted-foreground">2º fechamento</Label>
+                  <TimeInput id={`${dayKey}-second-close`} value={daySchedule.secondClose} onChange={(value) => onChangeTime(dayKey, "secondClose", value)} />
+                </div>
+              </div>
+              <Button type="button" variant="ghost" size="icon" onClick={() => onRemoveSecondPeriod(dayKey)} title="Remover segundo período">
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+            </div>
+          ) : (
+            <Button type="button" variant="ghost" size="sm" onClick={() => onAddSecondPeriod(dayKey)} className="text-xs text-primary">
+              <Plus className="mr-1 h-3.5 w-3.5" /> Adicionar intervalo de almoço
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -202,13 +232,25 @@ export default function ScheduleSettings() {
   };
 
   // Handler: Alterar horário
-  const handleChangeTime = (day: DayKey, field: "open" | "close", value: string) => {
+  const handleChangeTime = (day: DayKey, field: "open" | "close" | "secondOpen" | "secondClose", value: string) => {
     if (!localSchedule) return;
 
     setLocalSchedule({
       ...localSchedule,
       [day]: { ...localSchedule[day], [field]: value },
     });
+    setHasChanges(true);
+  };
+
+  const handleAddSecondPeriod = (day: DayKey) => {
+    if (!localSchedule) return;
+    setLocalSchedule({ ...localSchedule, [day]: { ...localSchedule[day], secondOpen: "14:00", secondClose: "17:00" } });
+    setHasChanges(true);
+  };
+
+  const handleRemoveSecondPeriod = (day: DayKey) => {
+    if (!localSchedule) return;
+    setLocalSchedule({ ...localSchedule, [day]: { ...localSchedule[day], secondOpen: null, secondClose: null } });
     setHasChanges(true);
   };
 
@@ -279,6 +321,17 @@ export default function ScheduleSettings() {
       if (closeMinutes <= openMinutes) {
         setSaveError(`O fechamento deve ser depois da abertura em ${DAY_LABELS[day]}.`);
         return;
+      }
+
+      if (daySchedule.secondOpen || daySchedule.secondClose) {
+        const secondOpen = daySchedule.secondOpen?.match(/^(\d{2}):(\d{2})$/);
+        const secondClose = daySchedule.secondClose?.match(/^(\d{2}):(\d{2})$/);
+        const secondOpenMinutes = secondOpen ? Number(secondOpen[1]) * 60 + Number(secondOpen[2]) : -1;
+        const secondCloseMinutes = secondClose ? Number(secondClose[1]) * 60 + Number(secondClose[2]) : -1;
+        if (!secondOpen || !secondClose || secondCloseMinutes <= secondOpenMinutes || secondOpenMinutes < closeMinutes) {
+          setSaveError(`O segundo período de ${DAY_LABELS[day]} deve começar após o primeiro e ter horários válidos.`);
+          return;
+        }
       }
     }
 
@@ -368,6 +421,8 @@ export default function ScheduleSettings() {
             schedule={localSchedule}
             onToggleActive={handleToggleActive}
             onChangeTime={handleChangeTime}
+            onAddSecondPeriod={handleAddSecondPeriod}
+            onRemoveSecondPeriod={handleRemoveSecondPeriod}
             onCopyToAll={handleCopyToAll}
             onCopyDown={handleCopyDown}
             isFirstDay={index === 0}

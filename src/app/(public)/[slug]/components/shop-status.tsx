@@ -51,18 +51,33 @@ export default function ShopStatus({ shopStatusData, shopScheduleConfig, isDarkH
     const active = schedule[`${day}_active`];
     const open = schedule[`${day}_open`]?.toString().slice(-5);
     const close = schedule[`${day}_close`]?.toString().slice(-5);
-    return active && open && close ? `${open} às ${close}` : 'Fechado';
+    const secondOpen = schedule[`${day}_second_open`]?.toString().slice(-5);
+    const secondClose = schedule[`${day}_second_close`]?.toString().slice(-5);
+    if (!active || !open || !close) return 'Fechado';
+    return secondOpen && secondClose
+      ? `${open} às ${close} · ${secondOpen} às ${secondClose}`
+      : `${open} às ${close}`;
   };
+  const todayKey = days[new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' })).getDay()][0];
+  const todaySecondOpen = schedule[`${todayKey}_second_open`]?.toString().slice(-5);
+  const currentMinutes = (() => {
+    const parts = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/Sao_Paulo' }).format(new Date()).split(':').map(Number);
+    return parts[0] * 60 + parts[1];
+  })();
+  const secondOpenMinutes = todaySecondOpen ? todaySecondOpen.split(':').map(Number).reduce((hours, minutes) => hours * 60 + minutes) : null;
+  const reopeningLabel = !shopStatus.isOpen && todaySecondOpen && secondOpenMinutes !== null && currentMinutes < secondOpenMinutes
+    ? ` · Reabre às ${todaySecondOpen}`
+    : '';
 
   return (
     <>
       <div className="flex items-center gap-2 border-l-2 pl-2.5" style={{ borderColor: shopStatus.isOpen ? openBorder : closedBorder }}>
         <div className="text-sm font-semibold" style={{ color: shopStatus.isOpen ? openText : closedText }}>
-          <span>{shopStatus.isOpen ? 'Aberto agora' : 'Fechado agora'}</span>
+          <span>{shopStatus.isOpen ? 'Aberto agora' : `Fechado agora${reopeningLabel}`}</span>
           <span className="ml-1 font-normal" style={{ color: mutedText || '#6B7280' }}>
             · {todayLabel.charAt(0).toUpperCase() + todayLabel.slice(1)}
-            {shopStatus.todaySchedule?.active && shopStatus.todaySchedule.open && shopStatus.todaySchedule.close
-              ? ` ${shopStatus.todaySchedule.open} às ${shopStatus.todaySchedule.close}`
+            {schedule[`${todayKey}_active`]
+              ? ` ${formatDay(todayKey)}`
               : ' · sem atendimento'}
           </span>
         </div>

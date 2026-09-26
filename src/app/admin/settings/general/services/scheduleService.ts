@@ -5,6 +5,8 @@ export interface DaySchedule {
   active: boolean;
   open: string;
   close: string;
+  secondOpen: string | null;
+  secondClose: string | null;
 }
 
 export interface ShopScheduleConfig {
@@ -32,6 +34,8 @@ export interface ShopScheduleConfig {
     saturday_active: boolean | null;
     saturday_open: string | null;
     saturday_close: string | null;
+    [key: `${string}_second_open`]: string | null;
+    [key: `${string}_second_close`]: string | null;
   };
 }
 
@@ -40,7 +44,7 @@ export interface ScheduleResponse {
 }
 
 export interface UpdateScheduleRequest {
-  shop_schedule_config: Partial<ShopScheduleConfig['attributes']>;
+  shop_schedule_config: Record<string, boolean | string | null>;
 }
 
 export const scheduleService = {
