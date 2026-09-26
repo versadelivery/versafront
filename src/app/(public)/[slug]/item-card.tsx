@@ -24,6 +24,14 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onClick, className }) => {
     return 'Por unidade';
   };
 
+  const getPriceUnit = () => {
+    switch (attributes.item_type) {
+      case 'weight_per_kg': return '/ kg';
+      case 'weight_per_g': return '/ g';
+      default: return '/ un';
+    }
+  };
+
   const hasDiscount = attributes.price_with_discount !== null && 
                       attributes.price_with_discount !== undefined &&
                       Number(attributes.price_with_discount) < Number(attributes.price);
@@ -132,11 +140,13 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onClick, className }) => {
                 {hasStartingPrice ? (
                   <span className="text-primary font-bold text-lg sm:text-xl">
                     A partir de {formatPrice(startingPrice)}
+                    <span className="ml-1 text-xs sm:text-sm font-medium text-gray-500">{getPriceUnit()}</span>
                   </span>
                 ) : hasDiscount ? (
                   <div className="flex items-end gap-1 sm:gap-2">
                     <span className="text-primary font-bold text-lg sm:text-xl">
                       {formatPrice(Number(attributes.price_with_discount))}
+                      <span className="ml-1 text-xs sm:text-sm font-medium text-gray-500">{getPriceUnit()}</span>
                     </span>
                     <span className="text-gray-400 text-xs sm:text-sm line-through mb-0.5">
                       {formatPrice(Number(attributes.price))}
@@ -145,6 +155,7 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onClick, className }) => {
                 ) : (
                   <span className="text-gray-900 font-bold text-lg sm:text-xl">
                     {formatPrice(Number(attributes.price))}
+                    <span className="ml-1 text-xs sm:text-sm font-medium text-gray-500">{getPriceUnit()}</span>
                   </span>
                 )}
                 
