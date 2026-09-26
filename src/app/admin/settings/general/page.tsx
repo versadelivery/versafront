@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { ImageIcon, Upload, MapPin, Phone, Mail, ShoppingBag, Wallet, Settings, Clock, ArrowLeft, Timer, Tag, Truck } from "lucide-react";
+import { ImageIcon, Upload, MapPin, Phone, Mail, ShoppingBag, Wallet, Settings, Clock, ArrowLeft, Timer, Tag, Truck, Globe } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -102,11 +102,32 @@ export default function GeneralSettingsPage() {
     }
   };
 
+  const handleSlugChange = (value: string) => {
+    const slug = value
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9-]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .replace(/-{2,}/g, "-");
+    setFormData(prev => ({ ...prev, slug }));
+    setFieldErrors(prev => ({ ...prev, slug: "" }));
+  };
+
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
 
     if (!formData.name?.trim()) {
       errors.name = "Nome do estabelecimento é obrigatório";
+    }
+
+    const reservedSlugs = new Set(["admin", "super-admin", "login", "register", "auth", "pedidos", "delivery", "avaliar", "privacidade", "termos", "sitemap", "api", "rails", "assets", "images"]);
+    if (!formData.slug || formData.slug.length < 3) {
+      errors.slug = "O link deve ter pelo menos 3 caracteres";
+    } else if (formData.slug.length > 60) {
+      errors.slug = "O link deve ter no máximo 60 caracteres";
+    } else if (reservedSlugs.has(formData.slug)) {
+      errors.slug = "Este link é reservado pelo sistema";
     }
 
     if (formData.cellphone) {
@@ -262,6 +283,16 @@ export default function GeneralSettingsPage() {
                       className={`h-10 text-base rounded-md border-[#E5E2DD] focus-visible:ring-primary ${fieldErrors.name ? "border-red-400 focus-visible:ring-red-400" : ""}`}
                     />
                     {fieldErrors.name && <p className="text-xs text-red-500">{fieldErrors.name}</p>}
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="slug" className="flex items-center gap-2 text-sm font-medium">
+                      <Globe className="h-3.5 w-3.5 text-muted-foreground" /> Link da loja
+                    </Label>
+                    <div className={`flex h-10 overflow-hidden rounded-md border bg-white focus-within:ring-1 focus-within:ring-primary ${fieldErrors.slug ? "border-red-400" : "border-[#E5E2DD]"}`}>
+                      <span className="hidden items-center border-r border-[#E5E2DD] bg-[#F7F6F3] px-3 text-sm text-muted-foreground sm:flex">versadelivery.com.br/</span>
+                      <Input id="slug" name="slug" value={formData.slug || ""} onChange={(event) => handleSlugChange(event.target.value)} autoCapitalize="none" autoCorrect="off" spellCheck={false} className="h-full rounded-none border-0 shadow-none focus-visible:ring-0" placeholder="minha-loja" />
+                    </div>
+                    {fieldErrors.slug ? <p className="text-xs text-red-500">{fieldErrors.slug}</p> : <p className="text-xs text-muted-foreground">O link deve ser único. O endereço anterior continuará funcionando.</p>}
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="description" className="text-sm font-medium">

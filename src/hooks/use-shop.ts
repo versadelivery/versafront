@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { shopService, ShopAttributes } from "../services/shop";
 import { toast } from "sonner";
+import type { AxiosError } from "axios";
 
 export function useShop() {
   const queryClient = useQueryClient();
@@ -28,8 +29,8 @@ export function useShop() {
       queryClient.invalidateQueries({ queryKey: ["shop"] });
       toast.success("Informações atualizadas com sucesso!");
     },
-    onError: () => {
-      toast.error("Erro ao atualizar informações");
+    onError: (error: AxiosError<{ error?: string }>) => {
+      toast.error(error.response?.data?.error || "Erro ao atualizar informações");
     },
   });
 
