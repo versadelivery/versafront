@@ -14,6 +14,7 @@ export interface Product {
   priority: number;
   image_url: string;
   prepare_methods_limit?: number | null;
+  assembly_pricing_mode?: 'sum' | 'highest';
   active?: boolean;
 }
 

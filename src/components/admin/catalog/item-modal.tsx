@@ -107,6 +107,7 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
 
   // Estados - Etapas
   const [hasSteps, setHasSteps] = useState(false);
+  const [assemblyPricingMode, setAssemblyPricingMode] = useState<'sum' | 'highest'>('sum');
   const [steps, setSteps] = useState<Step[]>([{ name: '', required: true, options: [{ name: '', price: '' }] }]);
 
   // Estados - Tags Visuais
@@ -187,6 +188,7 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
     setPrepareMethods([{ name: '' }]);
     setPrepareMethodsLimit('');
     setHasSteps(false);
+    setAssemblyPricingMode('sum');
     setSteps([{ name: '', required: true, options: [{ name: '', price: '' }] }]);
     setNewTag(false);
     setBestSellerTag(false);
@@ -524,6 +526,7 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
 
     // Etapas
     if (hasSteps) {
+      formData.append('assembly_pricing_mode', assemblyPricingMode);
       let stepIndex = 0;
       steps.forEach((step) => {
         if (step.name.trim() === '') return;
@@ -926,6 +929,17 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
 
           {hasSteps && (
             <div className="space-y-3">
+              <div className="rounded-md border border-gray-200 bg-white p-3 space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">Forma de cobrança da montagem</label>
+                <Select value={assemblyPricingMode} onValueChange={(value: 'sum' | 'highest') => setAssemblyPricingMode(value)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sum">Somar os valores das opções</SelectItem>
+                    <SelectItem value="highest">Maior valor × quantidade de etapas</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">Ex.: R$ 26 + R$ 22 ou R$ 26 × 2.</p>
+              </div>
               <p className="text-xs text-muted-foreground">Etapas ou opções vazias serão ignoradas ao salvar</p>
               {steps.map((step, stepIndex) => (
                 <div key={stepIndex} className="bg-muted/30 rounded-lg p-3 space-y-2">

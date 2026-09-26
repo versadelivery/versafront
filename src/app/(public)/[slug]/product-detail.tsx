@@ -11,6 +11,7 @@ import { CatalogItem } from "./types";
 import { formatPrice } from "./format-price";
 import { Minus, Plus, Utensils, X, Info } from "lucide-react";
 import { useCart } from "./cart/cart-context";
+import { calculateAssemblyPrice } from "@/utils/assembly-pricing";
 
 const ITEM_H = 44;
 const VISIBLE = 5;
@@ -218,13 +219,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
       });
     });
 
-    attributes.steps.data.forEach(step => {
-      const selectedOptionId = selectedOptions[step.id];
-      if (!selectedOptionId) return;
-      const option = step.attributes.options.data.find(o => o.id === selectedOptionId);
-      const optionPrice = parseFloat(option?.attributes.price || '0');
-      if (!isNaN(optionPrice)) total += optionPrice;
-    });
+    total += calculateAssemblyPrice(attributes.steps.data, selectedOptions, attributes.assembly_pricing_mode || 'sum');
 
     return total;
   }, [hasDiscount, attributes, isWeightBased, weight, quantity, selectedExtras, selectedSharedComplements, selectedOptions]);

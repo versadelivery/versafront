@@ -2,6 +2,7 @@ import { UICatalogItem } from "./catalog";
 
 export interface CatalogItemAttributes {
   prepare_methods_limit?: number | null;
+  assembly_pricing_mode?: 'sum' | 'highest';
   name: string;
   description?: string;
   item_type?: string;

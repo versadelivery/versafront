@@ -99,6 +99,7 @@ export interface ShopResponse {
                   priority: number
                   image_url: string | null
                   prepare_methods_limit?: number | null
+                  assembly_pricing_mode?: 'sum' | 'highest'
                   extra: {
                     data: Array<{
                       id: string
@@ -189,6 +190,7 @@ export interface Item {
     priority: number
     image_url: string | null
     prepare_methods_limit?: number | null
+    assembly_pricing_mode?: 'sum' | 'highest'
     extra: {
       data: Array<{
         id: string

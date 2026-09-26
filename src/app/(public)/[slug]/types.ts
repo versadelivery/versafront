@@ -81,6 +81,7 @@ export interface CatalogItem {
     priority: number;
     image_url: string | null;
     prepare_methods_limit?: number | null;
+    assembly_pricing_mode?: 'sum' | 'highest';
     cost?: number | null;
     ncm_code?: string | null;
     highlight?: boolean;
