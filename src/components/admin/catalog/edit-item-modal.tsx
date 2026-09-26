@@ -190,7 +190,8 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
       setDescription(item.description || '');
       setSelectedGroupId(catalogItem.data.attributes.group?.data?.id || '');
       setItemType((item.item_type as any) || 'unit');
-      setPrice(item.price ? item.price.toFixed(2).replace('.', ',') : '');
+      // Zero is a valid base price when the item has a required assembly step.
+      setPrice(item.price !== null && item.price !== undefined ? item.price.toFixed(2).replace('.', ',') : '');
       setMinWeight(item.min_weight ? item.min_weight.toString() : '');
       setMaxWeight(item.max_weight ? item.max_weight.toString() : '');
       setMeasureInterval(item.measure_interval ? item.measure_interval.toString() : '');
