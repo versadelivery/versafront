@@ -708,9 +708,13 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
   };
 
   const handleDeleteItem = async () => {
-    deleteCatalogItem();
-    setIsDeleteConfirmationOpen(false);
-    onOpenChange(false);
+    try {
+      await deleteCatalogItem();
+      setIsDeleteConfirmationOpen(false);
+      onOpenChange(false);
+    } catch {
+      // O hook mantém o modal aberto e exibe a mensagem de erro.
+    }
   };
 
   const handleClose = () => {
