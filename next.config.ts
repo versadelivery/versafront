@@ -22,6 +22,11 @@ const nextConfig: NextConfig = {
         hostname: '289a818c45e4.ngrok-free.app',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'web-production-9043c.up.railway.app',
+        pathname: '/rails/active_storage/**',
+      },
     ],
   },
   typescript: {
