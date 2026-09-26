@@ -165,7 +165,7 @@ export const useCatalogItem = (id: string) => {
   return {
     catalogItem: catalogItemQuery.data,
     isLoadingCatalogItem: catalogItemQuery.isLoading,
-    deleteCatalogItem: deleteCatalogItemMutation.mutate,
+    deleteCatalogItem: deleteCatalogItemMutation.mutateAsync,
     isDeletingCatalogItem: deleteCatalogItemMutation.isPending,
   };
 };
