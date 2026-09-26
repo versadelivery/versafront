@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 
 export interface RestaurantSounds {
   orderAccepted: () => void;
@@ -19,7 +19,6 @@ export interface SoundSettings {
 }
 
 export function useRestaurantSounds(): RestaurantSounds {
-  const audioRefs = useRef<Record<string, HTMLAudioElement>>({});
   const [settings, setSettings] = useState<SoundSettings>({
     enabled: true,
     volume: 0.7,
@@ -60,14 +59,6 @@ export function useRestaurantSounds(): RestaurantSounds {
       window.removeEventListener('restaurant-sound-settings-changed', customHandler as any);
       window.removeEventListener('storage', storageHandler);
     };
-  }, []);
-
-  // Função para criar e configurar um elemento de áudio
-  const createAudio = useCallback((src: string, volume: number = 0.7): HTMLAudioElement => {
-    const audio = new Audio(src);
-    audio.volume = volume;
-    audio.preload = 'auto';
-    return audio;
   }, []);
 
   // Função para tocar som de pedido aceito (som de sino/ding)
@@ -158,7 +149,7 @@ export function useRestaurantSounds(): RestaurantSounds {
     }
   }, [settings.enabled, settings.orderReady, settings.volume]);
 
-  // Função para tocar som de novo pedido
+  // Som metálico de moedas caindo, finalizado por uma batida grave de cofre.
   const newOrder = useCallback(() => {
     // Verificar se o som está habilitado
     if (!settings.enabled || !settings.newOrder) {
@@ -167,24 +158,45 @@ export function useRestaurantSounds(): RestaurantSounds {
 
     try {
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
+      const now = audioContext.currentTime;
+      const impacts = [
+        { at: 0, frequency: 1980, duration: 0.16, level: 0.55 },
+        { at: 0.11, frequency: 2440, duration: 0.13, level: 0.48 },
+        { at: 0.21, frequency: 1760, duration: 0.18, level: 0.58 },
+        { at: 0.34, frequency: 2210, duration: 0.2, level: 0.62 },
+      ];
+
+      impacts.forEach(({ at, frequency, duration, level }) => {
+        [1, 1.47].forEach((harmonic, index) => {
+          const oscillator = audioContext.createOscillator();
+          const gain = audioContext.createGain();
+          const start = now + at;
+
+          oscillator.type = index === 0 ? 'triangle' : 'sine';
+          oscillator.frequency.setValueAtTime(frequency * harmonic, start);
+          oscillator.frequency.exponentialRampToValueAtTime(frequency * harmonic * 0.72, start + duration);
+          gain.gain.setValueAtTime(Math.max(0.001, settings.volume * level / (index + 1)), start);
+          gain.gain.exponentialRampToValueAtTime(0.001, start + duration);
+          oscillator.connect(gain);
+          gain.connect(audioContext.destination);
+          oscillator.start(start);
+          oscillator.stop(start + duration);
+        });
+      });
+
+      const vaultHit = audioContext.createOscillator();
+      const vaultGain = audioContext.createGain();
+      vaultHit.type = 'sine';
+      vaultHit.frequency.setValueAtTime(150, now + 0.48);
+      vaultHit.frequency.exponentialRampToValueAtTime(72, now + 0.82);
+      vaultGain.gain.setValueAtTime(settings.volume * 0.72, now + 0.48);
+      vaultGain.gain.exponentialRampToValueAtTime(0.001, now + 0.82);
+      vaultHit.connect(vaultGain);
+      vaultGain.connect(audioContext.destination);
+      vaultHit.start(now + 0.48);
+      vaultHit.stop(now + 0.82);
       
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      
-      // Som de notificação para novo pedido
-      oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
-      oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
-      oscillator.frequency.setValueAtTime(400, audioContext.currentTime + 0.2);
-      
-      gainNode.gain.setValueAtTime(settings.volume, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
-      
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.4);
-      
-      console.log('🔔 Som de novo pedido tocado');
+      console.log('🪙 Som de novo pedido tocado');
     } catch (error) {
       console.warn('Erro ao tocar som de novo pedido:', error);
     }
