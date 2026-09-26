@@ -59,6 +59,9 @@ const ProductCard = memo(function ProductCard({ item, index, layout = 'grid', gr
   const hasImage = !!attributes.image_url;
   const hasComplements = attributes.shared_complements?.data?.length > 0;
   const hasCustomization = hasComplements || attributes.extra?.data?.length > 0 || attributes.steps?.data?.length > 0;
+  const baseDisplayPrice = hasDiscount ? Number(attributes.price_with_discount) : Number(attributes.price);
+  const startingPrice = Number(attributes.starting_price ?? baseDisplayPrice);
+  const hasStartingPrice = hasCustomization && startingPrice > baseDisplayPrice;
 
   const cardBg = groupColor || '#FFFFFF';
   const isUnavailable = !!attributes.has_out_of_stock_ingredient;
@@ -102,7 +105,11 @@ const ProductCard = memo(function ProductCard({ item, index, layout = 'grid', gr
               )}
 
               <div>
-                {hasDiscount ? (
+                {hasStartingPrice ? (
+                  <span className="font-bold text-sm sm:text-base" style={{ color: theme.text }}>
+                    A partir de {formatPrice(startingPrice)}
+                  </span>
+                ) : hasDiscount ? (
                   <div className="flex items-baseline gap-1.5">
                     <span className="font-bold text-sm sm:text-base" style={{ color: theme.text }}>
                       {formatPrice(Number(attributes.price_with_discount))}
@@ -200,7 +207,11 @@ const ProductCard = memo(function ProductCard({ item, index, layout = 'grid', gr
             )}
 
             <div className="mt-auto">
-              {hasDiscount ? (
+              {hasStartingPrice ? (
+                <span className="font-bold text-sm" style={{ color: theme.text }}>
+                  A partir de {formatPrice(startingPrice)}
+                </span>
+              ) : hasDiscount ? (
                 <div className="flex items-baseline gap-1.5">
                   <span className="font-bold text-sm" style={{ color: theme.text }}>
                     {formatPrice(Number(attributes.price_with_discount))}

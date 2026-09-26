@@ -75,6 +75,7 @@ export interface CatalogItem {
     item_type: 'unit' | 'weight_per_g' | 'weight_per_kg';
     price: number;
     price_with_discount: number | null;
+    starting_price?: number | null;
     measure_interval: number | null;
     min_weight: number | null;
     max_weight: number | null;

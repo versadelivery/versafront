@@ -196,6 +196,9 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
   const discountPercent = hasDiscount
     ? Math.round(((attributes.price - (attributes.price_with_discount || 0)) / attributes.price) * 100)
     : 0;
+  const baseDisplayPrice = hasDiscount ? attributes.price_with_discount! : attributes.price;
+  const startingPrice = Number(attributes.starting_price ?? baseDisplayPrice);
+  const hasStartingPrice = startingPrice > Number(baseDisplayPrice) && attributes.steps.data.length > 0;
 
   const calculatedPrice = useMemo(() => {
     const basePrice = hasDiscount ? attributes.price_with_discount! : attributes.price;
@@ -326,7 +329,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
 
             <div className="flex items-baseline gap-2.5 mt-2">
               <span className="text-base font-medium text-gray-900">
-                {formatPrice(hasDiscount ? attributes.price_with_discount! : attributes.price)}
+                {hasStartingPrice ? `A partir de ${formatPrice(startingPrice)}` : formatPrice(hasDiscount ? attributes.price_with_discount! : attributes.price)}
               </span>
               {hasDiscount && (
                 <span className="text-sm text-gray-400 line-through">
