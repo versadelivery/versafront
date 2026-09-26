@@ -21,7 +21,7 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onClick, className }) => {
     if (attributes.item_type === 'weight_per_kg') {
       return `${attributes.min_weight || 0}kg - ${attributes.max_weight || 0}kg`;
     }
-    return 'Unidade';
+    return 'Por unidade';
   };
 
   const hasDiscount = attributes.price_with_discount !== null && 

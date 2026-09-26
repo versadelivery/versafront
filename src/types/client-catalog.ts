@@ -52,6 +52,7 @@ export interface ShopResponse {
             debit: boolean
             credit: boolean
             manual_pix: boolean
+            food_voucher: boolean
             cash_adjustment_type: string
             cash_adjustment_value: string
             cash_value_type: string

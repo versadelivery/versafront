@@ -12,6 +12,7 @@ export type ShopPaymentConfig = {
       cash: boolean;
       debit: boolean;
       credit: boolean;
+      food_voucher: boolean;
       manual_pix: boolean;
       manual_pix_payment_moment: ManualPixPaymentMoment;
       pix_key: string | null;

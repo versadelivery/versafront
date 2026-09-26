@@ -43,6 +43,7 @@ const paymentConfig: Record<string, { label: string; icon: React.ElementType }> 
   manual_pix: { label: "PIX",               icon: QrCode     },
   asaas_pix:  { label: "PIX",               icon: QrCode     },
   cash:       { label: "Dinheiro",          icon: Wallet     },
+  food_voucher: { label: "Vale alimentação / refeição", icon: Wallet },
 };
 
 function StatusBadge({ status }: { status: string }) {

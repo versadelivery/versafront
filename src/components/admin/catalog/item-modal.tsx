@@ -636,17 +636,17 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
             {errors.group && <p className="text-xs text-destructive">{errors.group}</p>}
           </div>
 
-          {/* Tipo de Unidade */}
+          {/* Precificação */}
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">Tipo de Unidade</label>
+            <label className="text-sm font-medium">Precificação</label>
             <Select value={itemType} onValueChange={(v) => setItemType(v as any)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="unit">Unidade</SelectItem>
-                <SelectItem value="weight_per_kg">Peso por kg</SelectItem>
-                <SelectItem value="weight_per_g">Peso por g</SelectItem>
+                <SelectItem value="unit">Por unidade</SelectItem>
+                <SelectItem value="weight_per_kg">Por kg</SelectItem>
+                <SelectItem value="weight_per_g">Por grama</SelectItem>
               </SelectContent>
             </Select>
           </div>

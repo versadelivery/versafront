@@ -45,7 +45,8 @@ const idToAttributeKey = {
   cash: 'cash',
   credit_card: 'credit',
   debit_card: 'debit',
-  pix: 'manual_pix'
+  pix: 'manual_pix',
+  food_voucher: 'food_voucher',
 } as const;
 
 const adjustmentTypeLabels: Record<AdjustmentType, string> = {
@@ -115,6 +116,16 @@ export default function PaymentSettingsPage() {
           adjustmentType: attrs.debit_adjustment_type || "none",
           adjustmentValue: attrs.debit_adjustment_value || "0",
           valueType: attrs.debit_value_type || "fixed"
+        },
+        {
+          id: "food_voucher",
+          name: "Vale alimentação",
+          description: "Pagamento com cartão de vale alimentação",
+          icon: <Wallet className="w-5 h-5 text-primary" />,
+          enabled: attrs.food_voucher,
+          adjustmentType: "none",
+          adjustmentValue: "0",
+          valueType: "fixed"
         },
         {
           id: "pix",
@@ -251,6 +262,7 @@ export default function PaymentSettingsPage() {
     const credit = getMethod("credit_card");
     const debit = getMethod("debit_card");
     const pix = getMethod("pix");
+    const foodVoucher = getMethod("food_voucher");
 
     await updatePaymentMethodsMutation.mutateAsync({
       data: {
@@ -260,6 +272,7 @@ export default function PaymentSettingsPage() {
           cash: cash?.enabled || false,
           credit: credit?.enabled || false,
           debit: debit?.enabled || false,
+          food_voucher: foodVoucher?.enabled || false,
           manual_pix: asaasPix.enabled ? false : (pix?.enabled || false),
           manual_pix_payment_moment: manualPixConfig.paymentMoment,
           pix_key: manualPixConfig.pixKey || null,
@@ -308,6 +321,9 @@ export default function PaymentSettingsPage() {
     if (asaasPix.expirationMinutes !== String(attrs.asaas_pix_expiration_minutes ?? 30)) return true;
 
     return paymentMethods.some(method => {
+      if (method.id === 'food_voucher') {
+        return method.enabled !== attrs[method.id];
+      }
       const attrKey = idToAttributeKey[method.id as keyof typeof idToAttributeKey];
       if (method.enabled !== attrs[attrKey]) return true;
       const adjTypeKey = `${attrKey}_adjustment_type` as keyof typeof attrs;

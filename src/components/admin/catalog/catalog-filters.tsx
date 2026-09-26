@@ -37,7 +37,7 @@ const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
 
 const ITEM_TYPE_OPTIONS: { value: ItemTypeFilter; label: string }[] = [
   { value: "all", label: "Todos os tipos" },
-  { value: "unit", label: "Unidade" },
+  { value: "unit", label: "Por unidade" },
   { value: "weight_per_kg", label: "Por Kg" },
   { value: "weight_per_g", label: "Por Grama" },
 ];

@@ -42,6 +42,7 @@ export interface ShopData {
             debit: boolean;
             credit: boolean;
             manual_pix: boolean;
+            food_voucher: boolean;
           };
         };
       } | null;
