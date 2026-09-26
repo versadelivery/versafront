@@ -47,45 +47,21 @@ export function useSchedule() {
 
   // Função para converter os dados da API para o formato do componente
   const apiToSchedule = (data: ShopScheduleConfig): WeekSchedule => {
-    const schedule = {
-      sunday: {
-        active: data.attributes.sunday_active || false,
-        open: extractTime(data.attributes.sunday_open),
-        close: extractTime(data.attributes.sunday_close)
-      },
-      monday: {
-        active: data.attributes.monday_active || false,
-        open: extractTime(data.attributes.monday_open),
-        close: extractTime(data.attributes.monday_close)
-      },
-      tuesday: {
-        active: data.attributes.tuesday_active || false,
-        open: extractTime(data.attributes.tuesday_open),
-        close: extractTime(data.attributes.tuesday_close)
-      },
-      wednesday: {
-        active: data.attributes.wednesday_active || false,
-        open: extractTime(data.attributes.wednesday_open),
-        close: extractTime(data.attributes.wednesday_close)
-      },
-      thursday: {
-        active: data.attributes.thursday_active || false,
-        open: extractTime(data.attributes.thursday_open),
-        close: extractTime(data.attributes.thursday_close)
-      },
-      friday: {
-        active: data.attributes.friday_active || false,
-        open: extractTime(data.attributes.friday_open),
-        close: extractTime(data.attributes.friday_close)
-      },
-      saturday: {
-        active: data.attributes.saturday_active || false,
-        open: extractTime(data.attributes.saturday_open),
-        close: extractTime(data.attributes.saturday_close)
-      }
+    const attrs = data.attributes as Record<string, boolean | string | null>;
+    const buildDay = (day: DayKey): DaySchedule => ({
+      active: Boolean(attrs[`${day}_active`]),
+      open: extractTime(attrs[`${day}_open`] as string | null),
+      close: extractTime(attrs[`${day}_close`] as string | null),
+      secondOpen: attrs[`${day}_second_open`] ? extractTime(attrs[`${day}_second_open`] as string) : null,
+      secondClose: attrs[`${day}_second_close`] ? extractTime(attrs[`${day}_second_close`] as string) : null,
+    });
+
+    return {
+      sunday: buildDay("sunday"), monday: buildDay("monday"),
+      tuesday: buildDay("tuesday"), wednesday: buildDay("wednesday"),
+      thursday: buildDay("thursday"), friday: buildDay("friday"),
+      saturday: buildDay("saturday"),
     };
-    
-    return schedule;
   };
 
   // Função para converter do formato do componente para a API
@@ -97,29 +73,15 @@ export function useSchedule() {
       return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
     };
 
-    return {
-      sunday_active: schedule.sunday.active,
-      sunday_open: formatTime(schedule.sunday.open),
-      sunday_close: formatTime(schedule.sunday.close),
-      monday_active: schedule.monday.active,
-      monday_open: formatTime(schedule.monday.open),
-      monday_close: formatTime(schedule.monday.close),
-      tuesday_active: schedule.tuesday.active,
-      tuesday_open: formatTime(schedule.tuesday.open),
-      tuesday_close: formatTime(schedule.tuesday.close),
-      wednesday_active: schedule.wednesday.active,
-      wednesday_open: formatTime(schedule.wednesday.open),
-      wednesday_close: formatTime(schedule.wednesday.close),
-      thursday_active: schedule.thursday.active,
-      thursday_open: formatTime(schedule.thursday.open),
-      thursday_close: formatTime(schedule.thursday.close),
-      friday_active: schedule.friday.active,
-      friday_open: formatTime(schedule.friday.open),
-      friday_close: formatTime(schedule.friday.close),
-      saturday_active: schedule.saturday.active,
-      saturday_open: formatTime(schedule.saturday.open),
-      saturday_close: formatTime(schedule.saturday.close),
-    };
+    return (Object.keys(schedule) as DayKey[]).reduce<Record<string, boolean | string | null>>((result, day) => {
+      const value = schedule[day];
+      result[`${day}_active`] = value.active;
+      result[`${day}_open`] = formatTime(value.open);
+      result[`${day}_close`] = formatTime(value.close);
+      result[`${day}_second_open`] = value.secondOpen ? formatTime(value.secondOpen) : null;
+      result[`${day}_second_close`] = value.secondClose ? formatTime(value.secondClose) : null;
+      return result;
+    }, {});
   };
 
   // Buscar horários da API
