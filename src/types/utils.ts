@@ -79,6 +79,7 @@ export interface LoginFormData {
 }
 
 export interface RegisterData {
+  referral_code?: string;
   shop: {
     name: string;
     cellphone: string;
