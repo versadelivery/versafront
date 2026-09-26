@@ -13,6 +13,7 @@ import { formatDocument } from "@/utils/format-document";
 import { useAuth } from "@/hooks/use-auth";
 import { isAxiosError } from "axios";
 import { toast } from "sonner";
+import { getOwnerEmailError } from "@/utils/registration-error";
 
 type RegisterStateErrors = {
   shop?: Partial<RegisterFormData["shop"]>;
@@ -171,6 +172,7 @@ function RegisterForm() {
         : {})
     }));
 
+    setStep(fieldErrors.shop ? 1 : 2);
     return true;
   };
 
@@ -258,6 +260,7 @@ function RegisterForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return;
     if (!validateStep3()) return;
     setIsLoading(true);
     setErrors({});
@@ -279,6 +282,12 @@ function RegisterForm() {
         });
         setErrors(formattedErrors);
       } else {
+        const ownerEmailError = getOwnerEmailError(error);
+        if (ownerEmailError) {
+          applyBackendErrors({ shop_user: { email: ownerEmailError } });
+          toast.error(ownerEmailError);
+          return;
+        }
         const apiErrorMessage = getApiErrorMessage(error);
         if (apiErrorMessage) {
           const messages = extractBackendMessages(apiErrorMessage);
