@@ -14,6 +14,21 @@ interface ProductCardProps {
   groupColor?: string | null;
 }
 
+function getPriceUnit(itemType: CatalogItem['attributes']['item_type']) {
+  switch (itemType) {
+    case 'weight_per_kg':
+      return '/ kg';
+    case 'weight_per_g':
+      return '/ g';
+    default:
+      return '/ un';
+  }
+}
+
+function PriceUnit({ itemType, color }: { itemType: CatalogItem['attributes']['item_type']; color: string }) {
+  return <span className="ml-1 text-[10px] sm:text-xs font-medium" style={{ color }}>{getPriceUnit(itemType)}</span>;
+}
+
 function Tags({ attributes }: { attributes: any }) {
   return (
     <div className="absolute top-0 left-0 flex flex-col z-10">
@@ -108,11 +123,13 @@ const ProductCard = memo(function ProductCard({ item, index, layout = 'grid', gr
                 {hasStartingPrice ? (
                   <span className="font-bold text-sm sm:text-base" style={{ color: theme.text }}>
                     A partir de {formatPrice(startingPrice)}
+                    <PriceUnit itemType={attributes.item_type} color={theme.textMuted} />
                   </span>
                 ) : hasDiscount ? (
                   <div className="flex items-baseline gap-1.5">
                     <span className="font-bold text-sm sm:text-base" style={{ color: theme.text }}>
                       {formatPrice(Number(attributes.price_with_discount))}
+                      <PriceUnit itemType={attributes.item_type} color={theme.textMuted} />
                     </span>
                     <span className="text-xs line-through" style={{ color: theme.textMuted }}>
                       {formatPrice(Number(attributes.price))}
@@ -121,6 +138,7 @@ const ProductCard = memo(function ProductCard({ item, index, layout = 'grid', gr
                 ) : (
                   <span className="font-bold text-sm sm:text-base" style={{ color: theme.text }}>
                     {formatPrice(Number(attributes.price))}
+                    <PriceUnit itemType={attributes.item_type} color={theme.textMuted} />
                   </span>
                 )}
               </div>
@@ -210,11 +228,13 @@ const ProductCard = memo(function ProductCard({ item, index, layout = 'grid', gr
               {hasStartingPrice ? (
                 <span className="font-bold text-sm" style={{ color: theme.text }}>
                   A partir de {formatPrice(startingPrice)}
+                  <PriceUnit itemType={attributes.item_type} color={theme.textMuted} />
                 </span>
               ) : hasDiscount ? (
                 <div className="flex items-baseline gap-1.5">
                   <span className="font-bold text-sm" style={{ color: theme.text }}>
                     {formatPrice(Number(attributes.price_with_discount))}
+                    <PriceUnit itemType={attributes.item_type} color={theme.textMuted} />
                   </span>
                   <span className="text-[10px] sm:text-xs line-through" style={{ color: theme.textMuted }}>
                     {formatPrice(Number(attributes.price))}
@@ -223,6 +243,7 @@ const ProductCard = memo(function ProductCard({ item, index, layout = 'grid', gr
               ) : (
                 <span className="font-bold text-sm" style={{ color: theme.text }}>
                   {formatPrice(Number(attributes.price))}
+                  <PriceUnit itemType={attributes.item_type} color={theme.textMuted} />
                 </span>
               )}
             </div>
