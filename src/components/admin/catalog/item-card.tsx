@@ -24,6 +24,7 @@ interface ItemCardProps {
     item_type: 'unit' | 'weight_per_kg' | 'weight_per_g';
     price: number;
     price_with_discount?: number;
+    starting_price?: number;
     min_weight?: number;
     max_weight?: number;
     measure_interval?: number;
@@ -103,6 +104,10 @@ export function ItemCard({ item, layout = 'grid' }: ItemCardProps) {
   const hasPrepareMethods = item.catalog_item_prepare_methods_attributes && item.catalog_item_prepare_methods_attributes.length > 0;
   const hasSteps = item.catalog_item_steps_attributes && item.catalog_item_steps_attributes.length > 0;
   const hasIndicators = hasExtras || hasPrepareMethods || hasSteps;
+  const baseDisplayPrice = hasDiscount ? item.price_with_discount! : item.price;
+  const startingPrice = Number(item.starting_price ?? baseDisplayPrice);
+  const hasStartingPrice = !!hasSteps && startingPrice > baseDisplayPrice;
+  const displayPrice = hasStartingPrice ? `A partir de ${formatPrice(startingPrice)}` : formatPrice(baseDisplayPrice);
 
   // =============================================================================
   // RENDER
@@ -161,7 +166,7 @@ export function ItemCard({ item, layout = 'grid' }: ItemCardProps) {
           {/* Preço */}
           <div className="flex-shrink-0 text-right">
             <div className="text-sm font-bold text-foreground tabular-nums">
-              {formatPrice(hasDiscount ? item.price_with_discount! : item.price)}
+              {displayPrice}
               {getItemTypeLabel() && <span className="text-[10px] text-muted-foreground font-normal ml-1">{getItemTypeLabel()}</span>}
             </div>
             {hasDiscount && (
@@ -290,7 +295,7 @@ export function ItemCard({ item, layout = 'grid' }: ItemCardProps) {
           {/* Preço */}
           <div className="flex items-baseline gap-1.5 mt-1">
             <span className="text-base font-bold text-foreground">
-              {formatPrice(hasDiscount ? item.price_with_discount! : item.price)}
+              {displayPrice}
               {getItemTypeLabel() && (
                 <span className="text-[10px] text-muted-foreground font-normal ml-1">{getItemTypeLabel()}</span>
               )}

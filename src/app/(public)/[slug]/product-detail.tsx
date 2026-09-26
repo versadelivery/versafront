@@ -164,13 +164,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
   const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
   const [selectedMethods, setSelectedMethods] = useState<string[]>([]);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(() => {
-    const init: Record<string, string> = {};
-    product.attributes.steps.data.forEach(step => {
-      if (step.attributes.required !== false && step.attributes.options.data.length > 0) {
-        init[step.id] = step.attributes.options.data[0].id;
-      }
-    });
-    return init;
+    return {};
   });
   const [selectedSharedComplements, setSelectedSharedComplements] = useState<string[]>([]);
 
@@ -199,6 +193,9 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
   const baseDisplayPrice = hasDiscount ? attributes.price_with_discount! : attributes.price;
   const startingPrice = Number(attributes.starting_price ?? baseDisplayPrice);
   const hasStartingPrice = startingPrice > Number(baseDisplayPrice) && attributes.steps.data.length > 0;
+  const hasMissingRequiredStep = attributes.steps.data.some(
+    step => step.attributes.required !== false && !selectedOptions[step.id],
+  );
 
   const calculatedPrice = useMemo(() => {
     const basePrice = hasDiscount ? attributes.price_with_discount! : attributes.price;
@@ -234,13 +231,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
     setSelectedMethods([]);
     setSelectedSharedComplements([]);
     setSelectedOptions(() => {
-      const init: Record<string, string> = {};
-      product.attributes.steps.data.forEach(step => {
-        if (step.attributes.required !== false && step.attributes.options.data.length > 0) {
-          init[step.id] = step.attributes.options.data[0].id;
-        }
-      });
-      return init;
+      return {};
     });
   };
 
@@ -250,6 +241,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
   };
 
   const handleAddToCart = () => {
+    if (hasMissingRequiredStep) return;
     addItem({
       ...product,
       cartId: crypto.randomUUID(),
@@ -583,14 +575,18 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
             {/* Add to cart button */}
             <button
               onClick={handleAddToCart}
-              disabled={isUnavailable}
+              disabled={isUnavailable || hasMissingRequiredStep}
               className={`flex-1 h-12 font-bold text-base rounded-full transition-colors flex items-center justify-center gap-2 ${
-                isUnavailable
+                isUnavailable || hasMissingRequiredStep
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   : 'bg-primary hover:bg-primary/90 text-white cursor-pointer'
               }`}
             >
-              {isUnavailable ? 'Indisponível' : `Adicionar ${formatPrice(calculatedPrice)}`}
+              {isUnavailable
+                ? 'Indisponível'
+                : hasMissingRequiredStep
+                  ? 'Selecione as opções obrigatórias'
+                  : `Adicionar ${formatPrice(calculatedPrice)}`}
             </button>
           </div>
         </div>
