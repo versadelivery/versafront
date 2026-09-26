@@ -43,6 +43,8 @@ export interface ShopData {
             credit: boolean;
             manual_pix: boolean;
             food_voucher: boolean;
+            store_credit: boolean;
+            asaas_pix: boolean;
           };
         };
       } | null;

@@ -24,6 +24,8 @@ interface ShopPaymentConfig {
   debit: boolean;
   credit: boolean;
   food_voucher: boolean;
+  store_credit: boolean;
+  asaas_pix: boolean;
   manual_pix: boolean;
 }
 
