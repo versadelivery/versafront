@@ -33,6 +33,7 @@ import {
 import { API_BASE_URL } from "@/api/routes";
 import { getSuperAdminToken } from "@/lib/auth";
 import { toast } from "sonner";
+import { BillingTiersEditor } from "@/components/super-admin/billing-tiers-editor";
 
 interface MonthlyChargeAdmin {
   id: string;
@@ -226,6 +227,8 @@ export default function SuperAdminBillingPage() {
             </Button>
           </div>
         </div>
+
+        <BillingTiersEditor />
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

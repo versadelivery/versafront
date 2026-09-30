@@ -26,6 +26,7 @@ import { API_BASE_URL } from "@/api/routes";
 import { getSuperAdminToken } from "@/lib/auth";
 import { toast } from "sonner";
 import Link from "next/link";
+import { BillingTier, DEFAULT_BILLING_TIERS, formatTierAmount, getBillingTiers } from "@/services/billing-tiers";
 
 interface DashboardData {
   shops: {
@@ -85,16 +86,6 @@ const CATEGORY_LABELS: Record<string, string> = {
   hortifruti: "Hortifrútis",
   frigorifico: "Frigorífico",
   acougue: "Açougue",
-};
-
-const TIER_LABELS: Record<string, string> = {
-  free: "Grátis (< R$800)",
-  tier_29: "R$29/mês",
-  tier_59: "R$59/mês",
-  tier_99: "R$99/mês",
-  tier_149: "R$149/mês",
-  tier_219: "R$219/mês",
-  tier_299: "R$299/mês",
 };
 
 function formatCurrency(value: number) {
@@ -185,6 +176,7 @@ function MrrTooltip({
 
 export default function SuperAdminDashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
+  const [tiers, setTiers] = useState<BillingTier[]>(DEFAULT_BILLING_TIERS);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchDashboard = async () => {
@@ -199,6 +191,7 @@ export default function SuperAdminDashboard() {
       });
       if (!response.ok) throw new Error();
       setData(await response.json());
+      getBillingTiers().then(setTiers).catch(() => {});
     } catch {
       toast.error("Erro ao carregar dados do dashboard");
     } finally {
@@ -222,6 +215,7 @@ export default function SuperAdminDashboard() {
 
   const { shops, billing, orders } = data;
   const cm = billing.current_month;
+  const tierLabels = Object.fromEntries(tiers.map((tier) => [tier.key, `${tier.name} · ${formatTierAmount(tier.amount)}`]));
 
   const topCategories = Object.entries(shops.by_category)
     .sort(([, a], [, b]) => b - a)
@@ -493,7 +487,7 @@ export default function SuperAdminDashboard() {
                 {tierEntries.map(([tier, count]) => (
                   <div key={tier} className="flex items-center justify-between py-2.5">
                     <span className="font-body text-sm text-[#474747]">
-                      {TIER_LABELS[tier] ?? tier}
+                      {tierLabels[tier] ?? tier}
                     </span>
                     <span className="font-body text-sm font-semibold text-[#1B1B1B]">
                       {count}
