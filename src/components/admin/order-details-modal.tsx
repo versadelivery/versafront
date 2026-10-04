@@ -319,7 +319,13 @@ export default function OrderDetailsModal({
 
       if (Object.keys(changes).length > 0) {
         isSavingRef.current = true;
-        await onUpdateOrder(order.id, changes);
+        try {
+          await onUpdateOrder(order.id, changes);
+        } catch {
+          // erro já exibido por quem salvou; mantém a edição aberta
+          isSavingRef.current = false;
+          return;
+        }
         setTimeout(() => {
           isSavingRef.current = false;
         }, 2000);
@@ -445,6 +451,7 @@ export default function OrderDetailsModal({
         await onUpdateOrder(order.id, { deliveryPerson: resolvedValue });
       } catch (error) {
         console.error('Erro ao atualizar entregador:', error);
+        setSelectedDeliveryPerson(order.deliveryPerson || '');
       } finally {
         setIsSavingDelivery(false);
       }

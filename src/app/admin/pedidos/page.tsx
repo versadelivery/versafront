@@ -43,6 +43,7 @@ import { useRestaurantSounds } from '@/hooks/use-restaurant-sounds';
 import { useShop } from '@/hooks/use-shop';
 import Link from 'next/link';
 import api from '@/api/config';
+import { toast } from 'sonner';
 // Controle de som foi movido para o Header global da administração
 
 interface Order {
@@ -1238,6 +1239,14 @@ export default function OrderManagement() {
             coupon_code: selectedOrder.socketData.attributes.coupon_code || undefined
           }}
           onUpdateOrder={async (orderId, data) => {
+            // Persiste primeiro: se a API recusar, a edição fica aberta e nada muda na tela
+            try {
+              await updateOrderDetails(orderId, data);
+            } catch (error) {
+              toast.error(error instanceof Error ? error.message : 'Erro ao salvar o pedido');
+              throw error;
+            }
+
             
             // Atualizar localmente primeiro para feedback imediato
             setOrders(prev => prev.map(order => {
@@ -1286,13 +1295,6 @@ export default function OrderManagement() {
               return order;
             }));
             
-            // Enviar via WebSocket
-            try {
-              const success = await updateOrderDetails(orderId, data);
-
-            } catch (error) {
-              console.error('❌ Erro ao atualizar pedido:', error);
-            }
           }}
           onCancelOrder={async (orderId) => {
             // Atualizar localmente para status 'cancelled'

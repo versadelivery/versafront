@@ -360,86 +360,24 @@ export function useAdminActionCable() {
     });
   }, [])
 
-  const updateOrderDetails = useCallback((orderId: string, data: any): Promise<boolean> => {
-    console.log('🔄 updateOrderDetails chamado:', { orderId, data });
-    
-    return new Promise((resolve, reject) => {
-      if (!subscriptionRef.current || !subscriptionRef.current.send) {
-        console.error('❌ Subscription não está ativa');
-        resolve(false);
-        return;
-      }
+  const updateOrderDetails = useCallback(async (orderId: string, data: any): Promise<boolean> => {
+    // Campos que a API de edição aceita (PATCH /orders/:id/edit)
+    const order: any = {};
+    for (const key of ['customer', 'address', 'shop', 'items', 'total', 'payment_method', 'manual_adjustment', 'removed_item_ids', 'new_items', 'withdrawal']) {
+      if (data[key] !== undefined) order[key] = data[key];
+    }
+    if (data.deliveryPerson !== undefined) order.delivery_person = data.deliveryPerson;
 
-      // Filtrar apenas os campos que o backend suporta
-      const supportedData: any = {};
-      
-      if (data.customer) {
-        supportedData.customer = data.customer;
-      }
-      
-      if (data.address) {
-        supportedData.address = data.address;
-      }
-      
-      if (data.shop) {
-        supportedData.shop = data.shop;
-      }
-      
-      if (data.items) {
-        supportedData.items = data.items;
-      }
-
-      if (data.total !== undefined) {
-        supportedData.total = data.total;
-      }
-
-      if (data.deliveryPerson !== undefined) {
-        supportedData.delivery_person = data.deliveryPerson;
-      }
-
-      if (data.payment_method !== undefined) {
-        supportedData.payment_method = data.payment_method;
-      }
-
-      if (data.manual_adjustment !== undefined) {
-        supportedData.manual_adjustment = data.manual_adjustment;
-      }
-
-      if (data.removed_item_ids) {
-        supportedData.removed_item_ids = data.removed_item_ids;
-      }
-
-      if (data.new_items) {
-        supportedData.new_items = data.new_items;
-      }
-
-      if (data.withdrawal !== undefined) {
-        supportedData.withdrawal = data.withdrawal;
-      }
-
-      // Determinar se é uma edição completa ou atualização simples
-      const hasItemsChanges = (data.items && (Array.isArray(data.items) ? data.items.length > 0 : Object.keys(data.items).length > 0)) ||
-        data.removed_item_ids || data.new_items;
-      const event = hasItemsChanges ? "edit_order" : "update_order";
-
-      const updateData = {
-        event: event,
-        data: {
-          id: orderId,
-          ...supportedData
-        }
-      };
-
-      console.log('📤 Enviando dados para o backend:', updateData);
-
-      subscriptionRef.current.send(updateData);
-
-      // Simular sucesso por enquanto (o backend vai responder via WebSocket)
-      setTimeout(() => {
-        console.log('✅ updateOrderDetails concluído');
-        resolve(true);
-      }, 100);
-    });
+    // Via REST (igual às ações de status): o WebSocket não confirma entrega e
+    // descartava a edição em silêncio quando a conexão não estava ativa.
+    try {
+      await api.patch(`/orders/${orderId}/edit`, { order });
+      return true;
+    } catch (error: any) {
+      console.error('❌ Falha ao editar pedido pela API:', error);
+      const message = error?.response?.data?.error;
+      throw new Error(typeof message === 'string' ? message : 'Não foi possível salvar as alterações do pedido');
+    }
   }, []);
 
   const disconnect = useCallback(() => {
