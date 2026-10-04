@@ -4,6 +4,7 @@ import { Dialog, DialogContent } from '@/components/ui/order-dialog';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
+import { isWeightItem, formatWeight, orderItemQuantityLabel } from '@/utils/order-item-quantity';
 import {
   Select,
   SelectContent,
@@ -44,7 +45,7 @@ interface OrderItem {
   quantity: number;
   observation?: string;
   image?: string;
-  weight?: string;
+  weight?: number;
   item_type?: string;
   extras?: Array<{ name: string; price: number }>;
   prepare_methods?: Array<{ name: string }>;
@@ -180,6 +181,8 @@ export default function OrderDetailsModal({
   const [isEditingMode, setIsEditingMode] = useState(false);
   const [editedOrder, setEditedOrder] = useState(order);
   const [removedItemIds, setRemovedItemIds] = useState<string[]>([]);
+  // Texto digitado no campo de peso (permite "2," sem perder o cursor); some ao sair do campo
+  const [weightDrafts, setWeightDrafts] = useState<Record<string, string>>({});
   const [showAddItemModal, setShowAddItemModal] = useState(false);
   const [catalogGroups, setCatalogGroups] = useState<any[]>([]);
   const [loadingCatalog, setLoadingCatalog] = useState(false);
@@ -200,6 +203,7 @@ export default function OrderDetailsModal({
     setEditedOrder(order);
     setRemovedItemIds([]);
     setNewItemsToAdd([]);
+    setWeightDrafts({});
   }, [order]);
 
   const editedSubtotal = (editedOrder.items || []).reduce(
@@ -277,6 +281,11 @@ export default function OrderDetailsModal({
           hasChange = true;
         }
 
+        if (isWeightItem(editedItem) && Number(editedItem.weight) !== Number(originalItem.weight)) {
+          itemChange.weight = editedItem.weight;
+          hasChange = true;
+        }
+
         const origExtraIds = (originalItem.selected_extras || []).map((e: any) => e.id).sort();
         const newExtraIds = (editedItem.selected_extras || []).map((e: any) => e.id).sort();
         if (JSON.stringify(origExtraIds) !== JSON.stringify(newExtraIds)) {
@@ -297,6 +306,8 @@ export default function OrderDetailsModal({
       });
       if (editedItemsList.length > 0) {
         changes.items = editedItemsList;
+        // A API recalcula o valor dos itens (peso, adicionais) e do pedido; um total calculado aqui poderia divergir
+        delete changes.total;
       }
 
       if (removedItemIds.length > 0) {
@@ -339,6 +350,7 @@ export default function OrderDetailsModal({
     setEditedOrder(order);
     setRemovedItemIds([]);
     setNewItemsToAdd([]);
+    setWeightDrafts({});
     setIsEditingMode(false);
   };
 
@@ -484,10 +496,29 @@ ${order.address.reference ? `Referencia: ${order.address.reference}` : ''}
     : ''
 }
 Itens:
-${order.items.map((item) => `${item.quantity}x ${item.name} - ${formatCurrency(item.total_price ?? item.price * item.quantity)}`).join('\n')}
+${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${formatCurrency(item.total_price ?? item.price * item.quantity)}`).join('\n')}
     `.trim();
 
     navigator.clipboard.writeText(orderInfo);
+  };
+
+  // Peso editado muda o valor do item na hora: total += (novo peso - peso atual) x preço por kg/g
+  const handleWeightChange = (itemId: string, raw: string) => {
+    setWeightDrafts(prev => ({ ...prev, [itemId]: raw }));
+    const weight = parseFloat(raw.replace(',', '.'));
+    if (!Number.isFinite(weight) || weight <= 0) return;
+
+    setEditedOrder(prev => ({
+      ...prev,
+      items: prev.items.map((item: any) => {
+        if (item.id !== itemId) return item;
+        // parte do item original (sem acumular arredondamentos); peso nulo vale 1, como no cálculo da API
+        const original = order.items.find((i: any) => i.id === itemId) ?? item;
+        const delta = (weight - (Number(original.weight) || 1)) * item.price;
+        const total = Math.round(((original.total_price ?? 0) + delta) * 100) / 100;
+        return { ...item, weight, total_price: total };
+      }),
+    }));
   };
 
   const handleToggleExtra = (itemId: string, extra: { id: number; name: string; price: number }, wasSelected: boolean) => {
@@ -1075,20 +1106,17 @@ ${order.items.map((item) => `${item.quantity}x ${item.name} - ${formatCurrency(i
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex items-center gap-2 min-w-0">
-                            <span className="inline-flex items-center justify-center w-7 h-6 bg-primary text-white rounded-md text-xs font-bold flex-shrink-0">
-                              {item.quantity}x
-                            </span>
+                            {!isWeightItem(item) && (
+                              <span className="inline-flex items-center justify-center w-7 h-6 bg-primary text-white rounded-md text-xs font-bold flex-shrink-0">
+                                {item.quantity}x
+                              </span>
+                            )}
                             <span className="text-base font-medium text-gray-900 truncate">
                               {item.name}
                             </span>
-                            {item.weight && (
+                            {isWeightItem(item) && item.weight != null && (
                               <span className="text-xs px-1.5 py-0.5 rounded-md border border-[#E5E2DD] bg-white text-muted-foreground flex-shrink-0">
-                                {item.weight}{' '}
-                                {item.item_type === 'weight_per_g'
-                                  ? 'g'
-                                  : item.item_type === 'weight_per_kg'
-                                    ? 'kg'
-                                    : ''}
+                                {formatWeight(Number(item.weight))} {item.item_type === 'weight_per_g' ? 'g' : 'kg'}
                               </span>
                             )}
                           </div>
@@ -1112,6 +1140,29 @@ ${order.items.map((item) => `${item.quantity}x ${item.name} - ${formatCurrency(i
                             )}
                           </div>
                         </div>
+
+                        {isEditingMode && isWeightItem(item) && (
+                          <div className="mt-2 flex items-center gap-2">
+                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                              Peso
+                            </span>
+                            <Input
+                              type="text"
+                              inputMode="decimal"
+                              aria-label={`Peso de ${item.name}`}
+                              className="h-10 w-28 text-base"
+                              value={weightDrafts[item.id] ?? formatWeight(Number(item.weight) || 0)}
+                              onChange={(e) => handleWeightChange(item.id, e.target.value)}
+                              onBlur={() => setWeightDrafts(prev => {
+                                const { [item.id]: _removed, ...rest } = prev;
+                                return rest;
+                              })}
+                            />
+                            <span className="text-sm text-muted-foreground">
+                              {item.item_type === 'weight_per_g' ? 'g' : 'kg'}
+                            </span>
+                          </div>
+                        )}
 
                         {/* Observation */}
                         {item.observation && (

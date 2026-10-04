@@ -3,6 +3,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
+import { orderItemQuantityLabel } from '@/utils/order-item-quantity';
 
 const statusLabels: Record<string, string> = {
   received: "Recebido",
@@ -137,7 +138,7 @@ export default function OrderDetailDialog({
                     <div key={item.id} className="px-4 py-3 flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-900">
-                          <span className="text-muted-foreground mr-1.5">{ia.quantity}x</span>
+                          <span className="text-muted-foreground mr-1.5">{orderItemQuantityLabel(ia)}</span>
                           {name}
                         </p>
                         {ia.observation && (

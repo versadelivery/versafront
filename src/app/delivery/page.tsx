@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/use-auth'
 import { DeliveryOrder } from '@/services/delivery-orders-service'
 import { MapPin, Phone, Package, LogOut, RefreshCw, Truck, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { orderItemQuantityLabel } from '@/utils/order-item-quantity';
 
 const statusLabel: Record<string, string> = {
   ready: 'Pronto para entrega',
@@ -73,7 +74,7 @@ function OrderCard({
         <div className="flex flex-col gap-1">
           {a.items.map((item, i) => (
             <div key={i} className="flex items-baseline gap-1 text-sm text-gray-700">
-              <span className="font-medium">{item.quantity}x</span>
+              <span className="font-medium">{orderItemQuantityLabel(item)}</span>
               <span>{item.name}</span>
               {item.observation && (
                 <span className="text-xs text-gray-400">— {item.observation}</span>

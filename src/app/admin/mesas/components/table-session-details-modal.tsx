@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { X, UtensilsCrossed, Clock, Users, DollarSign, User, ShoppingCart } from "lucide-react";
 import { TableSession } from "../services/table-service";
+import { orderItemQuantityLabel } from '@/utils/order-item-quantity';
 
 interface TableSessionDetailsModalProps {
   isOpen: boolean;
@@ -162,7 +163,7 @@ export default function TableSessionDetailsModal({
                           <div className="mt-1 text-xs text-muted-foreground">
                             {order.items.map((item, i) => (
                               <span key={i}>
-                                {item.quantity}x {item.name}
+                                {orderItemQuantityLabel(item)} {item.name}
                                 {i < order.items.length - 1 && ", "}
                               </span>
                             ))}

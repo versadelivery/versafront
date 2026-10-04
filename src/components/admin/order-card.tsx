@@ -33,6 +33,7 @@ import { User } from '@/app/admin/settings/users/services/userService';
 import CancelOrderModal from './cancel-order-modal';
 import SelectDeliveryPersonModal from './select-delivery-person-modal';
 import { buildWhatsAppOrderMessage } from '@/utils/whatsapp-template';
+import { orderItemQuantityLabel } from '@/utils/order-item-quantity';
 
 const getPaymentMethodLabel = (method: string, manualPixPaymentMoment?: string) => {
   if (method === 'manual_pix') {
@@ -192,6 +193,7 @@ export default function OrderCard({
     const items = order.socketData?.attributes?.items?.data?.map((item: any) => ({
       name: item.attributes.catalog_item?.data?.attributes?.name || item.attributes.name || 'Item não encontrado',
       quantity: item.attributes.quantity,
+      quantityLabel: orderItemQuantityLabel(item.attributes),
       totalPrice: parseFloat(item.attributes.total_price || '0'),
       observation: item.attributes.observation || undefined,
     })) || [];
@@ -249,7 +251,7 @@ export default function OrderCard({
               <div class="section-title">ITENS</div>
               ${order.socketData?.attributes?.items?.data?.map((item: any) => `
                 <div class="item">
-                  <p><strong>${item.attributes.quantity}x ${item.attributes.catalog_item?.data?.attributes?.name || item.attributes.name || 'Item não encontrado'}</strong></p>
+                  <p><strong>${orderItemQuantityLabel(item.attributes)} ${item.attributes.catalog_item?.data?.attributes?.name || item.attributes.name || 'Item não encontrado'}</strong></p>
                   <p>Preço: R$ ${parseFloat(item.attributes.total_price || '0').toFixed(2)}</p>
                   ${item.attributes.observation ? `<p><em>Obs: ${item.attributes.observation}</em></p>` : ''}
                 </div>
@@ -304,7 +306,7 @@ ${order.socketData.attributes.address.data.attributes.complement ? `Complemento:
 
 🛒 *ITENS*
 ${order.socketData?.attributes?.items?.data?.map((item: any) => `
-• ${item.attributes.quantity}x ${item.attributes.catalog_item?.data?.attributes?.name || item.attributes.name || 'Item não encontrado'}
+• ${orderItemQuantityLabel(item.attributes)} ${item.attributes.catalog_item?.data?.attributes?.name || item.attributes.name || 'Item não encontrado'}
   R$ ${parseFloat(item.attributes.total_price || '0').toFixed(2)}
   ${item.attributes.observation ? `_Obs: ${item.attributes.observation}_` : ''}
 `).join('') || 'Nenhum item'}
@@ -402,7 +404,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '', orde
               {items.slice(0, 3).map((item: any) => (
                 <div key={item.id} className="flex justify-between items-center gap-2">
                   <span className="truncate min-w-0">
-                    {item.attributes.quantity}x {item.attributes.catalog_item?.data?.attributes?.name || item.attributes.name || 'Item removido'}
+                    {orderItemQuantityLabel(item.attributes)} {item.attributes.catalog_item?.data?.attributes?.name || item.attributes.name || 'Item removido'}
                   </span>
                   <span className="flex-shrink-0 text-gray-700">
                     {formatPrice(parseFloat(item.attributes.total_price || '0'))}

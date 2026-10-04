@@ -1176,7 +1176,8 @@ export default function OrderManagement() {
               quantity: item.attributes.quantity,
               observation: item.attributes.observation,
               image: item.attributes.catalog_item?.data?.attributes?.image_url,
-              weight: item.attributes.item_type === 'weight_per_kg' ? `${item.attributes.quantity}kg` : undefined,
+              weight: (item.attributes as any).weight != null ? parseFloat((item.attributes as any).weight) : undefined,
+              item_type: item.attributes.item_type,
               selected_extras: (item.attributes as any).selected_extras?.map((e: any) => ({
                 id: e.id,
                 name: e.name,

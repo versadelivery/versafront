@@ -10,6 +10,7 @@ import { X, UtensilsCrossed, Loader2, Clock, Users, ShoppingCart, DollarSign, Pe
 import { Badge } from "@/components/ui/badge";
 import { Table, TableSession, CloseTableSessionPayload } from "../services/table-service";
 import { getPaymentMethods } from "@/app/admin/settings/payment/payment-service";
+import { orderItemQuantityLabel } from '@/utils/order-item-quantity';
 
 interface CloseTableModalProps {
   isOpen: boolean;
@@ -198,7 +199,7 @@ export default function CloseTableModal({
                       <div className="mt-1 text-xs text-muted-foreground">
                         {order.items.map((item, i) => (
                           <span key={i}>
-                            {item.quantity}x {item.name}
+                            {orderItemQuantityLabel(item)} {item.name}
                             {i < order.items.length - 1 && ", "}
                           </span>
                         ))}

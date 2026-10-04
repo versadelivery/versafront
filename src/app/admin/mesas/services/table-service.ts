@@ -24,6 +24,8 @@ export interface Table {
 export interface TableSessionOrderItem {
   name: string;
   quantity: number;
+  item_type?: string | null;
+  weight?: number | null;
 }
 
 export interface TableSessionOrderSummary {

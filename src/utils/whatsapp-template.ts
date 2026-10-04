@@ -23,6 +23,8 @@ const STATUS_LABELS: Record<string, string> = {
 interface OrderItem {
     name: string;
     quantity: number;
+    // "2,2 kg" para itens por peso; sem ele usa `${quantity}x`
+    quantityLabel?: string;
     totalPrice: number;
     observation?: string;
 }
@@ -62,7 +64,7 @@ export function buildWhatsAppOrderMessage({
         lines.push('📋 *Itens:*');
         items.forEach((item) => {
             const obs = item.observation ? ` _(${item.observation})_` : '';
-            lines.push(`• ${item.quantity}x ${item.name}${obs}`);
+            lines.push(`• ${item.quantityLabel ?? `${item.quantity}x`} ${item.name}${obs}`);
         });
     }
 
