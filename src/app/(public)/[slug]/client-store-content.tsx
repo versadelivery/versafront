@@ -30,7 +30,7 @@ export default function ClientStoreContent({ shop: initialShop }: ClientStoreCon
   const { setShop } = useClient();
 
   // React Query com dado SSR como initialData — refetch automático em background
-  const { data: shop } = useQuery({
+  const { data: queryShop } = useQuery({
     queryKey: ['shop', slug],
     queryFn: () => fetchShopBySlug(slug),
     initialData: initialShop,
@@ -39,6 +39,10 @@ export default function ClientStoreContent({ shop: initialShop }: ClientStoreCon
     refetchInterval: 1000 * 60,    // refetch a cada 60s em background
     refetchOnWindowFocus: true,    // refetch ao voltar pra aba
   });
+
+  // O ShopStatusProvider (layout) pode criar a query ['shop', slug] antes desta página (slug vem do
+  // localStorage), e aí o initialData é ignorado e data chega undefined até o fetch terminar.
+  const shop = queryShop ?? initialShop;
 
   const [activeCategory, setActiveCategory] = useState('all');
 
