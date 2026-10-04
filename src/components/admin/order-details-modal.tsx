@@ -588,8 +588,8 @@ ${order.items.map((item) => `${item.quantity}x ${item.name} - ${formatCurrency(i
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-7xl p-0 flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-[#E5E2DD] flex items-center justify-between flex-shrink-0">
-          <div className="flex items-center gap-4">
+        <div className="px-4 sm:px-6 py-4 border-b border-[#E5E2DD] flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between flex-shrink-0">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 min-w-0">
             <div>
               <h2 className="font-tomato text-lg font-bold text-gray-900">Pedido #{order.id}</h2>
               <div className="flex items-center gap-3 mt-1">
@@ -660,7 +660,7 @@ ${order.items.map((item) => `${item.quantity}x ${item.name} - ${formatCurrency(i
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {!isEditingMode ? (
               <>
                 <Button
