@@ -13,7 +13,10 @@ import { Minus, Plus, Utensils, X, Info } from "lucide-react";
 import { useCart } from "./cart/cart-context";
 import { calculateAssemblyPrice } from "@/utils/assembly-pricing";
 
-const ITEM_H = 44;
+// Altura do item vem da CSS var --item-h (60px no celular p/ facilitar o toque, 44px no desktop);
+// o JS lê o valor calculado, então o scroll acompanha o breakpoint sem estado.
+const ITEM_H_FALLBACK = 44;
+const H = 'var(--item-h)';
 const VISIBLE = 5;
 const PAD = 2;
 
@@ -43,37 +46,42 @@ function WeightPicker({ min, max, step, value, onChange, unit = 'kg' }: {
 
   const listRef = useRef<HTMLDivElement>(null);
 
+  const getItemH = () => {
+    const h = listRef.current ? parseFloat(getComputedStyle(listRef.current).getPropertyValue('--item-h')) : NaN;
+    return h > 0 ? h : ITEM_H_FALLBACK;
+  };
+
   useEffect(() => {
     const idx = options.findIndex(o => Math.abs(o - value) < step * 0.01);
     if (listRef.current && idx >= 0) {
-      listRef.current.scrollTop = idx * ITEM_H;
+      listRef.current.scrollTop = idx * getItemH();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleScroll = () => {
     if (!listRef.current) return;
-    const idx = Math.round(listRef.current.scrollTop / ITEM_H);
+    const idx = Math.round(listRef.current.scrollTop / getItemH());
     const v = options[Math.max(0, Math.min(options.length - 1, idx))];
     if (v !== undefined && Math.abs(v - value) > step * 0.001) onChange(v);
   };
 
   return (
     <div
-      className="relative mx-auto overflow-hidden rounded-md border border-[#E5E2DD]"
-      style={{ height: ITEM_H * VISIBLE, maxWidth: 240 }}
+      className="relative mx-auto w-full max-w-[160px] sm:max-w-[240px] [--item-h:60px] sm:[--item-h:44px] overflow-hidden rounded-md border border-[#E5E2DD]"
+      style={{ height: `calc(${H} * ${VISIBLE})` }}
     >
       <div
         className="absolute inset-x-0 top-0 z-10 pointer-events-none"
-        style={{ height: ITEM_H * PAD, background: 'linear-gradient(to bottom, white 40%, transparent)' }}
+        style={{ height: `calc(${H} * ${PAD})`, background: 'linear-gradient(to bottom, white 40%, transparent)' }}
       />
       <div
         className="absolute inset-x-0 bottom-0 z-10 pointer-events-none"
-        style={{ height: ITEM_H * PAD, background: 'linear-gradient(to top, white 40%, transparent)' }}
+        style={{ height: `calc(${H} * ${PAD})`, background: 'linear-gradient(to top, white 40%, transparent)' }}
       />
       <div
         className="absolute inset-x-0 z-0 pointer-events-none bg-gray-50"
-        style={{ top: ITEM_H * PAD, height: ITEM_H, borderTop: '1px solid #e5e7eb', borderBottom: '1px solid #e5e7eb' }}
+        style={{ top: `calc(${H} * ${PAD})`, height: H, borderTop: '1px solid #e5e7eb', borderBottom: '1px solid #e5e7eb' }}
       />
       <div
         ref={listRef}
@@ -81,13 +89,13 @@ function WeightPicker({ min, max, step, value, onChange, unit = 'kg' }: {
         className="relative z-0 h-full overflow-y-scroll [&::-webkit-scrollbar]:hidden"
         style={{ scrollSnapType: 'y mandatory', scrollbarWidth: 'none' }}
       >
-        <div aria-hidden style={{ height: ITEM_H * PAD }} />
+        <div aria-hidden style={{ height: `calc(${H} * ${PAD})` }} />
         {options.map((v) => {
           const selected = Math.abs(v - value) < step * 0.001;
           return (
             <div
               key={v}
-              style={{ height: ITEM_H, scrollSnapAlign: 'center' }}
+              style={{ height: H, scrollSnapAlign: 'center' }}
               className={`flex items-center justify-center cursor-pointer transition-all duration-150 ${
                 selected
                   ? 'text-base font-bold text-foreground'
@@ -95,7 +103,7 @@ function WeightPicker({ min, max, step, value, onChange, unit = 'kg' }: {
               }`}
               onClick={() => {
                 const idx = options.indexOf(v);
-                listRef.current?.scrollTo({ top: idx * ITEM_H, behavior: 'smooth' });
+                listRef.current?.scrollTo({ top: idx * getItemH(), behavior: 'smooth' });
                 onChange(v);
               }}
             >
@@ -103,7 +111,7 @@ function WeightPicker({ min, max, step, value, onChange, unit = 'kg' }: {
             </div>
           );
         })}
-        <div aria-hidden style={{ height: ITEM_H * PAD }} />
+        <div aria-hidden style={{ height: `calc(${H} * ${PAD})` }} />
       </div>
     </div>
   );
