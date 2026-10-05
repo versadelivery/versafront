@@ -1,4 +1,5 @@
 import api from "@/api/config";
+import type { BillingTier } from "@/services/billing-tiers";
 
 export interface ShopAttributes {
   cellphone: string;
@@ -39,6 +40,7 @@ export interface ShopAttributes {
     color: string;
     monthly_revenue: number;
   };
+  billing_tiers?: BillingTier[];
 }
 
 export interface ShopResponse {

@@ -1,30 +1,23 @@
 "use client";
 
-import { useRef } from "react";
-import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import { motion, useInView } from "framer-motion";
-import { MessageCircle } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { BillingTier, DEFAULT_BILLING_TIERS, formatTierAmount, formatTierRevenue, getBillingTiers } from "@/services/billing-tiers";
 
-const faqItems = [
+const buildFaqItems = (tiers: BillingTier[]) => [
   {
     question: "Quais são as faixas de preço?",
     answer: (
       <>
         <p>A mensalidade é definida pelo faturamento mensal da loja na plataforma:</p>
         <ul className="mt-3 list-disc space-y-1 pl-5">
-          <li>Até R$ 799,99: grátis.</li>
-          <li>De R$ 800,00 a R$ 2.999,99: R$ 29,00/mês.</li>
-          <li>De R$ 3.000,00 a R$ 7.999,99: R$ 59,00/mês.</li>
-          <li>De R$ 8.000,00 a R$ 19.999,99: R$ 99,00/mês.</li>
-          <li>De R$ 20.000,00 a R$ 49.999,99: R$ 149,00/mês.</li>
-          <li>De R$ 50.000,00 a R$ 119.999,99: R$ 219,00/mês.</li>
-          <li>A partir de R$ 120.000,00: R$ 299,00/mês.</li>
+          {tiers.map((tier) => <li key={tier.key}>{formatTierRevenue(tier)}: {formatTierAmount(tier.amount)}.</li>)}
         </ul>
       </>
     ),
@@ -64,6 +57,12 @@ const faqItems = [
 const FAQ = () => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, amount: 0.1 });
+  const [tiers, setTiers] = useState(DEFAULT_BILLING_TIERS);
+  const faqItems = buildFaqItems(tiers);
+
+  useEffect(() => {
+    getBillingTiers().then(setTiers).catch(() => {});
+  }, []);
 
   return (
     <section id="faq" ref={ref} className="py-20 md:py-28 bg-[#FFFDF6]">
