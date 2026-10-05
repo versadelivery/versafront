@@ -4,6 +4,7 @@ import { toggleCatalogGroupActive, toggleCatalogItemActive } from "@/api/request
 import { CatalogItemResponse } from "@/api/requests/catalog_item/types";
 import { getCatalogItem, createCatalogItem, duplicateCatalogItem, destroyExtra, destroyStep, destroyPrepareMethod, deleteCatalogItem, destroyStepOption, updateStep, updateStepOption, updatePrepareMethod, updateExtra, updateCatalogItem } from "@/api/requests/catalog_item/requests";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/utils/api-error";
 
 interface EditStepProps {
   id: string;
@@ -226,8 +227,8 @@ export const useCatalogGroup = (id?: string) => {
       queryClient.invalidateQueries({ queryKey: ['catalog'] });
       toast.success("Item criado com sucesso");
     },
-    onError: () => {
-      toast.error("Erro ao criar item");
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Erro ao criar item"), { duration: 8000 });
     },
   });
 
@@ -237,8 +238,8 @@ export const useCatalogGroup = (id?: string) => {
       queryClient.invalidateQueries({ queryKey: ['catalog'] });
       toast.success("Item duplicado com sucesso");
     },
-    onError: () => {
-      toast.error("Erro ao duplicar item");
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Erro ao duplicar item"), { duration: 8000 });
     },
   });
 
@@ -312,7 +313,7 @@ export const useCatalogGroup = (id?: string) => {
       if (context?.previousCatalog) {
         queryClient.setQueryData(["catalog"], context.previousCatalog);
       }
-      toast.error("Erro ao atualizar status do item");
+      toast.error(getApiErrorMessage(err, "Erro ao atualizar status do item"), { duration: 8000 });
     },
   });
 
