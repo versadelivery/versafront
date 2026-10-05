@@ -22,13 +22,17 @@ export interface ShopResponse {
           id: string
           type: string
           attributes: {
-            delivery_fee_kind: "to_be_agreed" | "fixed" | "per_neighborhood"
+            delivery_fee_kind: "to_be_agreed" | "fixed" | "per_neighborhood" | "per_km"
             amount: number
             min_value_free_delivery: string | null
             minimum_order_value: number | null
             pickup_adjustment_type?: 'none' | 'discount' | 'surcharge'
             pickup_adjustment_value?: number | string
             pickup_value_type?: 'fixed' | 'percentage'
+            latitude: string | null
+            longitude: string | null
+            location_address: string | null
+            max_delivery_distance_km: string | null
             shop_delivery_neighborhoods: {
               data: Array<{
                 id: string
@@ -37,6 +41,17 @@ export interface ShopResponse {
                   name: string
                   amount: number
                   min_value_free_delivery: string | null
+                }
+              }>
+            }
+            shop_delivery_distance_tiers: {
+              data: Array<{
+                id: string
+                type: string
+                attributes: {
+                  min_km: string
+                  max_km: string | null
+                  amount: string
                 }
               }>
             }

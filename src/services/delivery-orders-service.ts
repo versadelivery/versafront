@@ -19,9 +19,13 @@ export interface DeliveryOrder {
       data: {
         attributes: {
           address: string
+          number: string | null
           neighborhood: string
           complement: string | null
           reference: string | null
+          latitude: string | null
+          longitude: string | null
+          distance_km: string | null
         }
       } | null
     }
