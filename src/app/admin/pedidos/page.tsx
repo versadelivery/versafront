@@ -44,6 +44,7 @@ import { useShop } from '@/hooks/use-shop';
 import Link from 'next/link';
 import api from '@/api/config';
 import { toast } from 'sonner';
+import { mapOrderItem } from './map-order-item';
 // Controle de som foi movido para o Header global da administração
 
 interface Order {
@@ -1173,60 +1174,7 @@ export default function OrderManagement() {
                 delivery_fee_kind: addrAttrs.delivery_fee_kind ?? null,
               };
             })() : undefined,
-            items: selectedOrder.socketData.attributes.items.data.map(item => ({
-              id: item.id,
-              catalog_item_id: item.attributes.catalog_item?.data?.id ? parseInt(item.attributes.catalog_item.data.id) : null,
-              name: item.attributes.catalog_item?.data?.attributes?.name || item.attributes.name || 'Item não encontrado',
-              price: parseFloat(item.attributes.price_with_discount || item.attributes.price),
-              total_price: parseFloat(item.attributes.total_price || '0'),
-              quantity: item.attributes.quantity,
-              observation: item.attributes.observation,
-              image: item.attributes.catalog_item?.data?.attributes?.image_url,
-              weight: (item.attributes as any).weight != null ? parseFloat((item.attributes as any).weight) : undefined,
-              item_type: item.attributes.item_type,
-              selected_extras: (item.attributes as any).selected_extras?.map((e: any) => ({
-                id: e.id,
-                name: e.name,
-                price: parseFloat(e.price)
-              })) || [],
-              selected_prepare_methods: (item.attributes as any).selected_prepare_methods?.map((m: any) => ({
-                id: m.id,
-                name: m.name
-              })) || [],
-              available_extras: item.attributes.catalog_item?.data?.attributes?.extra?.data?.map((extra: any) => ({
-                id: parseInt(extra.id),
-                name: extra.attributes.name,
-                price: parseFloat(extra.attributes.price)
-              })) || [],
-              available_prepare_methods: item.attributes.catalog_item?.data?.attributes?.prepare_method?.data?.map((method: any) => ({
-                id: parseInt(method.id),
-                name: method.attributes.name
-              })) || [],
-              extras: (item.attributes as any).selected_extras?.map((e: any) => ({
-                name: e.name,
-                price: parseFloat(e.price)
-              })) || [],
-              prepare_methods: (item.attributes as any).selected_prepare_methods?.map((m: any) => ({
-                name: m.name
-              })) || [],
-              steps: item.attributes.catalog_item?.data?.attributes?.steps?.data?.map((step: any) => ({
-                name: step.attributes.name,
-                options: step.attributes.options?.data?.map((option: any) => ({
-                  name: option.attributes.name
-                })) || []
-              })) || [],
-              selected_steps: (item.attributes as any).selected_steps?.map((s: any) => ({
-                id: s.id,
-                step_name: s.step_name,
-                option_name: s.option_name,
-                catalog_item_step_id: s.catalog_item_step_id,
-                catalog_item_step_option_id: s.catalog_item_step_option_id
-              })) || [],
-              complements: (item.attributes as any).complements?.map((comp: any) => ({
-                name: comp.name,
-                price: parseFloat(comp.price)
-              })) || []
-            })),
+            items: selectedOrder.socketData.attributes.items.data.map(mapOrderItem),
             shop: {
               name: selectedOrder.socketData.attributes.shop.data.attributes.name,
               phone: selectedOrder.socketData.attributes.shop.data.attributes.cellphone
