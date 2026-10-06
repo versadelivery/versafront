@@ -36,5 +36,10 @@ foreach ($Entry in $Shortcuts) {
     $Shortcut.Save()
 }
 
+# Registro de inicialização do usuário: funciona mesmo quando a pasta Startup é restringida por política.
+$RunCommand = '"' + $Pythonw + '" "' + (Join-Path $AppDir "app.py") + '" --background'
+New-Item -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Force | Out-Null
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "VersaPrintConnector" -Value $RunCommand
+
 Write-Host "Instalação concluída. O conector iniciará minimizado ao entrar no Windows. Abra-o uma vez para conectar sua loja e escolher a impressora."
 Start-Process -FilePath $Pythonw -ArgumentList ('"' + (Join-Path $AppDir "app.py") + '"') -WorkingDirectory $AppDir

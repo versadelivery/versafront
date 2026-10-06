@@ -7,5 +7,6 @@ $StartupShortcut = Join-Path ([Environment]::GetFolderPath("Startup")) "Conector
 Remove-Item $StartMenuShortcut -Force
 Remove-Item $DesktopShortcut -Force
 Remove-Item $StartupShortcut -Force
+Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "VersaPrintConnector" -Force
 Remove-Item $AppDir -Recurse -Force
 Write-Host "Conector VersaDelivery removido."
