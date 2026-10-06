@@ -123,7 +123,7 @@ class App:
         self.events, self.connector = queue.Queue(), Connector(queue.Queue())
         self.connector.events = self.events
         saved = self.load_config()
-        self.api = StringVar(value=saved.get("api", "https://api.versadelivery.com.br"))
+        self.api = StringVar(value=saved.get("api", "https://web-production-9043c.up.railway.app"))
         self.email, self.password = StringVar(), StringVar()
         self.printer = StringVar(value=saved.get("printer", "")); self.status = StringVar(value="Desconectado")
         self.build(); self.refresh_printers(); self.root.after(250, self.process_events)
