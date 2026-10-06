@@ -34,3 +34,4 @@ EOF_AUTOSTART
 
 chmod +x "$APP_DIR/app.py" "$DESKTOP_DIR/versa-print-connector.desktop" "$AUTOSTART_DIR/versa-print-connector.desktop"
 echo "Instalação concluída. O conector iniciará com a sessão. Abra-o uma vez para conectar a loja e escolher a impressora."
+"$PYTHON" "$APP_DIR/app.py" >/dev/null 2>&1 &
