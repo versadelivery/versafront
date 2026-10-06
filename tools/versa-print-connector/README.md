@@ -5,7 +5,7 @@ Aplicativo local que recebe a fila da loja e imprime cupons ESC/POS em impressor
 ## Arch Linux / Manjaro
 
 ```bash
-sudo pacman -S --needed python tk cups imagemagick
+sudo pacman -S --needed python python-pip python-virtualenv tk cups imagemagick
 sudo systemctl enable --now cups
 cd tools/versa-print-connector
 ./install.sh
@@ -16,7 +16,7 @@ Depois, abra **Conector VersaDelivery** no menu de aplicativos. O botão **Teste
 ## Ubuntu / Debian
 
 ```bash
-sudo apt install python3-tk cups imagemagick
+sudo apt install python3-venv python3-tk cups imagemagick
 cd tools/versa-print-connector
 ./install.sh
 ```
@@ -33,7 +33,7 @@ Ou execute no PowerShell dentro da pasta:
 powershell -ExecutionPolicy Bypass -File .\install.ps1
 ```
 
-O instalador cria atalhos no menu Iniciar e na Área de Trabalho. O conector usa diretamente o spooler do Windows e não exige CUPS ou ImageMagick.
+O instalador cria atalhos no menu Iniciar, na Área de Trabalho e na pasta de inicialização do Windows. Ele abre uma vez após a instalação para você conectar a loja e escolher a impressora. A senha fica no Gerenciador de Credenciais do Windows. Nos próximos logins do Windows, o conector inicia minimizado e conecta automaticamente. O conector usa diretamente o spooler do Windows e não exige CUPS ou ImageMagick.
 
 ## Sistemas suportados
 
@@ -41,4 +41,6 @@ O instalador cria atalhos no menu Iniciar e na Área de Trabalho. O conector usa
 - Windows 10 e 11, usando o spooler nativo.
 - macOS usa CUPS, mas o instalador ainda precisa ser empacotado e validado.
 
-Informe a conta da loja, selecione a impressora e clique em **Conectar**. A senha não é armazenada. Para impressão automática, ative o modo em **Configurações > Impressoras** no VersaDelivery e mantenha o conector aberto.
+Na primeira execução, informe a conta da loja, selecione a impressora e clique em **Conectar à loja**. A senha é armazenada pelo gerenciador seguro de credenciais do sistema operacional; não é gravada no arquivo de configuração. O endereço da API fica configurado internamente.
+
+Com a conexão ativa, minimizar ou fechar a janela mantém a impressão rodando em segundo plano. O ícone continua na barra de tarefas; use **Desconectar e sair** para encerrar. Após a primeira configuração, o conector inicia com a sessão do usuário e reconecta automaticamente depois de reiniciar ou entrar novamente no computador. No Linux, o gerenciador de senhas da sessão (Secret Service/KWallet) precisa estar disponível para guardar as credenciais. Para impressão automática de pedidos, ative o modo em **Configurações > Impressoras** no VersaDelivery.
