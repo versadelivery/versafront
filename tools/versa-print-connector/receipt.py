@@ -3,14 +3,30 @@ import os
 import subprocess
 import textwrap
 from datetime import datetime
+from pathlib import Path
 
 DEFAULT_WIDTH, DEFAULT_MARGIN = 576, 24
-if os.name == "nt":
-    REGULAR_FONT = "C:/Windows/Fonts/consola.ttf"
-    BOLD_FONT = "C:/Windows/Fonts/consolab.ttf"
-else:
-    REGULAR_FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"
-    BOLD_FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf"
+def resolve_font(bold=False):
+    if os.name == "nt":
+        candidates = ["C:/Windows/Fonts/consolab.ttf" if bold else "C:/Windows/Fonts/consola.ttf", "C:/Windows/Fonts/arialbd.ttf" if bold else "C:/Windows/Fonts/arial.ttf"]
+    else:
+        candidates = [
+            "/usr/share/fonts/noto/NotoSansMono-Bold.ttf" if bold else "/usr/share/fonts/noto/NotoSansMono-Regular.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf" if bold else "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
+        ]
+        try:
+            style = "Noto Sans Mono:style=Bold" if bold else "Noto Sans Mono"
+            matched = subprocess.run(["fc-match", "-f", "%{file}", style], capture_output=True, text=True, check=False).stdout.strip()
+            if matched: candidates.insert(0, matched)
+        except OSError:
+            pass
+    for candidate in candidates:
+        if Path(candidate).is_file(): return candidate
+    raise RuntimeError("Nenhuma fonte monoespaçada encontrada. Instale Noto Sans Mono ou DejaVu Sans Mono.")
+
+
+REGULAR_FONT = resolve_font()
+BOLD_FONT = resolve_font(bold=True)
 
 
 def unwrap(value):
