@@ -14,6 +14,7 @@ import type { CatalogItem } from './types';
 import { useClient } from './client-context';
 import ahoy from '@/lib/ahoy';
 import { getTextColors } from './theme-utils';
+import { hiddenCategoryIds } from './category-availability';
 import ReviewsSection from './components/reviews-section';
 import ReorderCardCatalog from './components/reorder-card-catalog';
 
@@ -81,8 +82,19 @@ export default function ClientStoreContent({ shop: initialShop }: ClientStoreCon
   const dayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
   const todayDayKey = `${dayKeys[new Date().getDay()]}_active`;
 
+  // Categorias liberadas só em alguns dias: as de hoje aparecem, e os grupos das outras somem
+  // (não viram "Outros"), mesmo que todas as categorias estejam fora do ar hoje
+  const rawCategories: any = shop?.data.attributes.catalog_categories;
+  const allCategories: any[] = Array.isArray(rawCategories)
+    ? rawCategories
+    : (Array.isArray(rawCategories?.data) ? rawCategories.data : []);
+  const hasCategories = allCategories.length > 0;
+  const normalizedCategories = allCategories.filter((category: any) => category.attributes?.[todayDayKey] !== false);
+  const hiddenIds = hiddenCategoryIds(shop?.data.attributes, todayDayKey);
+
   const groups = normalizedGroups
     .filter((g: any) => g.attributes?.active !== false)
+    .filter((g: any) => !hiddenIds.has(String(g.attributes?.catalog_category_id)))
     .map((g: any) => {
       const items = normalizeItems(g.attributes?.items);
       const activeItems = items.filter((item: CatalogItem) => {
@@ -101,10 +113,6 @@ export default function ClientStoreContent({ shop: initialShop }: ClientStoreCon
       return pa - pb;
     });
 
-  const rawCategories: any = shop?.data.attributes.catalog_categories;
-  const normalizedCategories: any[] = Array.isArray(rawCategories)
-    ? rawCategories
-    : (Array.isArray(rawCategories?.data) ? rawCategories.data : []);
   const categorySections = normalizedCategories
     .map((category: any) => {
       const categoryGroups = groups
@@ -113,13 +121,13 @@ export default function ClientStoreContent({ shop: initialShop }: ClientStoreCon
       return { ...category, attributes: { ...category.attributes, groups: categoryGroups } };
     })
     .filter((category: any) => category.attributes.groups.length > 0);
-  const uncategorizedGroups = normalizedCategories.length > 0
+  const uncategorizedGroups = hasCategories
     ? groups.filter((group: any) => !group.attributes?.catalog_category_id).map((group: any) => ({ ...group, __categoryName: 'Outros', __categoryId: 'uncategorized' }))
     : [];
-  const displayGroups = normalizedCategories.length > 0
+  const displayGroups = hasCategories
     ? [...categorySections.flatMap((category: any) => category.attributes.groups), ...uncategorizedGroups]
     : groups;
-  const navigationCategories = normalizedCategories.length > 0
+  const navigationCategories = hasCategories
     ? [...categorySections, ...(uncategorizedGroups.length > 0 ? [{ id: 'uncategorized', attributes: { name: 'Outros' } }] : [])]
     : displayGroups;
 

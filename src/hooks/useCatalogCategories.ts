@@ -8,12 +8,10 @@ export function useCatalogCategories() {
   const create = useMutation({
     mutationFn: createCatalogCategory,
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["catalog-categories"] }); toast.success("Categoria criada com sucesso"); },
-    onError: () => toast.error("Erro ao criar categoria"),
   });
   const update = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Parameters<typeof updateCatalogCategory>[1] }) => updateCatalogCategory(id, data),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["catalog-categories"] }); queryClient.invalidateQueries({ queryKey: ["catalog"] }); toast.success("Categoria atualizada"); },
-    onError: () => toast.error("Erro ao atualizar categoria"),
   });
   const remove = useMutation({
     mutationFn: deleteCatalogCategory,
