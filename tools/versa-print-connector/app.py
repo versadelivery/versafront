@@ -16,7 +16,7 @@ try:
 except ImportError:
     keyring = None
 
-from receipt import build_receipt, escpos, unwrap
+from receipt import DEFAULT_WIDTH, build_receipt, escpos, unwrap
 
 CONFIG_FILE = Path.home() / ".config" / "versa-print-connector" / "config.json"
 API_URL = "https://web-production-9043c.up.railway.app"
@@ -25,6 +25,7 @@ GREEN_DARK = "#006B39"
 INK = "#18221D"
 MUTED = "#65716B"
 SURFACE = "#F4F7F5"
+PAPER_OPTIONS = {"Automático (80 mm)": DEFAULT_WIDTH, "58 mm": 384, "80 mm": 576}
 if os.name == "nt":
     CONFIG_FILE = Path(os.environ["LOCALAPPDATA"]) / "VersaPrintConnector" / "config.json"
 
@@ -95,8 +96,8 @@ class Connector:
     def __init__(self, events):
         self.events, self.stop_event, self.token = events, threading.Event(), None
 
-    def start(self, email, password, printer):
-        self.api_url, self.printer = API_URL, printer
+    def start(self, email, password, printer, paper_width):
+        self.api_url, self.printer, self.paper_width = API_URL, printer, paper_width
         _, payload = http("POST", f"{self.api_url}/login", body={"email": email.strip().lower(), "password": password}, timeout=15)
         self.token = payload["token"]
         self.stop_event.clear()
@@ -118,7 +119,7 @@ class Connector:
                     continue
                 order_id = unwrap(job["order"]).get("id")
                 self.events.put(("log", f'Imprimindo pedido #{order_id} ({job["receipt_mode"]})'))
-                print_raw(self.printer, escpos(build_receipt(job)), f'Versa-{job["id"]}')
+                print_raw(self.printer, escpos(build_receipt(job, self.paper_width), self.paper_width), f'Versa-{job["id"]}')
                 self.request("PATCH", f'/print_jobs/{job["id"]}/complete')
                 self.events.put(("log", "Impressão enviada com sucesso"))
             except Exception as error:
@@ -137,7 +138,7 @@ class App:
         self.connector.events = self.events
         saved = self.load_config()
         self.email, self.password = StringVar(), StringVar()
-        self.printer = StringVar(value=saved.get("printer", "")); self.status = StringVar(value="Desconectado")
+        self.printer = StringVar(value=saved.get("printer", "")); self.paper_width = StringVar(value=saved.get("paper_width", "Automático (80 mm)")); self.status = StringVar(value="Desconectado")
         self.connected = False
         self.start_in_background = start_in_background
         self.build(); self.refresh_printers(); self.root.after(250, self.process_events)
@@ -193,7 +194,10 @@ class App:
         ttk.Entry(form, textvariable=self.password, show="•").grid(row=3, column=0, sticky="ew", pady=(4, 12))
         ttk.Label(form, text="Impressora", style="Card.TLabel").grid(row=4, column=0, sticky="w", pady=6)
         self.printers = ttk.Combobox(form, textvariable=self.printer, state="readonly")
-        self.printers.grid(row=5, column=0, sticky="ew", pady=(4, 4)); form.columnconfigure(0, weight=1)
+        self.printers.grid(row=5, column=0, sticky="ew", pady=(4, 12))
+        ttk.Label(form, text="Largura do papel", style="Card.TLabel").grid(row=6, column=0, sticky="w", pady=6)
+        self.paper_widths = ttk.Combobox(form, textvariable=self.paper_width, values=list(PAPER_OPTIONS), state="readonly")
+        self.paper_widths.grid(row=7, column=0, sticky="ew", pady=(4, 4)); form.columnconfigure(0, weight=1)
 
         actions = ttk.Frame(card, style="Card.TFrame"); actions.pack(fill=X, pady=(15, 0))
         self.connect_button = ttk.Button(actions, text="Conectar à loja", style="Primary.TButton", command=self.connect); self.connect_button.pack(side=LEFT)
@@ -228,15 +232,17 @@ class App:
         self.status.set("Conectando à loja...")
 
         email, password, printer = self.email.get().strip().lower(), self.password.get(), self.printer.get()
+        paper_label = self.paper_width.get() if self.paper_width.get() in PAPER_OPTIONS else "Automático (80 mm)"
+        paper_width = PAPER_OPTIONS[paper_label]
 
         def connect_in_background():
             try:
                 if not keyring:
                     raise RuntimeError("O armazenamento seguro do sistema não está instalado. Reinstale o conector para habilitar a conexão automática.")
                 keyring.set_password("VersaPrintConnector", email, password)
-                self.connector.start(email, password, printer)
+                self.connector.start(email, password, printer, paper_width)
                 CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
-                CONFIG_FILE.write_text(json.dumps({"email": email, "printer": printer}))
+                CONFIG_FILE.write_text(json.dumps({"email": email, "printer": printer, "paper_width": paper_label}))
                 self.events.put(("connected", automatic))
             except Exception as error:
                 try:
@@ -277,8 +283,9 @@ class App:
             "customer": {"data": {"attributes": {"name": "Teste da impressora"}}},
             "items": {"data": [item]},
         }
+        paper_width = PAPER_OPTIONS.get(self.paper_width.get(), DEFAULT_WIDTH)
         sample = {"receipt_mode": "summary", "font_size": "large", "order": {"data": {"id": "TESTE", "attributes": attributes}}}
-        try: print_raw(self.printer.get(), escpos(build_receipt(sample)), "Teste VersaDelivery")
+        try: print_raw(self.printer.get(), escpos(build_receipt(sample, paper_width), paper_width), "Teste VersaDelivery")
         except Exception as error: messagebox.showerror("Erro", f"Não foi possível imprimir o teste: {error}")
 
     def process_events(self):

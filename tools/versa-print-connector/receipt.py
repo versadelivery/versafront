@@ -4,7 +4,7 @@ import subprocess
 import textwrap
 from datetime import datetime
 
-WIDTH, MARGIN = 576, 24
+DEFAULT_WIDTH, DEFAULT_MARGIN = 576, 24
 if os.name == "nt":
     REGULAR_FONT = "C:/Windows/Fonts/consola.ttf"
     BOLD_FONT = "C:/Windows/Fonts/consolab.ttf"
@@ -28,11 +28,14 @@ def money(value):
 
 
 class Receipt:
-    def __init__(self):
+    def __init__(self, width=DEFAULT_WIDTH):
+        self.width = int(width)
+        self.margin = max(16, round(DEFAULT_MARGIN * self.width / DEFAULT_WIDTH))
+        self.pair_value_x = round(190 * self.width / DEFAULT_WIDTH)
         self.y, self.parts = 100, []
 
     def text(self, value, size=25, bold=False, align="left", gap=8):
-        width = max(12, int((WIDTH - 2 * MARGIN) / (size * 0.62)))
+        width = max(12, int((self.width - 2 * self.margin) / (size * 0.62)))
         lines = textwrap.wrap(str(value), width=width, break_long_words=True) or [""]
         for line in lines:
             self.parts.append(("text", self.y, line, size, bold, align))
@@ -40,7 +43,7 @@ class Receipt:
         self.y += gap - 4
 
     def pair(self, label, value, size=25, bold=False, gap=8):
-        width = max(10, int((WIDTH - 190 - MARGIN) / (size * 0.62)))
+        width = max(10, int((self.width - self.pair_value_x - self.margin) / (size * 0.62)))
         lines = textwrap.wrap(str(value), width=width, break_long_words=True) or [""]
         for index, line in enumerate(lines):
             self.parts.append(("pair", self.y, str(label) if index == 0 else "", line, size, bold))
@@ -59,23 +62,23 @@ class Receipt:
 
     def render(self):
         height = self.y + 110
-        svg = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{WIDTH}" height="{height}">', '<rect width="100%" height="100%" fill="white"/>']
+        svg = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{self.width}" height="{height}">', '<rect width="100%" height="100%" fill="white"/>']
         for kind, y, *args in self.parts:
             if kind == "rule":
-                svg.append(f'<line x1="{MARGIN}" y1="{y}" x2="{WIDTH-MARGIN}" y2="{y}" stroke="black" stroke-width="{4 if args[0] else 2}"/>')
+                svg.append(f'<line x1="{self.margin}" y1="{y}" x2="{self.width-self.margin}" y2="{y}" stroke="black" stroke-width="{4 if args[0] else 2}"/>')
             elif kind == "text":
                 value, size, bold, align = args
-                x, anchor = (MARGIN, "start") if align == "left" else (WIDTH // 2, "middle")
+                x, anchor = (self.margin, "start") if align == "left" else (self.width // 2, "middle")
                 svg.append(f'<text x="{x}" y="{y}" text-anchor="{anchor}" font-family="Noto Sans Mono" font-size="{size}" font-weight="{700 if bold else 400}">{html.escape(value)}</text>')
             elif kind == "pair":
                 label, value, size, bold = args
-                svg.append(f'<text x="{MARGIN}" y="{y}" font-family="Noto Sans Mono" font-size="{size}">{html.escape(label)}</text>')
-                svg.append(f'<text x="190" y="{y}" font-family="Noto Sans Mono" font-size="{size}" font-weight="{700 if bold else 400}">{html.escape(value)}</text>')
+                svg.append(f'<text x="{self.margin}" y="{y}" font-family="Noto Sans Mono" font-size="{size}">{html.escape(label)}</text>')
+                svg.append(f'<text x="{self.pair_value_x}" y="{y}" font-family="Noto Sans Mono" font-size="{size}" font-weight="{700 if bold else 400}">{html.escape(value)}</text>')
             else:
                 label, value, size, bold = args
                 weight = 700 if bold else 400
-                svg.append(f'<text x="{MARGIN}" y="{y}" font-family="Noto Sans Mono" font-size="{size}" font-weight="{weight}">{html.escape(label)}</text>')
-                svg.append(f'<text x="{WIDTH-MARGIN}" y="{y}" text-anchor="end" font-family="Noto Sans Mono" font-size="{size}" font-weight="{weight}">{html.escape(value)}</text>')
+                svg.append(f'<text x="{self.margin}" y="{y}" font-family="Noto Sans Mono" font-size="{size}" font-weight="{weight}">{html.escape(label)}</text>')
+                svg.append(f'<text x="{self.width-self.margin}" y="{y}" text-anchor="end" font-family="Noto Sans Mono" font-size="{size}" font-weight="{weight}">{html.escape(value)}</text>')
         svg.append('</svg>')
         return ''.join(svg), height, self.parts
 
@@ -90,13 +93,13 @@ def item_values(raw):
     return item, catalog.get("name") or item.get("name") or "ITEM", quantity, methods, steps, extras
 
 
-def build_receipt(job):
+def build_receipt(job, paper_width=DEFAULT_WIDTH):
     order, mode = unwrap(job["order"]), job["receipt_mode"]
     large = job.get("font_size") == "large"
     size, gap = (31 if large else 27), (40 if mode == "summary" else 7)
     customer, shop, address = unwrap(order.get("customer")), unwrap(order.get("shop")), unwrap(order.get("address"))
     created = datetime.fromisoformat(str(order.get("created_at", "")).replace("Z", "+00:00")) if order.get("created_at") else datetime.now()
-    kind, r = ("RETIRADA" if order.get("withdrawal") else "DELIVERY"), Receipt()
+    kind, r = ("RETIRADA" if order.get("withdrawal") else "DELIVERY"), Receipt(paper_width)
     r.rule()
     if mode == "summary":
         r.text(f'PEDIDO #{order.get("id")}', 31, True, "center")
@@ -143,10 +146,10 @@ def build_receipt(job):
     return r.render()
 
 
-def escpos(rendered):
+def escpos(rendered, paper_width=DEFAULT_WIDTH):
     svg, height, parts = rendered
     try:
-        pixels = pillow_pixels(parts, height)
+        pixels = pillow_pixels(parts, height, paper_width)
     except ImportError:
         result = subprocess.run(
             ["magick", "svg:-", "-background", "white", "-alpha", "remove", "-colorspace", "Gray", "-threshold", "65%", "-depth", "8", "gray:-"],
@@ -154,42 +157,46 @@ def escpos(rendered):
         )
         pixels = result.stdout
     output = bytearray(b"\x1b@\x1b\x33\x18")
-    if len(pixels) != WIDTH * height:
+    width = int(paper_width)
+    if len(pixels) != width * height:
         raise RuntimeError("Falha ao gerar a imagem térmica")
     for top in range(0, height, 24):
-        output.extend(b"\x1b\x2a\x21" + bytes([WIDTH & 255, WIDTH >> 8]))
-        for x in range(WIDTH):
+        output.extend(b"\x1b\x2a\x21" + bytes([width & 255, width >> 8]))
+        for x in range(width):
             for group in range(3):
                 value = 0
                 for bit in range(8):
                     y = top + group * 8 + bit
-                    if y < height and pixels[y * WIDTH + x] < 128: value |= 1 << (7 - bit)
+                    if y < height and pixels[y * width + x] < 128: value |= 1 << (7 - bit)
                 output.append(value)
         output.append(10)
     return bytes(output) + b"\x1b\x32\n\n\n\n\n\n\x1dV\x42\x04"
 
 
-def pillow_pixels(parts, height):
+def pillow_pixels(parts, height, paper_width=DEFAULT_WIDTH):
     from PIL import Image, ImageDraw, ImageFont
 
-    image = Image.new("L", (WIDTH, height), 255)
+    width = int(paper_width)
+    margin = max(16, round(DEFAULT_MARGIN * width / DEFAULT_WIDTH))
+    pair_value_x = round(190 * width / DEFAULT_WIDTH)
+    image = Image.new("L", (width, height), 255)
     draw = ImageDraw.Draw(image)
     font = lambda size, bold=False: ImageFont.truetype(BOLD_FONT if bold else REGULAR_FONT, size)
     for kind, y, *args in parts:
         if kind == "rule":
-            draw.line((MARGIN, y, WIDTH - MARGIN, y), fill=0, width=4 if args[0] else 2)
+            draw.line((margin, y, width - margin, y), fill=0, width=4 if args[0] else 2)
         elif kind == "text":
             value, size, bold, align = args; selected = font(size, bold)
-            width = draw.textbbox((0, 0), value, font=selected)[2]
-            x = MARGIN if align == "left" else (WIDTH - width) // 2
+            text_width = draw.textbbox((0, 0), value, font=selected)[2]
+            x = margin if align == "left" else (int(paper_width) - text_width) // 2
             draw.text((x, y - size), value, font=selected, fill=0)
         elif kind == "pair":
             label, value, size, bold = args
-            draw.text((MARGIN, y - size), label, font=font(size), fill=0)
-            draw.text((190, y - size), value, font=font(size, bold), fill=0)
+            draw.text((margin, y - size), label, font=font(size), fill=0)
+            draw.text((pair_value_x, y - size), value, font=font(size, bold), fill=0)
         else:
             label, value, size, bold = args; selected = font(size, bold)
-            draw.text((MARGIN, y - size), label, font=selected, fill=0)
-            width = draw.textbbox((0, 0), value, font=selected)[2]
-            draw.text((WIDTH - MARGIN - width, y - size), value, font=selected, fill=0)
+            draw.text((margin, y - size), label, font=selected, fill=0)
+            text_width = draw.textbbox((0, 0), value, font=selected)[2]
+            draw.text((int(paper_width) - margin - text_width, y - size), value, font=selected, fill=0)
     return image.point(lambda pixel: 0 if pixel < 166 else 255).tobytes()
