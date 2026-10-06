@@ -10,8 +10,11 @@ import urllib.error
 import urllib.request
 from datetime import datetime
 from pathlib import Path
-from tkinter import BOTH, END, LEFT, RIGHT, X, StringVar, Tk, Text, ttk, messagebox
-from PIL import Image, ImageTk
+from tkinter import BOTH, END, LEFT, RIGHT, X, PhotoImage, StringVar, Tk, Text, ttk, messagebox
+try:
+    import keyring
+except ImportError:
+    keyring = None
 
 from receipt import build_receipt, escpos, unwrap
 
@@ -126,7 +129,7 @@ class Connector:
 
 
 class App:
-    def __init__(self):
+    def __init__(self, start_in_background=False):
         self.root = Tk(); self.root.title("VersaDelivery · Impressão")
         self.root.geometry("700x650"); self.root.minsize(620, 580); self.root.configure(bg=SURFACE)
         self.root.protocol("WM_DELETE_WINDOW", self.close_window)
@@ -136,7 +139,18 @@ class App:
         self.email, self.password = StringVar(), StringVar()
         self.printer = StringVar(value=saved.get("printer", "")); self.status = StringVar(value="Desconectado")
         self.connected = False
+        self.start_in_background = start_in_background
         self.build(); self.refresh_printers(); self.root.after(250, self.process_events)
+        saved_email = saved.get("email", "")
+        try:
+            saved_password = keyring.get_password("VersaPrintConnector", saved_email) if saved_email and keyring else None
+        except Exception:
+            saved_password = None
+        if start_in_background and saved_email and saved_password and self.printer.get():
+            self.email.set(saved_email)
+            self.password.set(saved_password)
+            self.root.after_idle(self.root.iconify)
+            self.root.after(150, lambda: self.connect(automatic=True))
 
     @staticmethod
     def load_config():
@@ -159,11 +173,9 @@ class App:
 
         shell = ttk.Frame(self.root, padding=24); shell.pack(fill=BOTH, expand=True)
         header = ttk.Frame(shell); header.pack(fill=X, pady=(0, 20))
-        logo_path = Path(__file__).parent / "assets" / "logo-inline-black.png"
+        logo_path = Path(__file__).parent / "assets" / "logo-connector.png"
         try:
-            logo = Image.open(logo_path).convert("RGBA")
-            logo.thumbnail((230, 54), Image.Resampling.LANCZOS)
-            self.logo_image = ImageTk.PhotoImage(logo)
+            self.logo_image = PhotoImage(file=logo_path)
             ttk.Label(header, image=self.logo_image).pack(side=LEFT, anchor="center")
         except Exception:
             ttk.Label(header, text="VersaDelivery", font=("TkDefaultFont", 20, "bold")).pack(side=LEFT)
@@ -200,6 +212,7 @@ class App:
         self.log.pack(fill=BOTH, expand=True)
         bottom = ttk.Frame(shell); bottom.pack(fill=X, pady=(12, 0))
         ttk.Label(bottom, text="VersaDelivery · Conector de impressão", style="Muted.TLabel").pack(side=LEFT)
+        ttk.Button(bottom, text="Minimizar para segundo plano", style="Secondary.TButton", command=self.minimize).pack(side=RIGHT, padx=(8, 0))
         ttk.Button(bottom, text="Desconectar e sair", style="Secondary.TButton", command=self.quit).pack(side=RIGHT)
 
     def refresh_printers(self):
@@ -207,26 +220,45 @@ class App:
         self.printers["values"] = names
         if names and self.printer.get() not in names: self.printer.set(names[0])
 
-    def connect(self):
+    def connect(self, automatic=False):
         if not all([self.email.get(), self.password.get(), self.printer.get()]):
-            messagebox.showwarning("Campos obrigatórios", "Preencha a conta e escolha uma impressora."); return
-        try:
-            self.connector.start(self.email.get(), self.password.get(), self.printer.get())
-            CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
-            CONFIG_FILE.write_text(json.dumps({"printer": self.printer.get()}))
-            self.connected = True
-            self.connect_button.config(text="Conectado à loja", state="disabled")
-        except Exception as error: messagebox.showerror("Falha ao conectar", str(error))
+            if not automatic: messagebox.showwarning("Campos obrigatórios", "Preencha a conta e escolha uma impressora.")
+            return
+        self.connect_button.config(text="Conectando...", state="disabled")
+        self.status.set("Conectando à loja...")
+
+        email, password, printer = self.email.get().strip().lower(), self.password.get(), self.printer.get()
+
+        def connect_in_background():
+            try:
+                if not keyring:
+                    raise RuntimeError("O armazenamento seguro do sistema não está instalado. Reinstale o conector para habilitar a conexão automática.")
+                keyring.set_password("VersaPrintConnector", email, password)
+                self.connector.start(email, password, printer)
+                CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
+                CONFIG_FILE.write_text(json.dumps({"email": email, "printer": printer}))
+                self.events.put(("connected", automatic))
+            except Exception as error:
+                try:
+                    if keyring: keyring.delete_password("VersaPrintConnector", email)
+                except Exception: pass
+                self.events.put(("connect_error", (str(error), automatic)))
+        threading.Thread(target=connect_in_background, daemon=True).start()
 
     def disconnect(self):
         self.connector.stop(); self.connected = False; self.status.set("Desconectado"); self.status_dot.configure(foreground="#8A9690"); self.connect_button.config(text="Conectar à loja", state="normal")
 
     def close_window(self):
         if self.connected:
-            self.root.iconify()
-            self.events.put(("log", "Janela minimizada; impressão continua ativa"))
+            self.minimize()
         else:
             self.root.destroy()
+
+    def minimize(self):
+        if self.connected:
+            self.events.put(("log", "Janela minimizada; impressão continua ativa"))
+        # Defer the window-manager request so the click handler returns immediately.
+        self.root.after_idle(self.root.iconify)
 
     def quit(self):
         self.disconnect()
@@ -254,6 +286,18 @@ class App:
             kind, value = self.events.get()
             if kind == "status":
                 self.status.set(value); self.status_dot.configure(foreground=GREEN)
+            elif kind == "connected":
+                self.connected = True
+                self.connect_button.config(text="Conectado à loja", state="disabled")
+                if value: self.minimize()
+            elif kind == "connect_error":
+                error, automatic = value
+                self.connected = False
+                self.connect_button.config(text="Conectar à loja", state="normal")
+                self.status.set("Não foi possível conectar")
+                if automatic: self.root.deiconify()
+                else: messagebox.showerror("Falha ao conectar", error)
+                self.log.config(state="normal"); self.log.insert(END, f'[{datetime.now():%H:%M:%S}] Falha ao conectar: {error}\n'); self.log.see(END); self.log.config(state="disabled")
             else:
                 self.log.config(state="normal"); self.log.insert(END, f'[{datetime.now():%H:%M:%S}] {value}\n'); self.log.see(END); self.log.config(state="disabled")
         self.root.after(250, self.process_events)
@@ -261,4 +305,5 @@ class App:
     def run(self): self.root.mainloop()
 
 
-if __name__ == "__main__": App().run()
+if __name__ == "__main__":
+    App(start_in_background="--background" in sys.argv).run()
