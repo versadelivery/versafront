@@ -5,6 +5,8 @@ APP_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/versa-print-connector"
 DESKTOP_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/applications"
 mkdir -p "$APP_DIR" "$DESKTOP_DIR"
 cp app.py receipt.py "$APP_DIR/"
+mkdir -p "$APP_DIR/assets"
+cp assets/logo-inline-black.png "$APP_DIR/assets/"
 
 cat > "$DESKTOP_DIR/versa-print-connector.desktop" <<EOF
 [Desktop Entry]

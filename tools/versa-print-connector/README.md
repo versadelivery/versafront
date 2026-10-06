@@ -41,4 +41,6 @@ O instalador cria atalhos no menu Iniciar e na Área de Trabalho. O conector usa
 - Windows 10 e 11, usando o spooler nativo.
 - macOS usa CUPS, mas o instalador ainda precisa ser empacotado e validado.
 
-Informe a conta da loja, selecione a impressora e clique em **Conectar**. A senha não é armazenada. Para impressão automática, ative o modo em **Configurações > Impressoras** no VersaDelivery e mantenha o conector aberto.
+Informe a conta da loja, selecione a impressora e clique em **Conectar à loja**. A senha não é armazenada e o endereço da API fica configurado internamente.
+
+Com a conexão ativa, minimizar ou fechar a janela mantém a impressão rodando em segundo plano. O ícone continua na barra de tarefas; use **Desconectar e sair** para encerrar. Depois de reiniciar o computador, abra o conector e conecte novamente. Para impressão automática de pedidos, ative o modo em **Configurações > Impressoras** no VersaDelivery.

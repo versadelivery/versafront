@@ -11,6 +11,8 @@ if (-not (Get-Command py -ErrorAction SilentlyContinue)) {
 
 New-Item -ItemType Directory -Force -Path $AppDir | Out-Null
 Copy-Item "$PSScriptRoot\app.py", "$PSScriptRoot\receipt.py", "$PSScriptRoot\requirements.txt" -Destination $AppDir -Force
+New-Item -ItemType Directory -Force -Path (Join-Path $AppDir "assets") | Out-Null
+Copy-Item "$PSScriptRoot\assets\logo-inline-black.png" -Destination (Join-Path $AppDir "assets") -Force
 Copy-Item "$PSScriptRoot\uninstall.ps1" -Destination $AppDir -Force
 
 & py -3 -m venv (Join-Path $AppDir ".venv")

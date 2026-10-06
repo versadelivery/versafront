@@ -3,17 +3,25 @@ import json
 import os
 import queue
 import subprocess
+import sys
 import threading
 import time
 import urllib.error
 import urllib.request
 from datetime import datetime
 from pathlib import Path
-from tkinter import BOTH, END, LEFT, RIGHT, StringVar, Tk, Text, ttk, messagebox
+from tkinter import BOTH, END, LEFT, RIGHT, X, StringVar, Tk, Text, ttk, messagebox
+from PIL import Image, ImageTk
 
 from receipt import build_receipt, escpos, unwrap
 
 CONFIG_FILE = Path.home() / ".config" / "versa-print-connector" / "config.json"
+API_URL = "https://web-production-9043c.up.railway.app"
+GREEN = "#008F4C"
+GREEN_DARK = "#006B39"
+INK = "#18221D"
+MUTED = "#65716B"
+SURFACE = "#F4F7F5"
 if os.name == "nt":
     CONFIG_FILE = Path(os.environ["LOCALAPPDATA"]) / "VersaPrintConnector" / "config.json"
 
@@ -84,8 +92,8 @@ class Connector:
     def __init__(self, events):
         self.events, self.stop_event, self.token = events, threading.Event(), None
 
-    def start(self, api_url, email, password, printer):
-        self.api_url, self.printer = api_url.rstrip("/"), printer
+    def start(self, email, password, printer):
+        self.api_url, self.printer = API_URL, printer
         _, payload = http("POST", f"{self.api_url}/login", body={"email": email.strip().lower(), "password": password}, timeout=15)
         self.token = payload["token"]
         self.stop_event.clear()
@@ -119,13 +127,15 @@ class Connector:
 
 class App:
     def __init__(self):
-        self.root = Tk(); self.root.title("Conector VersaDelivery"); self.root.geometry("620x520")
+        self.root = Tk(); self.root.title("VersaDelivery · Impressão")
+        self.root.geometry("700x650"); self.root.minsize(620, 580); self.root.configure(bg=SURFACE)
+        self.root.protocol("WM_DELETE_WINDOW", self.close_window)
         self.events, self.connector = queue.Queue(), Connector(queue.Queue())
         self.connector.events = self.events
         saved = self.load_config()
-        self.api = StringVar(value=saved.get("api", "https://web-production-9043c.up.railway.app"))
         self.email, self.password = StringVar(), StringVar()
         self.printer = StringVar(value=saved.get("printer", "")); self.status = StringVar(value="Desconectado")
+        self.connected = False
         self.build(); self.refresh_printers(); self.root.after(250, self.process_events)
 
     @staticmethod
@@ -134,22 +144,63 @@ class App:
         except Exception: return {}
 
     def build(self):
-        frame = ttk.Frame(self.root, padding=24); frame.pack(fill=BOTH, expand=True)
-        ttk.Label(frame, text="Conector VersaDelivery", font=("TkDefaultFont", 18, "bold")).pack(anchor="w")
-        ttk.Label(frame, text="Impressão térmica automática de pedidos", foreground="#666").pack(anchor="w", pady=(2, 18))
-        form = ttk.Frame(frame); form.pack(fill="x")
-        for row, (label, variable, secret) in enumerate([("API", self.api, False), ("E-mail", self.email, False), ("Senha", self.password, True)]):
-            ttk.Label(form, text=label).grid(row=row, column=0, sticky="w", pady=5)
-            ttk.Entry(form, textvariable=variable, show="•" if secret else "").grid(row=row, column=1, sticky="ew", padx=(12, 0), pady=5)
-        ttk.Label(form, text="Impressora").grid(row=3, column=0, sticky="w", pady=5)
+        style = ttk.Style(self.root); style.theme_use("clam")
+        style.configure("TFrame", background=SURFACE)
+        style.configure("Card.TFrame", background="white")
+        style.configure("TLabel", background=SURFACE, foreground=INK, font=("TkDefaultFont", 10))
+        style.configure("Muted.TLabel", background=SURFACE, foreground=MUTED, font=("TkDefaultFont", 10))
+        style.configure("Card.TLabel", background="white", foreground=INK, font=("TkDefaultFont", 10))
+        style.configure("Section.TLabel", background="white", foreground=INK, font=("TkDefaultFont", 11, "bold"))
+        style.configure("TEntry", padding=(10, 9), fieldbackground="white", bordercolor="#DDE5E0")
+        style.configure("TCombobox", padding=(10, 8), fieldbackground="white", bordercolor="#DDE5E0")
+        style.configure("Primary.TButton", background=GREEN, foreground="white", padding=(16, 10), borderwidth=0, font=("TkDefaultFont", 10, "bold"))
+        style.map("Primary.TButton", background=[("active", GREEN_DARK), ("disabled", "#A7C7B5")])
+        style.configure("Secondary.TButton", background="white", foreground=INK, padding=(12, 9), bordercolor="#DDE5E0")
+
+        shell = ttk.Frame(self.root, padding=24); shell.pack(fill=BOTH, expand=True)
+        header = ttk.Frame(shell); header.pack(fill=X, pady=(0, 20))
+        logo_path = Path(__file__).parent / "assets" / "logo-inline-black.png"
+        try:
+            logo = Image.open(logo_path).convert("RGBA")
+            logo.thumbnail((230, 54), Image.Resampling.LANCZOS)
+            self.logo_image = ImageTk.PhotoImage(logo)
+            ttk.Label(header, image=self.logo_image).pack(side=LEFT, anchor="center")
+        except Exception:
+            ttk.Label(header, text="VersaDelivery", font=("TkDefaultFont", 20, "bold")).pack(side=LEFT)
+        ttk.Label(header, text="IMPRESSÃO", foreground=GREEN, background=SURFACE, font=("TkDefaultFont", 9, "bold")).pack(side=RIGHT, anchor="center")
+
+        ttk.Label(shell, text="Impressora de pedidos", font=("TkDefaultFont", 20, "bold")).pack(anchor="w")
+        ttk.Label(shell, text="Conecte sua loja e deixe os pedidos seguirem direto para a impressora.", style="Muted.TLabel", wraplength=620).pack(anchor="w", pady=(5, 18))
+
+        card = ttk.Frame(shell, style="Card.TFrame", padding=20); card.pack(fill=X)
+        ttk.Label(card, text="CONEXÃO", style="Section.TLabel").pack(anchor="w", pady=(0, 14))
+        form = ttk.Frame(card, style="Card.TFrame"); form.pack(fill=X)
+        ttk.Label(form, text="E-mail da loja", style="Card.TLabel").grid(row=0, column=0, sticky="w", pady=6)
+        ttk.Entry(form, textvariable=self.email).grid(row=1, column=0, sticky="ew", pady=(4, 12))
+        ttk.Label(form, text="Senha", style="Card.TLabel").grid(row=2, column=0, sticky="w", pady=6)
+        ttk.Entry(form, textvariable=self.password, show="•").grid(row=3, column=0, sticky="ew", pady=(4, 12))
+        ttk.Label(form, text="Impressora", style="Card.TLabel").grid(row=4, column=0, sticky="w", pady=6)
         self.printers = ttk.Combobox(form, textvariable=self.printer, state="readonly")
-        self.printers.grid(row=3, column=1, sticky="ew", padx=(12, 0), pady=5); form.columnconfigure(1, weight=1)
-        actions = ttk.Frame(frame); actions.pack(fill="x", pady=16)
-        self.connect_button = ttk.Button(actions, text="Conectar", command=self.connect); self.connect_button.pack(side=LEFT)
-        ttk.Button(actions, text="Atualizar impressoras", command=self.refresh_printers).pack(side=LEFT, padx=8)
-        ttk.Button(actions, text="Teste de impressão", command=self.test).pack(side=RIGHT)
-        ttk.Separator(frame).pack(fill="x", pady=(0, 12)); ttk.Label(frame, textvariable=self.status, foreground="#008044").pack(anchor="w")
-        self.log = Text(frame, height=12, state="disabled", font=("monospace", 10)); self.log.pack(fill=BOTH, expand=True, pady=(10, 0))
+        self.printers.grid(row=5, column=0, sticky="ew", pady=(4, 4)); form.columnconfigure(0, weight=1)
+
+        actions = ttk.Frame(card, style="Card.TFrame"); actions.pack(fill=X, pady=(15, 0))
+        self.connect_button = ttk.Button(actions, text="Conectar à loja", style="Primary.TButton", command=self.connect); self.connect_button.pack(side=LEFT)
+        ttk.Button(actions, text="Atualizar lista", style="Secondary.TButton", command=self.refresh_printers).pack(side=LEFT, padx=8)
+        ttk.Button(actions, text="Imprimir teste", style="Secondary.TButton", command=self.test).pack(side=RIGHT)
+
+        state = ttk.Frame(shell); state.pack(fill=X, pady=(17, 8))
+        self.status_dot = ttk.Label(state, text="●", foreground="#8A9690", font=("TkDefaultFont", 12))
+        self.status_dot.pack(side=LEFT, padx=(0, 7))
+        ttk.Label(state, textvariable=self.status, font=("TkDefaultFont", 10, "bold")).pack(side=LEFT)
+        ttk.Label(state, text="Ao minimizar, a impressão continua ativa.", style="Muted.TLabel").pack(side=RIGHT)
+
+        ttk.Label(shell, text="ATIVIDADE RECENTE", foreground=MUTED, background=SURFACE, font=("TkDefaultFont", 9, "bold")).pack(anchor="w", pady=(8, 7))
+        log_frame = ttk.Frame(shell, style="Card.TFrame", padding=2); log_frame.pack(fill=BOTH, expand=True)
+        self.log = Text(log_frame, height=9, state="disabled", font=("TkFixedFont", 9), bg="white", fg=INK, relief="flat", padx=12, pady=10, wrap="word", insertbackground=GREEN)
+        self.log.pack(fill=BOTH, expand=True)
+        bottom = ttk.Frame(shell); bottom.pack(fill=X, pady=(12, 0))
+        ttk.Label(bottom, text="VersaDelivery · Conector de impressão", style="Muted.TLabel").pack(side=LEFT)
+        ttk.Button(bottom, text="Desconectar e sair", style="Secondary.TButton", command=self.quit).pack(side=RIGHT)
 
     def refresh_printers(self):
         names = list_printers()
@@ -157,17 +208,29 @@ class App:
         if names and self.printer.get() not in names: self.printer.set(names[0])
 
     def connect(self):
-        if not all([self.api.get(), self.email.get(), self.password.get(), self.printer.get()]):
+        if not all([self.email.get(), self.password.get(), self.printer.get()]):
             messagebox.showwarning("Campos obrigatórios", "Preencha a conta e escolha uma impressora."); return
         try:
-            self.connector.start(self.api.get(), self.email.get(), self.password.get(), self.printer.get())
+            self.connector.start(self.email.get(), self.password.get(), self.printer.get())
             CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
-            CONFIG_FILE.write_text(json.dumps({"api": self.api.get(), "printer": self.printer.get()}))
-            self.connect_button.config(text="Desconectar", command=self.disconnect)
+            CONFIG_FILE.write_text(json.dumps({"printer": self.printer.get()}))
+            self.connected = True
+            self.connect_button.config(text="Conectado à loja", state="disabled")
         except Exception as error: messagebox.showerror("Falha ao conectar", str(error))
 
     def disconnect(self):
-        self.connector.stop(); self.status.set("Desconectado"); self.connect_button.config(text="Conectar", command=self.connect)
+        self.connector.stop(); self.connected = False; self.status.set("Desconectado"); self.status_dot.configure(foreground="#8A9690"); self.connect_button.config(text="Conectar à loja", state="normal")
+
+    def close_window(self):
+        if self.connected:
+            self.root.iconify()
+            self.events.put(("log", "Janela minimizada; impressão continua ativa"))
+        else:
+            self.root.destroy()
+
+    def quit(self):
+        self.disconnect()
+        self.root.destroy()
 
     def test(self):
         if not self.printer.get(): return
@@ -189,7 +252,8 @@ class App:
     def process_events(self):
         while not self.events.empty():
             kind, value = self.events.get()
-            if kind == "status": self.status.set(value)
+            if kind == "status":
+                self.status.set(value); self.status_dot.configure(foreground=GREEN)
             else:
                 self.log.config(state="normal"); self.log.insert(END, f'[{datetime.now():%H:%M:%S}] {value}\n'); self.log.see(END); self.log.config(state="disabled")
         self.root.after(250, self.process_events)

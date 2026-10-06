@@ -6,7 +6,7 @@ from pathlib import Path
 source = Path(__file__).parent
 output = source.parents[1] / "public" / "downloads"
 output.mkdir(parents=True, exist_ok=True)
-files = ["app.py", "receipt.py", "requirements.txt", "README.md", "install.sh", "install.ps1", "uninstall.ps1"]
+files = ["app.py", "receipt.py", "requirements.txt", "README.md", "install.sh", "install.ps1", "uninstall.ps1", "assets/logo-inline-black.png"]
 
 with zipfile.ZipFile(output / "versa-print-connector-windows.zip", "w", zipfile.ZIP_DEFLATED) as archive:
     for name in files:
