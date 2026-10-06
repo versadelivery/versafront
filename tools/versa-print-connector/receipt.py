@@ -172,7 +172,8 @@ def escpos(rendered, paper_width=DEFAULT_WIDTH):
             input=svg.encode(), check=True, capture_output=True,
         )
         pixels = result.stdout
-    output = bytearray(b"\x1b@\x1b\x33\x18")
+    # Keep adjacent 24-dot image bands aligned on printers with bidirectional heads.
+    output = bytearray(b"\x1b@\x1bU\x01\x1b\x33\x18")
     width = int(paper_width)
     if len(pixels) != width * height:
         raise RuntimeError("Falha ao gerar a imagem térmica")
@@ -186,7 +187,7 @@ def escpos(rendered, paper_width=DEFAULT_WIDTH):
                     if y < height and pixels[y * width + x] < 128: value |= 1 << (7 - bit)
                 output.append(value)
         output.append(10)
-    return bytes(output) + b"\x1b\x32\n\n\n\n\n\n\x1dV\x42\x04"
+    return bytes(output) + b"\x1b\x32\x1bU\x00\n\n\n\n\n\n\x1dV\x42\x04"
 
 
 def pillow_pixels(parts, height, paper_width=DEFAULT_WIDTH):
