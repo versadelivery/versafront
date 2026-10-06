@@ -172,22 +172,28 @@ def escpos(rendered, paper_width=DEFAULT_WIDTH):
             input=svg.encode(), check=True, capture_output=True,
         )
         pixels = result.stdout
-    # Keep adjacent 24-dot image bands aligned on printers with bidirectional heads.
-    output = bytearray(b"\x1b@\x1bU\x01\x1b\x33\x18")
+    # Send raster graphics in bounded chunks. The Caysn prints GS v 0 cleanly;
+    # ESC * 24-dot bands can overlap or clip lines on this printer.
+    output = bytearray(b"\x1b@")
     width = int(paper_width)
     if len(pixels) != width * height:
         raise RuntimeError("Falha ao gerar a imagem térmica")
-    for top in range(0, height, 24):
-        output.extend(b"\x1b\x2a\x21" + bytes([width & 255, width >> 8]))
-        for x in range(width):
-            for group in range(3):
+    bytes_per_row = (width + 7) // 8
+    chunk_height = 120
+    for top in range(0, height, chunk_height):
+        rows = min(chunk_height, height - top)
+        output.extend(b"\x1d\x76\x30\x00")
+        output.extend(bytes((bytes_per_row & 255, bytes_per_row >> 8, rows & 255, rows >> 8)))
+        for y in range(top, top + rows):
+            row = y * width
+            for byte_index in range(bytes_per_row):
                 value = 0
                 for bit in range(8):
-                    y = top + group * 8 + bit
-                    if y < height and pixels[y * width + x] < 128: value |= 1 << (7 - bit)
+                    x = byte_index * 8 + bit
+                    if x < width and pixels[row + x] < 128:
+                        value |= 1 << (7 - bit)
                 output.append(value)
-        output.append(10)
-    return bytes(output) + b"\x1b\x32\x1bU\x00\n\n\n\n\n\n\x1dV\x42\x04"
+    return bytes(output) + b"\x1b\x64\x08\x1d\x56\x42\x04"
 
 
 def pillow_pixels(parts, height, paper_width=DEFAULT_WIDTH):
