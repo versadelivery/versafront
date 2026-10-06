@@ -11,6 +11,8 @@ cd tools/versa-print-connector
 ./install.sh
 ```
 
+Se o arquivo foi extraído sem a permissão de execução, use `bash install.sh`.
+
 Depois, abra **Conector VersaDelivery** no menu de aplicativos. O botão **Teste de impressão** funciona sem login e permite validar a impressora antes do deploy da API.
 
 ## Ubuntu / Debian
