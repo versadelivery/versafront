@@ -81,8 +81,8 @@ export function buildOrderReceipt(order: ReceiptOrder, mode: ReceiptMode, fontSi
     @page { size: 80mm auto; margin: 4mm; } * { box-sizing: border-box; }
     body { width: 72mm; margin: 0 auto; color: #000; font: 14px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
     header, section { border-bottom: 1px dashed #000; padding: 8px 0; } header { text-align: center; }
-    h2 { font-size: 15px; margin: 10px 0; } .item { padding: 9px 0; border-bottom: 1px dashed #777; }
-    .item > div { margin-top: 3px; } .emphasis { font-size: ${large ? '19px' : '15px'}; font-weight: ${large ? '700' : '400'}; }
+    h2 { font-size: 15px; margin: 10px 0; } .item { padding: ${mode === 'summary' ? '16px 0' : '7px 0'}; border-bottom: 1px dashed #777; }
+    .item > div { margin-top: ${mode === 'summary' ? '12px' : '2px'}; } .emphasis { font-size: ${large ? '19px' : '15px'}; font-weight: ${large ? '700' : '400'}; }
     footer { text-align: center; padding-top: 10px; } @media print { body { width: auto; } }
   </style></head><body>${completeHeader}${details}${financial}<footer>--- VIA ${mode === 'summary' ? 'RESUMIDA' : 'DO CLIENTE'} ---${mode === 'complete' ? '<br>Obrigado pela preferência!<br>www.versadelivery.com.br' : ''}</footer></body></html>`;
 }

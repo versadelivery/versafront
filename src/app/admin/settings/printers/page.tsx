@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Printer, Save } from 'lucide-react';
+import { ArrowLeft, Download, Laptop, Printer, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -55,7 +55,14 @@ export default function PrinterSettingsPage() {
       <Button onClick={save} disabled={loading || saving}><Save className="mr-2 h-4 w-4" />{saving ? 'Salvando...' : 'Salvar'}</Button>
     </div></header>
     <div className="mx-auto max-w-4xl space-y-4 px-4 py-6">
-      <p className="text-sm text-gray-600">A impressão automática abre o diálogo de impressão do dispositivo quando um pedido novo chega.</p>
+      <p className="text-sm text-gray-600">A impressão automática envia pedidos novos ao Conector Versa instalado no computador da loja. Mantenha o conector aberto e conectado à impressora.</p>
+      <section className="rounded-lg border border-gray-200 bg-white p-5">
+        <div className="flex items-start gap-3"><Laptop className="mt-0.5 h-5 w-5 text-gray-600"/><div><h2 className="font-semibold text-gray-900">Instalar o Conector Versa</h2><p className="mt-1 text-sm text-gray-500">Baixe no computador conectado à impressora térmica.</p></div></div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Button asChild variant="outline"><a href="/downloads/versa-print-connector-windows.zip" download><Download className="mr-2 h-4 w-4"/>Windows 10/11</a></Button>
+          <Button asChild variant="outline"><a href="/downloads/versa-print-connector-linux.tar.gz" download><Download className="mr-2 h-4 w-4"/>Linux</a></Button>
+        </div>
+      </section>
       {receiptSection('summary', 'Impressão resumida', 'Itens, peso, preparo, montagem, adicionais e observações para separação.')}
       {receiptSection('complete', 'Impressão completa', 'Dados da loja e do cliente, itens, valores, entrega e pagamento.')}
     </div>
