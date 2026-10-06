@@ -251,6 +251,12 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
       newErrors.price = 'Preço deve ser maior que zero (ou adicione uma etapa de montagem obrigatória)';
     }
 
+    // A API só aceita a tag Promoção com um preço promocional menor que o preço normal
+    const hasValidDiscount = hasDiscount && !!discountValue && finalPrice > 0 && finalPrice < priceNumber;
+    if (promotionTag && !hasValidDiscount) {
+      newErrors.promotionTag = 'A tag Promoção exige um desconto: ative "Desconto" e informe um valor que deixe o preço menor que o original, ou desligue a tag.';
+    }
+
     // Validação de desconto
     if (hasDiscount && discountValue) {
       const discountNum = parseFloat(discountValue.replace(',', '.')) || 0;
@@ -694,7 +700,7 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
           {/* Desconto */}
           <div className="flex items-center justify-between rounded-lg p-3 bg-muted/40">
             <span className="text-sm font-medium">Produto com desconto?</span>
-            <Switch checked={hasDiscount} onCheckedChange={(v) => { setHasDiscount(v); if (!v) setDiscountValue(''); if (v) setPromotionTag(true); markDirty(); }} />
+            <Switch checked={hasDiscount} onCheckedChange={(v) => { setHasDiscount(v); if (!v) { setDiscountValue(''); setPromotionTag(false); } if (v) setPromotionTag(true); markDirty(); }} />
           </div>
 
           {hasDiscount && (
@@ -786,9 +792,10 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
             </div>
             <div className="flex items-center justify-between rounded-lg p-3 bg-muted/40">
               <span className="text-sm font-medium">Promoção</span>
-              <Switch checked={promotionTag} onCheckedChange={setPromotionTag} />
+              <Switch checked={promotionTag} onCheckedChange={(checked) => { setPromotionTag(checked); clearError('promotionTag'); markDirty(); }} />
             </div>
           </div>
+          {errors.promotionTag && <p className="text-xs text-destructive">{errors.promotionTag}</p>}
 
           <hr className="border-gray-100" />
 

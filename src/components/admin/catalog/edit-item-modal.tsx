@@ -20,6 +20,7 @@ import { updateCatalogItem } from "@/api/requests/catalog_item/requests";
 import { DeleteConfirmation } from "@/components/ui/delete-confirmation";
 import { toast } from "sonner";
 import { fixImageUrl } from "@/utils/image-url";
+import { getApiErrorMessage, getApiFieldErrors } from "@/utils/api-error";
 
 // =============================================================================
 // TIPOS
@@ -143,6 +144,8 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
   // Estados - UI
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isUpdating, setIsUpdating] = useState(false);
+  // Mensagem fixa acima do rodapé (o modal é longo; toast e erros de campo podem ficar fora da tela)
+  const [submitError, setSubmitError] = useState('');
   const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] = useState(false);
   const [showDisableWarning, setShowDisableWarning] = useState(false);
   const [disableWarningItems, setDisableWarningItems] = useState<string[]>([]);
@@ -153,6 +156,11 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
   const originalHasExtras = useRef(false);
   const originalHasPrepareMethods = useRef(false);
   const originalHasSteps = useRef(false);
+  // Valores salvos da promoção: a API só valida a tag Promoção quando tag, preço ou desconto mudam,
+  // então itens antigos com a tag sem desconto ainda podem ser salvos (ex.: apagar um modo de preparo)
+  const originalPromo = useRef({ tag: false, price: 0, discount: null as number | null });
+  // Ids vindos do servidor: o que sumir da lista precisa ir com _destroy, senão a API mantém o registro
+  const originalIds = useRef({ extras: [] as string[], prepareMethods: [] as string[], steps: [] as string[], options: {} as Record<string, string[]> });
 
   // Variáveis derivadas
   const priceNumber = parseFloat(price.replace(',', '.')) || 0;
@@ -290,7 +298,20 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
       originalHasExtras.current = item.extra?.data?.length > 0;
       originalHasPrepareMethods.current = item.prepare_method?.data?.length > 0;
       originalHasSteps.current = item.steps?.data?.length > 0;
+      originalPromo.current = {
+        tag: !!(item as any).promotion_tag,
+        price: Number(item.price) || 0,
+        discount: item.price_with_discount != null ? Number(item.price_with_discount) : null,
+      };
+      originalIds.current = {
+        extras: (item.extra?.data || []).map((e: any) => String(e.id)),
+        prepareMethods: (item.prepare_method?.data || []).map((m: any) => String(m.id)),
+        steps: (item.steps?.data || []).map((s: any) => String(s.id)),
+        options: Object.fromEntries((item.steps?.data || []).map((s: any) => [String(s.id), (s.attributes.options?.data || []).map((o: any) => String(o.id))])),
+      };
 
+      setErrors({});
+      setSubmitError('');
       formDirtyRef.current = false;
     }
   }, [catalogItem, isOpen]);
@@ -345,6 +366,20 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
       newErrors.price = 'Preço não pode ser negativo';
     } else if (priceNumber === 0 && !hasRequiredStep) {
       newErrors.price = 'Preço deve ser maior que zero (ou adicione uma etapa de montagem obrigatória)';
+    }
+
+    // A API só aceita a tag Promoção com um preço promocional menor que o preço normal
+    const hasValidDiscount = hasDiscount && !!discountValue && finalPrice > 0 && finalPrice < priceNumber;
+    const sentDiscount = hasValidDiscount ? finalPrice : null;
+    const orig = originalPromo.current;
+    const near = (a: number | null, b: number | null) => a === b || (a !== null && b !== null && Math.abs(a - b) < 0.005);
+    const promotionInputsChanged = promotionTag !== orig.tag || !near(priceNumber, orig.price) || !near(sentDiscount, orig.discount);
+    if (promotionTag && !hasValidDiscount && promotionInputsChanged) {
+      newErrors.promotionTag = 'A tag Promoção exige um desconto: ative "Desconto" e informe um valor que deixe o preço menor que o original, ou desligue a tag.';
+    }
+
+    if (prepareMethodsLimit && (!Number.isInteger(Number(prepareMethodsLimit)) || Number(prepareMethodsLimit) < 1)) {
+      newErrors.prepareMethods = 'O limite de modos de preparo deve ser um número inteiro maior que zero';
     }
 
     // Validação de desconto
@@ -412,7 +447,9 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const messages = Object.values(newErrors);
+    setSubmitError(messages.length > 0 ? `Corrija os campos destacados: ${messages.join(' • ')}` : '');
+    return messages.length === 0;
   };
 
   // =============================================================================
@@ -555,6 +592,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
 
   const proceedWithSubmit = async () => {
     setShowDisableWarning(false);
+    setSubmitError('');
     setIsUpdating(true);
     try {
       const formData = new FormData();
@@ -611,6 +649,14 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
         formData.append('ingredient_ids[]', '');
       }
 
+      const orig = originalIds.current;
+      const appendDestroy = (prefix: string, ids: string[], start: number) => {
+        ids.forEach((destroyId, i) => {
+          formData.append(`${prefix}[${start + i}][id]`, destroyId);
+          formData.append(`${prefix}[${start + i}][_destroy]`, 'true');
+        });
+      };
+
       // Extras
       if (hasExtras) {
         const validExtras = extras.filter((extra) => extra.name.trim() !== '');
@@ -621,11 +667,10 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
           formData.append(`catalog_item_extras_attributes[${index}][name]`, extra.name.trim());
           formData.append(`catalog_item_extras_attributes[${index}][price]`, (parseFloat(extra.price.replace(',', '.')) || 0).toString());
         });
-      } else if (originalHasExtras.current) {
-        extras.filter((e) => e.id).forEach((extra, index) => {
-          formData.append(`catalog_item_extras_attributes[${index}][id]`, extra.id!);
-          formData.append(`catalog_item_extras_attributes[${index}][_destroy]`, 'true');
-        });
+        const keptIds = validExtras.map((extra) => extra.id).filter(Boolean) as string[];
+        appendDestroy('catalog_item_extras_attributes', orig.extras.filter((x) => !keptIds.includes(x)), validExtras.length);
+      } else {
+        appendDestroy('catalog_item_extras_attributes', orig.extras, 0);
       }
 
       // Modos de preparo
@@ -637,11 +682,10 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
           }
           formData.append(`catalog_item_prepare_methods_attributes[${index}][name]`, method.name.trim());
         });
-      } else if (originalHasPrepareMethods.current) {
-        prepareMethods.filter((m) => m.id).forEach((method, index) => {
-          formData.append(`catalog_item_prepare_methods_attributes[${index}][id]`, method.id!);
-          formData.append(`catalog_item_prepare_methods_attributes[${index}][_destroy]`, 'true');
-        });
+        const keptIds = validMethods.map((method) => method.id).filter(Boolean) as string[];
+        appendDestroy('catalog_item_prepare_methods_attributes', orig.prepareMethods.filter((x) => !keptIds.includes(x)), validMethods.length);
+      } else {
+        appendDestroy('catalog_item_prepare_methods_attributes', orig.prepareMethods, 0);
       }
 
       formData.append('prepare_methods_limit', hasPrepareMethods && prepareMethodsLimit ? prepareMethodsLimit : '');
@@ -650,31 +694,38 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
       // Etapas
       if (hasSteps) {
         let stepIndex = 0;
+        const keptStepIds: string[] = [];
         steps.forEach((step) => {
           if (step.name.trim() === '') return;
           const validOptions = step.options.filter((option) => option.name.trim() !== '');
           if (validOptions.length === 0) return;
 
+          const prefix = `catalog_item_steps_attributes[${stepIndex}]`;
           if (step.id) {
-            formData.append(`catalog_item_steps_attributes[${stepIndex}][id]`, step.id);
+            formData.append(`${prefix}[id]`, step.id);
+            keptStepIds.push(step.id);
           }
-          formData.append(`catalog_item_steps_attributes[${stepIndex}][name]`, step.name.trim());
-          formData.append(`catalog_item_steps_attributes[${stepIndex}][required]`, step.required.toString());
+          formData.append(`${prefix}[name]`, step.name.trim());
+          formData.append(`${prefix}[required]`, step.required.toString());
 
           validOptions.forEach((option, optionIndex) => {
             if (option.id) {
-              formData.append(`catalog_item_steps_attributes[${stepIndex}][catalog_item_step_options_attributes][${optionIndex}][id]`, option.id);
+              formData.append(`${prefix}[catalog_item_step_options_attributes][${optionIndex}][id]`, option.id);
             }
-            formData.append(`catalog_item_steps_attributes[${stepIndex}][catalog_item_step_options_attributes][${optionIndex}][name]`, option.name.trim());
-            formData.append(`catalog_item_steps_attributes[${stepIndex}][catalog_item_step_options_attributes][${optionIndex}][price]`, (parseFloat(option.price.replace(',', '.')) || 0).toString());
+            formData.append(`${prefix}[catalog_item_step_options_attributes][${optionIndex}][name]`, option.name.trim());
+            formData.append(`${prefix}[catalog_item_step_options_attributes][${optionIndex}][price]`, (parseFloat(option.price.replace(',', '.')) || 0).toString());
           });
+
+          if (step.id) {
+            const keptOptionIds = validOptions.map((option) => option.id).filter(Boolean) as string[];
+            const removedOptionIds = (orig.options[step.id] || []).filter((x) => !keptOptionIds.includes(x));
+            appendDestroy(`${prefix}[catalog_item_step_options_attributes]`, removedOptionIds, validOptions.length);
+          }
           stepIndex++;
         });
-      } else if (originalHasSteps.current) {
-        steps.filter((s) => s.id).forEach((step, index) => {
-          formData.append(`catalog_item_steps_attributes[${index}][id]`, step.id!);
-          formData.append(`catalog_item_steps_attributes[${index}][_destroy]`, 'true');
-        });
+        appendDestroy('catalog_item_steps_attributes', orig.steps.filter((x) => !keptStepIds.includes(x)), stepIndex);
+      } else {
+        appendDestroy('catalog_item_steps_attributes', orig.steps, 0);
       }
 
       await updateCatalogItem(formData);
@@ -683,8 +734,20 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
       toast.success('Item atualizado com sucesso');
       formDirtyRef.current = false;
       onOpenChange(false);
-    } catch {
-      toast.error('Erro ao atualizar item');
+    } catch (error) {
+      const message = getApiErrorMessage(error, 'Não foi possível atualizar o item. Tente novamente.');
+      setSubmitError(message);
+      const fieldMap: Record<string, string> = {
+        name: 'name', description: 'description', catalog_group: 'group', catalog_group_id: 'group',
+        price: 'price', price_with_discount: 'discount', promotion_tag: 'promotionTag',
+        min_weight: 'minWeight', max_weight: 'maxWeight', measure_interval: 'measureInterval',
+        prepare_methods_limit: 'prepareMethods',
+      };
+      const serverErrors = Object.fromEntries(
+        Object.entries(getApiFieldErrors(error)).filter(([field]) => fieldMap[field]).map(([field, msgs]) => [fieldMap[field], msgs.join(' ')]),
+      );
+      setErrors((prev) => ({ ...prev, ...serverErrors }));
+      toast.error(message, { duration: 8000 });
     } finally {
       setIsUpdating(false);
     }
@@ -880,7 +943,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
           {/* Desconto */}
           <div className="flex items-center justify-between rounded-lg p-3 bg-muted/40">
             <span className="text-sm font-medium">Produto com desconto?</span>
-            <Switch checked={hasDiscount} onCheckedChange={(v) => { setHasDiscount(v); if (!v) setDiscountValue(''); if (v) setPromotionTag(true); markDirty(); }} />
+            <Switch checked={hasDiscount} onCheckedChange={(v) => { setHasDiscount(v); if (!v) { setDiscountValue(''); setPromotionTag(false); } if (v) setPromotionTag(true); markDirty(); }} />
           </div>
 
           {hasDiscount && (
@@ -972,9 +1035,10 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
             </div>
             <div className="flex items-center justify-between rounded-lg p-3 bg-muted/40">
               <span className="text-sm font-medium">Promoção</span>
-              <Switch checked={promotionTag} onCheckedChange={setPromotionTag} />
+              <Switch checked={promotionTag} onCheckedChange={(checked) => { setPromotionTag(checked); clearError('promotionTag'); markDirty(); }} />
             </div>
           </div>
+          {errors.promotionTag && <p className="text-xs text-destructive">{errors.promotionTag}</p>}
 
           <hr className="border-gray-100" />
           <div className="space-y-3">
@@ -1266,6 +1330,12 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
             </div>
           )}
         </div>
+
+        {submitError && (
+          <div role="alert" className="mx-6 mb-2 max-h-28 overflow-y-auto rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            {submitError}
+          </div>
+        )}
 
         {/* Footer */}
         <div className="flex gap-3 px-6 py-4 border-t border-gray-100">

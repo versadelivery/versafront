@@ -10,7 +10,8 @@ const DEBOUNCE_MS = 500;
 const MIN_QUERY_LENGTH = 3;
 
 interface AddressSearchInputProps {
-  shopId: string | number;
+  /** Sem loja (cadastro novo), a busca não prioriza resultados perto da loja */
+  shopId?: string | number;
   value: string;
   onValueChange: (value: string) => void;
   onSelect: (place: GeoPlace) => void;

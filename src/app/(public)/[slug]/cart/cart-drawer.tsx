@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge'
 import { CatalogItem } from '../types'
 import { useShopStatusContext } from '@/contexts/ShopStatusContext'
 import { useClient } from '../client-context'
+import { hiddenCategoryIds } from '../category-availability'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
 interface CartItem extends CatalogItem {
@@ -51,8 +52,10 @@ export function CartDrawer() {
     const todayDayKey = `${dayKeys[new Date().getDay()]}_active`
     const groups = contextShop.data?.attributes?.catalog_groups
     const groupList = Array.isArray(groups) ? groups : (groups?.data ?? [])
+    const hiddenIds = hiddenCategoryIds(contextShop.data?.attributes, todayDayKey)
     groupList.forEach((g: any) => {
       if (g.attributes?.active === false) return
+      if (hiddenIds.has(String(g.attributes?.catalog_category_id))) return
       const items = Array.isArray(g.attributes?.items) ? g.attributes.items : (g.attributes?.items?.data ?? [])
       items.forEach((i: any) => {
         const item = i.data ?? i

@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { formatCurrency, cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { isWeightItem, formatWeight, orderItemQuantityLabel } from '@/utils/order-item-quantity';
+import { calculateItemTotal } from '@/utils/order-item-total';
+import { toast } from 'sonner';
 import {
   Select,
   SelectContent,
@@ -51,6 +53,10 @@ interface OrderItem {
   image?: string;
   weight?: number;
   item_type?: string;
+  prepare_methods_limit?: number | null;
+  assembly_pricing_mode?: string;
+  available_steps?: Array<{ id: number; name: string; required: boolean; options: Array<{ id: number; name: string; price: number }> }>;
+  selected_steps?: Array<{ id?: number; step_name: string; option_name: string; catalog_item_step_id: number | null; catalog_item_step_option_id: number | null; price?: number }>;
   extras?: Array<{ name: string; price: number }>;
   prepare_methods?: Array<{ name: string }>;
   selected_extras?: Array<{ id: number; name: string; price: number }>;
@@ -119,6 +125,9 @@ const getPaymentMethodLabel = (method: string) => {
   };
   return methodMap[method] || method;
 };
+
+// Botões de seleção da edição (alvo de toque maior no celular)
+const EDIT_CHIP = 'text-sm px-3 py-1.5 rounded-md border transition-colors cursor-pointer';
 
 const formatFullDate = (dateString: string) => {
   const date = new Date(dateString);
@@ -323,17 +332,35 @@ export default function OrderDetailsModal({
           hasChange = true;
         }
 
-        const origExtraIds = (originalItem.selected_extras || []).map((e: any) => e.id).sort();
-        const newExtraIds = (editedItem.selected_extras || []).map((e: any) => e.id).sort();
+        // Só ids do cardápio: adicionais/preparos/etapas cujo item foi apagado do cardápio (id nulo) a API preserva
+        const catalogIds = (list: any[] | undefined) =>
+          (list || []).map((entry: any) => entry.id).filter((id: unknown) => id != null).sort();
+        const origExtraIds = catalogIds(originalItem.selected_extras);
+        const newExtraIds = catalogIds(editedItem.selected_extras);
         if (JSON.stringify(origExtraIds) !== JSON.stringify(newExtraIds)) {
           itemChange.extras_ids = newExtraIds;
           hasChange = true;
         }
 
-        const origMethodIds = (originalItem.selected_prepare_methods || []).map((m: any) => m.id).sort();
-        const newMethodIds = (editedItem.selected_prepare_methods || []).map((m: any) => m.id).sort();
+        const origMethodIds = catalogIds(originalItem.selected_prepare_methods);
+        const newMethodIds = catalogIds(editedItem.selected_prepare_methods);
         if (JSON.stringify(origMethodIds) !== JSON.stringify(newMethodIds)) {
           itemChange.prepare_methods_ids = newMethodIds;
+          hasChange = true;
+        }
+
+        const stepChoices = (list: any[] | undefined) =>
+          (list || [])
+            .filter((step: any) => step.catalog_item_step_id != null && step.catalog_item_step_option_id != null)
+            .map((step: any) => ({
+              catalog_item_step_id: step.catalog_item_step_id,
+              catalog_item_step_option_id: step.catalog_item_step_option_id,
+            }))
+            .sort((a: any, b: any) => a.catalog_item_step_id - b.catalog_item_step_id);
+        const origSteps = stepChoices(originalItem.selected_steps);
+        const newSteps = stepChoices(editedItem.selected_steps);
+        if (JSON.stringify(origSteps) !== JSON.stringify(newSteps)) {
+          itemChange.steps = newSteps;
           hasChange = true;
         }
 
@@ -541,7 +568,7 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
     navigator.clipboard.writeText(orderInfo);
   };
 
-  // Peso editado muda o valor do item na hora: total += (novo peso - peso atual) x preço por kg/g
+  // Peso editado muda o valor do item na hora (mesma conta da API)
   const handleWeightChange = (itemId: string, raw: string) => {
     setWeightDrafts(prev => ({ ...prev, [itemId]: raw }));
     const weight = parseFloat(raw.replace(',', '.'));
@@ -551,40 +578,91 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
       ...prev,
       items: prev.items.map((item: any) => {
         if (item.id !== itemId) return item;
-        // parte do item original (sem acumular arredondamentos); peso nulo vale 1, como no cálculo da API
-        const original = order.items.find((i: any) => i.id === itemId) ?? item;
-        const delta = (weight - (Number(original.weight) || 1)) * item.price;
-        const total = Math.round(((original.total_price ?? 0) + delta) * 100) / 100;
-        return { ...item, weight, total_price: total };
+        const updated = { ...item, weight };
+        return { ...updated, total_price: calculateItemTotal(updated) };
       }),
     }));
   };
 
-  const handleToggleExtra = (itemId: string, extra: { id: number; name: string; price: number }, wasSelected: boolean) => {
-    setEditedOrder(prev => {
-      const newItems = prev.items.map((item: any) => {
+  // Atualiza uma opção do item e já recalcula o valor mostrado (a API recalcula de novo ao salvar)
+  const updateItemOptions = (itemId: string, change: (item: any) => any) => {
+    setEditedOrder(prev => ({
+      ...prev,
+      items: prev.items.map((item: any) => {
         if (item.id !== itemId) return item;
-        const currentExtras = item.selected_extras || [];
-        const newExtras = wasSelected
-          ? currentExtras.filter((e: any) => e.id !== extra.id)
-          : [...currentExtras, extra];
-        return { ...item, selected_extras: newExtras };
-      });
-      return { ...prev, items: newItems };
+        const updated = change(item);
+        return { ...updated, total_price: calculateItemTotal(updated) };
+      }),
+    }));
+  };
+
+  // Se a opção já estava no pedido, a API mantém o preço de quando foi pedida; a prévia usa o mesmo preço
+  const originalOf = (itemId: string) => order.items.find((i: any) => i.id === itemId);
+
+  const handleToggleExtra = (itemId: string, extra: { id: number; name: string; price: number }, wasSelected: boolean) => {
+    updateItemOptions(itemId, (item) => {
+      const currentExtras = item.selected_extras || [];
+      const orderedExtra = originalOf(itemId)?.selected_extras?.find((e: any) => e.id === extra.id);
+      const newExtras = wasSelected
+        ? currentExtras.filter((e: any) => e.id !== extra.id)
+        : [...currentExtras, orderedExtra ?? extra];
+      return { ...item, selected_extras: newExtras };
     });
   };
 
-  const handleTogglePrepareMethod = (itemId: string, method: { id: number; name: string }, wasSelected: boolean) => {
-    setEditedOrder(prev => {
-      const newItems = prev.items.map((item: any) => {
-        if (item.id !== itemId) return item;
-        const currentMethods = item.selected_prepare_methods || [];
-        const newMethods = wasSelected
-          ? currentMethods.filter((m: any) => m.id !== method.id)
-          : [...currentMethods, method];
-        return { ...item, selected_prepare_methods: newMethods };
-      });
-      return { ...prev, items: newItems };
+  const handleTogglePrepareMethod = (item: any, method: { id: number; name: string }, wasSelected: boolean) => {
+    const limit: number | null = item.prepare_methods_limit ?? null;
+    const currentMethods = item.selected_prepare_methods || [];
+
+    if (!wasSelected && limit && currentMethods.filter((m: any) => m.id != null).length >= limit && limit > 1) {
+      toast.error(`Este item permite no máximo ${limit} modos de preparo`);
+      return;
+    }
+
+    updateItemOptions(item.id, (current) => {
+      const methods = current.selected_prepare_methods || [];
+      let newMethods;
+      if (wasSelected) {
+        newMethods = methods.filter((m: any) => m.id !== method.id);
+      } else if (limit === 1) {
+        // limite 1: escolher outro troca o modo de preparo (mantém os sem id, que vêm de itens apagados do cardápio)
+        newMethods = [...methods.filter((m: any) => m.id == null), method];
+      } else {
+        newMethods = [...methods, method];
+      }
+      return { ...current, selected_prepare_methods: newMethods };
+    });
+  };
+
+  // Uma opção por etapa; etapa opcional pode ser desmarcada tocando de novo, obrigatória só troca
+  const handleSelectStepOption = (
+    itemId: string,
+    step: { id: number; name: string; required: boolean },
+    option: { id: number; name: string; price: number },
+    wasSelected: boolean,
+  ) => {
+    updateItemOptions(itemId, (item) => {
+      const others = (item.selected_steps || []).filter((s: any) => s.catalog_item_step_id !== step.id);
+      const orderedStep = originalOf(itemId)?.selected_steps?.find(
+        (s: any) => s.catalog_item_step_id === step.id && s.catalog_item_step_option_id === option.id,
+      );
+      if (wasSelected) {
+        if (step.required) return item;
+        return { ...item, selected_steps: others };
+      }
+      return {
+        ...item,
+        selected_steps: [
+          ...others,
+          {
+            catalog_item_step_id: step.id,
+            catalog_item_step_option_id: option.id,
+            step_name: step.name,
+            option_name: option.name,
+            price: orderedStep?.price ?? option.price,
+          },
+        ],
+      };
     });
   };
 
@@ -1294,7 +1372,7 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
                                         key={`extra-${extra.id}`}
                                         onClick={() => handleToggleExtra(item.id, extra, !!isSelected)}
                                         className={cn(
-                                          'text-xs px-2 py-0.5 rounded-md border transition-colors cursor-pointer',
+                                          EDIT_CHIP,
                                           isSelected
                                             ? 'border-primary bg-primary/10 text-primary font-semibold'
                                             : 'border-[#E5E2DD] bg-white text-gray-400 hover:border-gray-300',
@@ -1311,7 +1389,7 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
                             {item.available_prepare_methods && item.available_prepare_methods.length > 0 && (
                               <div className="mt-2">
                                 <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                                  Preparo
+                                  Preparo{item.prepare_methods_limit ? ` (até ${item.prepare_methods_limit})` : ''}
                                 </span>
                                 <div className="flex flex-wrap gap-1.5 mt-1">
                                   {item.available_prepare_methods.map((method: any) => {
@@ -1319,9 +1397,9 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
                                     return (
                                       <button
                                         key={`method-${method.id}`}
-                                        onClick={() => handleTogglePrepareMethod(item.id, method, !!isSelected)}
+                                        onClick={() => handleTogglePrepareMethod(item, method, !!isSelected)}
                                         className={cn(
-                                          'text-xs px-2 py-0.5 rounded-md border transition-colors cursor-pointer',
+                                          EDIT_CHIP,
                                           isSelected
                                             ? 'border-primary bg-primary/10 text-primary font-semibold'
                                             : 'border-[#E5E2DD] bg-white text-gray-400 hover:border-gray-300',
@@ -1333,6 +1411,51 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
                                   })}
                                 </div>
                               </div>
+                            )}
+                            {/* Editable steps (montagem) */}
+                            {item.available_steps && item.available_steps.length > 0 && (
+                              <div className="mt-2 space-y-3">
+                                {item.available_steps.map((step: any) => {
+                                  const selected = (item.selected_steps || []).find((s: any) => s.catalog_item_step_id === step.id);
+                                  return (
+                                    <div key={`step-${step.id}`}>
+                                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                                        {step.name}{step.required ? ' *' : ''}
+                                      </span>
+                                      <div className="flex flex-wrap gap-1.5 mt-1">
+                                        {step.options.map((option: any) => {
+                                          const isSelected = selected?.catalog_item_step_option_id === option.id;
+                                          return (
+                                            <button
+                                              key={`step-${step.id}-option-${option.id}`}
+                                              type="button"
+                                              aria-pressed={isSelected}
+                                              onClick={() => handleSelectStepOption(item.id, step, option, !!isSelected)}
+                                              className={cn(
+                                                EDIT_CHIP,
+                                                isSelected
+                                                  ? 'border-primary bg-primary/10 text-primary font-semibold'
+                                                  : 'border-[#E5E2DD] bg-white text-gray-400 hover:border-gray-300',
+                                              )}
+                                            >
+                                              {option.name}{option.price > 0 ? ` (+${formatCurrency(option.price)})` : ''}
+                                            </button>
+                                          );
+                                        })}
+                                      </div>
+                                      {step.required && !selected && (
+                                        <p className="mt-1 text-xs text-destructive">Escolha uma opção para esta etapa obrigatória</p>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                            {/* Complementos compartilhados não são editáveis aqui, mas contam no valor */}
+                            {item.complements && item.complements.length > 0 && (
+                              <p className="mt-2 text-xs text-muted-foreground">
+                                Complementos: {item.complements.map((comp: any) => comp.name).join(', ')}
+                              </p>
                             )}
                           </>
                         ) : (
@@ -1385,7 +1508,7 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
                         )}
 
                         {/* Steps - opções selecionadas */}
-                        {item.selected_steps && item.selected_steps.length > 0 && (
+                        {!(isEditingMode && item.available_steps && item.available_steps.length > 0) && item.selected_steps && item.selected_steps.length > 0 && (
                           <div className="mt-2">
                             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                               Opcoes

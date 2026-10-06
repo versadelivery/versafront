@@ -50,6 +50,7 @@ export const registerShop = async (data: any) => {
   const { confirmPassword, ...shopUserData } = data.shop_user || {}
   const payload: RegisterData & { referral_code?: string } = {
     shop: data.shop,
+    ...(data.shop_location ? { shop_location: data.shop_location } : {}),
     shop_user: shopUserData,
     shop_billing_config: data.shop_billing_config,
     ...(data.referral_code ? { referral_code: data.referral_code } : {}),

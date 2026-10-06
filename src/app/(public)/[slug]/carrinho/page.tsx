@@ -10,6 +10,7 @@ import { formatPrice } from "../format-price"
 import { CatalogItem } from "../types"
 import Link from "next/link"
 import Image from "next/image"
+import { hiddenCategoryIds } from "../category-availability"
 import favicon from "@/public/logo/favicon.svg"
 import logoInlineBlack from "@/public/logo/logo-inline-black.svg"
 
@@ -59,8 +60,10 @@ export default function CartPage() {
     const todayDayKey = `${dayKeys[new Date().getDay()]}_active`
     const groups = contextShop.data?.attributes?.catalog_groups
     const groupList = Array.isArray(groups) ? groups : (groups?.data ?? [])
+    const hiddenIds = hiddenCategoryIds(contextShop.data?.attributes, todayDayKey)
     groupList.forEach((g: any) => {
       if (g.attributes?.active === false) return
+      if (hiddenIds.has(String(g.attributes?.catalog_category_id))) return
       const items = Array.isArray(g.attributes?.items) ? g.attributes.items : (g.attributes?.items?.data ?? [])
       items.forEach((i: any) => {
         const item = i.data ?? i

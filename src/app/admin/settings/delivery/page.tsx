@@ -48,7 +48,7 @@ import { useShop } from "@/hooks/use-shop";
 import { toast } from "sonner";
 import { deliveryService, DeliveryFeeKind } from "@/services/delivery-service";
 import { useQueryClient } from "@tanstack/react-query";
-import { formatCurrencyInput, formatCurrencyValue as formatApiValue, parseCurrencyInput } from "@/utils/format-price";
+import { formatCurrencyInput, formatCurrencyValue as formatApiValue, parseCurrencyInput, parseOptionalCurrencyInput } from "@/utils/format-price";
 import { StoreLocation, StoreLocationPicker } from "./components/store-location-picker";
 import {
   DistanceTiersEditor,
@@ -61,7 +61,7 @@ import {
 type Neighborhood = {
   id: string;
   name: string;
-  value: number;
+  value: number | null;
   hasFreeDelivery: boolean;
   freeDeliveryThreshold: number;
 };
@@ -167,20 +167,19 @@ export default function DeliverySettingsPage() {
       newErrors.neighborhoodName = "Nome do bairro é obrigatório";
     }
 
+    // R$ 0,00 é válido (entrega gratuita); só o campo vazio é erro
+    const missingValueMessage = "Informe o valor da entrega (use 0,00 para entrega gratuita)";
+
     if (currentNeighborhood.hasFreeDelivery) {
       if (!currentNeighborhood.freeDeliveryThreshold || currentNeighborhood.freeDeliveryThreshold <= 0) {
         newErrors.neighborhoodFreeDeliveryThreshold = "Valor mínimo para taxa gratuita é obrigatório";
-      } else if (!currentNeighborhood.value || currentNeighborhood.value <= 0) {
-        newErrors.neighborhoodValue = "Valor da entrega é obrigatório";
+      } else if (currentNeighborhood.value === null) {
+        newErrors.neighborhoodValue = missingValueMessage;
       } else if (currentNeighborhood.freeDeliveryThreshold <= currentNeighborhood.value) {
         newErrors.neighborhoodFreeDeliveryThreshold = "O valor mínimo para frete grátis deve ser maior que o valor da taxa";
       }
-    } else {
-      if (!currentNeighborhood.value) {
-        newErrors.neighborhoodValue = "Valor da entrega é obrigatório";
-      } else if (currentNeighborhood.value < 0) {
-        newErrors.neighborhoodValue = "Valor não pode ser negativo";
-      }
+    } else if (currentNeighborhood.value === null) {
+      newErrors.neighborhoodValue = missingValueMessage;
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -203,7 +202,7 @@ export default function DeliverySettingsPage() {
 
     // A taxa continua sendo cobrada abaixo do limite; ela só zera quando o
     // total do pedido atingir freeDeliveryThreshold.
-    const amount = currentNeighborhood.value;
+    const amount = currentNeighborhood.value ?? 0;
 
     if (isEditing && currentNeighborhood.id) {
       updateNeighborhood({
@@ -224,12 +223,7 @@ export default function DeliverySettingsPage() {
   };
 
   const handleEditNeighborhood = (neighborhood: Neighborhood) => {
-    const autoFree = neighborhood.value === 0 && !neighborhood.hasFreeDelivery;
-    setCurrentNeighborhood({
-      ...neighborhood,
-      hasFreeDelivery: autoFree || neighborhood.hasFreeDelivery,
-      freeDeliveryThreshold: autoFree ? (neighborhood.freeDeliveryThreshold || 50) : neighborhood.freeDeliveryThreshold,
-    });
+    setCurrentNeighborhood({ ...neighborhood });
     setIsEditing(true);
     setErrors({});
     setIsDialogOpen(true);
@@ -252,7 +246,7 @@ export default function DeliverySettingsPage() {
     setCurrentNeighborhood({
       id: "",
       name: "",
-      value: 0,
+      value: null,
       hasFreeDelivery: false,
       freeDeliveryThreshold: 0
     });
@@ -899,12 +893,12 @@ export default function DeliverySettingsPage() {
                   id="neighborhoodValue"
                   type="text"
                   inputMode="decimal"
-                  value={currentNeighborhood?.value ? formatApiValue(currentNeighborhood.value) : ""}
+                  value={currentNeighborhood?.value == null ? "" : formatApiValue(currentNeighborhood.value)}
                   onChange={(e) => {
-                    const formatted = formatCurrencyInput(e.target.value);
+                    const previousDisplay = currentNeighborhood?.value == null ? "" : formatApiValue(currentNeighborhood.value);
                     setCurrentNeighborhood({
                       ...currentNeighborhood!,
-                      value: parseCurrencyInput(formatted),
+                      value: parseOptionalCurrencyInput(e.target.value, previousDisplay, (e.nativeEvent as InputEvent).inputType),
                     });
                     if (errors.neighborhoodValue) setErrors(prev => ({ ...prev, neighborhoodValue: "" }));
                   }}
@@ -925,9 +919,9 @@ export default function DeliverySettingsPage() {
                 <div className="flex items-center gap-3">
                   <Gift className="w-4 h-4 text-primary flex-shrink-0" />
                   <div className="space-y-0.5">
-                    <Label htmlFor="freeDelivery" className="text-sm font-medium">Taxa Gratuita</Label>
+                    <Label htmlFor="freeDelivery" className="text-sm font-medium">Taxa Gratuita / valor mínimo</Label>
                     <p className="text-sm text-muted-foreground">
-                      Ative para oferecer taxa gratuita a partir de um valor mínimo
+                      Ative para oferecer taxa gratuita a partir de um valor mínimo do pedido
                     </p>
                   </div>
                 </div>
@@ -935,14 +929,22 @@ export default function DeliverySettingsPage() {
                   id="freeDelivery"
                   checked={currentNeighborhood?.hasFreeDelivery || false}
                   onCheckedChange={(checked) => {
+                    // nada é preenchido sozinho: o valor mínimo só aparece e é digitado por quem ativou
                     setCurrentNeighborhood({
                       ...currentNeighborhood!,
                       hasFreeDelivery: checked,
-                      freeDeliveryThreshold: checked ? (currentNeighborhood?.freeDeliveryThreshold || 50) : 0
+                      freeDeliveryThreshold: checked ? (currentNeighborhood?.freeDeliveryThreshold ?? 0) : 0
                     });
                   }}
                 />
               </div>
+
+              {currentNeighborhood?.hasFreeDelivery && currentNeighborhood.value === 0 && (
+                <p className="text-sm text-muted-foreground flex items-center gap-1">
+                  <Info className="w-3.5 h-3.5 flex-shrink-0" />
+                  Com a taxa em R$ 0,00 a entrega já é sempre gratuita; o valor mínimo só tem efeito quando a taxa é maior que zero
+                </p>
+              )}
 
               {currentNeighborhood?.hasFreeDelivery && (
                 <div className="space-y-1.5">

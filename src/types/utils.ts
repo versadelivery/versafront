@@ -83,7 +83,14 @@ export interface RegisterData {
   shop: {
     name: string;
     cellphone: string;
+    address_street: string;
+    address_number: string;
+    address_complement?: string;
+    address_neighborhood: string;
+    address_city: string;
   };
+  /** Pin escolhido no mapa; vira a localização da loja usada na taxa por km */
+  shop_location?: { latitude: number; longitude: number; address: string };
   shop_user: {
     name: string;
     email: string;

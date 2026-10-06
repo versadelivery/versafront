@@ -4,7 +4,7 @@ import { AuthLayout } from "@/components/auth/auth-layout";
 import { AuthFormInput } from "@/components/auth/auth-form-input";
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { registerSchema, registerStep1Schema, registerStep3Schema, RegisterFormData } from "@/schemas/auth-schemas";
+import { registerSchema, registerStep1Schema, registerStep3Schema, registerAddressSchema, RegisterFormData } from "@/schemas/auth-schemas";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { z } from "zod";
@@ -14,6 +14,9 @@ import { useAuth } from "@/hooks/use-auth";
 import { isAxiosError } from "axios";
 import { toast } from "sonner";
 import { getOwnerEmailError } from "@/utils/registration-error";
+import { StoreAddressStep, StorePin } from "@/components/auth/store-address-step";
+
+const ADDRESS_FIELDS = ["address_street", "address_number", "address_complement", "address_neighborhood", "address_city"] as const;
 
 type RegisterStateErrors = {
   shop?: Partial<RegisterFormData["shop"]>;
@@ -26,6 +29,10 @@ type BackendErrorDescriptor =
   | { section: "shop_user"; field: keyof RegisterFormData["shop_user"]; message: string };
 
 const BACKEND_ERROR_MAP: Record<string, BackendErrorDescriptor> = {
+  "Rua é obrigatória": { section: "shop", field: "address_street", message: "Informe a rua" },
+  "Número é obrigatório": { section: "shop", field: "address_number", message: "Informe o número (use S/N se não houver)" },
+  "Bairro é obrigatório": { section: "shop", field: "address_neighborhood", message: "Informe o bairro" },
+  "Cidade é obrigatória": { section: "shop", field: "address_city", message: "Informe a cidade" },
   "Cellphone has already been taken": {
     section: "shop",
     field: "cellphone",
@@ -136,7 +143,12 @@ function RegisterForm() {
   const [formData, setFormData] = useState<RegisterFormData>({
     shop: {
       name: "",
-      cellphone: ""
+      cellphone: "",
+      address_street: "",
+      address_number: "",
+      address_complement: "",
+      address_neighborhood: "",
+      address_city: ""
     },
     shop_user: {
       name: "",
@@ -151,6 +163,7 @@ function RegisterForm() {
   });
   const [errors, setErrors] = useState<RegisterStateErrors>({});
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [shopLocation, setShopLocation] = useState<StorePin>({ latitude: null, longitude: null, address: "" });
 
   useEffect(() => {
     const ref = searchParams.get("ref");
@@ -172,8 +185,14 @@ function RegisterForm() {
         : {})
     }));
 
-    setStep(fieldErrors.shop ? 1 : 2);
+    setStep(stepForShopErrors(fieldErrors.shop));
     return true;
+  };
+
+  const stepForShopErrors = (shopErrors?: Partial<RegisterFormData["shop"]>) => {
+    if (!shopErrors) return 3;
+    if (shopErrors.name || shopErrors.cellphone) return 1;
+    return ADDRESS_FIELDS.some((field) => shopErrors[field]) ? 2 : 1;
   };
 
   const validateStep1 = (): boolean => {
@@ -198,6 +217,19 @@ function RegisterForm() {
       }
       return false;
     }
+  };
+
+  const validateAddressStep = (): boolean => {
+    const result = registerAddressSchema.safeParse(formData.shop);
+    if (result.success) return true;
+
+    const fieldErrors: Partial<RegisterFormData["shop"]> = {};
+    result.error.errors.forEach((err) => {
+      const field = err.path[0] as keyof RegisterFormData["shop"];
+      if (field && !fieldErrors[field]) fieldErrors[field] = err.message;
+    });
+    setErrors({ shop: fieldErrors });
+    return false;
   };
 
   const validateStep3 = (): boolean => {
@@ -225,9 +257,22 @@ function RegisterForm() {
     setErrors({});
     if (step === 1 && validateStep1()) {
       setStep(2);
-    } else if (step === 2) {
+    } else if (step === 2 && validateAddressStep()) {
       setStep(3);
+    } else if (step === 3) {
+      setStep(4);
     }
+  };
+
+  // Campos preenchidos pela busca de endereço ou pelo pin do mapa
+  const handleAddressFieldsChange = (fields: Partial<RegisterFormData["shop"]>) => {
+    setFormData(prev => ({ ...prev, shop: { ...prev.shop, ...fields } }));
+    setErrors(prev => {
+      if (!prev.shop) return prev;
+      const cleared = { ...prev.shop };
+      (Object.keys(fields) as Array<keyof RegisterFormData["shop"]>).forEach((key) => { cleared[key] = undefined; });
+      return { ...prev, shop: cleared };
+    });
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -266,7 +311,14 @@ function RegisterForm() {
     setErrors({});
     try {
       const validatedData = registerSchema.parse(formData);
-      await register({ ...validatedData, referral_code: referralCode || undefined });
+      const { latitude, longitude } = shopLocation;
+      await register({
+        ...validatedData,
+        ...(latitude !== null && longitude !== null
+          ? { shop_location: { latitude, longitude, address: shopLocation.address } }
+          : {}),
+        referral_code: referralCode || undefined
+      });
     } catch (error) {
       if (error instanceof z.ZodError) {
         const formattedErrors: Partial<RegisterFormData> = {};
@@ -281,6 +333,7 @@ function RegisterForm() {
           }
         });
         setErrors(formattedErrors);
+        setStep(formattedErrors.shop ? stepForShopErrors(formattedErrors.shop) : formattedErrors.shop_user ? 3 : 4);
       } else {
         const ownerEmailError = getOwnerEmailError(error);
         if (ownerEmailError) {
@@ -356,6 +409,40 @@ function RegisterForm() {
     if (step === 2) {
       return (
         <div className="space-y-4">
+          <StoreAddressStep
+            shop={formData.shop}
+            errors={errors.shop}
+            location={shopLocation}
+            disabled={isLoading}
+            onFieldInput={handleChange}
+            onFieldsChange={handleAddressFieldsChange}
+            onLocationChange={setShopLocation}
+          />
+          <div className="flex gap-3 mt-2">
+            <button
+              type="button"
+              className="flex-1 border border-[#E8E4DF] text-[#1B1B1B] text-base font-medium py-4 rounded-2xl transition-colors cursor-pointer hover:bg-[#f5f5f5]"
+              onClick={() => setStep(1)}
+              disabled={isLoading}
+            >
+              Voltar
+            </button>
+            <button
+              type="button"
+              className="flex-1 bg-[#1B1B1B] hover:bg-black text-white text-base font-medium py-4 rounded-2xl transition-colors cursor-pointer disabled:opacity-50"
+              onClick={handleNextStep}
+              disabled={isLoading}
+            >
+              Próximo
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    if (step === 3) {
+      return (
+        <div className="space-y-4">
           <AuthFormInput
             type="text"
             name="shop_user.name"
@@ -402,7 +489,7 @@ function RegisterForm() {
             <button
               type="button"
               className="flex-1 border border-[#E8E4DF] text-[#1B1B1B] text-base font-medium py-4 rounded-2xl transition-colors cursor-pointer hover:bg-[#f5f5f5]"
-              onClick={() => setStep(1)}
+              onClick={() => setStep(2)}
               disabled={isLoading}
             >
               Voltar
@@ -464,7 +551,7 @@ function RegisterForm() {
           <button
             type="button"
             className="flex-1 border border-[#E8E4DF] text-[#1B1B1B] text-base font-medium py-4 rounded-2xl transition-colors cursor-pointer hover:bg-[#f5f5f5]"
-            onClick={() => setStep(2)}
+            onClick={() => setStep(3)}
             disabled={isLoading}
           >
             Voltar
@@ -488,6 +575,7 @@ function RegisterForm() {
           <div className={`w-2.5 h-2.5 rounded-full transition-colors ${step === 1 ? 'bg-[#009246]' : 'bg-[#E8E4DF]'}`} />
           <div className={`w-2.5 h-2.5 rounded-full transition-colors ${step === 2 ? 'bg-[#009246]' : 'bg-[#E8E4DF]'}`} />
           <div className={`w-2.5 h-2.5 rounded-full transition-colors ${step === 3 ? 'bg-[#009246]' : 'bg-[#E8E4DF]'}`} />
+          <div className={`w-2.5 h-2.5 rounded-full transition-colors ${step === 4 ? 'bg-[#009246]' : 'bg-[#E8E4DF]'}`} />
         </div>
       </div>
       {renderStep()}
