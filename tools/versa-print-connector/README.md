@@ -43,6 +43,6 @@ O instalador cria atalhos no menu Iniciar, na Área de Trabalho e na pasta de in
 - Windows 10 e 11, usando o spooler nativo.
 - macOS usa CUPS, mas o instalador ainda precisa ser empacotado e validado.
 
-Na primeira execução, informe a conta da loja, selecione a impressora e clique em **Conectar à loja**. A senha é armazenada pelo gerenciador seguro de credenciais do sistema operacional; não é gravada no arquivo de configuração. O endereço da API fica configurado internamente.
+Na primeira execução, informe a conta da loja, selecione a impressora, escolha a largura do papel e clique em **Conectar à loja**. O conector oferece **Automático (80 mm)**, **58 mm** e **80 mm**; a escolha fica salva para a próxima inicialização. A senha é armazenada pelo gerenciador seguro de credenciais do sistema operacional; não é gravada no arquivo de configuração. O endereço da API fica configurado internamente.
 
 Com a conexão ativa, minimizar ou fechar a janela mantém a impressão rodando em segundo plano. O ícone continua na barra de tarefas; use **Desconectar e sair** para encerrar. Após a primeira configuração, o conector inicia com a sessão do usuário e reconecta automaticamente depois de reiniciar ou entrar novamente no computador. No Linux, o gerenciador de senhas da sessão (Secret Service/KWallet) precisa estar disponível para guardar as credenciais. Para impressão automática de pedidos, ative o modo em **Configurações > Impressoras** no VersaDelivery.
