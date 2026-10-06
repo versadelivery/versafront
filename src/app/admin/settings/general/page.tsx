@@ -39,6 +39,11 @@ export default function GeneralSettingsPage() {
         description: shop.description || "",
         cellphone: shop.cellphone || "",
         address: shop.address || "",
+        address_street: shop.address_street || "",
+        address_number: shop.address_number || "",
+        address_complement: shop.address_complement || "",
+        address_neighborhood: shop.address_neighborhood || "",
+        address_city: shop.address_city || "",
         email: shop.email || "",
         slug: shop.slug,
         image: null,
@@ -135,6 +140,17 @@ export default function GeneralSettingsPage() {
       if (digits.length > 0 && (digits.length < 10 || digits.length > 11)) {
         errors.cellphone = "Telefone deve ter formato (XX) XXXX-XXXX ou (XX) XXXXX-XXXX";
       }
+    }
+
+    // Endereço estruturado: vazio (loja antiga) ou completo. Preencher só uma parte deixa o endereço pela metade.
+    const addressFields = ["address_street", "address_number", "address_neighborhood", "address_city"] as const;
+    const anyAddress = addressFields.some((key) => String(formData[key] ?? "").trim() !== "") ||
+      String(formData.address_complement ?? "").trim() !== "";
+    if (anyAddress) {
+      if (!String(formData.address_street ?? "").trim()) errors.address_street = "Informe a rua";
+      if (!String(formData.address_number ?? "").trim()) errors.address_number = "Informe o número (use S/N se não houver)";
+      if (!String(formData.address_neighborhood ?? "").trim()) errors.address_neighborhood = "Informe o bairro";
+      if (!String(formData.address_city ?? "").trim()) errors.address_city = "Informe a cidade";
     }
 
     if (formData.auto_open_cash_register && !formData.auto_open_cash_register_time) {
@@ -380,22 +396,86 @@ export default function GeneralSettingsPage() {
                   />
                   {fieldErrors.cellphone && <p className="text-xs text-red-500">{fieldErrors.cellphone}</p>}
                 </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="address" className="flex items-center gap-2 text-sm font-medium">
+                <div className="space-y-3 md:col-span-3">
+                  <Label className="flex items-center gap-2 text-sm font-medium">
                     <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
-                    Endereço
+                    Endereço do estabelecimento
                   </Label>
-                  <Input
-                    id="address"
-                    name="address"
-                    value={formData.address || ""}
-                    onChange={handleInputChange}
-                    maxLength={70}
-                    placeholder="Major Barreto, 1602"
-                    className="h-10 rounded-md border-[#E5E2DD]"
-                  />
+                  {!formData.address_street && formData.address && (
+                    <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                      Endereço atual cadastrado: <span className="font-medium">{formData.address}</span>. Preencha os campos abaixo
+                      para detalhar rua e número.
+                    </p>
+                  )}
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <Label htmlFor="address_street" className="text-xs text-muted-foreground">Rua</Label>
+                      <Input
+                        id="address_street"
+                        name="address_street"
+                        value={formData.address_street || ""}
+                        onChange={handleInputChange}
+                        maxLength={120}
+                        placeholder="Ex: Major Barreto"
+                        className={`h-10 rounded-md border-[#E5E2DD] ${fieldErrors.address_street ? "border-red-400" : ""}`}
+                      />
+                      {fieldErrors.address_street && <p className="text-xs text-red-500">{fieldErrors.address_street}</p>}
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="address_number" className="text-xs text-muted-foreground">Número</Label>
+                      <Input
+                        id="address_number"
+                        name="address_number"
+                        value={formData.address_number || ""}
+                        onChange={handleInputChange}
+                        maxLength={20}
+                        placeholder="Ex: 1602"
+                        className={`h-10 rounded-md border-[#E5E2DD] ${fieldErrors.address_number ? "border-red-400" : ""}`}
+                      />
+                      {fieldErrors.address_number && <p className="text-xs text-red-500">{fieldErrors.address_number}</p>}
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="address_complement" className="text-xs text-muted-foreground">Complemento (opcional)</Label>
+                      <Input
+                        id="address_complement"
+                        name="address_complement"
+                        value={formData.address_complement || ""}
+                        onChange={handleInputChange}
+                        maxLength={80}
+                        placeholder="Sala, loja..."
+                        className="h-10 rounded-md border-[#E5E2DD]"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="address_neighborhood" className="text-xs text-muted-foreground">Bairro</Label>
+                      <Input
+                        id="address_neighborhood"
+                        name="address_neighborhood"
+                        value={formData.address_neighborhood || ""}
+                        onChange={handleInputChange}
+                        maxLength={120}
+                        placeholder="Ex: Centro"
+                        className={`h-10 rounded-md border-[#E5E2DD] ${fieldErrors.address_neighborhood ? "border-red-400" : ""}`}
+                      />
+                      {fieldErrors.address_neighborhood && <p className="text-xs text-red-500">{fieldErrors.address_neighborhood}</p>}
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="address_city" className="text-xs text-muted-foreground">Cidade</Label>
+                      <Input
+                        id="address_city"
+                        name="address_city"
+                        value={formData.address_city || ""}
+                        onChange={handleInputChange}
+                        maxLength={120}
+                        placeholder="Ex: Itapajé"
+                        className={`h-10 rounded-md border-[#E5E2DD] ${fieldErrors.address_city ? "border-red-400" : ""}`}
+                      />
+                      {fieldErrors.address_city && <p className="text-xs text-red-500">{fieldErrors.address_city}</p>}
+                    </div>
+                  </div>
                   <p className="text-xs text-muted-foreground">
-                    Exibido para clientes que escolherem retirada no estabelecimento
+                    Exibido para clientes que escolherem retirada no estabelecimento. O pin no mapa (usado na taxa de entrega por km)
+                    fica em Configurações &gt; Entrega.
                   </p>
                 </div>
                 <div className="space-y-1.5">

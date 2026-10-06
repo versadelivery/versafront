@@ -4,6 +4,9 @@ import { API_ENDPOINTS } from "@/api/routes";
 export interface GeoPlace {
   label: string;
   street: string | null;
+  /** Só o nome da rua (street vem com o número junto) */
+  road?: string | null;
+  house_number?: string | null;
   neighborhood: string | null;
   city: string | null;
   state: string | null;
@@ -41,20 +44,20 @@ export async function getOrderDeliveryRoute(orderId: string | number): Promise<D
   return response.data.data;
 }
 
-export async function searchAddresses(shopId: string | number, query: string): Promise<GeoPlace[]> {
+export async function searchAddresses(shopId: string | number | undefined, query: string): Promise<GeoPlace[]> {
   const response = await api.get<{ data: GeoPlace[] }>(API_ENDPOINTS.GEOCODING_AUTOCOMPLETE, {
-    params: { shop_id: shopId, q: query },
+    params: { ...(shopId !== undefined && { shop_id: shopId }), q: query },
   });
   return response.data.data ?? [];
 }
 
 export async function reverseGeocode(
-  shopId: string | number,
+  shopId: string | number | undefined,
   latitude: number,
   longitude: number
 ): Promise<GeoPlace | null> {
   const response = await api.get<{ data: GeoPlace | null }>(API_ENDPOINTS.GEOCODING_REVERSE, {
-    params: { shop_id: shopId, latitude, longitude },
+    params: { ...(shopId !== undefined && { shop_id: shopId }), latitude, longitude },
   });
   return response.data.data ?? null;
 }

@@ -6,6 +6,11 @@ export interface ShopAttributes {
   name: string;
   slug: string;
   address: string | null;
+  address_street?: string | null;
+  address_number?: string | null;
+  address_complement?: string | null;
+  address_neighborhood?: string | null;
+  address_city?: string | null;
   description: string | null;
   email: string | null;
   image?: File | string | any;

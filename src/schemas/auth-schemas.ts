@@ -13,6 +13,26 @@ export const registerStep1Schema = z.object({
     .regex(phoneRegex, "Telefone inválido. Use o formato (xx) xxxxx-xxxx")
 });
 
+const addressFields = {
+  address_street: z.string().trim()
+    .min(3, "Informe a rua")
+    .max(120, "Rua não pode ter mais de 120 caracteres"),
+  address_number: z.string().trim()
+    .min(1, "Informe o número (use S/N se não houver)")
+    .max(20, "Número não pode ter mais de 20 caracteres"),
+  address_complement: z.string().trim()
+    .max(80, "Complemento não pode ter mais de 80 caracteres")
+    .optional(),
+  address_neighborhood: z.string().trim()
+    .min(2, "Informe o bairro")
+    .max(120, "Bairro não pode ter mais de 120 caracteres"),
+  address_city: z.string().trim()
+    .min(2, "Informe a cidade")
+    .max(120, "Cidade não pode ter mais de 120 caracteres")
+};
+
+export const registerAddressSchema = z.object(addressFields);
+
 const baseStep2Schema = z.object({
   userName: z.string()
     .min(3, "Nome deve ter pelo menos 3 caracteres")
@@ -54,7 +74,8 @@ export const registerSchema = z.object({
       .max(50, "Nome da loja não pode ter mais de 50 caracteres"),
     cellphone: z.string()
       .min(14, "Telefone inválido")
-      .regex(/^\(\d{2}\) \d{4,5}-\d{4}$/, "Telefone inválido. Use o formato (xx) xxxxx-xxxx")
+      .regex(/^\(\d{2}\) \d{4,5}-\d{4}$/, "Telefone inválido. Use o formato (xx) xxxxx-xxxx"),
+    ...addressFields
   }),
   shop_user: z.object({
     name: z.string()
