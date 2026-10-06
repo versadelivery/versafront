@@ -34,6 +34,9 @@ import CancelOrderModal from './cancel-order-modal';
 import SelectDeliveryPersonModal from './select-delivery-person-modal';
 import { buildWhatsAppOrderMessage } from '@/utils/whatsapp-template';
 import { orderItemQuantityLabel } from '@/utils/order-item-quantity';
+import { PrinterConfig } from '@/services/printer-config';
+import { ReceiptMode } from '@/utils/order-receipt';
+import { OrderReceiptDialog } from './order-receipt-dialog';
 
 const getPaymentMethodLabel = (method: string, manualPixPaymentMoment?: string) => {
   if (method === 'manual_pix') {
@@ -84,6 +87,7 @@ interface OrderCardProps {
   onOpenOrderDetails: (orderId: string) => void;
   onCancelOrder?: (orderId: string, reason: string, reasonType?: string) => void;
   nextStatus?: Order['status'] | null;
+  printerConfig: PrinterConfig;
 }
 
 export default function OrderCard({
@@ -97,7 +101,8 @@ export default function OrderCard({
   onDeliveryPersonChange,
   onOpenOrderDetails,
   onCancelOrder,
-  nextStatus
+  nextStatus,
+  printerConfig
 }: OrderCardProps) {
   // Buscar entregadores reais
   const { users, loading: loadingUsers } = useUsers();
@@ -120,10 +125,11 @@ export default function OrderCard({
   const isRecebido = order.status === 'recebidos';
   const isEntregue = order.status === 'entregue';
   const isCancelled = order.status === 'cancelled';
-  
+
   // Estado para controlar os modais
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showDeliveryPersonModal, setShowDeliveryPersonModal] = useState(false);
+  const [receiptMode, setReceiptMode] = useState<ReceiptMode | null>(null);
 
   // Statuses onde o dropdown de entregador fica disponível (apenas para delivery)
   const showDeliveryDropdown = order.deliveryType === 'delivery' && ['recebidos', 'aceitos', 'em_analise', 'em_preparo', 'prontos'].includes(order.status);
@@ -141,7 +147,7 @@ export default function OrderCard({
       onDeliveryPersonChange(order.id, defaultDeliveryPersonName);
     }
   }, [defaultDeliveryPersonName, order.deliveryPerson, order.deliveryType, order.id]);
-  
+
   const handleDeliveryPersonChange = (value: string) => {
     onDeliveryPersonChange(order.id, value === "none" ? "" : value);
   };
@@ -212,83 +218,6 @@ export default function OrderCard({
     window.open(whatsappUrl, '_blank');
   };
 
-  // Função para imprimir pedido
-  const handlePrintOrder = () => {
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      const printContent = `
-        <html>
-          <head>
-            <title>Pedido #${order.id}</title>
-            <style>
-              body { font-family: Arial, sans-serif; margin: 20px; }
-              .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
-              .section { margin-bottom: 20px; }
-              .section-title { font-weight: bold; font-size: 16px; margin-bottom: 10px; }
-              .item { margin-bottom: 10px; }
-              .total { font-weight: bold; font-size: 18px; border-top: 1px solid #000; padding-top: 10px; }
-              @media print { body { margin: 0; } }
-            </style>
-          </head>
-          <body>
-            <div class="header">
-              <h1>PEDIDO #${order.id}</h1>
-              <p>Data: ${order.time}</p>
-            </div>
-            
-            <div class="section">
-              <div class="section-title">CLIENTE</div>
-              <p><strong>Nome:</strong> ${order.customerName}</p>
-              <p><strong>Telefone:</strong> ${order.socketData?.attributes?.customer?.data?.attributes?.cellphone || 'N/A'}</p>
-              ${order.deliveryType === 'delivery' && order.socketData?.attributes?.address?.data ? `
-                <p><strong>Endereço:</strong> ${order.socketData.attributes.address.data.attributes.address}${order.socketData.attributes.address.data.attributes.number ? `, ${order.socketData.attributes.address.data.attributes.number}` : ''}</p>
-                <p><strong>Bairro:</strong> ${order.socketData.attributes.address.data.attributes.neighborhood}</p>
-                ${order.socketData.attributes.address.data.attributes.complement ? `<p><strong>Complemento:</strong> ${order.socketData.attributes.address.data.attributes.complement}</p>` : ''}
-                ${order.socketData.attributes.address.data.attributes.distance_km != null ? `<p><strong>Distância:</strong> ${Number(order.socketData.attributes.address.data.attributes.distance_km).toFixed(1).replace('.', ',')} km</p>` : ''}
-              ` : '<p><strong>Tipo:</strong> Retirada na loja</p>'}
-            </div>
-            
-            <div class="section">
-              <div class="section-title">ITENS</div>
-              ${order.socketData?.attributes?.items?.data?.map((item: any) => `
-                <div class="item">
-                  <p><strong>${orderItemQuantityLabel(item.attributes)} ${item.attributes.catalog_item?.data?.attributes?.name || item.attributes.name || 'Item não encontrado'}</strong></p>
-                  <p>Preço: R$ ${parseFloat(item.attributes.total_price || '0').toFixed(2)}</p>
-                  ${item.attributes.observation ? `<p><em>Obs: ${item.attributes.observation}</em></p>` : ''}
-                </div>
-              `).join('') || 'Nenhum item'}
-            </div>
-            
-            <div class="section">
-              <div class="section-title">FORMA DE PAGAMENTO</div>
-              <p>${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '', order.socketData?.attributes?.manual_pix_payment_moment)}</p>
-            </div>
-            
-            <div class="total">
-              <p><strong>TOTAL: R$ ${order.amount.toFixed(2)}</strong></p>
-            </div>
-          </body>
-        </html>
-      `;
-      
-      printWindow.document.write(printContent);
-      printWindow.document.close();
-      printWindow.focus();
-      
-      // Aguarda o conteúdo carregar e imprime
-      setTimeout(() => {
-        printWindow.print();
-        printWindow.close();
-      }, 500);
-      
-      // Toast criativo para impressão
-      toast.success('🖨️ Impressão iniciada!', {
-        description: 'Pedido enviado para impressora',
-        duration: 2500,
-      });
-    }
-  };
-
   // Função para copiar impressão (formatação para WhatsApp/Telegram)
   const handleCopyPrintFormat = () => {
     const printText = `
@@ -319,7 +248,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '', orde
 
 💰 *TOTAL: R$ ${order.amount.toFixed(2)}*
     `.trim();
-    
+
     navigator.clipboard.writeText(printText).then(() => {
       console.log('✅ Formato de impressão copiado!');
       // Toast criativo para cópia
@@ -605,15 +534,16 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '', orde
                 <img src="/whatsapp.svg" alt="WhatsApp" className="w-4 h-4" />
                 <span>WhatsApp</span>
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="rounded-md border border-gray-300 cursor-pointer"
-                onClick={handlePrintOrder}
-                title="Imprimir Pedido"
-              >
-                <Printer className="w-4 h-4"/>
-              </Button>
+              {printerConfig.summary_enabled && (
+                <Button variant="ghost" size="sm" className="rounded-md border border-gray-300 cursor-pointer" onClick={() => setReceiptMode('summary')} title="Impressão resumida">
+                  <Printer className="w-4 h-4"/><span>Resumida</span>
+                </Button>
+              )}
+              {printerConfig.complete_enabled && (
+                <Button variant="ghost" size="sm" className="rounded-md border border-gray-300 cursor-pointer" onClick={() => setReceiptMode('complete')} title="Impressão completa">
+                  <Printer className="w-4 h-4"/><span>Completa</span>
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 size="sm"
@@ -694,13 +624,14 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '', orde
     />
 
     {/* Modal de Seleção de Entregador */}
-    <SelectDeliveryPersonModal
+      <SelectDeliveryPersonModal
       open={showDeliveryPersonModal}
       onOpenChange={setShowDeliveryPersonModal}
       deliveryPeople={deliveryPeople}
       onConfirm={handleConfirmDeliveryAndDispatch}
       defaultValue={defaultDeliveryPersonName || ''}
-    />
+      />
+      <OrderReceiptDialog order={order} mode={receiptMode} config={printerConfig} onClose={() => setReceiptMode(null)} />
     </>
   );
-} 
+}

@@ -44,6 +44,8 @@ import { useShop } from '@/hooks/use-shop';
 import Link from 'next/link';
 import api from '@/api/config';
 import { toast } from 'sonner';
+import { usePrinterConfig } from '@/hooks/use-printer-config';
+import { downloadOrderReceipt } from '@/utils/order-receipt';
 // Controle de som foi movido para o Header global da administração
 
 interface Order {
@@ -224,6 +226,7 @@ export default function OrderManagement() {
   const { subscribeToAdminOrders, updateOrder, updateOrderDetails, isConnected } = useAdminActionCable();
   const { orderAccepted, orderReady, newOrder, orderOverdue } = useRestaurantSounds();
   const { shop } = useShop();
+  const { config: printerConfig } = usePrinterConfig();
   const estimatedPrepTime = shop?.estimated_prep_time ?? null;
   const estimatedDeliveryTime = shop?.estimated_delivery_time ?? null;
 
@@ -319,6 +322,12 @@ export default function OrderManagement() {
             if (!seenOrderIdsRef.current.has(order.id)) {
               seenOrderIdsRef.current.add(order.id);
               newOrder();
+              if (printerConfig.summary_enabled && printerConfig.summary_automation === 'automatic') {
+                void downloadOrderReceipt(order, 'summary', printerConfig.summary_font_size);
+              }
+              if (printerConfig.complete_enabled && printerConfig.complete_automation === 'automatic') {
+                window.setTimeout(() => void downloadOrderReceipt(order, 'complete', printerConfig.complete_font_size), 500);
+              }
             }
           });
 
@@ -944,6 +953,7 @@ export default function OrderManagement() {
                               onOpenOrderDetails={setSelectedOrderId}
                               onCancelOrder={cancelOrder}
                               nextStatus={nextStatus}
+                              printerConfig={printerConfig}
                             />
                           ))}
                           {statusOrders.length === 0 && (
@@ -996,6 +1006,7 @@ export default function OrderManagement() {
                               onOpenOrderDetails={setSelectedOrderId}
                               onCancelOrder={cancelOrder}
                               nextStatus={null}
+                              printerConfig={printerConfig}
                             />
                           ))}
                         </div>
@@ -1049,6 +1060,7 @@ export default function OrderManagement() {
                                 onOpenOrderDetails={setSelectedOrderId}
                                 onCancelOrder={cancelOrder}
                                 nextStatus={nextStatus}
+                                printerConfig={printerConfig}
                               />
                             ))}
                             {statusOrders.length === 0 && (
@@ -1103,6 +1115,7 @@ export default function OrderManagement() {
                                 onOpenOrderDetails={setSelectedOrderId}
                                 onCancelOrder={cancelOrder}
                                 nextStatus={null}
+                                printerConfig={printerConfig}
                               />
                             ))}
                           </div>

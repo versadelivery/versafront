@@ -1,6 +1,13 @@
-import { Settings, Users, Truck, CreditCard, Bell, Palette, ListOrdered } from "lucide-react";
+import { Settings, Users, Truck, CreditCard, Bell, Palette, ListOrdered, Printer } from "lucide-react";
 
 export const settingsCards = [
+  {
+    title: "Impressoras",
+    description: "Configure cupons resumidos, completos e impressão automática",
+    href: "/admin/settings/printers",
+    icon: Printer,
+    iconBgColor: "bg-gray-700",
+  },
   {
     href: "/admin/settings/general",
     icon: Settings,

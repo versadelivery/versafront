@@ -29,6 +29,7 @@ import {
   FileText,
   Star,
   ListOrdered,
+  Printer,
   type LucideIcon,
 } from "lucide-react"
 
@@ -45,6 +46,16 @@ export interface AdminSection {
 
 export const adminSections: AdminSection[] = [
   // Páginas principais
+  {
+    id: "settings-printers",
+    title: "Impressoras",
+    description: "Configure impressão de pedidos",
+    href: "/admin/settings/printers",
+    icon: Printer,
+    iconBgColor: "bg-gray-700",
+    keywords: ["impressora", "impressao", "cupom", "pedido"],
+    group: "Configurações",
+  },
   {
     id: "dashboard",
     title: "Dashboard",
