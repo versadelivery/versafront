@@ -32,10 +32,9 @@ import { formatPrice } from '@/app/(public)/[slug]/format-price';
 import { User } from '@/app/admin/settings/users/services/userService';
 import CancelOrderModal from './cancel-order-modal';
 import SelectDeliveryPersonModal from './select-delivery-person-modal';
-import { buildWhatsAppOrderMessage } from '@/utils/whatsapp-template';
 import { orderItemQuantityLabel } from '@/utils/order-item-quantity';
 import { PrinterConfig } from '@/services/printer-config';
-import { ReceiptMode } from '@/utils/order-receipt';
+import { buildWhatsAppReceiptMessage, ReceiptMode } from '@/utils/order-receipt';
 import { OrderReceiptDialog } from './order-receipt-dialog';
 
 const getPaymentMethodLabel = (method: string, manualPixPaymentMoment?: string) => {
@@ -195,26 +194,11 @@ export default function OrderCard({
 
   // Função para notificar via WhatsApp
   const handleWhatsAppNotification = () => {
-    const customerPhone = order.socketData?.attributes?.customer?.data?.attributes?.cellphone?.replace(/\D/g, '') || '';
-    const items = order.socketData?.attributes?.items?.data?.map((item: any) => ({
-      name: item.attributes.catalog_item?.data?.attributes?.name || item.attributes.name || 'Item não encontrado',
-      quantity: item.attributes.quantity,
-      quantityLabel: orderItemQuantityLabel(item.attributes),
-      totalPrice: parseFloat(item.attributes.total_price || '0'),
-      observation: item.attributes.observation || undefined,
-    })) || [];
+    const phoneDigits = order.socketData?.attributes?.customer?.data?.attributes?.cellphone?.replace(/\D/g, '') || '';
+    const customerPhone = phoneDigits.startsWith('55') ? phoneDigits : `55${phoneDigits}`;
+    const message = buildWhatsAppReceiptMessage(order);
 
-    const message = buildWhatsAppOrderMessage({
-      orderId: order.id,
-      customerName: order.customerName,
-      status: order.status,
-      items,
-      paymentMethod: order.socketData?.attributes?.payment_method,
-      deliveryType: order.deliveryType,
-      total: order.amount,
-    });
-
-    const whatsappUrl = `https://wa.me/55${customerPhone}?text=${encodeURIComponent(message)}`;
+    const whatsappUrl = `https://wa.me/${customerPhone}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
 
@@ -523,7 +507,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '', orde
         <div className="px-3 py-2.5 space-y-2">
           {/* Botões utilitários (WhatsApp, Imprimir, Copiar) — aparecem após recebido */}
           {!isRecebido && !isEntregue && !isCancelled && (
-            <div className="flex gap-1 justify-center">
+            <div className="flex items-center justify-center gap-1">
               <Button
                 variant="ghost"
                 size="sm"
@@ -534,16 +518,6 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '', orde
                 <img src="/whatsapp.svg" alt="WhatsApp" className="w-4 h-4" />
                 <span>WhatsApp</span>
               </Button>
-              {printerConfig.summary_enabled && (
-                <Button variant="ghost" size="sm" className="rounded-md border border-gray-300 cursor-pointer" onClick={() => setReceiptMode('summary')} title="Impressão resumida">
-                  <Printer className="w-4 h-4"/><span>Resumida</span>
-                </Button>
-              )}
-              {printerConfig.complete_enabled && (
-                <Button variant="ghost" size="sm" className="rounded-md border border-gray-300 cursor-pointer" onClick={() => setReceiptMode('complete')} title="Impressão completa">
-                  <Printer className="w-4 h-4"/><span>Completa</span>
-                </Button>
-              )}
               <Button
                 variant="ghost"
                 size="sm"
@@ -553,6 +527,20 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '', orde
               >
                 <Copy className="w-4 h-4"/>
               </Button>
+            </div>
+          )}
+          {!isRecebido && !isEntregue && !isCancelled && (printerConfig.summary_enabled || printerConfig.complete_enabled) && (
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(100px,1fr))] gap-2">
+              {printerConfig.summary_enabled && (
+                <Button variant="ghost" size="sm" className="w-full min-w-0 rounded-md border border-gray-300 cursor-pointer" onClick={() => setReceiptMode('summary')} title="Impressão resumida">
+                  <Printer className="w-4 h-4 shrink-0"/><span className="truncate">Resumida</span>
+                </Button>
+              )}
+              {printerConfig.complete_enabled && (
+                <Button variant="ghost" size="sm" className="w-full min-w-0 rounded-md border border-gray-300 cursor-pointer" onClick={() => setReceiptMode('complete')} title="Impressão completa">
+                  <Printer className="w-4 h-4 shrink-0"/><span className="truncate">Completa</span>
+                </Button>
+              )}
             </div>
           )}
 

@@ -31,10 +31,8 @@ import {
   ShoppingBag,
   Trash2,
   Plus,
-  Minus,
   Search,
   Loader2,
-  PackageX,
   Navigation,
 } from 'lucide-react';
 import { getCatalog } from '@/api/requests/catalog/requests';
@@ -253,12 +251,13 @@ export default function OrderDetailsModal({
     (sum: number, item: any) => sum + (item.total_price ?? item.price * item.quantity),
     0,
   );
+  const savedManualAdjustment = order.manual_adjustment || 0;
 
   const editedTotal = editedSubtotal
     + (editedOrder.delivery_fee || 0)
     - (editedOrder.discount_amount || 0)
     + (editedOrder.payment_adjustment_amount || 0)
-    + (editedOrder.manual_adjustment || 0);
+    + savedManualAdjustment;
 
   const handleSaveAllChanges = async () => {
     if (onUpdateOrder) {
@@ -303,10 +302,6 @@ export default function OrderDetailsModal({
 
       if (editedOrder.payment_method !== order.payment_method) {
         changes.payment_method = editedOrder.payment_method;
-      }
-
-      if ((editedOrder.manual_adjustment ?? 0) !== (order.manual_adjustment ?? 0)) {
-        changes.manual_adjustment = editedOrder.manual_adjustment ?? 0;
       }
 
       if (editedOrder.withdrawal !== order.withdrawal) {
@@ -1160,72 +1155,14 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
                     </div>
                   )}
 
-                  {/* Manual adjustment */}
-                  {(isEditingMode || (editedOrder.manual_adjustment !== undefined && editedOrder.manual_adjustment !== 0)) && (
+                  {savedManualAdjustment !== 0 && (
                     <div className="flex items-start justify-between py-1.5">
-                      <span className={cn(
-                        'text-sm',
-                        (editedOrder.manual_adjustment ?? 0) < 0 ? 'text-green-600' : (editedOrder.manual_adjustment ?? 0) > 0 ? 'text-orange-600' : 'text-muted-foreground',
-                      )}>
+                      <span className={cn('text-sm', savedManualAdjustment < 0 ? 'text-green-600' : 'text-orange-600')}>
                         Ajuste manual
                       </span>
-                      {isEditingMode ? (
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => setEditedOrder(prev => ({
-                              ...prev,
-                              manual_adjustment: -Math.abs(prev.manual_adjustment ?? 0) || -1,
-                            }))}
-                            className={cn(
-                              'p-1 rounded border text-xs',
-                              (editedOrder.manual_adjustment ?? 0) < 0
-                                ? 'border-green-400 bg-green-50 text-green-700'
-                                : 'border-gray-200 text-gray-400',
-                            )}
-                            title="Desconto"
-                          >
-                            <Minus className="h-3 w-3" />
-                          </button>
-                          <button
-                            onClick={() => setEditedOrder(prev => ({
-                              ...prev,
-                              manual_adjustment: Math.abs(prev.manual_adjustment ?? 0) || 1,
-                            }))}
-                            className={cn(
-                              'p-1 rounded border text-xs',
-                              (editedOrder.manual_adjustment ?? 0) > 0
-                                ? 'border-orange-400 bg-orange-50 text-orange-700'
-                                : 'border-gray-200 text-gray-400',
-                            )}
-                            title="Acrescimo"
-                          >
-                            <Plus className="h-3 w-3" />
-                          </button>
-                          <Input
-                            type="number"
-                            value={Math.abs(editedOrder.manual_adjustment ?? 0)}
-                            onChange={(e) => {
-                              const absVal = parseFloat(e.target.value) || 0;
-                              const sign = (editedOrder.manual_adjustment ?? 0) < 0 ? -1 : 1;
-                              setEditedOrder(prev => ({
-                                ...prev,
-                                manual_adjustment: absVal * sign,
-                              }));
-                            }}
-                            className="h-8 w-24 text-sm rounded-md border-[#E5E2DD]"
-                            min="0"
-                            step="0.01"
-                          />
-                        </div>
-                      ) : (
-                        <span className={cn(
-                          'text-sm font-medium',
-                          (editedOrder.manual_adjustment ?? 0) < 0 ? 'text-green-600' : 'text-orange-600',
-                        )}>
-                          {(editedOrder.manual_adjustment ?? 0) < 0 ? '-' : '+'}
-                          {formatCurrency(Math.abs(editedOrder.manual_adjustment ?? 0))}
-                        </span>
-                      )}
+                      <span className={cn('text-sm font-medium', savedManualAdjustment < 0 ? 'text-green-600' : 'text-orange-600')}>
+                        {savedManualAdjustment < 0 ? '-' : '+'}{formatCurrency(Math.abs(savedManualAdjustment))}
+                      </span>
                     </div>
                   )}
 
