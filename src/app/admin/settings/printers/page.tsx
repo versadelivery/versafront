@@ -76,8 +76,9 @@ export default function PrinterSettingsPage() {
       <p className="text-sm text-gray-600">A impressão automática envia o pedido ao Conector Versa quando ele entrar no status escolhido. Os status disponíveis seguem o fluxo configurado para esta loja.</p>
       <section className="rounded-lg border border-gray-200 bg-white p-5">
         <div className="flex items-start gap-3"><Laptop className="mt-0.5 h-5 w-5 text-gray-600"/><div><h2 className="font-semibold text-gray-900">Instalar o Conector Versa</h2><p className="mt-1 text-sm text-gray-500">Baixe no computador conectado à impressora térmica.</p></div></div>
+        <p className="mt-3 text-sm text-gray-600">No Windows, o instalador inclui o runtime e configura a inicialização automática; não é necessário instalar Python.</p>
         <div className="mt-4 flex flex-wrap gap-2">
-          <Button asChild variant="outline"><a href="/downloads/versa-print-connector-windows.zip" download><Download className="mr-2 h-4 w-4"/>Windows 10/11</a></Button>
+          <Button asChild variant="outline"><a href="https://github.com/versadelivery/versafront/releases/latest/download/VersaPrintConnectorSetup.exe"><Download className="mr-2 h-4 w-4"/>Windows 10/11 (.exe)</a></Button>
           <Button asChild variant="outline"><a href="/downloads/versa-print-connector-linux.tar.gz" download><Download className="mr-2 h-4 w-4"/>Linux</a></Button>
         </div>
       </section>
