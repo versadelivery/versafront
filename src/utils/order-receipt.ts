@@ -11,6 +11,7 @@ const escapeHtml = (value: unknown) => String(value ?? '')
 
 const money = (value: unknown) => Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const number = (value: unknown) => Number(value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+const whatsappMoney = (value: unknown) => Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 const paymentLabels: Record<string, string> = {
   cash: 'DINHEIRO', credit: 'CARTÃO DE CRÉDITO', debit: 'CARTÃO DE DÉBITO',
@@ -85,6 +86,76 @@ export function buildOrderReceipt(order: ReceiptOrder, mode: ReceiptMode, fontSi
     .item > div { margin-top: ${mode === 'summary' ? '12px' : '2px'}; } .emphasis { font-size: ${large ? '19px' : '15px'}; font-weight: ${large ? '700' : '400'}; }
     footer { text-align: center; padding-top: 10px; } @media print { body { width: auto; } }
   </style></head><body>${completeHeader}${details}${financial}<footer>--- VIA ${mode === 'summary' ? 'RESUMIDA' : 'DO CLIENTE'} ---${mode === 'complete' ? '<br>Obrigado pela preferência!<br>www.versadelivery.com.br' : ''}</footer></body></html>`;
+}
+
+export function buildWhatsAppReceiptMessage(order: ReceiptOrder) {
+  const attrs = order.socketData?.attributes || order.attributes || {};
+  const shop = attrs.shop?.data?.attributes || {};
+  const customer = attrs.customer?.data?.attributes || {};
+  const address = attrs.address?.data?.attributes || {};
+  const items = attrs.items?.data || [];
+  const createdAt = new Date(attrs.created_at || Date.now());
+  const date = createdAt.toLocaleDateString('pt-BR');
+  const time = createdAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  const total = Number(attrs.total_price || order.amount || 0);
+  const deliveryFee = Number(attrs.delivery_fee || 0);
+  const discount = Number(attrs.discount_amount || 0);
+  const changeFor = Number(attrs.change_for || attrs.cash_change_for || 0);
+  const paymentLabels: Record<string, string> = {
+    cash: 'Dinheiro', credit: 'Cartão de crédito', debit: 'Cartão de débito',
+    manual_pix: attrs.manual_pix_payment_moment === 'on_order' ? 'PIX Direto (no pedido)' : 'PIX Direto (na entrega)',
+    asaas_pix: 'PIX Automático', food_voucher: 'Vale alimentação / refeição', store_credit: 'Fiado (a receber)',
+  };
+  const lines = [
+    `🏪 *${shop.name || 'Loja'}*`,
+    shop.address ? `📍 ${shop.address}` : '',
+    shop.document ? `CNPJ: ${shop.document}` : '',
+    '',
+    `🧾 *PEDIDO #${order.id}*`,
+    `📅 ${date} às ${time} · ${attrs.withdrawal ? 'Retirada' : 'Delivery'}`,
+    attrs.delivery_person ? `🛵 Entregador: ${attrs.delivery_person}` : '',
+    '',
+    '👤 *CLIENTE*',
+    customer.name || order.customerName || 'Cliente',
+    !attrs.withdrawal && address.address
+      ? `📍 ${address.address}${address.number ? `, ${address.number}` : ''}`
+      : 'Retirada na loja',
+    !attrs.withdrawal && address.neighborhood ? `Bairro: ${address.neighborhood}` : '',
+    customer.cellphone ? `📞 ${customer.cellphone}` : '',
+    '',
+    '🛒 *ITENS DO PEDIDO*',
+  ].filter((line, index, all) => line !== '' || (index > 0 && all[index - 1] !== ''));
+
+  items.forEach((item: any) => {
+    const itemAttrs = item.attributes || {};
+    const catalog = itemAttrs.catalog_item?.data?.attributes || {};
+    const name = catalog.name || itemAttrs.name || 'Item removido';
+    const quantity = itemAttrs.weight
+      ? `${number(itemAttrs.weight)} kg`
+      : orderItemQuantityLabel(itemAttrs);
+    const unitPrice = Number(itemAttrs.price_with_discount || itemAttrs.price || 0);
+    const methods = (itemAttrs.selected_prepare_methods || []).map((entry: any) => entry.name).filter(Boolean).join(', ');
+    const steps = (itemAttrs.selected_steps || []).map((entry: any) => `${entry.step_name}: ${entry.option_name}`).filter(Boolean).join(' · ');
+    const extras = [...(itemAttrs.selected_extras || []), ...(itemAttrs.complements || [])].map((entry: any) => entry.name).filter(Boolean).join(', ');
+    lines.push('', `▪️ *${name}*`, `${quantity} × ${whatsappMoney(unitPrice)}${itemAttrs.weight ? '/kg' : ''}`);
+    if (methods) lines.push(`🍳 Preparo: ${methods}`);
+    if (steps) lines.push(`🧩 Montagem: ${steps}`);
+    if (extras) lines.push(`➕ Adicionais: ${extras}`);
+    if (itemAttrs.observation) lines.push(`📝 Observação: ${itemAttrs.observation}`);
+    lines.push(`Subtotal: *${whatsappMoney(itemAttrs.total_price)}*`);
+  });
+
+  lines.push(
+    '', '💰 *RESUMO FINANCEIRO*',
+    `Produtos: ${whatsappMoney(attrs.total_items_price)}`,
+    `Taxa de entrega: ${whatsappMoney(deliveryFee)}`,
+  );
+  if (discount) lines.push(`Desconto: −${whatsappMoney(discount)}`);
+  lines.push(`*TOTAL A PAGAR: ${whatsappMoney(total)}*`, '', '💳 *FORMA DE PAGAMENTO*');
+  lines.push(paymentLabels[attrs.payment_method] || attrs.payment_method || 'Não informado');
+  if (changeFor) lines.push(`Troco para: ${whatsappMoney(changeFor)}`, `Levar de troco: ${whatsappMoney(Math.max(0, changeFor - total))}`);
+  lines.push('', '━━━━━━━━━━━━━━━━━━', '🙏 Obrigado pela preferência!', 'www.versadelivery.com.br');
+  return lines.filter((line, index, all) => line !== '' || (index > 0 && all[index - 1] !== '')).join('\n');
 }
 
 export function printOrderReceipt(order: ReceiptOrder, mode: ReceiptMode, fontSize: PrintFontSize) {
