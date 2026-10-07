@@ -1,0 +1,79 @@
+name: Build Windows print connector
+
+on:
+  pull_request:
+    branches: [develop, main]
+    paths:
+      - "tools/versa-print-connector/**"
+      - "src/app/admin/settings/printers/page.tsx"
+      - ".github/workflows/build-windows-print-connector.yml"
+  push:
+    paths:
+      - "tools/versa-print-connector/**"
+      - "src/app/admin/settings/printers/page.tsx"
+      - ".github/workflows/build-windows-print-connector.yml"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: tools/versa-print-connector
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install connector dependencies
+        run: python -m pip install --upgrade pip && python -m pip install -r requirements.txt pyinstaller
+
+      - name: Build standalone connector executable
+        run: >-
+          python -m PyInstaller --noconfirm --clean --onefile --windowed
+          --name VersaPrintConnector
+          --add-data "assets/logo-connector.png;assets"
+          --collect-all keyring
+          app.py
+
+      - name: Install Inno Setup
+        run: choco install innosetup --yes --no-progress
+
+      - name: Build single-file installer
+        shell: pwsh
+        run: |
+          $version = "1.0.$env:GITHUB_RUN_NUMBER"
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DAppVersion=$version" installer.iss
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: VersaPrintConnectorSetup
+          path: tools/versa-print-connector/dist/installer/VersaPrintConnectorSetup.exe
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: VersaPrintConnectorSetup
+          path: dist
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: versa-print-connector-${{ github.run_number }}-${{ github.run_attempt }}
+          name: Conector VersaDelivery para Windows (build ${{ github.run_number }})
+          body: "Instalador para Windows 10 e 11. Inclui o runtime necessário, configura a inicialização automática e não exige instalação manual do Python."
+          files: dist/VersaPrintConnectorSetup.exe
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -25,22 +25,16 @@ cd tools/versa-print-connector
 
 ## Windows 10 e 11
 
-1. Instale o Python 3 por `python.org` e marque **Add Python to PATH**.
-2. Extraia a pasta do conector.
-3. Clique com o botão direito em `install.ps1` e selecione **Executar com PowerShell**.
+1. Baixe **Windows 10/11 (.exe)** em **Configurações > Impressoras** no VersaDelivery.
+2. Abra `VersaPrintConnectorSetup.exe` e conclua a instalação.
+3. O conector abrirá para você conectar a loja e selecionar a impressora.
 
-Ou execute no PowerShell dentro da pasta:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\install.ps1
-```
-
-O instalador cria atalhos no menu Iniciar, na Área de Trabalho e na pasta de inicialização do Windows. Ele abre uma vez após a instalação para você conectar a loja e escolher a impressora. A senha fica no Gerenciador de Credenciais do Windows. Nos próximos logins do Windows, o conector inicia minimizado e conecta automaticamente. O conector usa diretamente o spooler do Windows e não exige CUPS ou ImageMagick.
+O instalador inclui o runtime e as dependências do aplicativo; não é necessário instalar Python, CUPS ou ImageMagick. Ele cria um atalho no menu Iniciar, oferece um atalho opcional na Área de Trabalho e configura o início automático com o Windows. A senha fica no Gerenciador de Credenciais do Windows. Nas próximas sessões, o conector inicia minimizado e reconecta automaticamente.
 
 ## Sistemas suportados
 
 - Arch Linux, Manjaro, Ubuntu, Debian e outras distribuições Linux com CUPS.
-- Windows 10 e 11, usando o spooler nativo.
+- Windows 10 e 11 (64 bits), usando o instalador independente e o spooler nativo.
 - macOS usa CUPS, mas o instalador ainda precisa ser empacotado e validado.
 
 Na primeira execução, informe a conta da loja, selecione a impressora, escolha a largura do papel e clique em **Conectar à loja**. O conector oferece **Automático (80 mm)**, **58 mm** e **80 mm**; a escolha fica salva para a próxima inicialização. A senha é armazenada pelo gerenciador seguro de credenciais do sistema operacional; não é gravada no arquivo de configuração. O endereço da API fica configurado internamente.
