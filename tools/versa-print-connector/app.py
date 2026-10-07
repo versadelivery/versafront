@@ -11,6 +11,11 @@ import urllib.request
 from datetime import datetime
 from pathlib import Path
 from tkinter import BOTH, END, LEFT, RIGHT, X, PhotoImage, StringVar, Tk, Text, ttk, messagebox
+from PIL import Image
+try:
+    import pystray
+except ImportError:
+    pystray = None
 try:
     import keyring
 except ImportError:
@@ -134,6 +139,8 @@ class App:
         self.root = Tk(); self.root.title("VersaDelivery · Impressão")
         self.root.geometry("700x650"); self.root.minsize(620, 580); self.root.configure(bg=SURFACE)
         self.root.protocol("WM_DELETE_WINDOW", self.close_window)
+        self.tray_icon = None
+        self.window_icon = None
         self.events, self.connector = queue.Queue(), Connector(queue.Queue())
         self.connector.events = self.events
         saved = self.load_config()
@@ -141,7 +148,7 @@ class App:
         self.printer = StringVar(value=saved.get("printer", "")); self.paper_width = StringVar(value=saved.get("paper_width", "Automático (80 mm)")); self.status = StringVar(value="Desconectado")
         self.connected = False
         self.start_in_background = start_in_background
-        self.build(); self.refresh_printers(); self.root.after(250, self.process_events)
+        self.build(); self.refresh_printers(); self.create_tray_icon(); self.root.after(250, self.process_events)
         saved_email = saved.get("email", "")
         try:
             saved_password = keyring.get_password("VersaPrintConnector", saved_email) if saved_email and keyring else None
@@ -150,7 +157,7 @@ class App:
         if start_in_background and saved_email and saved_password and self.printer.get():
             self.email.set(saved_email)
             self.password.set(saved_password)
-            self.root.after_idle(self.root.iconify)
+            self.root.after_idle(self.root.withdraw)
             self.root.after(150, lambda: self.connect(automatic=True))
 
     @staticmethod
@@ -160,6 +167,11 @@ class App:
 
     def build(self):
         style = ttk.Style(self.root); style.theme_use("clam")
+        try:
+            self.window_icon = PhotoImage(file=self.asset_path("versa-icon.png"))
+            self.root.iconphoto(True, self.window_icon)
+        except Exception:
+            pass
         style.configure("TFrame", background=SURFACE)
         style.configure("Card.TFrame", background="white")
         style.configure("TLabel", background=SURFACE, foreground=INK, font=("TkDefaultFont", 10))
@@ -174,7 +186,7 @@ class App:
 
         shell = ttk.Frame(self.root, padding=24); shell.pack(fill=BOTH, expand=True)
         header = ttk.Frame(shell); header.pack(fill=X, pady=(0, 20))
-        logo_path = Path(__file__).parent / "assets" / "logo-connector.png"
+        logo_path = self.asset_path("logo-connector.png")
         try:
             self.logo_image = PhotoImage(file=logo_path)
             ttk.Label(header, image=self.logo_image).pack(side=LEFT, anchor="center")
@@ -208,7 +220,7 @@ class App:
         self.status_dot = ttk.Label(state, text="●", foreground="#8A9690", font=("TkDefaultFont", 12))
         self.status_dot.pack(side=LEFT, padx=(0, 7))
         ttk.Label(state, textvariable=self.status, font=("TkDefaultFont", 10, "bold")).pack(side=LEFT)
-        ttk.Label(state, text="Ao minimizar, a impressão continua ativa.", style="Muted.TLabel").pack(side=RIGHT)
+        ttk.Label(state, text="Fechar mantém a impressão ativa na bandeja do Windows.", style="Muted.TLabel").pack(side=RIGHT)
 
         ttk.Label(shell, text="ATIVIDADE RECENTE", foreground=MUTED, background=SURFACE, font=("TkDefaultFont", 9, "bold")).pack(anchor="w", pady=(8, 7))
         log_frame = ttk.Frame(shell, style="Card.TFrame", padding=2); log_frame.pack(fill=BOTH, expand=True)
@@ -216,8 +228,27 @@ class App:
         self.log.pack(fill=BOTH, expand=True)
         bottom = ttk.Frame(shell); bottom.pack(fill=X, pady=(12, 0))
         ttk.Label(bottom, text="VersaDelivery · Conector de impressão", style="Muted.TLabel").pack(side=LEFT)
-        ttk.Button(bottom, text="Minimizar para segundo plano", style="Secondary.TButton", command=self.minimize).pack(side=RIGHT, padx=(8, 0))
+        ttk.Button(bottom, text="Minimizar na bandeja", style="Secondary.TButton", command=self.minimize).pack(side=RIGHT, padx=(8, 0))
         ttk.Button(bottom, text="Desconectar e sair", style="Secondary.TButton", command=self.quit).pack(side=RIGHT)
+
+    @staticmethod
+    def asset_path(name):
+        base = Path(getattr(sys, "_MEIPASS", Path(__file__).parent))
+        return base / "assets" / name
+
+    def create_tray_icon(self):
+        if os.name != "nt" or not pystray:
+            return
+        try:
+            image = Image.open(self.asset_path("versa-icon.png")).convert("RGBA")
+            menu = pystray.Menu(
+                pystray.MenuItem("Abrir VersaDelivery", lambda _icon, _item: self.events.put(("show_window", None)), default=True),
+                pystray.MenuItem("Sair", lambda _icon, _item: self.events.put(("quit", None))),
+            )
+            self.tray_icon = pystray.Icon("VersaPrintConnector", image, "VersaDelivery · Impressão", menu)
+            self.tray_icon.run_detached()
+        except Exception as error:
+            self.events.put(("log", f"Não foi possível iniciar o ícone da bandeja: {error}"))
 
     def refresh_printers(self):
         names = list_printers()
@@ -255,19 +286,26 @@ class App:
         self.connector.stop(); self.connected = False; self.status.set("Desconectado"); self.status_dot.configure(foreground="#8A9690"); self.connect_button.config(text="Conectar à loja", state="normal")
 
     def close_window(self):
-        if self.connected:
-            self.minimize()
-        else:
-            self.root.destroy()
+        self.minimize()
 
     def minimize(self):
+        if self.tray_icon:
+            self.root.withdraw()
+        else:
+            # Keep a recovery path if Windows cannot initialize the notification icon.
+            self.root.iconify()
         if self.connected:
-            self.events.put(("log", "Janela minimizada; impressão continua ativa"))
-        # Defer the window-manager request so the click handler returns immediately.
-        self.root.after_idle(self.root.iconify)
+            self.events.put(("log", "Janela oculta na bandeja; impressão continua ativa"))
+
+    def show_window(self):
+        self.root.deiconify()
+        self.root.lift()
+        self.root.focus_force()
 
     def quit(self):
         self.disconnect()
+        if self.tray_icon:
+            self.tray_icon.stop()
         self.root.destroy()
 
     def test(self):
@@ -291,7 +329,12 @@ class App:
     def process_events(self):
         while not self.events.empty():
             kind, value = self.events.get()
-            if kind == "status":
+            if kind == "show_window":
+                self.show_window()
+            elif kind == "quit":
+                self.quit()
+                return
+            elif kind == "status":
                 self.status.set(value); self.status_dot.configure(foreground=GREEN)
             elif kind == "connected":
                 self.connected = True

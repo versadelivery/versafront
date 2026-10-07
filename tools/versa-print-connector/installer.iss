@@ -9,6 +9,7 @@ AppPublisher=VersaDelivery
 DefaultDirName={localappdata}\VersaPrintConnector
 DefaultGroupName=Conector VersaDelivery
 UninstallDisplayIcon={app}\VersaPrintConnector.exe
+SetupIconFile=assets\versa-icon.ico
 OutputDir=dist\installer
 OutputBaseFilename=VersaPrintConnectorSetup
 PrivilegesRequired=lowest
