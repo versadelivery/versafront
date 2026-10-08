@@ -931,6 +931,22 @@ export default function CheckoutPage() {
     }
   }
 
+  // Rótulo do bairro no select: taxa + condição de frete grátis (quando houver)
+  const neighborhoodOptionLabel = (nb: any) => {
+    const amount = Number(nb.attributes.amount) || 0
+    const minFree = Number(nb.attributes.min_value_free_delivery) || 0
+    const fee = amount === 0 ? 'Grátis' : formatPrice(amount)
+    if (amount === 0 || minFree <= 0) return `${nb.attributes.name} · ${fee}`
+    return `${nb.attributes.name} · ${fee} · Grátis a partir de ${formatPrice(minFree)}`
+  }
+
+  const selectedNeighborhoodData = shopDeliveryConfig?.delivery_fee_kind === 'per_neighborhood'
+    ? shopDeliveryConfig.shop_delivery_neighborhoods.data.find((n: any) => n.id === selectedNeighborhood)
+    : null
+  const selectedMinFree = Number(selectedNeighborhoodData?.attributes.min_value_free_delivery) || 0
+  const selectedNeighborhoodFee = Number(selectedNeighborhoodData?.attributes.amount) || 0
+  const freeDeliveryRemaining = selectedMinFree - totalPrice
+
   const deliveryFeeDisplay = () => {
     if (deliveryOption !== 'delivery') return null
     if (shopDeliveryConfig?.delivery_fee_kind === 'to_be_agreed') return 'A combinar'
@@ -1382,11 +1398,18 @@ export default function CheckoutPage() {
                             <option value="">Selecione o bairro</option>
                             {shopDeliveryConfig?.shop_delivery_neighborhoods.data.map((nb: any) => (
                               <option key={nb.id} value={nb.id}>
-                                {nb.attributes.name} · R$ {Number(nb.attributes.amount).toFixed(2).replace('.', ',')}
+                                {neighborhoodOptionLabel(nb)}
                               </option>
                             ))}
                           </select>
                           {fieldErrors.neighborhood && <p className="text-sm text-red-500 mt-1">{fieldErrors.neighborhood}</p>}
+                          {selectedMinFree > 0 && selectedNeighborhoodFee > 0 && (
+                            <p className={`text-xs mt-1.5 ${freeDeliveryRemaining <= 0 ? 'text-green-600 font-medium' : 'text-gray-500'}`}>
+                              {freeDeliveryRemaining <= 0
+                                ? 'Você ganhou frete grátis neste bairro!'
+                                : `Frete grátis neste bairro a partir de ${formatPrice(selectedMinFree)} — faltam ${formatPrice(freeDeliveryRemaining)}`}
+                            </p>
+                          )}
                         </>
                       ) : (
                         <>

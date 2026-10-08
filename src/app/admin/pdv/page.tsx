@@ -1382,7 +1382,8 @@ export default function PDVPage() {
                             <SelectContent>
                               {neighborhoods.map((nb) => (
                                 <SelectItem key={nb.id} value={nb.id}>
-                                  {nb.name} · {formatPrice(nb.amount)}
+                                  {nb.name} · {nb.amount > 0 ? formatPrice(nb.amount) : "Grátis"}
+                                  {nb.amount > 0 && (nb.min_value_free_delivery ?? 0) > 0 && ` · Grátis a partir de ${formatPrice(nb.min_value_free_delivery)}`}
                                 </SelectItem>
                               ))}
                             </SelectContent>
