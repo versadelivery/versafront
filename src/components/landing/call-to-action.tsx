@@ -24,19 +24,19 @@ const CallToAction = () => {
             <h2 className="font-tomato text-3xl sm:text-4xl lg:text-5xl font-semibold text-black tracking-tight leading-tight mb-5">
               Seu açougue pronto para vender online?
             </h2>
-            <p className="text-lg text-black/75 mb-10 max-w-lg mx-auto leading-relaxed">
+            <p className="text-lg text-[#1B1B1B] mb-10 max-w-lg mx-auto leading-relaxed">
               Organize seu catálogo, receba pedidos em tempo real e facilite a
               venda de produtos por peso.
             </p>
 
             <Link href="/register" className="block sm:inline-block">
-              <button className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-[#1B1B1B] hover:bg-white text-white hover:text-black text-lg sm:text-xl font-semibold px-6 sm:px-16 py-5 sm:py-6 rounded-2xl transition-colors cursor-pointer">
+              <button className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-[#1B1B1B] hover:bg-white text-white hover:text-black text-lg sm:text-xl font-semibold px-6 sm:px-16 py-5 sm:py-6 rounded-xl transition-colors cursor-pointer">
                 Criar minha loja grátis
                 <ArrowRight className="w-4 h-4" />
               </button>
             </Link>
 
-            <p className="mt-5 text-black/75">
+            <p className="mt-5 text-[#1B1B1B]">
               Precisa esclarecer alguma dúvida?{" "}
               <a
                 href={WHATSAPP_URL}
@@ -48,16 +48,16 @@ const CallToAction = () => {
               </a>
             </p>
 
-            <div className="mt-10 pt-8 border-t border-black/15">
+            <div className="mt-10 pt-8 border-t border-[#5DAE3A]">
               <h3 className="text-lg font-semibold text-black mb-2">
                 Quer ganhar indicando o VersaDelivery?
               </h3>
-              <p className="text-black/75 mb-5">
+              <p className="text-[#1B1B1B] mb-5">
                 Apresente a plataforma a donos de açougues e conheça as
                 condições do programa de indicação.
               </p>
               <Link href="/register" className="block sm:inline-block">
-                <button className="bg-white hover:bg-[#1B1B1B] text-black hover:text-white text-lg font-semibold px-10 py-4 rounded-2xl transition-colors cursor-pointer">
+                <button className="bg-white hover:bg-[#1B1B1B] text-black hover:text-white text-lg font-semibold px-10 py-4 rounded-xl transition-colors cursor-pointer">
                   Quero indicar e ganhar
                 </button>
               </Link>

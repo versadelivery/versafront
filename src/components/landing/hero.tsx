@@ -22,7 +22,7 @@ function DemoVideo() {
   };
 
   return (
-    <div className="relative mx-auto w-full max-w-[250px] sm:max-w-[280px] overflow-hidden rounded-[2.2rem] border-[7px] border-[#1B1B1B] bg-black shadow-[0_30px_60px_-24px_rgba(27,27,27,.5)]">
+    <div className="relative mx-auto w-full max-w-[250px] sm:max-w-[280px] overflow-hidden rounded-[2.2rem] border-[7px] border-[#1B1B1B] bg-black">
       <video
         ref={videoRef}
         controls={started}
@@ -41,12 +41,12 @@ function DemoVideo() {
           type="button"
           onClick={play}
           aria-label="Assistir ao vídeo demonstrativo"
-          className="absolute inset-0 flex flex-col items-center justify-end gap-3 bg-gradient-to-t from-black/70 via-black/10 to-transparent pb-8 text-white cursor-pointer"
+          className="absolute inset-0 flex flex-col items-center justify-end gap-3 pb-6 text-white cursor-pointer"
         >
-          <span className="grid size-16 place-items-center rounded-full bg-white text-[#1B1B1B] shadow-lg transition-transform hover:scale-105">
+          <span className="grid size-16 place-items-center rounded-full bg-white text-[#1B1B1B]">
             <Play className="ml-1 size-7 fill-current" />
           </span>
-          <span className="px-4 text-center text-sm font-semibold">
+          <span className="mx-4 rounded-full bg-[#1B1B1B] px-4 py-2 text-center text-sm font-semibold">
             Veja o pedido por peso na prática
           </span>
         </button>
@@ -68,23 +68,11 @@ const Hero = () => {
   return (
     <section
       id="home"
-      className="relative overflow-hidden rounded-b-[2rem] pb-16 pt-28 sm:pt-32 md:rounded-b-[4rem] md:pb-24 lg:pt-40"
+      className="relative overflow-hidden rounded-b-[2rem] pb-16 pt-24 sm:pt-28 md:rounded-b-[4rem] md:pb-24 lg:pt-36"
     >
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -right-24 top-24 size-[420px] rounded-full bg-[#7ED957]/25 blur-3xl"
-      />
       <div className="relative mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-8">
         <div className="grid items-center gap-12 lg:grid-cols-[1.15fr_1fr] lg:gap-16">
           <div className="text-center lg:text-left">
-            <motion.span
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }}
-              className="mb-5 inline-block rounded-full border border-[#C0FFA5] bg-[#F1FBE9] px-4 py-1.5 text-sm font-semibold text-[#006A43]"
-            >
-              Delivery para açougues com venda por peso
-            </motion.span>
 
             <motion.h1
               initial={{ opacity: 0, y: 16 }}
@@ -114,7 +102,7 @@ const Hero = () => {
               className="flex justify-center lg:justify-start"
             >
               <Link href="/register" className="w-full sm:w-auto">
-                <button className="w-full cursor-pointer rounded-2xl bg-[#1B1B1B] px-8 py-5 text-lg font-semibold text-white transition-colors hover:bg-[#7ED957] hover:text-black sm:px-14 sm:text-xl">
+                <button className="w-full cursor-pointer rounded-xl bg-[#1B1B1B] px-8 py-5 text-lg font-semibold text-white transition-colors hover:bg-[#7ED957] hover:text-black sm:px-14 sm:text-xl">
                   Criar minha loja grátis
                 </button>
               </Link>

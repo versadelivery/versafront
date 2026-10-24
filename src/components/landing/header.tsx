@@ -4,119 +4,159 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Menu, X } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 import logo from "../../../public/logo/logo-inline-primary.svg";
+
+const navLinks = [
+  { name: "Como funciona", href: "como-funciona" },
+  { name: "Recursos", href: "recursos" },
+  { name: "Planos", href: "planos" },
+  { name: "Indicação", href: "indicacao" },
+  { name: "FAQ", href: "faq" },
+];
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [active, setActive] = useState("");
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 10);
-    window.addEventListener("scroll", handleScroll);
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 10);
+      if (window.scrollY < 200) setActive("");
+    };
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) setActive(entry.target.id);
+        });
+      },
+      { rootMargin: "-40% 0px -55% 0px" }
+    );
+    navLinks.forEach(({ href }) => {
+      const el = document.getElementById(href);
+      if (el) observer.observe(el);
+    });
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setIsOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isOpen]);
 
   const closeMenu = () => setIsOpen(false);
 
   const scrollToSection = (sectionId: string) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
-    }
+    document.getElementById(sectionId)?.scrollIntoView({ behavior: "smooth" });
     closeMenu();
   };
 
-  const navLinks = [
-    { name: "Como funciona", href: "como-funciona" },
-    { name: "Recursos", href: "recursos" },
-    { name: "Planos", href: "planos" },
-    { name: "Indicação", href: "indicacao" },
-    { name: "FAQ", href: "faq" },
-  ];
-
   return (
-    <nav
-      className={`fixed w-full z-50 transition-all duration-300 ${
-        scrolled
-          ? "bg-white/95 backdrop-blur-sm shadow-[0_1px_4px_rgba(0,0,0,.06)]"
-          : "bg-transparent"
+    <header
+      className={`fixed inset-x-0 top-0 z-50 bg-[#FFFDF6] transition-colors ${
+        scrolled || isOpen ? "border-b border-[#E8E4DF]" : "border-b border-transparent"
       }`}
     >
-      <div className="w-full px-6 sm:px-10 lg:px-14 flex items-center h-[96px]">
-        <Link href="/" className="flex-shrink-0 mr-6 lg:mr-12">
-          <Image src={logo} alt="VersaDelivery" width={220} height={64} className="w-[180px] lg:w-[220px] h-auto" />
+      <nav
+        aria-label="Principal"
+        className="mx-auto flex h-16 max-w-[1200px] items-center gap-6 px-4 sm:px-6 lg:h-20 lg:px-8"
+      >
+        <Link href="/" className="shrink-0" aria-label="VersaDelivery, página inicial">
+          <Image
+            src={logo}
+            alt="VersaDelivery"
+            width={200}
+            height={58}
+            priority
+            className="h-auto w-[140px] lg:w-[170px]"
+          />
         </Link>
 
-        <div className="hidden md:flex items-center gap-5 lg:gap-10">
+        <ul className="ml-4 hidden items-center gap-8 md:flex">
           {navLinks.map((link) => (
-            <button
-              key={link.href}
-              onClick={() => scrollToSection(link.href)}
-              className="font-tomato text-black hover:text-[#009246] hover:underline text-md font-bold transition-colors cursor-pointer whitespace-nowrap"
-            >
-              {link.name}
-            </button>
+            <li key={link.href}>
+              <button
+                onClick={() => scrollToSection(link.href)}
+                aria-current={active === link.href ? "true" : undefined}
+                className={`cursor-pointer whitespace-nowrap border-b-2 py-1 text-[15px] font-medium transition-colors ${
+                  active === link.href
+                    ? "border-[#009246] text-[#009246]"
+                    : "border-transparent text-[#1B1B1B] hover:text-[#009246]"
+                }`}
+              >
+                {link.name}
+              </button>
+            </li>
           ))}
-        </div>
+        </ul>
 
-        <div className="hidden md:flex items-center gap-2 lg:gap-3 ml-auto">
-          <Link href="/login">
-            <button className="text-[#1B1B1B] text-[15px] hover:border border-black rounded-xl px-4 lg:px-6 py-2.5 font-semibold transition-opacity cursor-pointer whitespace-nowrap">
-              Conectar-se
-            </button>
+        <div className="ml-auto hidden items-center gap-3 md:flex">
+          <Link
+            href="/login"
+            className="rounded-xl px-4 py-2.5 text-[15px] font-semibold text-[#1B1B1B] transition-colors hover:bg-[#F4F1EA]"
+          >
+            Conectar-se
           </Link>
-          <Link href="/register">
-            <button className="bg-[#1B1B1B] hover:bg-[#7ED957] text-white text-[15px] font-semibold px-4 lg:px-6 py-2.5 rounded-xl transition-colors cursor-pointer whitespace-nowrap">
-              Criar loja
-            </button>
+          <Link
+            href="/register"
+            className="rounded-xl bg-[#1B1B1B] px-5 py-2.5 text-[15px] font-semibold text-white transition-colors hover:bg-[#7ED957] hover:text-black"
+          >
+            Criar loja
           </Link>
         </div>
 
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="md:hidden p-2 text-[#1B1B1B] cursor-pointer ml-auto"
+          aria-label={isOpen ? "Fechar menu" : "Abrir menu"}
+          aria-expanded={isOpen}
+          aria-controls="menu-mobile"
+          className="-mr-2 ml-auto cursor-pointer rounded-lg p-2 text-[#1B1B1B] hover:bg-[#F4F1EA] md:hidden"
         >
           {isOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
-      </div>
+      </nav>
 
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="md:hidden bg-white border-t border-[#E8E4DF] overflow-hidden"
-          >
-            <div className="px-6 py-4 space-y-1">
-              {navLinks.map((link) => (
+      {isOpen && (
+        <div id="menu-mobile" className="border-t border-[#E8E4DF] bg-[#FFFDF6] md:hidden">
+          <ul className="mx-auto max-w-[1200px] px-4 py-3 sm:px-6">
+            {navLinks.map((link) => (
+              <li key={link.href}>
                 <button
-                  key={link.href}
                   onClick={() => scrollToSection(link.href)}
-                  className="font-tomato block w-full text-left text-[#1B1B1B] text-base font-semibold py-3 px-2 rounded-xl hover:bg-black/5 transition-colors cursor-pointer"
+                  className="block w-full cursor-pointer rounded-lg px-3 py-3 text-left text-base font-medium text-[#1B1B1B] hover:bg-[#F4F1EA]"
                 >
                   {link.name}
                 </button>
-              ))}
-              <div className="pt-4 space-y-2 border-t border-[#E8E4DF]">
-                <Link href="/login" onClick={closeMenu} className="block">
-                  <button className="w-full text-[#1B1B1B] text-base font-semibold py-3 rounded-xl border border-[#1B1B1B] transition-colors cursor-pointer">
-                    Conectar-se
-                  </button>
-                </Link>
-                <Link href="/register" onClick={closeMenu} className="block">
-                  <button className="w-full bg-[#1B1B1B] hover:bg-[#7ED957] text-white text-base font-semibold py-3 rounded-xl transition-colors cursor-pointer">
-                    Criar loja
-                  </button>
-                </Link>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </nav>
+              </li>
+            ))}
+          </ul>
+          <div className="mx-auto grid max-w-[1200px] gap-2 border-t border-[#E8E4DF] px-4 py-4 sm:px-6">
+            <Link
+              href="/login"
+              onClick={closeMenu}
+              className="rounded-xl border border-[#1B1B1B] py-3 text-center text-base font-semibold text-[#1B1B1B]"
+            >
+              Conectar-se
+            </Link>
+            <Link
+              href="/register"
+              onClick={closeMenu}
+              className="rounded-xl bg-[#1B1B1B] py-3 text-center text-base font-semibold text-white"
+            >
+              Criar loja
+            </Link>
+          </div>
+        </div>
+      )}
+    </header>
   );
 };
 
