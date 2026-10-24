@@ -433,7 +433,7 @@ export default function OrderDetailsModal({
         const response = await getCatalog();
         setCatalogGroups(response.data || []);
       } catch (error) {
-        console.error('Erro ao carregar catálogo:', error);
+        console.error('Erro ao carregar cardápio:', error);
       } finally {
         setLoadingCatalog(false);
       }
@@ -474,7 +474,6 @@ export default function OrderDetailsModal({
       price: unitPrice,
       total_price: unitPrice * quantity,
       quantity,
-      observation: options?.observation || '',
       image: catalogItem.attributes.image_url,
       extras: options?.selectedExtras?.map((e: any) => ({ name: e.name, price: e.price })) || [],
       prepare_methods: options?.selectedMethods?.map((m: any) => ({ name: m.name })) || [],
@@ -502,7 +501,6 @@ export default function OrderDetailsModal({
         catalog_item_step_id: parseInt(stepId),
         catalog_item_step_option_id: parseInt(opt.optionId),
       })) : [],
-      observation: options?.observation || '',
       weight: options?.weight,
       _tempId: tempId,
     }]);
@@ -1492,7 +1490,7 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
               <Input
                 value={catalogSearch}
                 onChange={(e) => setCatalogSearch(e.target.value)}
-                placeholder="Buscar item no catalogo..."
+                placeholder="Buscar item no cardapio..."
                 className="pl-9 h-9 text-sm rounded-md border-[#E5E2DD]"
               />
             </div>

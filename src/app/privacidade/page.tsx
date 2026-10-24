@@ -126,7 +126,7 @@ export default function PrivacidadePage() {
                 <ul className="space-y-2 text-[#444]">
                   {[
                     "Criação e gestão da sua conta na plataforma;",
-                    "Prestação dos serviços contratados (catálogo, pedidos, relatórios, PDV);",
+                    "Prestação dos serviços contratados (cardápio, pedidos, relatórios, PDV);",
                     "Cobrança e emissão de faturas;",
                     "Comunicação sobre atualizações, manutenções e novidades da plataforma;",
                     "Melhoria contínua dos serviços, com base em dados agregados e anonimizados;",

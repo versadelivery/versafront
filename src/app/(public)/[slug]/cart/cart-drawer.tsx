@@ -136,7 +136,7 @@ export function CartDrawer() {
                         <div key={item.cartId} className="flex items-center gap-3 pb-4 border-b">
                           <div className="flex-1">
                             <p className="text-sm text-red-500 font-medium">
-                              {item.attributes ? `"${item.attributes.name}" indisponível` : 'Item removido do catálogo'}
+                              {item.attributes ? `"${item.attributes.name}" indisponível` : 'Item removido do cardápio'}
                             </p>
                             <p className="text-xs text-muted-foreground">
                               {item.attributes ? 'Este item foi desativado ou não está disponível hoje.' : 'Este item não está mais disponível.'}

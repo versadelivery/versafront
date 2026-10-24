@@ -154,7 +154,7 @@ export default function TermosPage() {
                 </h2>
                 <p className="text-[#444] leading-relaxed mb-3">
                   <strong>Do usuário (estabelecimento):</strong> você é responsável pelo
-                  conteúdo publicado no seu catálogo, pela veracidade das informações de
+                  conteúdo publicado no seu cardápio, pela veracidade das informações de
                   produtos, preços e disponibilidade, pela gestão dos pedidos recebidos e
                   pela qualidade dos produtos ou serviços oferecidos aos seus clientes.
                 </p>

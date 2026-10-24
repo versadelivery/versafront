@@ -311,7 +311,7 @@ function CatalogPage() {
                   <span className="text-sm font-medium hidden sm:block">Voltar</span>
                 </a>
                 <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
-                <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900">Catálogo</h1>
+                <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900">Cardápio</h1>
               </div>
               <div className="flex items-center gap-3">
                 {tab === "catalog" && (
@@ -341,7 +341,7 @@ function CatalogPage() {
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  Catálogo
+                  Cardápio
                 </button>
                 <button
                   onClick={() => setTab("complements")}
@@ -442,7 +442,7 @@ function CatalogPage() {
               {isLoading ? (
                 <div className="flex flex-col items-center justify-center w-full py-12 gap-3">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  <p className="text-sm text-muted-foreground">Carregando catálogo...</p>
+                  <p className="text-sm text-muted-foreground">Carregando cardápio...</p>
                 </div>
               ) : validGroups.length === 0 ? (
                 /* Empty State */

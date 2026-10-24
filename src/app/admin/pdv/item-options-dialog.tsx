@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import { ShoppingCart, Scale, Plus, ChefHat, ListChecks, MessageSquare } from "lucide-react";
+import { ShoppingCart, Scale, Plus, ChefHat, ListChecks } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Package } from "lucide-react";
 import { formatPrice } from "@/utils/format-price";
@@ -122,7 +121,6 @@ interface ItemOptionsDialogProps {
   onAddToCart: (options: {
     extrasPrice: number;
     complementsPrice: number;
-    observation: string;
     selectedExtras: { id: string; name: string; price: number }[];
     selectedMethods: { id: string; name: string }[];
     selectedOptions: Record<string, { optionId: string; optionName: string }>;
@@ -143,7 +141,6 @@ export function ItemOptionsDialog({
   const [selectedOptions, setSelectedOptions] = useState<
     Record<string, string>
   >({});
-  const [observation, setObservation] = useState("");
   const [weight, setWeight] = useState<number>(1);
 
   // Reset e pré-selecionar primeira opção de cada step ao abrir
@@ -159,7 +156,6 @@ export function ItemOptionsDialog({
         if (step.attributes?.required !== false && opts.length > 0) initOptions[step.id] = opts[0].id;
       });
       setSelectedOptions(initOptions);
-      setObservation("");
       // Inicializar peso para itens por peso (mesma lógica do client-side)
       const attrs = item.attributes;
       if (attrs?.item_type === 'weight_per_g') {
@@ -310,7 +306,6 @@ export function ItemOptionsDialog({
     onAddToCart({
       extrasPrice: extrasTotal,
       complementsPrice: complementsTotal,
-      observation,
       selectedExtras: selectedExtrasData,
       selectedMethods: selectedMethodsData,
       selectedOptions: selectedOptionsData,
@@ -616,21 +611,6 @@ export function ItemOptionsDialog({
               </>
             )}
 
-            {/* Observação */}
-            <hr className="border-[#E5E2DD]" />
-            <section className="space-y-3">
-              <div className="flex items-center gap-2">
-                <MessageSquare className="h-4 w-4 text-primary" />
-                <h3 className="text-sm font-semibold text-gray-900">Observação</h3>
-              </div>
-              <Textarea
-                placeholder="Ex: sem cebola, bem passado..."
-                value={observation}
-                onChange={(e) => setObservation(e.target.value)}
-                rows={3}
-                className="resize-none text-sm bg-white"
-              />
-            </section>
           </div>
         </div>
 

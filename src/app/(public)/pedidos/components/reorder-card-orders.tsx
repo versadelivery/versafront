@@ -19,7 +19,7 @@ export default function ReorderCardOrders({ order }: ReorderCardOrdersProps) {
 
   const shopSlug = order.attributes.shop.data.attributes.slug
 
-  // Busca dados frescos do catálogo da loja — garante disponibilidade em tempo real
+  // Busca dados frescos do cardápio da loja — garante disponibilidade em tempo real
   const { data: shopData } = useQuery({
     queryKey: ["shop", shopSlug],
     queryFn: () => fetchShopBySlug(shopSlug),
@@ -31,7 +31,7 @@ export default function ReorderCardOrders({ order }: ReorderCardOrdersProps) {
   // Status da loja: aberta ou fechada (vem do mesmo shopData, atualizado a cada 60s)
   const shopIsOpen = shopData?.data?.attributes?.shop_status?.is_open ?? true
 
-  // Recomputa disponibilidade toda vez que o catálogo ou o pedido mudar
+  // Recomputa disponibilidade toda vez que o cardápio ou o pedido mudar
   const validation: OrderValidation = useMemo(
     () => validateOrder(order, shopData),
     [order, shopData],

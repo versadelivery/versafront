@@ -33,7 +33,7 @@ const faqItems = [
   {
     question: "Também posso vender por unidade?",
     answer:
-      "Sim. O catálogo pode incluir produtos vendidos por peso ou por unidade, conforme o tipo de produto.",
+      "Sim. O cardápio pode incluir produtos vendidos por peso ou por unidade, conforme o tipo de produto.",
   },
   {
     question: "O VersaDelivery cobra comissão sobre as vendas?",
@@ -62,7 +62,7 @@ const faqItems = [
   {
     question: "Quanto tempo leva para começar?",
     answer:
-      "Você pode começar cadastrando os produtos, configurando o catálogo e compartilhando o link da sua loja. O tempo necessário depende da quantidade de produtos e das informações que deseja cadastrar.",
+      "Você pode começar cadastrando os produtos, configurando o cardápio e compartilhando o link da sua loja. O tempo necessário depende da quantidade de produtos e das informações que deseja cadastrar.",
   },
   {
     question: "Como funciona o programa de indicação?",

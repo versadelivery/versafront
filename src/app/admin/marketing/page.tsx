@@ -20,7 +20,7 @@ const marketingModules = [
   },
   {
     title: "Cardápio em PDF",
-    description: "Exporte seu catálogo completo como PDF profissional",
+    description: "Exporte seu cardápio completo como PDF profissional",
     href: "/admin/marketing/pdf-catalog",
     icon: FileText,
     iconBgColor: "bg-purple-500",

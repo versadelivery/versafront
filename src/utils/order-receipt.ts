@@ -70,6 +70,8 @@ export function buildOrderReceipt(order: ReceiptOrder, mode: ReceiptMode, fontSi
     <header><strong>PEDIDO #${escapeHtml(order.id)}</strong><br>[ ${type} ] &nbsp; ${date.slice(0, 5)} - ${time}<br>Cliente: ${escapeHtml(customer.name || order.customerName || 'Cliente')}</header>
     <h2>ITENS PARA SEPARAÇÃO:</h2>`;
 
+  const orderNote = attrs.observation ? `<section><strong>OBSERVAÇÕES:</strong><br>${escapeHtml(attrs.observation)}</section>` : '';
+
   const financial = mode === 'complete' ? `
     <section><strong>RESUMO FINANCEIRO:</strong><br><br>
     Subtotal dos produtos: ${money(subtotal)}<br>Taxa de Entrega: ${money(deliveryFee)}<br>
@@ -85,7 +87,7 @@ export function buildOrderReceipt(order: ReceiptOrder, mode: ReceiptMode, fontSi
     h2 { font-size: 15px; margin: 10px 0; } .item { padding: ${mode === 'summary' ? '16px 0' : '7px 0'}; border-bottom: 1px dashed #777; }
     .item > div { margin-top: ${mode === 'summary' ? '12px' : '2px'}; } .emphasis { font-size: ${large ? '19px' : '15px'}; font-weight: ${large ? '700' : '400'}; }
     footer { text-align: center; padding-top: 10px; } @media print { body { width: auto; } }
-  </style></head><body>${completeHeader}${details}${financial}<footer>--- VIA ${mode === 'summary' ? 'RESUMIDA' : 'DO CLIENTE'} ---${mode === 'complete' ? '<br>Obrigado pela preferência!<br>www.versadelivery.com.br' : ''}</footer></body></html>`;
+  </style></head><body>${completeHeader}${details}${orderNote}${financial}<footer>--- VIA ${mode === 'summary' ? 'RESUMIDA' : 'DO CLIENTE'} ---${mode === 'complete' ? '<br>Obrigado pela preferência!<br>www.versadelivery.com.br' : ''}</footer></body></html>`;
 }
 
 export function buildWhatsAppReceiptMessage(order: ReceiptOrder) {
@@ -145,6 +147,7 @@ export function buildWhatsAppReceiptMessage(order: ReceiptOrder) {
     lines.push(`Subtotal: *${whatsappMoney(itemAttrs.total_price)}*`);
   });
 
+  if (attrs.observation) lines.push('', '📝 *OBSERVAÇÕES*', attrs.observation);
   lines.push(
     '', '💰 *RESUMO FINANCEIRO*',
     `Produtos: ${whatsappMoney(attrs.total_items_price)}`,

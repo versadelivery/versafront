@@ -78,8 +78,8 @@ export const adminSections: AdminSection[] = [
   },
   {
     id: "catalogo",
-    title: "Catálogo",
-    description: "Gerencie seu catálogo de produtos",
+    title: "Cardápio",
+    description: "Gerencie seu cardápio de produtos",
     href: "/admin/catalog",
     icon: BookOpen,
     iconBgColor: "bg-emerald-600",
@@ -159,7 +159,7 @@ export const adminSections: AdminSection[] = [
   {
     id: "marketing-pdf-catalog",
     title: "Cardapio em PDF",
-    description: "Exporte seu catalogo completo como PDF",
+    description: "Exporte seu cardápio completo como PDF",
     href: "/admin/marketing/pdf-catalog",
     icon: FileText,
     iconBgColor: "bg-purple-500",

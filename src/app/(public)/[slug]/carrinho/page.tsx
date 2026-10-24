@@ -221,7 +221,7 @@ export default function CartPage() {
                           <div className="flex items-center justify-between gap-4">
                             <div>
                               <p className="text-sm font-semibold text-red-600">
-                                {attrs ? `"${attrs.name}" indisponível` : 'Item removido do catálogo'}
+                                {attrs ? `"${attrs.name}" indisponível` : 'Item removido do cardápio'}
                               </p>
                               <p className="text-xs text-red-400 mt-0.5">
                                 {attrs ? 'Desativado ou indisponível hoje.' : 'Não está mais disponível.'}

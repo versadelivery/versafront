@@ -16,7 +16,7 @@ export default function SupportPage() {
   const faqs = [
     {
       question: "Como configurar meu cardápio?",
-      answer: "Acesse a seção 'Catálogo' no menu lateral e clique em 'Adicionar Produto'. Preencha as informações do produto, adicione fotos e defina preços e variações."
+      answer: "Acesse a seção 'Cardápio' no menu lateral e clique em 'Adicionar Produto'. Preencha as informações do produto, adicione fotos e defina preços e variações."
     },
     {
       question: "Como funciona o sistema de pedidos?",

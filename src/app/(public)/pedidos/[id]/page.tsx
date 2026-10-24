@@ -152,6 +152,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
     status: orderData.attributes.status ?? 'received',
     withdrawal: orderData.attributes.withdrawal ?? false,
     payment_method: orderData.attributes.payment_method ?? 'cash',
+    observation: orderData.attributes.observation ?? '',
     delivery_fee: parseFloat(orderData.attributes.delivery_fee ?? '0'),
     items: (orderData.attributes.items?.data ?? []).map((item: any) => ({
       id: item.id ?? '',
@@ -307,6 +308,13 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                     </div>
                   ))}
                 </div>
+
+                {order.observation && (
+                  <div className="mt-4 rounded-md bg-[#FAF9F7] border border-[#E5E2DD] px-3 py-2">
+                    <p className="text-sm font-medium text-foreground">Observações</p>
+                    <p className="text-sm text-muted-foreground mt-0.5 whitespace-pre-line">{order.observation}</p>
+                  </div>
+                )}
 
                 {/* Totals */}
                 <div className="mt-5 pt-4 border-t border-[#E5E2DD] space-y-2">

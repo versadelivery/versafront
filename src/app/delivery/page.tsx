@@ -100,6 +100,10 @@ function OrderCard({
         </div>
       )}
 
+      {a.observation && (
+        <p className="text-sm text-gray-700 bg-amber-50 rounded-lg p-2 italic">Obs: {a.observation}</p>
+      )}
+
       {a.status === 'ready' && (
         <Button
           onClick={() => onUpdateStatus(id, 'left_for_delivery')}

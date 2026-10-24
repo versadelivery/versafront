@@ -25,7 +25,7 @@ const CallToAction = () => {
               Seu açougue pronto para vender online?
             </h2>
             <p className="text-lg text-[#1B1B1B] mb-10 max-w-lg mx-auto leading-relaxed">
-              Organize seu catálogo, receba pedidos em tempo real e facilite a
+              Organize seu cardápio, receba pedidos em tempo real e facilite a
               venda de produtos por peso.
             </p>
 

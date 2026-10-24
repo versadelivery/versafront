@@ -29,6 +29,7 @@ export interface DeliveryOrder {
         }
       } | null
     }
+    observation?: string | null
     items: Array<{ name: string; quantity: number; item_type?: string | null; weight?: number | null; observation: string | null }>
   }
 }

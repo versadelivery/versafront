@@ -36,6 +36,7 @@ export interface CreateOrderRequest {
     customer_name?: string;
     customer_phone?: string;
     coupon_code?: string;
+    observation?: string;
     table_session_id?: number;
     address: {
       address: string;
@@ -111,6 +112,7 @@ export interface ActionCableOrderData {
     discount_amount: string
     payment_adjustment_amount: string
     coupon_code: string | null
+    observation?: string | null
     withdrawal: boolean
     payment_method: string
     created_at: string
@@ -298,6 +300,7 @@ export interface CustomerOrder {
     discount_amount: string | null;
     payment_adjustment_amount: string | null;
     coupon_code: string | null;
+    observation?: string | null;
     withdrawal: boolean;
     payment_method: string;
     created_at: string;

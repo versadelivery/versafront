@@ -3,12 +3,13 @@
 import {
   CreditCard, Wallet, QrCode, Truck, ChevronDown, ChevronUp,
   Plus, Minus, X, CheckCircle2, Store, Clock, AlertTriangle,
-  ChevronLeft, ShoppingCart, Package, User, Phone, Tag, Loader2, Copy, ExternalLink
+  ChevronLeft, ShoppingCart, Package, User, Phone, Tag, Loader2, Copy, ExternalLink, MessageSquare
 } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import { toast } from "sonner"
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -321,7 +322,6 @@ interface CartItemWithExtras {
   selectedOptions?: Record<string, string>
   selectedSharedComplements?: string[]
   totalPrice: number
-  observation?: string
 }
 
 const PAYMENT_LABELS: Record<PaymentMethod, { label: string; icon: React.ReactNode }> = {
@@ -357,7 +357,7 @@ export default function CheckoutPage() {
   const [selectedNeighborhood, setSelectedNeighborhood] = useState<string>('')
   const [kmDelivery, setKmDelivery] = useState<KmDeliveryState>(emptyKmDeliveryState)
   const [order, setOrder] = useState<Order | null>(null)
-  const [itemObservations, setItemObservations] = useState<Record<string, string>>({})
+  const [observation, setObservation] = useState('')
   const [guestName, setGuestName] = useState(() => {
     if (typeof window === 'undefined') return ''
     try {
@@ -596,7 +596,6 @@ export default function CheckoutPage() {
       selectedOptions: item.selectedOptions || {},
       selectedSharedComplements: item.selectedSharedComplements || [],
       totalPrice: item.totalPrice,
-      observation: item.observation
     }))
     setCartItems(mappedItems)
     setIsLoading(false)
@@ -802,6 +801,7 @@ export default function CheckoutPage() {
         payment_method: paymentMethod as any,
         customer_name: guestName.trim(),
         customer_phone: guestPhone.replace(/\D/g, ''),
+        ...(observation.trim() && { observation: observation.trim() }),
         ...(appliedCoupon && { coupon_code: appliedCoupon.code }),
         address: isKmDelivery
           ? {
@@ -824,7 +824,6 @@ export default function CheckoutPage() {
           catalog_item_id: Number(item.id),
           quantity: item.quantity,
           ...(item.weight && { weight: item.weight }),
-          observation: item.observation || '',
           extras_ids: item.selectedExtras || [],
           prepare_methods_ids: item.selectedMethods || [],
           steps: Object.entries(item.selectedOptions || {}).map(([stepId, optionId]) => ({
@@ -1234,20 +1233,6 @@ export default function CheckoutPage() {
                         </div>
                       </div>
 
-                      {/* Observação */}
-                      <div className="mt-3">
-                        <Input
-                          placeholder="Observação (ex: sem cebola)"
-                          value={itemObservations[item.id] || ''}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setItemObservations(prev => ({ ...prev, [item.id]: val }));
-                            setCartItems(prev => prev.map(ci => ci.id === item.id ? { ...ci, observation: val } : ci));
-                          }}
-                          className="h-8 text-sm bg-[#FAF9F7] border-[#E5E2DD] focus:border-primary/40 rounded-md"
-                        />
-                      </div>
-
                       {/* Detalhes expandidos */}
                       <AnimatePresence>
                         {isExpanded[item.id] && (
@@ -1529,6 +1514,24 @@ export default function CheckoutPage() {
                     )}
                   </div>
                 )}
+              </div>
+            </div>
+
+            {/* ── Observações ── */}
+            <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+              <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
+                <MessageSquare className="h-4 w-4 text-primary" />
+                <h2 className="font-tomato text-base font-semibold text-gray-900">Observações</h2>
+              </div>
+              <div className="px-5 py-4">
+                <Textarea
+                  id="order-observation"
+                  placeholder="Alguma observação sobre o pedido? (ex: sem cebola, campainha quebrada)"
+                  value={observation}
+                  onChange={(e) => setObservation(e.target.value)}
+                  maxLength={500}
+                  className="text-sm border-[#E5E2DD] focus:border-primary/40"
+                />
               </div>
             </div>
 

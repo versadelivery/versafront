@@ -53,9 +53,9 @@ export const ShopStatusProvider: React.FC<ShopStatusProviderProps> = ({ children
     return () => window.removeEventListener('shop-updated', handleShopUpdated);
   }, []);
 
-  // Mesma queryKey do catálogo (['shop', slug]) → compartilha o cache do React Query.
-  // Quando o catálogo refaz o fetch, este contexto recebe o dado atualizado sem nova requisição.
-  // Quando o usuário está em /carrinho ou /conferir (catálogo desmontado), polling próprio de 60s garante atualização.
+  // Mesma queryKey do cardápio (['shop', slug]) → compartilha o cache do React Query.
+  // Quando o cardápio refaz o fetch, este contexto recebe o dado atualizado sem nova requisição.
+  // Quando o usuário está em /carrinho ou /conferir (cardápio desmontado), polling próprio de 60s garante atualização.
   const { data: shopData, isLoading, refetch } = useQuery({
     queryKey: ['shop', slug],
     queryFn: () => fetchShopBySlug(slug!),

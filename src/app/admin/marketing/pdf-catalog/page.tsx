@@ -90,7 +90,7 @@ export default function PdfCatalogPage() {
                 </h3>
                 <p className="text-sm text-muted-foreground">
                   {isLoading
-                    ? "Carregando catalogo..."
+                    ? "Carregando cardapio..."
                     : `${groupCount} grupos | ${itemCount} itens`}
                 </p>
               </div>
@@ -154,7 +154,7 @@ export default function PdfCatalogPage() {
 
             {itemCount === 0 && !isLoading && (
               <p className="text-sm text-center text-muted-foreground">
-                Nenhum item encontrado no catalogo. Adicione itens antes de gerar o PDF.
+                Nenhum item encontrado no cardapio. Adicione itens antes de gerar o PDF.
               </p>
             )}
           </div>

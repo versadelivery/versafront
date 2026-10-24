@@ -38,7 +38,6 @@ interface CartItem {
   selectedStepOptions?: Record<string, { optionId: string; optionName: string }>;
   selectedSharedComplements?: { id: string; name: string; price: number }[];
   totalPrice: number;
-  observation?: string;
   weight?: number;
   itemType?: string;
 }
@@ -111,7 +110,7 @@ export default function PDVPage() {
     fetchTablesAndSessions();
   }, []);
 
-  // Filtrar catálogo — somente itens e grupos ativos
+  // Filtrar cardápio — somente itens e grupos ativos
   const filteredCatalog =
     catalog?.data
       ?.filter((group: any) => group.attributes.active !== false)
@@ -221,7 +220,6 @@ export default function PDVPage() {
     options?: {
       extrasPrice?: number;
       complementsPrice?: number;
-      observation?: string;
       selectedExtras?: { id: string; name: string; price: number }[];
       selectedMethods?: { id: string; name: string }[];
       selectedOptions?: Record<string, { optionId: string; optionName: string }>;
@@ -255,7 +253,6 @@ export default function PDVPage() {
       selectedMethods: options?.selectedMethods,
       selectedStepOptions: options?.selectedOptions,
       selectedSharedComplements: options?.selectedSharedComplements,
-      observation: options?.observation,
       ...(isWeightBased && itemWeight && { weight: itemWeight, itemType: attrs.item_type }),
     };
 
@@ -267,7 +264,6 @@ export default function PDVPage() {
   const handleOptionsAddToCart = (options: {
     extrasPrice: number;
     complementsPrice: number;
-    observation: string;
     selectedExtras: { id: string; name: string; price: number }[];
     selectedMethods: { id: string; name: string }[];
     selectedOptions: Record<string, { optionId: string; optionName: string }>;
@@ -525,6 +521,7 @@ export default function PDVPage() {
             : customerInfo.name.trim(),
           customer_phone: isTableOrder ? undefined : customerInfo.phone.replace(/\D/g, "") || undefined,
           ...(appliedCoupon && { coupon_code: appliedCoupon.code }),
+          ...(notes.trim() && { observation: notes.trim() }),
           ...(selectedTableSessionId && { table_session_id: Number(selectedTableSessionId) }),
           address: isPerKm && !isTableOrder
             ? {
@@ -551,7 +548,6 @@ export default function PDVPage() {
             catalog_item_id: parseInt(item.id.split("-")[0]),
             quantity: item.quantity,
             ...(item.weight && { weight: item.weight }),
-            observation: item.observation || notes || undefined,
             extras_ids: item.selectedExtras?.map((e) => e.id) || [],
             prepare_methods_ids: item.selectedMethods?.map((m) => m.id) || [],
             steps: item.selectedStepOptions
@@ -618,13 +614,13 @@ export default function PDVPage() {
       <div className="max-w-[1920px] mx-auto px-4 sm:px-6 py-4">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
-        {/* ── Catálogo ─────────────────────────────────── */}
+        {/* ── Cardápio ─────────────────────────────────── */}
         <div className="lg:col-span-2 space-y-4">
           <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
             <div className="px-5 py-4 border-b border-[#E5E2DD]">
               <h2 className="font-tomato flex items-center gap-2 text-base font-semibold text-gray-900 mb-3">
                 <Package className="h-5 w-5 text-primary" />
-                Catálogo de Produtos
+                Cardápio de Produtos
               </h2>
 
               {/* Busca e filtros */}
@@ -986,13 +982,6 @@ export default function PDVPage() {
                                 </Badge>
                               ))}
                             </div>
-                          )}
-
-                          {/* Observação */}
-                          {item.observation && (
-                            <p className="text-[11px] text-muted-foreground mt-1 italic">
-                              "{item.observation}"
-                            </p>
                           )}
 
                           {/* Peso (itens por kg/g) */}
@@ -1495,7 +1484,7 @@ export default function PDVPage() {
               })()}
 
               <div className="space-y-1.5">
-                <Label htmlFor="notes" className="text-sm">Observações gerais</Label>
+                <Label htmlFor="notes" className="text-sm">Observações do pedido</Label>
                 <Textarea
                   id="notes"
                   value={notes}

@@ -581,7 +581,7 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
         <DialogHeader className="px-4 sm:px-6 pt-5 sm:pt-6 pb-4 border-b border-gray-100">
           <DialogTitle className="font-tomato text-lg font-semibold">Novo Item</DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
-            Adicione um novo item ao catálogo
+            Adicione um novo item ao cardápio
           </DialogDescription>
         </DialogHeader>
 

@@ -14,6 +14,7 @@ export interface ClientOrderData {
     discount_amount: string | null
     payment_adjustment_amount: string | null
     coupon_code: string | null
+    observation?: string | null
     withdrawal: boolean
     payment_method: string
     created_at: string

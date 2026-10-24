@@ -227,7 +227,10 @@ ${order.socketData?.attributes?.items?.data?.map((item: any) => `
   ${item.attributes.observation ? `_Obs: ${item.attributes.observation}_` : ''}
 `).join('') || 'Nenhum item'}
 
-💳 *FORMA DE PAGAMENTO*
+${order.socketData?.attributes?.observation ? `📝 *OBSERVAÇÕES*
+${order.socketData.attributes.observation}
+
+` : ''}💳 *FORMA DE PAGAMENTO*
 ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '', order.socketData?.attributes?.manual_pix_payment_moment)}
 
 💰 *TOTAL: R$ ${order.amount.toFixed(2)}*
@@ -254,7 +257,8 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '', orde
   const couponCode = order.socketData?.attributes?.coupon_code;
   const discountAmount = parseFloat(order.socketData?.attributes?.discount_amount || '0');
   const paymentAdj = order.socketData?.attributes?.payment_adjustment_amount ? parseFloat(order.socketData.attributes.payment_adjustment_amount) : 0;
-  const hasObservations = items?.some((item: any) => item.attributes.observation);
+  const orderObservation = order.socketData?.attributes?.observation;
+  const hasObservations = !!orderObservation || items?.some((item: any) => item.attributes.observation);
 
   return (
     <>
@@ -409,6 +413,12 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '', orde
             <hr className="border-[#E5E2DD]" />
             <div className="px-3 py-2">
               <div className="text-xs text-orange-600 space-y-0.5">
+                {orderObservation && (
+                  <div className="flex items-start gap-1.5">
+                    <MessageCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                    <span className="italic">"{orderObservation}"</span>
+                  </div>
+                )}
                 {items
                   .filter((item: any) => item.attributes.observation)
                   .slice(0, 2)

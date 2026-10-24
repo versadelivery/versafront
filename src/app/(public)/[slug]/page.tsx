@@ -29,14 +29,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const shopData = result.data.data.attributes;
-  const defaultDescription = `Confira o catálogo completo da ${shopData.name}. Faça seus pedidos online de forma rápida e prática.`;
+  const defaultDescription = `Confira o cardápio completo da ${shopData.name}. Faça seus pedidos online de forma rápida e prática.`;
 
   return {
-    title: `${shopData.name} - Catálogo Online`,
+    title: `${shopData.name} - Cardápio Online`,
     description: defaultDescription,
-    keywords: `${shopData.name}, delivery, catálogo, pedidos online`,
+    keywords: `${shopData.name}, delivery, cardápio, pedidos online`,
     openGraph: {
-      title: `${shopData.name} - Catálogo Online`,
+      title: `${shopData.name} - Cardápio Online`,
       description: defaultDescription,
       images: shopData.image_url ? [shopData.image_url] : [],
       url: `${process.env.NEXT_PUBLIC_SHOP_DOMAIN}/${slug}`,
@@ -44,7 +44,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${shopData.name} - Catálogo Online`,
+      title: `${shopData.name} - Cardápio Online`,
       description: defaultDescription,
       images: shopData.image_url ? [shopData.image_url] : [],
     },
