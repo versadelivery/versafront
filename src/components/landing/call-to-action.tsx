@@ -29,8 +29,8 @@ const CallToAction = () => {
               venda de produtos por peso.
             </p>
 
-            <Link href="/register">
-              <button className="inline-flex items-center justify-center gap-2 bg-[#1B1B1B] hover:bg-white text-white hover:text-black text-xl font-semibold px-12 sm:px-16 py-6 rounded-2xl transition-colors cursor-pointer">
+            <Link href="/register" className="block sm:inline-block">
+              <button className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-[#1B1B1B] hover:bg-white text-white hover:text-black text-lg sm:text-xl font-semibold px-6 sm:px-16 py-5 sm:py-6 rounded-2xl transition-colors cursor-pointer">
                 Criar minha loja grátis
                 <ArrowRight className="w-4 h-4" />
               </button>
@@ -56,7 +56,7 @@ const CallToAction = () => {
                 Apresente a plataforma a donos de açougues e conheça as
                 condições do programa de indicação.
               </p>
-              <Link href="/register">
+              <Link href="/register" className="block sm:inline-block">
                 <button className="bg-white hover:bg-[#1B1B1B] text-black hover:text-white text-lg font-semibold px-10 py-4 rounded-2xl transition-colors cursor-pointer">
                   Quero indicar e ganhar
                 </button>

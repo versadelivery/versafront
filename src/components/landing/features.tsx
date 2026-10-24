@@ -54,7 +54,7 @@ const Features = () => {
   const isInView = useInView(ref, { once: true, amount: 0.1 });
 
   return (
-    <section id="recursos" ref={ref} className="py-20 md:py-28 bg-[#FFFDF6]">
+    <section id="recursos" ref={ref} className="scroll-mt-24 py-16 md:py-24 bg-white">
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -80,9 +80,9 @@ const Features = () => {
               initial={{ opacity: 0, y: 15 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.4, delay: 0.1 + index * 0.05 }}
-              className="bg-white rounded-2xl border-2 border-black p-6 hover:bg-[#7ED957] hover:border-[#7ED957] transition-colors duration-200 cursor-default"
+              className="rounded-2xl border border-[#E8E4DF] bg-[#FFFDF6] p-6 transition-colors duration-200 hover:border-[#7ED957] hover:bg-[#F1FBE9] cursor-default"
             >
-              <div className="w-10 h-10 rounded-xl bg-[#F9FFF6] flex items-center justify-center mb-3 text-[#009246]">
+              <div className="w-11 h-11 rounded-xl bg-[#F1FBE9] flex items-center justify-center mb-3 text-[#009246]">
                 {feature.icon}
               </div>
               <h3 className="text-base font-semibold text-[#1B1B1B] mb-1">

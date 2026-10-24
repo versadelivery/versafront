@@ -33,7 +33,7 @@ const Footer = () => {
         <div className="py-14 grid grid-cols-2 md:grid-cols-4 gap-10">
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="inline-block mb-5">
-              <Image src={logo} alt="VersaDelivery" width={150} height={48} />
+              <Image src={logo} alt="VersaDelivery" width={150} height={48} className="h-auto w-[150px]" />
             </Link>
             <p className="text-[#858585] text-sm leading-relaxed mb-6 max-w-xs">
               Delivery para açougues com venda por peso.
