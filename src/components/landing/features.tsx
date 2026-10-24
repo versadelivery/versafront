@@ -54,7 +54,7 @@ const Features = () => {
   const isInView = useInView(ref, { once: true, amount: 0.1 });
 
   return (
-    <section id="recursos" ref={ref} className="scroll-mt-24 py-16 md:py-24 bg-white">
+    <section id="recursos" ref={ref} className="scroll-mt-24 py-16 md:py-24 bg-[#1B1B1B]">
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -62,10 +62,10 @@ const Features = () => {
           transition={{ duration: 0.5 }}
           className="text-center mb-14"
         >
-          <h2 className="font-tomato text-3xl sm:text-4xl lg:text-5xl font-semibold text-[#1B1B1B] tracking-tight mb-4">
+          <h2 className="font-tomato text-3xl sm:text-4xl lg:text-5xl font-semibold text-white tracking-tight mb-4">
             Recursos do VersaDelivery
           </h2>
-          <p className="text-lg text-[#474747] max-w-2xl mx-auto">
+          <p className="text-lg text-[#E8E4DF] max-w-2xl mx-auto">
             Tudo para organizar seus pedidos de delivery em um só lugar.
           </p>
         </motion.div>
@@ -77,15 +77,15 @@ const Features = () => {
               initial={{ opacity: 0, y: 15 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.4, delay: 0.1 + index * 0.05 }}
-              className="rounded-2xl border border-[#E8E4DF] bg-[#FFFDF6] p-6 transition-colors duration-200 hover:border-[#7ED957] hover:bg-[#F1FBE9] cursor-default"
+              className="rounded-2xl bg-[#FFFDF6] p-6 transition-colors duration-200 hover:bg-[#7ED957] cursor-default"
             >
-              <div className="w-11 h-11 rounded-xl bg-[#F1FBE9] flex items-center justify-center mb-3 text-[#009246]">
+              <div className="w-11 h-11 rounded-xl bg-[#7ED957] flex items-center justify-center mb-3 text-[#1B1B1B]">
                 {feature.icon}
               </div>
               <h3 className="text-base font-semibold text-[#1B1B1B] mb-1">
                 {feature.title}
               </h3>
-              <p className="text-sm text-[#474747] leading-relaxed">
+              <p className="text-sm text-[#1B1B1B] leading-relaxed">
                 {feature.description}
               </p>
             </motion.div>
