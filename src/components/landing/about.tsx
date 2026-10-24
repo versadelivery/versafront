@@ -37,9 +37,6 @@ const About = () => {
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.5 }}
           >
-            <span className="font-tomato mb-3 inline-block text-sm font-semibold uppercase tracking-wide text-[#009246]">
-              Venda por peso
-            </span>
             <h2 className="font-tomato mb-5 text-3xl font-semibold leading-tight tracking-tight text-[#1B1B1B] sm:text-4xl">
               Quem compra quer clareza e praticidade. Quem vende quer agilidade e controle.
             </h2>

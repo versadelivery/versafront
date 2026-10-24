@@ -30,9 +30,6 @@ const Pricing = () => {
           transition={{ duration: 0.5 }}
           className="text-center mb-12"
         >
-          <span className="font-tomato inline-block text-[#009246] text-sm font-semibold tracking-wide uppercase mb-3">
-            Planos e preços
-          </span>
           <h2 className="font-tomato text-3xl sm:text-4xl lg:text-5xl font-semibold text-[#1B1B1B] tracking-tight mb-4">
             Comece grátis. O plano acompanha seu faturamento.
           </h2>
@@ -46,7 +43,7 @@ const Pricing = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="rounded-2xl border border-[#E8E4DF] bg-[#FFFDF6] p-3 sm:p-5"
+          className="rounded-xl border border-[#E8E4DF] bg-[#FFFDF6] p-3 sm:p-5"
         >
           <ul>
             {tiers.map((tier) => (
@@ -59,7 +56,7 @@ const Pricing = () => {
                 <div className="flex min-w-0 items-center gap-3">
                   <span
                     aria-hidden
-                    className="size-3 shrink-0 rounded-full border border-black/10"
+                    className="size-3 shrink-0 rounded-full border border-[#D9D4CB]"
                     style={{ backgroundColor: tier.color }}
                   />
                   <div className="min-w-0">
@@ -86,7 +83,7 @@ const Pricing = () => {
 
         <div className="text-center mt-8">
           <Link href="/register">
-            <button className="bg-[#1B1B1B] hover:bg-[#7ED957] text-white hover:text-black text-xl font-semibold px-12 sm:px-16 py-6 rounded-2xl transition-colors cursor-pointer">
+            <button className="bg-[#1B1B1B] hover:bg-[#7ED957] text-white hover:text-black text-xl font-semibold px-12 sm:px-16 py-6 rounded-xl transition-colors cursor-pointer">
               Criar minha loja grátis
             </button>
           </Link>

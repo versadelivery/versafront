@@ -13,7 +13,6 @@ import { cn } from "@/lib/utils";
 
 // Telas ilustrativas do VersaDelivery desenhadas em código. Decorativas (aria-hidden).
 
-const shadow = "shadow-[0_24px_50px_-24px_rgba(27,27,27,.35)]";
 
 function Window({
   title,
@@ -29,7 +28,6 @@ function Window({
       aria-hidden
       className={cn(
         "mx-auto w-full max-w-[460px] overflow-hidden rounded-2xl border border-[#E8E4DF] bg-white",
-        shadow,
         className
       )}
     >
@@ -58,7 +56,6 @@ export function StorePhone({ className }: { className?: string }) {
       aria-hidden
       className={cn(
         "mx-auto w-full max-w-[280px] overflow-hidden rounded-[2.2rem] border-[7px] border-[#1B1B1B] bg-white",
-        shadow,
         className
       )}
     >
@@ -69,13 +66,13 @@ export function StorePhone({ className }: { className?: string }) {
           </div>
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold leading-tight">Açougue Boi Bom</p>
-            <p className="text-[11px] text-[#9BF07C]">Aberto agora · 30–45 min</p>
+            <p className="text-[11px] text-[#9BF07C]">Aberto agora · 30 a 45 min</p>
           </div>
         </div>
         <div className="mt-4 flex gap-2 overflow-hidden text-[11px] font-medium">
           <span className="rounded-full bg-white px-3 py-1 text-[#16663A]">Tudo</span>
-          <span className="rounded-full bg-white/15 px-3 py-1">Bovinos</span>
-          <span className="rounded-full bg-white/15 px-3 py-1">Aves</span>
+          <span className="rounded-full bg-[#2B7A4B] px-3 py-1">Bovinos</span>
+          <span className="rounded-full bg-[#2B7A4B] px-3 py-1">Aves</span>
         </div>
       </div>
 
@@ -217,7 +214,7 @@ export function DeliveryWindow({ className }: { className?: string }) {
                   className={cn(
                     "grid size-8 shrink-0 place-items-center rounded-full",
                     active ? "bg-[#009246] text-white" : "bg-[#F4F1EA] text-[#B5B0A6]",
-                    step.current && "ring-4 ring-[#009246]/20"
+                    step.current && "ring-4 ring-[#CDEBD9]"
                   )}
                 >
                   <Icon className="size-4" />
@@ -239,7 +236,7 @@ export function DeliveryWindow({ className }: { className?: string }) {
             <MapPin className="size-3" /> Por bairro
           </span>
           <span className="flex items-center gap-1 rounded-full bg-[#F4F1EA] px-3 py-1">
-            <Clock className="size-3" /> 30–45 min
+            <Clock className="size-3" /> 30 a 45 min
           </span>
           <span className="rounded-full bg-[#F4F1EA] px-3 py-1">R$ 20,00</span>
         </div>
@@ -254,7 +251,6 @@ export function WeightCompare({ className }: { className?: string }) {
       aria-hidden
       className={cn(
         "mx-auto w-full max-w-[420px] rounded-2xl border border-[#E8E4DF] bg-white p-5",
-        shadow,
         className
       )}
     >
@@ -287,7 +283,6 @@ export function BrandCard({ className }: { className?: string }) {
       aria-hidden
       className={cn(
         "mx-auto w-full max-w-[380px] overflow-hidden rounded-2xl border border-[#E8E4DF] bg-white",
-        shadow,
         className
       )}
     >

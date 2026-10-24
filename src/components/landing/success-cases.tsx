@@ -20,9 +20,6 @@ const SuccessCases = () => {
     <section id="casos" className="scroll-mt-24 py-16 md:py-24 bg-[#FFFDF6]">
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <span className="font-tomato inline-block text-[#009246] text-sm font-semibold tracking-wide uppercase mb-3">
-            Casos de sucesso
-          </span>
           <h2 className="font-tomato text-3xl sm:text-4xl lg:text-5xl font-semibold text-[#1B1B1B] tracking-tight mb-4">
             Açougues que já usam o VersaDelivery
           </h2>

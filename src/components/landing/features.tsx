@@ -62,9 +62,6 @@ const Features = () => {
           transition={{ duration: 0.5 }}
           className="text-center mb-14"
         >
-          <span className="font-tomato inline-block text-[#009246] text-sm font-semibold tracking-wide uppercase mb-3">
-            Recursos
-          </span>
           <h2 className="font-tomato text-3xl sm:text-4xl lg:text-5xl font-semibold text-[#1B1B1B] tracking-tight mb-4">
             Recursos do VersaDelivery
           </h2>

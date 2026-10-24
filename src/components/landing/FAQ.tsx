@@ -89,9 +89,6 @@ const FAQ = () => {
           transition={{ duration: 0.5 }}
           className="text-center mb-12"
         >
-          <span className="font-tomato inline-block text-[#009246] text-sm font-semibold tracking-wide uppercase mb-3">
-            FAQ
-          </span>
           <h2 className="font-tomato text-3xl sm:text-4xl font-semibold text-[#1B1B1B] tracking-tight mb-4">
             Perguntas frequentes
           </h2>
@@ -122,28 +119,6 @@ const FAQ = () => {
             ))}
           </Accordion>
         </motion.div>
-{/* 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="mt-14 bg-[#F9FFF6] border border-[#C0FFA5]/50 rounded-2xl p-8 text-center"
-        >
-          <div className="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center mx-auto mb-4">
-            <MessageCircle className="w-6 h-6 text-[#009246]" />
-          </div>
-          <h3 className="text-xl font-semibold text-[#1B1B1B] mb-2">
-            Ainda com dúvida?
-          </h3>
-          <p className="text-[#474747] mb-6 max-w-md mx-auto">
-            Fala com a gente. Nosso time tá pronto pra te ajudar.
-          </p>
-          <Link href="/login">
-            <button className="bg-[#009246] hover:bg-[#006A43] text-white text-sm font-medium px-6 py-3 rounded-2xl transition-colors cursor-pointer">
-              Fale conosco
-            </button>
-          </Link>
-        </motion.div> */}
       </div>
     </section>
   );

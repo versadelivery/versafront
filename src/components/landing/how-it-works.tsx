@@ -43,11 +43,8 @@ const HowItWorks = () => {
           transition={{ duration: 0.5 }}
           className="mb-12 text-center md:mb-16"
         >
-          <span className="font-tomato mb-3 inline-block text-sm font-semibold uppercase tracking-wide text-[#009246]">
-            Como funciona
-          </span>
           <h2 className="font-tomato text-3xl font-semibold tracking-tight text-[#1B1B1B] sm:text-4xl lg:text-5xl">
-            Do link ao pedido entregue
+            Como funciona
           </h2>
         </motion.div>
 

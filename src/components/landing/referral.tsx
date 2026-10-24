@@ -23,9 +23,6 @@ const Referral = () => {
           transition={{ duration: 0.5 }}
           className="text-center mb-10"
         >
-          <span className="font-tomato inline-block text-[#009246] text-sm font-semibold tracking-wide uppercase mb-3">
-            Programa de indicação
-          </span>
           <h2 className="font-tomato text-3xl sm:text-4xl lg:text-5xl font-semibold text-[#1B1B1B] tracking-tight mb-4">
             Indique o VersaDelivery. Ganhe todo mês.
           </h2>
@@ -62,7 +59,7 @@ const Referral = () => {
           </ol>
 
           <Link href="/register" className="block mt-8">
-            <button className="w-full bg-[#1B1B1B] hover:bg-[#7ED957] text-white hover:text-black text-lg font-semibold py-4 rounded-2xl transition-colors cursor-pointer">
+            <button className="w-full bg-[#1B1B1B] hover:bg-[#7ED957] text-white hover:text-black text-lg font-semibold py-4 rounded-xl transition-colors cursor-pointer">
               Quero indicar e ganhar
             </button>
           </Link>

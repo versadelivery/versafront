@@ -101,7 +101,7 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="border-t border-white/10 py-6 text-center">
+        <div className="border-t border-[#333333] py-6 text-center">
           <p className="text-[#858585] text-sm">
             &copy; {new Date().getFullYear()} VersaDelivery. Todos os direitos
             reservados.
