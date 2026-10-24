@@ -339,29 +339,13 @@ export default function GeneralSettingsPage() {
                         <SelectValue placeholder="Selecione a categoria" />
                       </SelectTrigger>
                       <SelectContent className="rounded-md border-[#E5E2DD]">
-                        <SelectItem value="other">Outro</SelectItem>
-                        <SelectItem value="hamburgueria">Hamburgueria</SelectItem>
-                        <SelectItem value="pizzaria">Pizzaria</SelectItem>
-                        <SelectItem value="acaiteria">Açaiteria</SelectItem>
-                        <SelectItem value="padaria">Padaria</SelectItem>
-                        <SelectItem value="confeitaria">Confeitaria</SelectItem>
-                        <SelectItem value="restaurante">Restaurante</SelectItem>
-                        <SelectItem value="lanchonete">Lanchonete</SelectItem>
-                        <SelectItem value="sorveteria">Sorveteria</SelectItem>
-                        <SelectItem value="cafeteria">Cafeteria</SelectItem>
-                        <SelectItem value="bar">Bar</SelectItem>
-                        <SelectItem value="doceria">Doceria</SelectItem>
-                        <SelectItem value="sushi">Sushi / Japonesa</SelectItem>
-                        <SelectItem value="churrascaria">Churrascaria</SelectItem>
-                        <SelectItem value="pastelaria">Pastelaria</SelectItem>
-                        <SelectItem value="marmitaria">Marmitaria</SelectItem>
-                        <SelectItem value="petiscaria">Petiscaria</SelectItem>
-                        <SelectItem value="emporio">Empório</SelectItem>
-                        <SelectItem value="mercado">Mercado</SelectItem>
-                        <SelectItem value="conveniencia">Conveniência</SelectItem>
-                        <SelectItem value="hortifruti">Hortifrútis</SelectItem>
-                        <SelectItem value="frigorifico">Frigorífico</SelectItem>
                         <SelectItem value="acougue">Açougue</SelectItem>
+                        <SelectItem value="frigorifico">Frigorífico</SelectItem>
+                        <SelectItem value="peixaria">Peixaria</SelectItem>
+                        <SelectItem value="hortifruti">Hortifrútis</SelectItem>
+                        <SelectItem value="pizzaria">Pizzaria</SelectItem>
+                        <SelectItem value="hamburgueria">Hamburgueria</SelectItem>
+                        <SelectItem value="other">Outros</SelectItem>
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground">
