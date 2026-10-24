@@ -68,7 +68,7 @@ const HowItWorks = () => {
                   {step.description}
                 </p>
               </div>
-              <div className="rounded-3xl bg-[#EEF8E8] p-5 sm:p-8">{step.visual}</div>
+              <div className="rounded-3xl bg-[#7ED957] p-5 sm:p-8">{step.visual}</div>
             </motion.li>
           ))}
         </ol>

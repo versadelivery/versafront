@@ -57,7 +57,7 @@ const Identity = () => {
                   transition={{ duration: 0.4, delay: 0.1 + index * 0.1 }}
                   className="flex gap-4"
                 >
-                  <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#F1FBE9] text-[#009246]">
+                  <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#7ED957] text-[#1B1B1B]">
                     <Icon className="size-5" />
                   </span>
                   <div>
@@ -68,7 +68,7 @@ const Identity = () => {
               ))}
             </ul>
           </div>
-          <div className="rounded-3xl bg-[#EEF8E8] p-5 sm:p-10">
+          <div className="rounded-3xl bg-[#7ED957] p-5 sm:p-10">
             <BrandCard />
           </div>
         </div>

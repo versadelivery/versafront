@@ -113,7 +113,7 @@ export function WeighWindow({ className }: { className?: string }) {
             <p className="text-sm font-semibold text-[#1B1B1B]">Pedido #1042 · Maria S.</p>
             <p className="text-[11px] text-[#858585]">Entrega por bairro · há 4 min</p>
           </div>
-          <span className="rounded-full bg-[#FFF4D6] px-2.5 py-1 text-[11px] font-semibold text-[#8A6100]">
+          <span className="rounded-full bg-[#F5C84C] px-2.5 py-1 text-[11px] font-semibold text-[#1B1B1B]">
             Em separação
           </span>
         </div>
@@ -124,8 +124,8 @@ export function WeighWindow({ className }: { className?: string }) {
             <p className="text-[11px] text-[#858585]">Pedido: 1,000 kg</p>
           </div>
           <div className="mt-3 grid grid-cols-2 gap-3">
-            <div className="rounded-lg bg-[#F1FBE9] px-3 py-2">
-              <p className="flex items-center gap-1 text-[10px] font-medium text-[#006A43]">
+            <div className="rounded-lg bg-[#7ED957] px-3 py-2">
+              <p className="flex items-center gap-1 text-[10px] font-medium text-[#1B1B1B]">
                 <Scale className="size-3" /> Peso real
               </p>
               <p className="text-lg font-semibold text-[#1B1B1B]">1,125 kg</p>
@@ -154,9 +154,9 @@ export function WeighWindow({ className }: { className?: string }) {
 }
 
 const kdsColumns = [
-  { title: "Novos", tone: "bg-[#EAF2FF] text-[#2676C0]", cards: [["#1044", "João", "2 itens"], ["#1045", "Ana", "4 itens"]] },
-  { title: "Em separação", tone: "bg-[#FFF4D6] text-[#8A6100]", cards: [["#1042", "Maria", "2 itens"], ["#1043", "Carlos", "1 item"]] },
-  { title: "Prontos", tone: "bg-[#E4F6DC] text-[#006A43]", cards: [["#1041", "Paula", "3 itens"]] },
+  { title: "Novos", tone: "bg-[#1B1B1B] text-white", cards: [["#1044", "João", "2 itens"], ["#1045", "Ana", "4 itens"]] },
+  { title: "Em separação", tone: "bg-[#F5C84C] text-[#1B1B1B]", cards: [["#1042", "Maria", "2 itens"], ["#1043", "Carlos", "1 item"]] },
+  { title: "Prontos", tone: "bg-[#7ED957] text-[#1B1B1B]", cards: [["#1041", "Paula", "3 itens"]] },
 ];
 
 export function KdsWindow({ className }: { className?: string }) {
@@ -214,7 +214,7 @@ export function DeliveryWindow({ className }: { className?: string }) {
                   className={cn(
                     "grid size-8 shrink-0 place-items-center rounded-full",
                     active ? "bg-[#009246] text-white" : "bg-[#F4F1EA] text-[#B5B0A6]",
-                    step.current && "ring-4 ring-[#CDEBD9]"
+                    step.current && "ring-4 ring-[#7ED957]"
                   )}
                 >
                   <Icon className="size-4" />
@@ -264,10 +264,10 @@ export function WeightCompare({ className }: { className?: string }) {
           <p className="text-xs text-[#474747]">R$ 69,90</p>
         </div>
         <Scale className="size-5 text-[#009246]" />
-        <div className="rounded-xl bg-[#F1FBE9] p-4 ring-1 ring-[#C0FFA5]">
-          <p className="text-[11px] text-[#006A43]">Peso real</p>
+        <div className="rounded-xl bg-[#7ED957] p-4">
+          <p className="text-[11px] text-[#1B1B1B]">Peso real</p>
           <p className="text-xl font-semibold text-[#1B1B1B]">1,125 kg</p>
-          <p className="text-xs font-semibold text-[#006A43]">R$ 78,64</p>
+          <p className="text-xs font-semibold text-[#1B1B1B]">R$ 78,64</p>
         </div>
       </div>
       <p className="mt-4 text-xs text-[#858585]">
@@ -288,7 +288,7 @@ export function BrandCard({ className }: { className?: string }) {
     >
       <div className="h-20 bg-[#16663A]" />
       <div className="-mt-8 px-5 pb-5">
-        <div className="grid size-16 place-items-center rounded-2xl border-4 border-white bg-[#F1FBE9] text-xs font-semibold text-[#009246]">
+        <div className="grid size-16 place-items-center rounded-2xl border-4 border-white bg-[#7ED957] text-xs font-semibold text-[#1B1B1B]">
           Sua logo
         </div>
         <p className="mt-3 text-base font-semibold text-[#1B1B1B]">Nome do seu açougue</p>

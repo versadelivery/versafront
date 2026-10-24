@@ -15,7 +15,7 @@ const Referral = () => {
   const isInView = useInView(ref, { once: true, amount: 0.1 });
 
   return (
-    <section id="indicacao" ref={ref} className="scroll-mt-24 py-16 md:py-24 bg-[#FFFDF6]">
+    <section id="indicacao" ref={ref} className="scroll-mt-24 py-16 md:py-24 bg-[#1B1B1B]">
       <div className="max-w-[800px] mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -23,10 +23,10 @@ const Referral = () => {
           transition={{ duration: 0.5 }}
           className="text-center mb-10"
         >
-          <h2 className="font-tomato text-3xl sm:text-4xl lg:text-5xl font-semibold text-[#1B1B1B] tracking-tight mb-4">
+          <h2 className="font-tomato text-3xl sm:text-4xl lg:text-5xl font-semibold text-white tracking-tight mb-4">
             Indique o VersaDelivery. Ganhe todo mês.
           </h2>
-          <p className="text-lg text-[#474747] leading-relaxed">
+          <p className="text-lg text-[#E8E4DF] leading-relaxed">
             Conhece donos de açougues que precisam organizar o delivery?
             Apresente o VersaDelivery e receba{" "}
             <strong>12% da mensalidade dos clientes indicados que contratarem um plano pago</strong>.
@@ -37,7 +37,7 @@ const Referral = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="bg-white rounded-2xl border border-[#E8E4DF] p-6 sm:p-10"
+          className="bg-[#FFFDF6] rounded-2xl p-6 sm:p-10"
         >
           <p className="text-xs font-semibold tracking-wide uppercase text-[#858585] mb-3">
             Programa de indicação

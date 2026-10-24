@@ -28,10 +28,10 @@ function DemoVideo() {
         controls={started}
         playsInline
         preload="metadata"
-        poster="/img/picanha.jpg"
+        poster="/img/video-poster.png"
         onError={() => setFailed(true)}
         onEnded={() => setStarted(false)}
-        className="block aspect-[9/20] w-full bg-black object-cover"
+        className="block aspect-[877/1600] w-full bg-black object-contain"
       >
         <source src="/video-landing-page.mp4" type="video/mp4" />
       </video>
@@ -145,7 +145,9 @@ const Hero = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
           >
-            <DemoVideo />
+            <div className="rounded-3xl bg-[#7ED957] p-6 sm:p-10">
+              <DemoVideo />
+            </div>
           </motion.div>
         </div>
       </div>
