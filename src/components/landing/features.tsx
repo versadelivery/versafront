@@ -1,82 +1,53 @@
 "use client";
 
 import { useRef } from "react";
-import Link from "next/link";
 import { motion, useInView } from "framer-motion";
 import {
-  LayoutGrid,
-  Clock,
-  Headset,
-  ShieldCheck,
-  Users,
-  TrendingUp,
   Scale,
-  Smartphone,
+  ShoppingBag,
   Zap,
+  MonitorSmartphone,
+  Printer,
+  SlidersHorizontal,
 } from "lucide-react";
-
-const bigFeatures = [
-  {
-    icon: <Scale className="w-7 h-7 text-[#009246]" />,
-    badge: "Exclusivo",
-    title: "Venda por peso, do seu jeito",
-    description:
-      "Seu cliente escolhe o peso exato que quer. Perfeito pra açougue, padaria, hortifrúti. Nenhuma outra plataforma faz isso.",
-  },
-  {
-    icon: <Smartphone className="w-7 h-7 text-[#6358DE]" />,
-    badge: "Simples",
-    title: "Loja pronta em minutos",
-    description:
-      "Cadastre seus produtos, monte o catálogo e comece a vender. Sem complicação. Sua loja online rodando hoje.",
-  },
-  {
-    icon: <Zap className="w-7 h-7 text-[#2676C0]" />,
-    badge: "Tempo real",
-    title: "Gerencie tudo ao vivo",
-    description:
-      "Painel kanban com pedidos em tempo real. Arraste, atualize e notifique seus clientes na hora.",
-  },
-];
 
 const features = [
   {
-    icon: <LayoutGrid className="w-6 h-6" />,
-    title: "Interface intuitiva",
-    description: "Gerenciar pedidos e entregas nunca foi tão fácil.",
+    icon: <Scale className="w-6 h-6" />,
+    title: "Venda por peso ou unidade",
+    description:
+      "Atenda produtos com peso variável e produtos vendidos por unidade, conforme as configurações do catálogo.",
   },
   {
-    icon: <Clock className="w-6 h-6" />,
-    title: "Tempo real",
-    description: "Acompanhe vendas e tome decisões com dados na mão.",
+    icon: <ShoppingBag className="w-6 h-6" />,
+    title: "Catálogo online",
+    description:
+      "Organize categorias, grupos, produtos, imagens e adicionais para facilitar a escolha do cliente.",
   },
   {
-    icon: <Headset className="w-6 h-6" />,
-    title: "Suporte dedicado",
-    description: "Time pronto pra resolver qualquer problema rápido.",
+    icon: <Zap className="w-6 h-6" />,
+    title: "Pedidos ao vivo",
+    description:
+      "Acompanhe novos pedidos e mudanças de status em tempo real pelo painel.",
   },
   {
-    icon: <ShieldCheck className="w-6 h-6" />,
-    title: "Segurança de verdade",
-    description: "Dados dos seus clientes protegidos como deve ser.",
+    icon: <MonitorSmartphone className="w-6 h-6" />,
+    title: "Painel em diferentes dispositivos",
+    description: "Acompanhe os pedidos pelo celular, tablet ou computador.",
   },
   {
-    icon: <TrendingUp className="w-6 h-6" />,
-    title: "Análises detalhadas",
-    description: "Métricas e insights pra entender seu negócio melhor.",
+    icon: <Printer className="w-6 h-6" />,
+    title: "Impressão opcional",
+    description:
+      "Se desejar, utilize uma impressora compatível para imprimir os pedidos e auxiliar na separação e conferência.",
   },
   {
-    icon: <Users className="w-6 h-6" />,
-    title: "Multiusuários",
-    description: "Acesso pra toda a equipe com permissões diferentes.",
+    icon: <SlidersHorizontal className="w-6 h-6" />,
+    title: "Personalização do catálogo",
+    description:
+      "Configure produtos, adicionais, instruções de preparo e opções de acordo com a realidade do seu negócio.",
   },
 ];
-
-const accentColors: Record<number, { bg: string; text: string; border: string }> = {
-  0: { bg: "bg-[#F9FFF6]", text: "text-[#006A43]", border: "border-[#C0FFA5]" },
-  1: { bg: "bg-[#F5F3FF]", text: "text-[#6358DE]", border: "border-[#C4BFFF]" },
-  2: { bg: "bg-[#EFF6FF]", text: "text-[#2676C0]", border: "border-[#93C5FD]" },
-};
 
 const Features = () => {
   const ref = useRef(null);
@@ -89,62 +60,27 @@ const Features = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.5 }}
-          className="text-center mb-16"
+          className="text-center mb-14"
         >
           <span className="font-tomato inline-block text-[#009246] text-sm font-semibold tracking-wide uppercase mb-3">
             Recursos
           </span>
           <h2 className="font-tomato text-3xl sm:text-4xl lg:text-5xl font-semibold text-[#1B1B1B] tracking-tight mb-4">
-            Tudo pra você vender mais
+            Recursos do VersaDelivery
           </h2>
           <p className="text-lg text-[#474747] max-w-2xl mx-auto">
-            Ferramentas que fazem diferença no dia a dia da sua operação de
-            delivery.
+            Tudo para organizar seus pedidos de delivery em um só lugar.
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-6 mb-16">
-          {bigFeatures.map((feature, index) => {
-            const colors = accentColors[index];
-            return (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                animate={isInView ? { opacity: 1, y: 0 } : {}}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="bg-white rounded-2xl hover:shadow-[0_2px_4px_-2px_rgba(27,27,27,.1),0_4px_8px_-2px_rgba(27,27,27,.14)] transition-shadow duration-300 p-7 flex flex-col"
-              >
-                <div className="flex items-center gap-3 mb-4">
-                  <div
-                    className={`w-12 h-12 rounded-2xl flex items-center justify-center`}
-                  >
-                    {feature.icon}
-                  </div>
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${colors.text} ${colors.border}`}
-                  >
-                    {feature.badge}
-                  </span>
-                </div>
-                <h3 className="text-xl font-semibold text-[#1B1B1B] mb-2">
-                  {feature.title}
-                </h3>
-                <p className="text-[#474747] text-sm leading-relaxed flex-1">
-                  {feature.description}
-                </p>
-              </motion.div>
-            );
-          })}
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {features.map((feature, index) => (
             <motion.div
-              key={index}
+              key={feature.title}
               initial={{ opacity: 0, y: 15 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.4, delay: 0.3 + index * 0.05 }}
-              className="bg-white rounded-2xl border-2 border-black p-5 md:p-6 hover:bg-[#7ED957] hover:border-[#7ED957] transition-colors duration-200 cursor-default"
+              transition={{ duration: 0.4, delay: 0.1 + index * 0.05 }}
+              className="bg-white rounded-2xl border-2 border-black p-6 hover:bg-[#7ED957] hover:border-[#7ED957] transition-colors duration-200 cursor-default"
             >
               <div className="w-10 h-10 rounded-xl bg-[#F9FFF6] flex items-center justify-center mb-3 text-[#009246]">
                 {feature.icon}
@@ -152,25 +88,12 @@ const Features = () => {
               <h3 className="text-base font-semibold text-[#1B1B1B] mb-1">
                 {feature.title}
               </h3>
-              <p className="text-sm text-[#858585] leading-relaxed">
+              <p className="text-sm text-[#474747] leading-relaxed">
                 {feature.description}
               </p>
             </motion.div>
           ))}
         </div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.5, delay: 0.6 }}
-          className="text-center mt-14"
-        >
-          <Link href="/register">
-                <button className="bg-[#1B1B1B] hover:bg-[#7ED957] text-white hover:text-black text-xl font-semibold px-16 py-6 rounded-2xl transition-colors cursor-pointer">
-                  Comece agora
-                </button>
-              </Link>
-        </motion.div>
       </div>
     </section>
   );

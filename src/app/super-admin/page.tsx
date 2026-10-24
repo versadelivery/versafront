@@ -86,6 +86,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   hortifruti: "Hortifrútis",
   frigorifico: "Frigorífico",
   acougue: "Açougue",
+  peixaria: "Peixaria",
 };
 
 function formatCurrency(value: number) {

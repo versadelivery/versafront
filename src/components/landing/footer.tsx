@@ -1,73 +1,59 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Phone, Mail } from "lucide-react";
 import logo from "../../../public/logo/logo-inline.svg";
-import { getToken } from "@/lib/auth";
 
-const productLinks = [
-  { name: "Catálogo online", href: "/admin/catalog" },
-  { name: "Gestão de pedidos", href: "/admin/pedidos" },
-  { name: "Painel admin", href: "/admin" },
-  { name: "PDV integrado", href: "/admin/pdv" },
-  { name: "Relatórios", href: "/admin/relatorios" },
+const WHATSAPP_URL = "https://wa.me/5585991520090";
+
+const productItems = [
+  "Catálogo online",
+  "Gestão de pedidos",
+  "Painel administrativo",
+  "PDV integrado",
+  "Relatórios",
 ];
 
-const resourceLinks = [
-  { name: "Central de ajuda", href: "/" },
-  { name: "Blog", href: "/" },
-  { name: "Suporte", href: "/" },
-  { name: "Status da plataforma", href: "/" },
-];
+// ponytail: Central de ajuda, Blog e Status entram só quando as páginas existirem (pedido do cliente)
+const helpLinks = [{ name: "Suporte", href: WHATSAPP_URL, external: true }];
 
 const legalLinks = [
   { name: "Termos de uso", href: "/termos" },
-  { name: "Privacidade", href: "/privacidade" },
-  { name: "Cookies", href: "/privacidade#cookies" },
+  { name: "Política de privacidade", href: "/privacidade" },
+  { name: "Política de cookies", href: "/privacidade#cookies" },
 ];
 
+const linkClass = "text-[#858585] hover:text-white text-sm transition-colors";
+
 const Footer = () => {
-  const [isAdmin, setIsAdmin] = useState(false);
-
-  useEffect(() => {
-    setIsAdmin(!!getToken());
-  }, []);
-
-  if (!isAdmin) return null;
-
   return (
     <footer className="bg-[#1B1B1B] text-white">
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="py-14 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-10">
-          <div className="col-span-2 lg:col-span-2">
+        <div className="py-14 grid grid-cols-2 md:grid-cols-4 gap-10">
+          <div className="col-span-2 md:col-span-1">
             <Link href="/" className="inline-block mb-5">
-              <Image
-                src={logo}
-                alt="VersaDelivery"
-                width={150}
-                height={48}
-              />
+              <Image src={logo} alt="VersaDelivery" width={150} height={48} />
             </Link>
             <p className="text-[#858585] text-sm leading-relaxed mb-6 max-w-xs">
-              A plataforma de delivery que se adapta ao seu negócio. Flexibilidade
-              e controle total pra você e seus clientes.
+              Delivery para açougues com venda por peso.
             </p>
             <div className="space-y-3">
               <a
-                href="tel:+5585991520090"
+                href={WHATSAPP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex items-center gap-2 text-[#858585] hover:text-white transition-colors text-sm"
               >
                 <Phone className="w-4 h-4 text-[#009246]" />
-                +55 (85) 99152-0090
+                WhatsApp: +55 (85) 99152-0090
               </a>
               <a
                 href="mailto:contato@versadelivery.com.br"
                 className="flex items-center gap-2 text-[#858585] hover:text-white transition-colors text-sm"
               >
                 <Mail className="w-4 h-4 text-[#009246]" />
-                contato@versadelivery.com.br
+                E-mail: contato@versadelivery.com.br
               </a>
             </div>
           </div>
@@ -75,30 +61,27 @@ const Footer = () => {
           <div>
             <h4 className="text-sm font-semibold text-white mb-4">Produto</h4>
             <ul className="space-y-2.5">
-              {productLinks.map((link) => (
-                <li key={link.name}>
-                  <Link
-                    href={link.href}
-                    className="text-[#858585] hover:text-white text-sm transition-colors"
-                  >
-                    {link.name}
-                  </Link>
+              {productItems.map((item) => (
+                <li key={item} className="text-[#858585] text-sm">
+                  {item}
                 </li>
               ))}
             </ul>
           </div>
 
           <div>
-            <h4 className="text-sm font-semibold text-white mb-4">Recursos</h4>
+            <h4 className="text-sm font-semibold text-white mb-4">Ajuda</h4>
             <ul className="space-y-2.5">
-              {resourceLinks.map((link) => (
+              {helpLinks.map((link) => (
                 <li key={link.name}>
-                  <Link
+                  <a
                     href={link.href}
-                    className="text-[#858585] hover:text-white text-sm transition-colors"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={linkClass}
                   >
                     {link.name}
-                  </Link>
+                  </a>
                 </li>
               ))}
             </ul>
@@ -109,10 +92,7 @@ const Footer = () => {
             <ul className="space-y-2.5">
               {legalLinks.map((link) => (
                 <li key={link.name}>
-                  <Link
-                    href={link.href}
-                    className="text-[#858585] hover:text-white text-sm transition-colors"
-                  >
+                  <Link href={link.href} className={linkClass}>
                     {link.name}
                   </Link>
                 </li>
@@ -121,16 +101,11 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="border-t border-white/10 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="border-t border-white/10 py-6 text-center">
           <p className="text-[#858585] text-sm">
             &copy; {new Date().getFullYear()} VersaDelivery. Todos os direitos
             reservados.
           </p>
-          <div className="flex items-center gap-1">
-            <span className="text-[#858585] text-xs">Feito com</span>
-            <span className="text-[#009246] text-xs mx-0.5">●</span>
-            <span className="text-[#858585] text-xs">no Brasil</span>
-          </div>
         </div>
       </div>
     </footer>

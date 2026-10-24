@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import {
   Accordion,
@@ -8,61 +8,77 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { BillingTier, DEFAULT_BILLING_TIERS, formatTierAmount, formatTierRevenue, getBillingTiers } from "@/services/billing-tiers";
 
-const buildFaqItems = (tiers: BillingTier[]) => [
+const faqItems = [
   {
-    question: "Quais são as faixas de preço?",
+    question: "Quanto custa o VersaDelivery?",
+    answer:
+      "Você pode começar gratuitamente com até R$ 799,99 em vendas mensais. Acima desse limite, aplica-se a mensalidade da faixa correspondente, de R$ 39 a R$ 299.",
+  },
+  {
+    question: "Como funciona a cobrança?",
+    answer:
+      "O modelo comercial prevê fechamento mensal, pagamento por Pix com vencimento no dia 5 e prazo de regularização até o dia 10. Após esse prazo, a loja poderá ficar indisponível até a regularização, conforme as condições contratuais.",
+  },
+  {
+    question: "Como sei em qual faixa estou?",
+    answer:
+      "O painel apresenta sua faixa de faturamento. Os critérios para apuração e mudança de faixa seguem as regras comerciais do VersaDelivery.",
+  },
+  {
+    question: "Posso vender produtos por peso?",
+    answer:
+      "Sim. Seu cliente escolhe o produto e a quantidade desejada. Após a pesagem, você atualiza o peso real e o valor correspondente.",
+  },
+  {
+    question: "Também posso vender por unidade?",
+    answer:
+      "Sim. O catálogo pode incluir produtos vendidos por peso ou por unidade, conforme o tipo de produto.",
+  },
+  {
+    question: "O VersaDelivery cobra comissão sobre as vendas?",
+    answer:
+      "Não. Você paga a mensalidade do plano correspondente à faixa de faturamento, sem comissão por pedido.",
+  },
+  {
+    question: "Preciso de uma impressora?",
+    answer:
+      "Não. Você pode acompanhar os pedidos pelo painel KDS em um celular, tablet ou computador. A impressora é opcional e pode ser utilizada para imprimir cupons de apoio à separação e à entrega.",
+  },
+  {
+    question: "O VersaDelivery emite nota fiscal?",
     answer: (
       <>
-        <p>A mensalidade é definida pelo faturamento mensal da loja na plataforma:</p>
-        <ul className="mt-3 list-disc space-y-1 pl-5">
-          {tiers.map((tier) => <li key={tier.key}>{formatTierRevenue(tier)}: {formatTierAmount(tier.amount)}.</li>)}
-        </ul>
+        <p>
+          Atualmente, o VersaDelivery não possui integração para emissão de
+          documentos fiscais. O lojista deve providenciar a emissão dos
+          documentos exigidos para sua operação por meio do sistema ou
+          procedimento fiscal adequado.
+        </p>
+        <p className="mt-3">O cupom interno do pedido não substitui o documento fiscal.</p>
       </>
     ),
   },
   {
-    question: "Como o Versa se adapta ao meu negócio?",
+    question: "Quanto tempo leva para começar?",
     answer:
-      "O Versa foi feito pra ser flexível. Você personaliza produtos, métodos de entrega, horários, áreas de cobertura e muito mais. A plataforma se adapta ao seu modelo, não o contrário.",
+      "Você pode começar cadastrando os produtos, configurando o catálogo e compartilhando o link da sua loja. O tempo necessário depende da quantidade de produtos e das informações que deseja cadastrar.",
   },
   {
-    question: "Preciso de algum equipamento especial?",
+    question: "Como funciona o programa de indicação?",
     answer:
-      "Não. O Versa roda no navegador, então basta um celular, tablet ou computador com internet. Sem instalar nada, sem servidor, sem dor de cabeça.",
+      "Você indica o VersaDelivery a outros lojistas e pode receber 12% da mensalidade dos clientes indicados que contratarem planos pagos, conforme as regras do programa. O painel permite acompanhar o faturamento dos indicados e consultar a comissão correspondente.",
   },
   {
-    question: "Quanto tempo leva pra começar a usar?",
+    question: "Como recebo minha comissão?",
     answer:
-      "A maioria dos negócios fica operacional em 1 a 2 dias. Nosso time ajuda na configuração inicial e no treinamento da equipe.",
-  },
-  {
-    question: "Dá pra vender produtos por peso?",
-    answer:
-      "Sim, essa é uma das funcionalidades que só o Versa tem. O cliente escolhe o peso que quer, você define mínimo e máximo. Perfeito pra açougues, padarias e hortifrútis.",
-  },
-  {
-    question: "Tem comissão sobre as vendas?",
-    answer:
-      "Não há comissão sobre as vendas da sua própria loja. A VersaDelivery cobra uma mensalidade conforme a faixa de faturamento.",
-  },
-  {
-    question: "Como funciona o programa de indicações?",
-    answer:
-      "Lojistas podem indicar outras lojas usando um link exclusivo. Quando uma loja indicada paga a mensalidade, o indicador recebe 12% desse valor como comissão. Essa comissão é do programa de indicações e não é uma taxa sobre as vendas.",
+      "Atualmente, a apuração e o pagamento seguem o processo manual vigente do programa. Os valores e as condições aplicáveis podem ser consultados conforme as regras de indicação.",
   },
 ];
 
 const FAQ = () => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, amount: 0.1 });
-  const [tiers, setTiers] = useState(DEFAULT_BILLING_TIERS);
-  const faqItems = buildFaqItems(tiers);
-
-  useEffect(() => {
-    getBillingTiers().then(setTiers).catch(() => {});
-  }, []);
 
   return (
     <section id="faq" ref={ref} className="py-20 md:py-28 bg-[#FFFDF6]">
