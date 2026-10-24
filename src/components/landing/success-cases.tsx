@@ -17,7 +17,7 @@ const SuccessCases = () => {
   if (successCases.length === 0) return null;
 
   return (
-    <section id="casos" className="py-20 md:py-28 bg-[#FFFDF6]">
+    <section id="casos" className="scroll-mt-24 py-16 md:py-24 bg-[#FFFDF6]">
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <span className="font-tomato inline-block text-[#009246] text-sm font-semibold tracking-wide uppercase mb-3">

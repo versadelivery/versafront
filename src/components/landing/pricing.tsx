@@ -22,7 +22,7 @@ const Pricing = () => {
   }, []);
 
   return (
-    <section id="planos" ref={ref} className="py-20 md:py-28 bg-[#FFFDF6]">
+    <section id="planos" ref={ref} className="scroll-mt-24 py-16 md:py-24 bg-white">
       <div className="max-w-[800px] mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -46,28 +46,37 @@ const Pricing = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="bg-white rounded-2xl p-4 sm:p-6"
+          className="rounded-2xl border border-[#E8E4DF] bg-[#FFFDF6] p-3 sm:p-5"
         >
-          <table className="w-full text-left text-sm sm:text-base">
-            <thead>
-              <tr className="border-b border-[#E8E4DF] text-[#1B1B1B]">
-                <th className="py-3 pr-2 font-semibold">Plano</th>
-                <th className="py-3 px-2 font-semibold">Faturamento mensal</th>
-                <th className="py-3 pl-2 font-semibold text-right">Mensalidade</th>
-              </tr>
-            </thead>
-            <tbody>
-              {tiers.map((tier) => (
-                <tr key={tier.key} className="border-b border-[#E8E4DF] last:border-0">
-                  <td className="py-3 pr-2 font-medium text-[#1B1B1B]">{tier.name}</td>
-                  <td className="py-3 px-2 text-[#474747]">{formatTierRevenue(tier)}</td>
-                  <td className="py-3 pl-2 text-right font-semibold text-[#1B1B1B]">
-                    {formatMonthly(tier.amount)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <ul>
+            {tiers.map((tier) => (
+              <li
+                key={tier.key}
+                className={`flex items-center justify-between gap-4 rounded-xl px-3 py-3.5 sm:px-4 ${
+                  tier.amount === 0 ? "bg-[#F1FBE9]" : "border-b border-[#E8E4DF] last:border-0"
+                }`}
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  <span
+                    aria-hidden
+                    className="size-3 shrink-0 rounded-full border border-black/10"
+                    style={{ backgroundColor: tier.color }}
+                  />
+                  <div className="min-w-0">
+                    <p className="font-semibold text-[#1B1B1B]">Plano {tier.name}</p>
+                    <p className="text-sm text-[#474747]">{formatTierRevenue(tier)}</p>
+                  </div>
+                </div>
+                <p
+                  className={`shrink-0 text-lg font-semibold ${
+                    tier.amount === 0 ? "text-[#009246]" : "text-[#1B1B1B]"
+                  }`}
+                >
+                  {formatMonthly(tier.amount)}
+                </p>
+              </li>
+            ))}
+          </ul>
         </motion.div>
 
         <p className="mt-6 text-sm text-[#858585] text-center">

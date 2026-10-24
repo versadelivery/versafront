@@ -1,99 +1,165 @@
 "use client";
 
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { Check, Play } from "lucide-react";
+
+const trustItems = [
+  "Grátis até R$ 799,99 em vendas mensais",
+  "Sem comissão por pedido",
+  "Sem cadastro de cartão de crédito",
+];
+
+function DemoVideo() {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [started, setStarted] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  const play = () => {
+    setStarted(true);
+    videoRef.current?.play().catch(() => setFailed(true));
+  };
+
+  return (
+    <div className="relative mx-auto w-full max-w-[250px] sm:max-w-[280px] overflow-hidden rounded-[2.2rem] border-[7px] border-[#1B1B1B] bg-black shadow-[0_30px_60px_-24px_rgba(27,27,27,.5)]">
+      <video
+        ref={videoRef}
+        controls={started}
+        playsInline
+        preload="metadata"
+        poster="/img/picanha.jpg"
+        onError={() => setFailed(true)}
+        onEnded={() => setStarted(false)}
+        className="block aspect-[9/20] w-full bg-black object-cover"
+      >
+        <source src="/video-landing-page.mp4" type="video/mp4" />
+      </video>
+
+      {!started && (
+        <button
+          type="button"
+          onClick={play}
+          aria-label="Assistir ao vídeo demonstrativo"
+          className="absolute inset-0 flex flex-col items-center justify-end gap-3 bg-gradient-to-t from-black/70 via-black/10 to-transparent pb-8 text-white cursor-pointer"
+        >
+          <span className="grid size-16 place-items-center rounded-full bg-white text-[#1B1B1B] shadow-lg transition-transform hover:scale-105">
+            <Play className="ml-1 size-7 fill-current" />
+          </span>
+          <span className="px-4 text-center text-sm font-semibold">
+            Veja o pedido por peso na prática
+          </span>
+        </button>
+      )}
+
+      {failed && (
+        <p className="absolute inset-x-3 bottom-3 rounded-lg bg-white p-3 text-center text-xs text-[#1B1B1B]">
+          Não foi possível reproduzir aqui.{" "}
+          <a href="/video-landing-page.mp4" className="font-semibold underline">
+            Abrir o vídeo
+          </a>
+        </p>
+      )}
+    </div>
+  );
+}
 
 const Hero = () => {
   return (
     <section
       id="home"
-      className="relative pt-36 pb-24 md:pt-44 md:pb-32 rounded-b-[2.5rem] md:rounded-b-[4rem] overflow-hidden"
+      className="relative overflow-hidden rounded-b-[2rem] pb-16 pt-28 sm:pt-32 md:rounded-b-[4rem] md:pb-24 lg:pt-40"
     >
-      <div className="max-w-[900px] mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <motion.h1
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="font-tomato text-4xl sm:text-5xl lg:text-[3.5rem] font-semibold text-[#1B1B1B] leading-[1.12] tracking-tight mb-6"
-        >
-          Seu açougue online.
-          <br />
-          <span className="text-[#009246]">Venda por peso, sem complicação.</span>
-        </motion.h1>
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-24 top-24 size-[420px] rounded-full bg-[#7ED957]/25 blur-3xl"
+      />
+      <div className="relative mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-8">
+        <div className="grid items-center gap-12 lg:grid-cols-[1.15fr_1fr] lg:gap-16">
+          <div className="text-center lg:text-left">
+            <motion.span
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="mb-5 inline-block rounded-full border border-[#C0FFA5] bg-[#F1FBE9] px-4 py-1.5 text-sm font-semibold text-[#006A43]"
+            >
+              Delivery para açougues com venda por peso
+            </motion.span>
 
-        <motion.p
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="text-base sm:text-lg text-[#463b3f] max-w-2xl mx-auto mb-10 leading-relaxed"
-        >
-          Crie sua loja online, receba pedidos em tempo real e atualize o peso e
-          o valor dos produtos após a pesagem. Tudo em um só sistema, sem pagar
-          comissão por pedido.
-        </motion.p>
+            <motion.h1
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="font-tomato mb-6 text-[2rem] font-semibold leading-[1.1] tracking-tight text-[#1B1B1B] sm:text-5xl lg:text-[3.5rem]"
+            >
+              Seu açougue online.{" "}
+              <span className="text-[#009246]">Venda por peso, sem complicação.</span>
+            </motion.h1>
 
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="max-w-[720px] mx-auto mb-10"
-        >
-          <video
-            controls
-            playsInline
-            preload="metadata"
-            poster="/img/picanha.jpg"
-            className="w-full aspect-video rounded-3xl bg-black object-cover shadow-[0_8px_30px_rgba(27,27,27,.18)]"
+            <motion.p
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="mx-auto mb-8 max-w-xl text-base leading-relaxed text-[#463b3f] sm:text-lg lg:mx-0"
+            >
+              Crie sua loja online, receba pedidos em tempo real e atualize o
+              peso e o valor dos produtos após a pesagem. Tudo em um só sistema,
+              sem pagar comissão por pedido.
+            </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="flex justify-center lg:justify-start"
+            >
+              <Link href="/register" className="w-full sm:w-auto">
+                <button className="w-full cursor-pointer rounded-2xl bg-[#1B1B1B] px-8 py-5 text-lg font-semibold text-white transition-colors hover:bg-[#7ED957] hover:text-black sm:px-14 sm:text-xl">
+                  Criar minha loja grátis
+                </button>
+              </Link>
+            </motion.div>
+
+            <motion.ul
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.5 }}
+              className="mt-6 flex flex-col items-center gap-2 text-sm text-[#463b3f] sm:text-base lg:items-start"
+            >
+              {trustItems.map((item) => (
+                <li key={item} className="flex items-center gap-2">
+                  <Check className="size-4 shrink-0 text-[#009246]" />
+                  {item}
+                </li>
+              ))}
+            </motion.ul>
+
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.6 }}
+              className="mt-8 border-t border-[#E8E4DF] pt-6"
+            >
+              <p className="font-semibold text-[#1B1B1B]">
+                Quer indicar o VersaDelivery e ganhar?
+              </p>
+              <a
+                href="#indicacao"
+                className="font-medium text-[#009246] hover:underline"
+              >
+                Conheça o programa de indicação.
+              </a>
+            </motion.div>
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
           >
-            <source src="/video-landing-page.mp4" type="video/mp4" />
-          </video>
-          <p className="mt-4 text-sm text-[#463b3f]">
-            Veja como o cliente escolhe a picanha, define o peso, personaliza o
-            preparo e finaliza o pedido.
-          </p>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="flex justify-center"
-        >
-          <Link href="/register">
-            <button className="bg-[#1B1B1B] hover:bg-[#7ED957] text-white hover:text-black text-xl font-semibold px-12 sm:px-16 py-6 rounded-2xl transition-colors cursor-pointer">
-              Criar minha loja grátis
-            </button>
-          </Link>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.5 }}
-          className="mt-6 space-y-1 text-base text-[#463b3f]"
-        >
-          <p>
-            Grátis até R$ 799,99 em vendas mensais · Sem comissão por pedido ·
-            Sem cadastro de cartão de crédito.
-          </p>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.6 }}
-          className="mt-10 pt-8 border-t border-[#E8E4DF]"
-        >
-          <p className="font-semibold text-[#1B1B1B] mb-1">
-            Quer indicar o VersaDelivery e ganhar?
-          </p>
-          <a
-            href="#indicacao"
-            className="text-[#009246] hover:underline font-medium"
-          >
-            Conheça o programa de indicação.
-          </a>
-        </motion.div>
+            <DemoVideo />
+          </motion.div>
+        </div>
       </div>
     </section>
   );
