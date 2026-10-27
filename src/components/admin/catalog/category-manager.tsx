@@ -63,16 +63,18 @@ export function CategorySection({ category, position, groupCount, expanded, onTo
           type="button"
           onClick={onToggleExpanded}
           aria-expanded={expanded}
-          className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 rounded-md py-1 text-left hover:bg-[#FAF9F7]"
+          className="group/toggle flex min-w-0 flex-1 cursor-pointer items-center gap-3 rounded-md py-1 text-left hover:bg-[#FAF9F7]"
         >
-          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-xs font-semibold text-primary">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-black text-sm font-semibold text-white">
             {position ?? <Tags className="h-3.5 w-3.5" />}
           </span>
           <span className={`min-w-0 flex-1 ${inactive ? "opacity-60" : ""}`}>
             <span className="block truncate font-tomato text-base font-semibold text-gray-900">{name}</span>
             <span className="block truncate text-xs text-muted-foreground">{groupsLabel} · {status}</span>
           </span>
-          <ChevronDown className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${expanded ? "rotate-180" : ""}`} />
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-gray-300 bg-white text-gray-900 shadow-sm transition-colors group-hover/toggle:border-black group-hover/toggle:bg-gray-100" title={expanded ? "Recolher" : "Expandir"}>
+            <ChevronDown className={`h-6 w-6 transition-transform ${expanded ? "rotate-180" : ""}`} strokeWidth={2.5} />
+          </span>
         </button>
 
         {category && (
