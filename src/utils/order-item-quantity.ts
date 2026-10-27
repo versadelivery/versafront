@@ -11,7 +11,8 @@ export const orderItemQuantityLabel = (item: {
   quantity?: number | string | null;
 }) => {
   if (isWeightItem(item) && item.weight != null) {
-    return `${formatWeight(Number(item.weight))} ${item.item_type === 'weight_per_g' ? 'g' : 'kg'}`;
+    const weight = `${formatWeight(Number(item.weight))} ${item.item_type === 'weight_per_g' ? 'g' : 'kg'}`;
+    return Number(item.quantity) > 1 ? `${item.quantity}x ${weight}` : weight;
   }
   return `${item.quantity}x`;
 };

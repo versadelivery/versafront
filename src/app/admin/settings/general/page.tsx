@@ -44,6 +44,7 @@ export default function GeneralSettingsPage() {
         address_complement: shop.address_complement || "",
         address_neighborhood: shop.address_neighborhood || "",
         address_city: shop.address_city || "",
+        address_state: shop.address_state || "",
         email: shop.email || "",
         slug: shop.slug,
         image: null,
@@ -143,7 +144,7 @@ export default function GeneralSettingsPage() {
     }
 
     // Endereço estruturado: vazio (loja antiga) ou completo. Preencher só uma parte deixa o endereço pela metade.
-    const addressFields = ["address_street", "address_number", "address_neighborhood", "address_city"] as const;
+    const addressFields = ["address_street", "address_number", "address_neighborhood", "address_city", "address_state"] as const;
     const anyAddress = addressFields.some((key) => String(formData[key] ?? "").trim() !== "") ||
       String(formData.address_complement ?? "").trim() !== "";
     if (anyAddress) {
@@ -151,6 +152,7 @@ export default function GeneralSettingsPage() {
       if (!String(formData.address_number ?? "").trim()) errors.address_number = "Informe o número (use S/N se não houver)";
       if (!String(formData.address_neighborhood ?? "").trim()) errors.address_neighborhood = "Informe o bairro";
       if (!String(formData.address_city ?? "").trim()) errors.address_city = "Informe a cidade";
+      if (!/^[A-Za-z]{2}$/.test(String(formData.address_state ?? "").trim())) errors.address_state = "Informe a UF (2 letras)";
     }
 
     if (formData.auto_open_cash_register && !formData.auto_open_cash_register_time) {
@@ -319,7 +321,7 @@ export default function GeneralSettingsPage() {
                       name="description"
                       value={formData.description || ""}
                       onChange={handleInputChange}
-                      placeholder="As melhores pizzas artesanais da cidade"
+                      placeholder="As melhores carnes da cidade"
                       className="min-h-24 text-base rounded-md border-[#E5E2DD] focus-visible:ring-primary"
                     />
                     <p className="text-xs text-muted-foreground">
@@ -455,6 +457,19 @@ export default function GeneralSettingsPage() {
                         className={`h-10 rounded-md border-[#E5E2DD] ${fieldErrors.address_city ? "border-red-400" : ""}`}
                       />
                       {fieldErrors.address_city && <p className="text-xs text-red-500">{fieldErrors.address_city}</p>}
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="address_state" className="text-xs text-muted-foreground">Estado (UF)</Label>
+                      <Input
+                        id="address_state"
+                        name="address_state"
+                        value={formData.address_state || ""}
+                        onChange={handleInputChange}
+                        maxLength={2}
+                        placeholder="Ex: CE"
+                        className={`h-10 rounded-md border-[#E5E2DD] uppercase ${fieldErrors.address_state ? "border-red-400" : ""}`}
+                      />
+                      {fieldErrors.address_state && <p className="text-xs text-red-500">{fieldErrors.address_state}</p>}
                     </div>
                   </div>
                   <p className="text-xs text-muted-foreground">

@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import { getOwnerEmailError } from "@/utils/registration-error";
 import { StoreAddressStep, StorePin } from "@/components/auth/store-address-step";
 
-const ADDRESS_FIELDS = ["address_street", "address_number", "address_complement", "address_neighborhood", "address_city"] as const;
+const ADDRESS_FIELDS = ["address_street", "address_number", "address_complement", "address_neighborhood", "address_city", "address_state"] as const;
 
 type RegisterStateErrors = {
   shop?: Partial<RegisterFormData["shop"]>;
@@ -33,6 +33,7 @@ const BACKEND_ERROR_MAP: Record<string, BackendErrorDescriptor> = {
   "Número é obrigatório": { section: "shop", field: "address_number", message: "Informe o número (use S/N se não houver)" },
   "Bairro é obrigatório": { section: "shop", field: "address_neighborhood", message: "Informe o bairro" },
   "Cidade é obrigatória": { section: "shop", field: "address_city", message: "Informe a cidade" },
+  "Estado (UF) é obrigatório": { section: "shop", field: "address_state", message: "Informe a UF" },
   "Cellphone has already been taken": {
     section: "shop",
     field: "cellphone",
@@ -148,7 +149,8 @@ function RegisterForm() {
       address_number: "",
       address_complement: "",
       address_neighborhood: "",
-      address_city: ""
+      address_city: "",
+      address_state: ""
     },
     shop_user: {
       name: "",

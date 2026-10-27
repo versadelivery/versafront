@@ -28,7 +28,7 @@ export function calculateItemTotal(item: TotalInput): number {
   const unit = Number(item.price) || 0;
   const options = sum(item.selected_extras) + sum(item.complements) + steps;
   const total = isWeightItem(item)
-    ? unit * (Number(item.weight) || 1) + options
+    ? (unit * (Number(item.weight) || 1) + options) * (Number(item.quantity) || 1)
     : (unit + options) * (Number(item.quantity) || 1);
 
   return Math.round(total * 100) / 100;

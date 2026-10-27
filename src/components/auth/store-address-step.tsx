@@ -17,6 +17,7 @@ export interface StoreAddressFields {
   address_complement?: string;
   address_neighborhood: string;
   address_city: string;
+  address_state: string;
 }
 
 export interface StorePin {
@@ -207,6 +208,17 @@ export function StoreAddressStep({
         disabled={disabled}
         label="Cidade"
         error={errors?.address_city}
+      />
+
+      <AuthFormInput
+        type="text"
+        name="shop.address_state"
+        placeholder="UF (ex: CE)"
+        value={shop.address_state}
+        onChange={handleFieldInput}
+        disabled={disabled}
+        label="Estado (UF)"
+        error={errors?.address_state}
       />
 
       <LocationPickerMap

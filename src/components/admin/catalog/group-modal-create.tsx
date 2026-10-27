@@ -255,7 +255,7 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
                       setName(e.target.value);
                       clearError("name");
                     }}
-                    placeholder="Ex: Pratos Principais"
+                    placeholder="Ex: Cortes nobres e churrasco"
                     maxLength={50}
                     disabled={isLoading}
                     className={errors.name ? "border-destructive" : ""}

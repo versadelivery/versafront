@@ -1225,7 +1225,7 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex items-center gap-2 min-w-0">
-                            {!isWeightItem(item) && (
+                            {(!isWeightItem(item) || Number(item.quantity) > 1) && (
                               <span className="inline-flex items-center justify-center w-7 h-6 bg-primary text-white rounded-md text-xs font-bold flex-shrink-0">
                                 {item.quantity}x
                               </span>
