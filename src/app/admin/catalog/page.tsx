@@ -16,7 +16,8 @@ import { DeleteConfirmation } from "@/components/ui/delete-confirmation";
 import { ComplementManagement } from "@/components/admin/catalog/complement-management";
 import { IngredientManagement } from "@/components/admin/catalog/ingredient-management";
 import { CategoryModal } from "@/components/admin/catalog/category-modal";
-import { CategoryManager } from "@/components/admin/catalog/category-manager";
+import { CategorySection } from "@/components/admin/catalog/category-manager";
+import { useCatalogCategories } from "@/hooks/useCatalogCategories";
 import {
   DndContext,
   closestCenter,
@@ -100,6 +101,7 @@ function CatalogPage() {
 
   const { isLoading, catalog, deleteCatalogGroup, isDeletingGroup, toggleCatalogGroupActive, toggleCatalogItemActive } = useCatalogGroup();
   const { reorderGroups, reorderItems } = useCatalogReorder();
+  const { categories, reorderCategories } = useCatalogCategories();
 
   const groups = catalog?.data || [];
   const hasActiveFilters = filters.status !== "all" || filters.tags.length > 0 || filters.itemType !== "all" || filters.discountOnly || filters.outOfStockIngredientOnly;
@@ -120,7 +122,28 @@ function CatalogPage() {
     [groups]
   );
 
-  const groupIds = useMemo(() => validGroups.map((g: any) => g.id), [validGroups]);
+  const categoryIds: string[] = categories.map((category: any) => String(category.id));
+  const hasCategories = categories.length > 0;
+
+  // Categorias recolhidas (lembradas neste navegador); por padrão tudo vem expandido
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => {
+    try {
+      return new Set(JSON.parse(localStorage.getItem("catalog-collapsed-categories") || "[]"));
+    } catch {
+      return new Set();
+    }
+  });
+  const saveCollapsed = (next: Set<string>) => {
+    setCollapsed(next);
+    try { localStorage.setItem("catalog-collapsed-categories", JSON.stringify([...next])); } catch { /* sem storage: só não lembra */ }
+  };
+  const toggleCollapsed = (id: string) => {
+    const next = new Set(collapsed);
+    if (!next.delete(id)) next.add(id);
+    saveCollapsed(next);
+  };
+  const setAllExpanded = (expanded: boolean) =>
+    saveCollapsed(expanded ? new Set() : new Set([...categoryIds, "uncategorized"]));
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -154,14 +177,22 @@ function CatalogPage() {
     setIsCategoryModalOpen(true);
   };
 
-  const handleGroupDragEnd = (event: DragEndEvent) => {
+  const handleGroupDragEnd = (sectionGroupIds: string[]) => (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
-    const oldIndex = groupIds.indexOf(active.id as string);
-    const newIndex = groupIds.indexOf(over.id as string);
-    const newOrder = arrayMove(groupIds, oldIndex, newIndex);
-    reorderGroups(newOrder);
+    const oldIndex = sectionGroupIds.indexOf(active.id as string);
+    const newIndex = sectionGroupIds.indexOf(over.id as string);
+    if (oldIndex < 0 || newIndex < 0) return;
+    reorderGroups(arrayMove(sectionGroupIds, oldIndex, newIndex));
+  };
+
+  const handleCategoryDragEnd = ({ active, over }: DragEndEvent) => {
+    if (!over || active.id === over.id) return;
+    const oldIndex = categoryIds.indexOf(String(active.id));
+    const newIndex = categoryIds.indexOf(String(over.id));
+    if (oldIndex < 0 || newIndex < 0) return;
+    reorderCategories(arrayMove(categoryIds, oldIndex, newIndex));
   };
 
   const handleItemDragEnd = (groupId: string, allItems: any[]) => (event: DragEndEvent) => {
@@ -291,6 +322,121 @@ function CatalogPage() {
     );
   };
 
+  const renderGroupCard = (group: any) => {
+    const itemsContent = renderItems(group);
+    if (isFiltering && itemsContent === null) return null;
+
+    return (
+            <SortableGroupWrapper key={group.id} id={group.id} disabled={isFiltering}>
+              {({ dragHandleProps }) => (
+                <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+                  {/* Header do grupo */}
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-[#E5E2DD]">
+                    <div className="flex items-center flex-1 min-w-0 mr-3 gap-2">
+                      {!isFiltering && (
+                        <div
+                          className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors"
+                          {...dragHandleProps}
+                        >
+                          <GripVertical className="h-4 w-4" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <h2 className="font-tomato text-base font-semibold text-foreground truncate">
+                          {group.attributes.name}
+                        </h2>
+                        {group.attributes.description && (
+                          <p className="text-sm text-muted-foreground line-clamp-1 mt-0.5">
+                            {group.attributes.description}
+                          </p>
+                        )}
+                        {group.attributes.priority && (
+                          <p className={`text-[11px] font-medium mt-1 ${getPriorityColor(group.attributes.priority)}`}>
+                            Prioridade: {group.attributes.priority}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {/* Container Status/Editar do Grupo */}
+                      <div className="bg-white rounded-md py-1 px-3 flex items-center border border-[#E5E2DD] gap-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-tight">
+                            {group.attributes.active ? "Ativo" : "Pausado"}
+                          </span>
+                          <Switch
+                            checked={group.attributes.active}
+                            onCheckedChange={(checked) => {
+                              toggleCatalogGroupActive({ id: group.id, active: checked });
+                            }}
+                            className="scale-[0.6] origin-center"
+                          />
+                        </div>
+
+                        <div className="w-[1px] h-3 bg-[#E5E2DD]" />
+
+                        <button
+                          className="cursor-pointer flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground hover:text-primary transition-colors uppercase tracking-tight"
+                          onClick={() => handleEditGroup(group.id)}
+                        >
+                          <Edit2 className="h-3 w-3" />
+                          Editar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Items do grupo */}
+                  <div className="p-3">
+                    {itemsContent || (
+                      <div className="text-center py-6">
+                        <p className="text-sm text-muted-foreground">Este grupo não possui itens</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </SortableGroupWrapper>
+    );
+  };
+
+  // =============================================================================
+  // CATEGORIAS > GRUPOS > ITENS (cada nível ordena só dentro do pai)
+  // =============================================================================
+
+  const sectionFor = (categoryId: string | null) => {
+    const sectionGroups = validGroups.filter((g: any) => {
+      const own = g.attributes.catalog_category_id;
+      return categoryId === null
+        ? !own || !categories.some((c: any) => String(c.id) === String(own))
+        : String(own) === String(categoryId);
+    });
+    const cards = sectionGroups.map((g: any) => ({ group: g, node: renderGroupCard(g) })).filter((entry: any) => entry.node);
+    return { groups: sectionGroups, cards };
+  };
+
+  const renderGroupList = (section: { groups: any[]; cards: any[] }) => {
+    if (section.groups.length === 0) {
+      return (
+        <div className="flex flex-col items-center gap-2 rounded-md border border-dashed border-[#E5E2DD] bg-white px-4 py-6 text-center">
+          <p className="text-sm text-muted-foreground">Nenhum grupo nesta categoria</p>
+          <Button size="sm" variant="outline" className="cursor-pointer gap-2" onClick={handleCreateGroup}>
+            <Plus className="h-4 w-4" /> Novo grupo
+          </Button>
+        </div>
+      );
+    }
+    const ids = section.groups.map((g: any) => g.id);
+    return (
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleGroupDragEnd(ids)}>
+        <SortableContext items={ids} strategy={verticalListSortingStrategy}>
+          <div className="flex flex-col gap-4">{section.cards.map((entry: any) => entry.node)}</div>
+        </SortableContext>
+      </DndContext>
+    );
+  };
+
   // =============================================================================
   // RENDER
   // =============================================================================
@@ -384,8 +530,6 @@ function CatalogPage() {
                 onClearFilters={handleClearFilters}
               />
 
-              <CategoryManager onCreate={() => { setEditingCategory(null); setIsCategoryModalOpen(true); }} onEdit={handleEditCategory} />
-
               <CategoryModal open={isCategoryModalOpen} onOpenChange={(open) => { setIsCategoryModalOpen(open); if (!open) setEditingCategory(null); }} category={editingCategory} />
 
               <GroupModal
@@ -417,95 +561,66 @@ function CatalogPage() {
                   </Button>
                 </div>
               ) : (
-                /* Lista de Grupos */
-                <DndContext
-                  sensors={sensors}
-                  collisionDetection={closestCenter}
-                  onDragEnd={handleGroupDragEnd}
-                >
-                  <SortableContext items={groupIds} strategy={verticalListSortingStrategy}>
-                    <div className="flex flex-col gap-4 w-full pb-8">
-                      {validGroups.map((group: any) => {
-                        const itemsContent = renderItems(group);
-                        if (isFiltering && itemsContent === null) return null;
-
-                        return (
-                          <SortableGroupWrapper key={group.id} id={group.id} disabled={isFiltering}>
-                            {({ dragHandleProps }) => (
-                              <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
-                                {/* Header do grupo */}
-                                <div className="flex items-center justify-between px-4 py-3 border-b border-[#E5E2DD]">
-                                  <div className="flex items-center flex-1 min-w-0 mr-3 gap-2">
-                                    {!isFiltering && (
-                                      <div
-                                        className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors"
-                                        {...dragHandleProps}
-                                      >
-                                        <GripVertical className="h-4 w-4" />
-                                      </div>
-                                    )}
-                                    <div className="flex-1 min-w-0">
-                                      <h2 className="font-tomato text-base font-semibold text-foreground truncate">
-                                        {group.attributes.name}
-                                      </h2>
-                                      {group.attributes.description && (
-                                        <p className="text-sm text-muted-foreground line-clamp-1 mt-0.5">
-                                          {group.attributes.description}
-                                        </p>
-                                      )}
-                                      {group.attributes.priority && (
-                                        <p className={`text-[11px] font-medium mt-1 ${getPriorityColor(group.attributes.priority)}`}>
-                                          Prioridade: {group.attributes.priority}
-                                        </p>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  <div className="flex items-center gap-2">
-                                    {/* Container Status/Editar do Grupo */}
-                                    <div className="bg-white rounded-md py-1 px-3 flex items-center border border-[#E5E2DD] gap-3">
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-tight">
-                                          {group.attributes.active ? "Ativo" : "Pausado"}
-                                        </span>
-                                        <Switch
-                                          checked={group.attributes.active}
-                                          onCheckedChange={(checked) => {
-                                            toggleCatalogGroupActive({ id: group.id, active: checked });
-                                          }}
-                                          className="scale-[0.6] origin-center"
-                                        />
-                                      </div>
-
-                                      <div className="w-[1px] h-3 bg-[#E5E2DD]" />
-
-                                      <button
-                                        className="cursor-pointer flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground hover:text-primary transition-colors uppercase tracking-tight"
-                                        onClick={() => handleEditGroup(group.id)}
-                                      >
-                                        <Edit2 className="h-3 w-3" />
-                                        Editar
-                                      </button>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {/* Items do grupo */}
-                                <div className="p-3">
-                                  {itemsContent || (
-                                    <div className="text-center py-6">
-                                      <p className="text-sm text-muted-foreground">Este grupo não possui itens</p>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-                          </SortableGroupWrapper>
-                        );
-                      })}
+                /* Categorias com grupos */
+                <div className="flex w-full flex-col gap-3 pb-8">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className="max-w-3xl text-xs text-muted-foreground">
+                      {hasCategories
+                        ? <>A ordem vale dentro de cada nível: categorias entre si, grupos dentro da categoria e itens dentro do grupo. Arraste pelo ícone <GripVertical className="inline h-3 w-3" />.</>
+                        : "Crie categorias (ex.: Churrasco, Bebidas) para organizar os grupos do cardápio."}
+                    </p>
+                    <div className="flex items-center gap-1">
+                      {hasCategories && !isFiltering && (
+                        <>
+                          <Button size="sm" variant="ghost" className="h-8 cursor-pointer text-xs" onClick={() => setAllExpanded(true)}>Expandir tudo</Button>
+                          <Button size="sm" variant="ghost" className="h-8 cursor-pointer text-xs" onClick={() => setAllExpanded(false)}>Recolher tudo</Button>
+                        </>
+                      )}
+                      <Button size="sm" variant="outline" className="h-8 cursor-pointer gap-2" onClick={() => { setEditingCategory(null); setIsCategoryModalOpen(true); }}>
+                        <Plus className="h-4 w-4" /> Nova categoria
+                      </Button>
                     </div>
-                  </SortableContext>
-                </DndContext>
+                  </div>
+
+                  {hasCategories ? (
+                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleCategoryDragEnd}>
+                      <SortableContext items={categoryIds} strategy={verticalListSortingStrategy}>
+                        {categories.map((category: any, index: number) => {
+                          const section = sectionFor(category.id);
+                          if (isFiltering && section.cards.length === 0) return null;
+                          return (
+                            <CategorySection
+                              key={category.id}
+                              category={category}
+                              position={index + 1}
+                              groupCount={section.groups.length}
+                              expanded={isFiltering || !collapsed.has(category.id)}
+                              onToggleExpanded={() => toggleCollapsed(category.id)}
+                              onEdit={() => handleEditCategory(category)}
+                            >
+                              {renderGroupList(section)}
+                            </CategorySection>
+                          );
+                        })}
+                      </SortableContext>
+                    </DndContext>
+                  ) : null}
+
+                  {(() => {
+                    const section = sectionFor(null);
+                    if (hasCategories && section.groups.length === 0) return null;
+                    if (isFiltering && section.cards.length === 0) return null;
+                    return hasCategories ? (
+                      <CategorySection
+                        groupCount={section.groups.length}
+                        expanded={isFiltering || !collapsed.has("uncategorized")}
+                        onToggleExpanded={() => toggleCollapsed("uncategorized")}
+                      >
+                        {renderGroupList(section)}
+                      </CategorySection>
+                    ) : renderGroupList(section);
+                  })()}
+                </div>
               )}
             </>
           ) : tab === "complements" ? (
