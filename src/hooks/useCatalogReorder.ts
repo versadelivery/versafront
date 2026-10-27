@@ -14,17 +14,14 @@ export const useCatalogReorder = () => {
 
       queryClient.setQueryData(["catalog"], (old: any) => {
         if (!old) return old;
-        const sorted = orderedIds
-          .map((id) => old.data.find((g: any) => g.id === id))
-          .filter(Boolean);
-        const reordered = sorted.map((group: any, index: number) => ({
-          ...group,
-          attributes: {
-            ...group.attributes,
-            priority: index + 1,
-          },
-        }));
-        return { ...old, data: reordered };
+        // orderedIds pode ser só os grupos de uma categoria: os demais ficam como estão
+        return {
+          ...old,
+          data: old.data.map((group: any) => {
+            const index = orderedIds.indexOf(group.id);
+            return index < 0 ? group : { ...group, attributes: { ...group.attributes, priority: index + 1 } };
+          }),
+        };
       });
 
       return { previousCatalog };
