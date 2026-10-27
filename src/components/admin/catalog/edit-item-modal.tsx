@@ -15,6 +15,7 @@ import { useCatalogGroup, useCatalogItem } from "@/hooks/useCatalogGroup";
 import { useCatalogComplement } from "@/hooks/useCatalogComplement";
 import { useIngredient } from "@/hooks/useIngredient";
 import { Checkbox } from "@/components/ui/checkbox";
+import { BarcodeFields } from "@/components/admin/catalog/barcode-fields";
 
 import { updateCatalogItem } from "@/api/requests/catalog_item/requests";
 import { DeleteConfirmation } from "@/components/ui/delete-confirmation";
@@ -101,6 +102,8 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
   const [minWeight, setMinWeight] = useState('');
   const [maxWeight, setMaxWeight] = useState('');
   const [measureInterval, setMeasureInterval] = useState('');
+  const [barcode, setBarcode] = useState('');
+  const [scaleCode, setScaleCode] = useState('');
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
 
@@ -203,6 +206,8 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
       setMinWeight(item.min_weight ? item.min_weight.toString() : '');
       setMaxWeight(item.max_weight ? item.max_weight.toString() : '');
       setMeasureInterval(item.measure_interval ? item.measure_interval.toString() : '');
+      setBarcode(item.barcode ?? '');
+      setScaleCode(item.scale_code != null ? item.scale_code.toString() : '');
       setPreviewImage(item.image_url ? (fixImageUrl(item.image_url) || null) : null);
       setActive(item.active ?? true);
 
@@ -617,6 +622,10 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
         if (measureInterval) formData.append('measure_interval', measureInterval);
       }
 
+      // Vazio limpa o código; item de unidade não pode ter código de balança
+      formData.append('barcode', barcode);
+      formData.append('scale_code', itemType === 'unit' ? '' : scaleCode);
+
       // Imagem
       if (imageFile) {
         formData.append('image', imageFile);
@@ -741,7 +750,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
         name: 'name', description: 'description', catalog_group: 'group', catalog_group_id: 'group',
         price: 'price', price_with_discount: 'discount', promotion_tag: 'promotionTag',
         min_weight: 'minWeight', max_weight: 'maxWeight', measure_interval: 'measureInterval',
-        prepare_methods_limit: 'prepareMethods',
+        prepare_methods_limit: 'prepareMethods', barcode: 'barcode', scale_code: 'scaleCode',
       };
       const serverErrors = Object.fromEntries(
         Object.entries(getApiFieldErrors(error)).filter(([field]) => fieldMap[field]).map(([field, msgs]) => [fieldMap[field], msgs.join(' ')]),
@@ -922,6 +931,16 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
               </div>
             </>
           )}
+
+          {/* Código de barras e código da balança */}
+          <BarcodeFields
+            barcode={barcode}
+            scaleCode={scaleCode}
+            showScaleCode={itemType !== 'unit'}
+            errors={errors}
+            onBarcodeChange={(value) => { setBarcode(value); clearError('barcode'); markDirty(); }}
+            onScaleCodeChange={(value) => { setScaleCode(value); clearError('scaleCode'); markDirty(); }}
+          />
 
           {/* Preço */}
           <div className="space-y-1.5">

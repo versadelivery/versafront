@@ -50,6 +50,8 @@ export interface Item {
   image_url: string | null;
   cost?: number | null;
   ncm_code?: string | null;
+  barcode?: string | null;
+  scale_code?: number | null;
   highlight?: boolean;
   sunday_active?: boolean;
   monday_active?: boolean;
@@ -99,6 +101,8 @@ export interface CatalogItemAttributes {
   image_url: string;
   cost?: number | null;
   ncm_code?: string | null;
+  barcode?: string | null;
+  scale_code?: number | null;
   highlight?: boolean;
   sunday_active?: boolean;
   monday_active?: boolean;
