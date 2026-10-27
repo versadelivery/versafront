@@ -285,7 +285,7 @@ export default function OrderDetailsPage() {
                           </div>
                           <p className="text-sm text-muted-foreground mt-0.5">
                             {item.weight && (item.item_type === 'weight_per_kg' || item.item_type === 'weight_per_g')
-                              ? `${item.weight} ${item.item_type === 'weight_per_g' ? 'g' : 'kg'} × ${formatCurrency(item.price_with_discount ?? item.price)}/${item.item_type === 'weight_per_g' ? 'g' : 'kg'}`
+                              ? `${item.quantity > 1 ? `${item.quantity}× ` : ''}${item.weight} ${item.item_type === 'weight_per_g' ? 'g' : 'kg'} × ${formatCurrency(item.price_with_discount ?? item.price)}/${item.item_type === 'weight_per_g' ? 'g' : 'kg'}`
                               : `${item.quantity}× ${formatCurrency(item.price_with_discount ?? item.price)}`
                             }
                           </p>

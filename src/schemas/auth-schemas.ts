@@ -28,7 +28,9 @@ const addressFields = {
     .max(120, "Bairro não pode ter mais de 120 caracteres"),
   address_city: z.string().trim()
     .min(2, "Informe a cidade")
-    .max(120, "Cidade não pode ter mais de 120 caracteres")
+    .max(120, "Cidade não pode ter mais de 120 caracteres"),
+  address_state: z.string().trim()
+    .regex(/^[A-Za-z]{2}$/, "Informe a UF com 2 letras (ex: CE)")
 };
 
 export const registerAddressSchema = z.object(addressFields);

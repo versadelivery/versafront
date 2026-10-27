@@ -11,6 +11,7 @@ export interface ShopAttributes {
   address_complement?: string | null;
   address_neighborhood?: string | null;
   address_city?: string | null;
+  address_state?: string | null;
   description: string | null;
   email: string | null;
   image?: File | string | any;
