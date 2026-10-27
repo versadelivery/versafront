@@ -312,7 +312,7 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
                           </button>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>Maior número = aparece primeiro</p>
+                          <p>Menor número = aparece primeiro</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>

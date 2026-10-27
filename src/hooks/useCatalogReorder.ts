@@ -21,7 +21,7 @@ export const useCatalogReorder = () => {
           ...group,
           attributes: {
             ...group.attributes,
-            priority: sorted.length - index,
+            priority: index + 1,
           },
         }));
         return { ...old, data: reordered };
