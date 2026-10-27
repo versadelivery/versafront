@@ -9,17 +9,14 @@ import { useCatalogGroup } from "@/hooks/useCatalogGroup";
 import { useCatalogReorder } from "@/hooks/useCatalogReorder";
 import { ItemCard } from "@/components/admin/catalog/item-card";
 import { SortableItemCard } from "@/components/admin/catalog/sortable-item-card";
-import { ArrowLeft, Edit2, GripVertical, LayoutGrid, LayoutList, Loader2, Package, Plus, Tags, Trash2 } from "lucide-react";
+import { ArrowLeft, Edit2, GripVertical, LayoutGrid, LayoutList, Loader2, Package, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { DeleteConfirmation } from "@/components/ui/delete-confirmation";
 import { ComplementManagement } from "@/components/admin/catalog/complement-management";
 import { IngredientManagement } from "@/components/admin/catalog/ingredient-management";
 import { CategoryModal } from "@/components/admin/catalog/category-modal";
-import { weekdaysSummary } from "@/components/admin/catalog/weekday-picker";
-import { getApiErrorMessage } from "@/utils/api-error";
-import { toast } from "sonner";
-import { useCatalogCategories } from "@/hooks/useCatalogCategories";
+import { CategoryManager } from "@/components/admin/catalog/category-manager";
 import {
   DndContext,
   closestCenter,
@@ -103,7 +100,6 @@ function CatalogPage() {
 
   const { isLoading, catalog, deleteCatalogGroup, isDeletingGroup, toggleCatalogGroupActive, toggleCatalogItemActive } = useCatalogGroup();
   const { reorderGroups, reorderItems } = useCatalogReorder();
-  const { categories, deleteCategory, updateCategory } = useCatalogCategories();
 
   const groups = catalog?.data || [];
   const hasActiveFilters = filters.status !== "all" || filters.tags.length > 0 || filters.itemType !== "all" || filters.discountOnly || filters.outOfStockIngredientOnly;
@@ -388,44 +384,7 @@ function CatalogPage() {
                 onClearFilters={handleClearFilters}
               />
 
-              <div className="mb-4 rounded-md border border-[#E5E2DD] bg-white p-3">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <Tags className="h-4 w-4 text-primary" />
-                    <div>
-                      <p className="text-sm font-semibold">Categorias</p>
-                      <p className="text-xs text-muted-foreground">Organize grupos e itens por categoria. Categorias não possuem imagem.</p>
-                    </div>
-                  </div>
-                  <Button size="sm" variant="outline" className="gap-2" onClick={() => { setEditingCategory(null); setIsCategoryModalOpen(true); }}>
-                    <Plus className="h-4 w-4" /> Nova categoria
-                  </Button>
-                </div>
-                {categories.length > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {categories.map((category: any) => (
-                      <div key={category.id} className={`flex items-center gap-2 rounded-md border border-[#E5E2DD] px-3 py-1.5 text-sm ${category.attributes.active === false ? "opacity-60" : ""}`}>
-                        <span>{category.attributes.name}</span>
-                        {category.attributes.active === false ? (
-                          <span className="text-xs text-muted-foreground">Inativa</span>
-                        ) : (
-                          weekdaysSummary(category.attributes) && <span className="text-xs text-muted-foreground">{weekdaysSummary(category.attributes)}</span>
-                        )}
-                        <Switch
-                          checked={category.attributes.active !== false}
-                          onCheckedChange={(checked) => updateCategory(
-                            { id: category.id, data: { active: checked } },
-                            { onError: (error) => toast.error(getApiErrorMessage(error, "Erro ao atualizar categoria"), { duration: 8000 }) },
-                          )}
-                          aria-label={`Ativar ou desativar ${category.attributes.name}`}
-                        />
-                        <button type="button" onClick={() => handleEditCategory(category)} aria-label={`Editar ${category.attributes.name}`}><Edit2 className="h-3.5 w-3.5 text-muted-foreground" /></button>
-                        <button type="button" onClick={() => window.confirm(`Remover a categoria ${category.attributes.name}?`) && deleteCategory(category.id)} aria-label={`Remover ${category.attributes.name}`}><Trash2 className="h-3.5 w-3.5 text-destructive" /></button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <CategoryManager onCreate={() => { setEditingCategory(null); setIsCategoryModalOpen(true); }} onEdit={handleEditCategory} />
 
               <CategoryModal open={isCategoryModalOpen} onOpenChange={(open) => { setIsCategoryModalOpen(open); if (!open) setEditingCategory(null); }} category={editingCategory} />
 

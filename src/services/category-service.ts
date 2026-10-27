@@ -21,3 +21,8 @@ export async function updateCatalogCategory(id: string, data: Partial<CategoryPa
 export async function deleteCatalogCategory(id: string) {
   await api.delete(`/catalog_categories/${id}`);
 }
+
+export async function reorderCatalogCategories(orderedIds: string[]) {
+  const response = await api.patch("/catalog_categories/reorder", { ordered_ids: orderedIds });
+  return response.data;
+}
