@@ -120,7 +120,7 @@ function CatalogPage() {
   const validGroups = useMemo(() =>
     [...groups]
       .filter((group: any) => group && group.attributes && group.attributes.name)
-      .sort((a: any, b: any) => (b.attributes.priority || 0) - (a.attributes.priority || 0)),
+      .sort((a: any, b: any) => (a.attributes.priority || 0) - (b.attributes.priority || 0)),
     [groups]
   );
 
