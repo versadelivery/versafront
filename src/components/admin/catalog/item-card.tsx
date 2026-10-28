@@ -118,7 +118,7 @@ export function ItemCard({ item, layout = 'grid' }: ItemCardProps) {
     return (
       <>
         <div
-          className={`bg-white border border-[#E5E2DD] rounded-md overflow-hidden cursor-pointer hover:border-primary/40 transition-colors duration-200 flex flex-row items-center gap-3 px-3 py-2.5 ${!item.active ? 'opacity-60' : ''}`}
+          className={`bg-white border border-[#E5E2DD] rounded-md overflow-hidden cursor-pointer hover:border-primary/40 transition-colors duration-200 flex flex-row flex-wrap sm:flex-nowrap items-center gap-x-3 gap-y-2 px-3 py-2.5 ${!item.active ? 'opacity-60' : ''}`}
           onClick={() => setIsDetailsOpen(true)}
         >
           {/* Imagem */}
@@ -139,9 +139,9 @@ export function ItemCard({ item, layout = 'grid' }: ItemCardProps) {
           </div>
 
           {/* Nome + descrição */}
-          <div className="flex-1 min-w-0">
+          <div className="min-w-0 basis-[calc(100%-4rem)] sm:basis-0 sm:flex-1">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-sm font-semibold text-foreground truncate">{item.name}</span>
+              <span className="text-sm font-semibold text-foreground sm:truncate">{item.name}</span>
               {item.has_out_of_stock_ingredient && (
                 <span className="bg-destructive text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md flex-shrink-0">INDISPONÍVEL</span>
               )}
@@ -150,7 +150,7 @@ export function ItemCard({ item, layout = 'grid' }: ItemCardProps) {
               {item.promotion_tag && <span className="bg-primary text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md flex-shrink-0">PROMOÇÃO</span>}
             </div>
             {item.description && (
-              <p className="text-xs text-muted-foreground truncate mt-0.5">{item.description}</p>
+              <p className="text-xs text-muted-foreground sm:truncate mt-0.5">{item.description}</p>
             )}
           </div>
 
@@ -164,7 +164,7 @@ export function ItemCard({ item, layout = 'grid' }: ItemCardProps) {
           )}
 
           {/* Preço */}
-          <div className="flex-shrink-0 text-right">
+          <div className="flex-shrink-0 text-left sm:text-right ml-[60px] sm:ml-0">
             <div className="text-sm font-bold text-foreground tabular-nums">
               {displayPrice}
               {getItemTypeLabel() && <span className="text-[10px] text-muted-foreground font-normal ml-1">{getItemTypeLabel()}</span>}
@@ -175,7 +175,7 @@ export function ItemCard({ item, layout = 'grid' }: ItemCardProps) {
           </div>
 
           {/* Ações */}
-          <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center gap-2 flex-shrink-0 ml-auto sm:ml-0" onClick={(e) => e.stopPropagation()}>
             <button className="cursor-pointer p-1.5 rounded-md hover:bg-[#F0EFEB] text-muted-foreground hover:text-primary transition-colors" onClick={handleCopyLink} title="Copiar link">
               <Link className="h-3.5 w-3.5" />
             </button>
