@@ -23,7 +23,6 @@ export const GroupSection = memo(function GroupSection({ group, onAddToCart, onT
 
   useEffect(() => {
     const images = [
-      group.image,
       ...group.items.map((item: Item) => item.attributes.image_url)
     ].filter(Boolean)
 
@@ -95,19 +94,6 @@ export const GroupSection = memo(function GroupSection({ group, onAddToCart, onT
         className="flex items-center gap-4 p-4 bg-white rounded-xl shadow-sm cursor-pointer hover:scale-[1.01] transition-transform duration-200"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        {group.image ? (
-          <img
-            src={group.image}
-            alt={group.name}
-            className="h-16 w-16 rounded-xl object-cover"
-          />
-        ) : (
-          <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
-            <span className="text-primary/50 text-2xl font-bold">
-              {group.name.charAt(0).toUpperCase()}
-            </span>
-          </div>
-        )}
         <div className="flex-1">
           <h3 className="text-xl font-semibold text-gray-900">{group.name}</h3>
           <p className="text-gray-500">{group.description}</p>
