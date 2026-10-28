@@ -1,13 +1,13 @@
 import { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = process.env.NEXT_PUBLIC_SHOP_DOMAIN || 'http://localhost:3000';
+  const baseUrl = 'https://www.versadelivery.com.br';
 
   return {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/admin/', '/api/', '/_next/'],
+      disallow: ['/admin/', '/api/'],
     },
     sitemap: `${baseUrl}/sitemap.xml`,
   };
