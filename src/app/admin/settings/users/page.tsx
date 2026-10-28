@@ -127,7 +127,7 @@ export default function UsersManagementPage() {
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* SectionCard: Usuarios */}
         <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
-          <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center justify-between">
+          <div className="px-5 py-4 border-b border-[#E5E2DD] flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-primary" />
               <h2 className="font-tomato text-base font-semibold text-gray-900">Usuários</h2>
