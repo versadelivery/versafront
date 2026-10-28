@@ -1,8 +1,8 @@
 import { MetadataRoute } from 'next';
-import { getAllShopSlugs } from './[slug]/server-service';
+import { getAllShopSlugs } from './(public)/[slug]/server-service';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_SHOP_DOMAIN || 'http://localhost:3000';
+  const baseUrl = 'https://www.versadelivery.com.br';
   
   try {
     const shopSlugs = await getAllShopSlugs();
