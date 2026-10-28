@@ -68,7 +68,7 @@ export const adminSections: AdminSection[] = [
   },
   {
     id: "pedidos",
-    title: "Gerenciamento de Pedidos",
+    title: "Pedidos",
     description: "Gerencie os pedidos da sua loja",
     href: "/admin/pedidos",
     icon: ShoppingCart,
