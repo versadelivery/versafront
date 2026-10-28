@@ -208,10 +208,15 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
                     className={errors.description ? "border-destructive" : ""}
           />
 
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-gray-700">Categoria</label>
+                  {errors.description && (
+                    <p className="text-xs text-destructive mt-1">{errors.description}</p>
+                  )}
+                </div>
+
+                <div>
+            <label className="text-sm font-medium text-foreground mb-1.5 block">Categoria</label>
             <Select value={categoryId} onValueChange={setCategoryId}>
-              <SelectTrigger><SelectValue placeholder="Sem categoria" /></SelectTrigger>
+              <SelectTrigger className="w-full"><SelectValue placeholder="Sem categoria" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">Sem categoria</SelectItem>
                 {categories.map((category: any) => (
@@ -219,10 +224,6 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
                 ))}
               </SelectContent>
             </Select>
-          </div>
-                  {errors.description && (
-                    <p className="text-xs text-destructive mt-1">{errors.description}</p>
-                  )}
                 </div>
 
                 <div>

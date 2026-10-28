@@ -301,15 +301,15 @@ function CatalogPage() {
         <div className="bg-white border-b border-[#E5E2DD]">
           <div className="max-w-[1920px] mx-auto px-4 sm:px-6">
             <div className="flex items-center justify-between h-16">
-              <div className="flex items-center gap-4">
+              <div className="flex min-w-0 items-center gap-2 sm:gap-4">
                 <a href="/admin" className="flex items-center gap-1.5 text-muted-foreground hover:text-gray-900 transition-colors">
                   <ArrowLeft className="w-5 h-5" />
                   <span className="text-sm font-medium hidden sm:block">Voltar</span>
                 </a>
                 <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
-                <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900">Cardápio</h1>
+                <h1 className="hidden sm:block font-tomato text-lg font-bold text-gray-900">Cardápio</h1>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex min-w-0 items-center gap-3">
                 {tab === "catalog" && (
                   <div className="hidden sm:flex items-center bg-[#F0EFEB] p-0.5 rounded-md border border-[#E5E2DD]">
                     <button
@@ -328,10 +328,10 @@ function CatalogPage() {
                     </button>
                   </div>
                 )}
-                <div className="flex items-center gap-1 bg-[#F0EFEB] p-1 rounded-md">
+                <div className="flex items-center gap-1 bg-[#F0EFEB] p-1 rounded-md overflow-x-auto">
                 <button
                   onClick={() => setTab("catalog")}
-                  className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all cursor-pointer ${
+                  className={`px-2.5 sm:px-4 py-1.5 text-[13px] sm:text-sm font-medium rounded-md transition-all cursor-pointer whitespace-nowrap ${
                     tab === "catalog"
                       ? "bg-white text-primary border border-[#E5E2DD]"
                       : "text-muted-foreground hover:text-foreground"
@@ -341,7 +341,7 @@ function CatalogPage() {
                 </button>
                 <button
                   onClick={() => setTab("complements")}
-                  className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all cursor-pointer ${
+                  className={`px-2.5 sm:px-4 py-1.5 text-[13px] sm:text-sm font-medium rounded-md transition-all cursor-pointer whitespace-nowrap ${
                     tab === "complements"
                       ? "bg-white text-primary border border-[#E5E2DD]"
                       : "text-muted-foreground hover:text-foreground"
@@ -351,7 +351,7 @@ function CatalogPage() {
                 </button>
                 <button
                   onClick={() => setTab("ingredients")}
-                  className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all cursor-pointer ${
+                  className={`px-2.5 sm:px-4 py-1.5 text-[13px] sm:text-sm font-medium rounded-md transition-all cursor-pointer whitespace-nowrap ${
                     tab === "ingredients"
                       ? "bg-white text-primary border border-[#E5E2DD]"
                       : "text-muted-foreground hover:text-foreground"
