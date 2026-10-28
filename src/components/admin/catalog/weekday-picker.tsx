@@ -33,7 +33,7 @@ export function WeekdayPicker({ value, onChange }: { value: WeekdayState; onChan
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Disponibilidade Semanal</p>
         <button
           type="button"

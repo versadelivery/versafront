@@ -871,7 +871,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
           <div className="space-y-1.5">
             <label className="text-sm font-medium">Grupo *</label>
             <Select value={selectedGroupId} onValueChange={(v) => { setSelectedGroupId(v); clearError('group'); }}>
-              <SelectTrigger className={errors.group ? 'border-destructive' : ''}>
+              <SelectTrigger className={`w-full ${errors.group ? 'border-destructive' : ''}`}>
                 <SelectValue placeholder={isLoading ? "Carregando..." : "Selecione um grupo"} />
               </SelectTrigger>
               <SelectContent>
@@ -889,7 +889,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
           <div className="space-y-1.5">
             <label className="text-sm font-medium">Precificação</label>
             <Select value={itemType} onValueChange={(v) => setItemType(v as any)}>
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -1137,7 +1137,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
           </div>
 
           <hr className="border-gray-100" />
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 mb-2">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Disponibilidade Semanal</p>
 
             <button
@@ -1188,7 +1188,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
               <div className="rounded-md border border-gray-200 bg-white p-3 space-y-2">
                 <label className="text-xs font-medium text-muted-foreground">Forma de cobrança da montagem</label>
                 <Select value={assemblyPricingMode} onValueChange={(value: 'sum' | 'highest') => setAssemblyPricingMode(value)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="sum">Somar os valores das opções</SelectItem>
                     <SelectItem value="highest">Maior valor × quantidade de etapas</SelectItem>

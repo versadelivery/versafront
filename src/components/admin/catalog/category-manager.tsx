@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { DndContext, closestCenter, DragEndEvent, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
-import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, rectSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Edit2, GripVertical, Tags, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -33,41 +33,34 @@ function CategoryRow({ category, position, onEdit, onDelete, onToggle }: {
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`flex items-center gap-3 rounded-md border bg-white px-2 py-2 sm:px-3 ${isDragging ? "relative z-10 border-primary shadow-md" : "border-[#E5E2DD] hover:border-primary/40"}`}
+      className={`flex items-center gap-2 rounded-md border bg-white px-2 py-1.5 text-sm ${isDragging ? "relative z-10 border-primary shadow-md" : "border-[#E5E2DD] hover:border-primary/40"} ${inactive ? "opacity-60" : ""}`}
     >
       <button
         type="button"
-        className="flex h-8 w-6 shrink-0 cursor-grab touch-none items-center justify-center rounded text-muted-foreground hover:bg-[#FAF9F7] hover:text-gray-900 active:cursor-grabbing"
+        className="flex h-6 w-4 shrink-0 cursor-grab touch-none items-center justify-center text-muted-foreground hover:text-gray-900 active:cursor-grabbing"
         aria-label={`Arrastar para reordenar ${name}`}
         {...attributes}
         {...listeners}
       >
-        <GripVertical className="h-4 w-4" />
+        <GripVertical className="h-3.5 w-3.5" />
       </button>
-
-      <span className="flex h-6 min-w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 px-1.5 text-xs font-semibold text-primary">
-        {position}
-      </span>
-
-      <div className={`min-w-0 flex-1 ${inactive ? "opacity-60" : ""}`}>
-        <p className="truncate text-sm font-medium text-gray-900">{name}</p>
-        <p className="truncate text-xs text-muted-foreground">
-          {inactive ? "Inativa: oculta no cardápio" : days ? `Somente: ${days}` : "Todos os dias"}
-        </p>
-      </div>
-
+      <span className="text-xs font-semibold text-primary">{position}</span>
+      <span className="font-medium text-gray-900">{name}</span>
+      {(inactive || days) && (
+        <span className="text-xs text-muted-foreground">{inactive ? "Inativa" : days}</span>
+      )}
       <Switch
-        className="cursor-pointer"
+        className="h-5 w-9 cursor-pointer shadow-sm [&>span]:size-4"
         checked={!inactive}
         onCheckedChange={onToggle}
         aria-label={`Ativar ou desativar ${name}`}
       />
-      <Button type="button" variant="ghost" size="icon" className="h-8 w-8 cursor-pointer" onClick={onEdit} aria-label={`Editar ${name}`} title="Editar">
-        <Edit2 className="h-4 w-4 text-muted-foreground" />
-      </Button>
-      <Button type="button" variant="ghost" size="icon" className="h-8 w-8 cursor-pointer hover:bg-red-50" onClick={onDelete} aria-label={`Remover ${name}`} title="Remover">
-        <Trash2 className="h-4 w-4 text-destructive" />
-      </Button>
+      <button type="button" className="cursor-pointer" onClick={onEdit} aria-label={`Editar ${name}`} title="Editar">
+        <Edit2 className="h-3.5 w-3.5 text-muted-foreground hover:text-gray-900" />
+      </button>
+      <button type="button" className="cursor-pointer" onClick={onDelete} aria-label={`Remover ${name}`} title="Remover">
+        <Trash2 className="h-3.5 w-3.5 text-destructive" />
+      </button>
     </div>
   );
 }
@@ -91,12 +84,10 @@ export function CategoryManager({ onEdit }: CategoryManagerProps) {
   };
 
   return (
-    <div className="mb-4 rounded-md border border-[#E5E2DD] bg-white p-4">
+    <div className="mb-4 rounded-md border border-[#E5E2DD] bg-white p-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/10">
-            <Tags className="h-4 w-4 text-primary" />
-          </div>
+        <div className="flex items-center gap-2">
+          <Tags className="h-4 w-4 text-primary" />
           <div>
             <p className="font-tomato text-sm font-semibold text-gray-900">Categorias</p>
             <p className="text-xs text-muted-foreground">Arraste pelo ícone <GripVertical className="inline h-3 w-3" /> para definir a ordem em que aparecem na loja.</p>
@@ -111,8 +102,8 @@ export function CategoryManager({ onEdit }: CategoryManagerProps) {
         </div>
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={ids} strategy={verticalListSortingStrategy}>
-            <div className="mt-3 space-y-2">
+          <SortableContext items={ids} strategy={rectSortingStrategy}>
+            <div className="mt-3 flex flex-wrap gap-2">
               {categories.map((category: any, index: number) => (
                 <CategoryRow
                   key={category.id}
