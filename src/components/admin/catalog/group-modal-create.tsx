@@ -40,7 +40,9 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
     isDeletingGroup,
     catalogGroup,
     isLoadingGroup,
+    catalog,
   } = useCatalogGroup(editingGroup || undefined);
+  const totalGroups = catalog?.data?.length ?? 0;
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -61,6 +63,8 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
       return;
     }
 
+    if (!isEditing) setPriority(String(totalGroups + 1));
+
     if (isEditing && catalogGroup) {
       const attrs = catalogGroup.data.attributes;
       setName(attrs.name || "");
@@ -70,7 +74,7 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
       setCategoryId(attrs.catalog_category_id?.toString() || "none");
 
     }
-  }, [isOpen, catalogGroup, isEditing]);
+  }, [isOpen, catalogGroup, isEditing, totalGroups]);
 
   const resetForm = () => {
     setName("");
@@ -239,7 +243,7 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
                           </button>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>Menor número = aparece primeiro</p>
+                          <p>1 = aparece primeiro. Os outros grupos se ajustam sozinhos.</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
