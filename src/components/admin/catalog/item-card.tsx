@@ -176,19 +176,19 @@ export function ItemCard({ item, layout = 'grid' }: ItemCardProps) {
 
           {/* Ações */}
           <div className="flex items-center gap-2 flex-shrink-0 ml-auto sm:ml-0" onClick={(e) => e.stopPropagation()}>
-            <button className="cursor-pointer p-1.5 rounded-md hover:bg-[#F0EFEB] text-muted-foreground hover:text-primary transition-colors" onClick={handleCopyLink} title="Copiar link">
-              <Link className="h-3.5 w-3.5" />
+            <button className="cursor-pointer p-3 sm:p-1.5 rounded-md hover:bg-[#F0EFEB] active:bg-[#F0EFEB] text-muted-foreground hover:text-primary transition-colors" onClick={handleCopyLink} title="Copiar link">
+              <Link className="h-5 w-5 sm:h-3.5 sm:w-3.5" />
             </button>
-            <button className="cursor-pointer p-1.5 rounded-md hover:bg-[#F0EFEB] text-muted-foreground hover:text-primary transition-colors" onClick={handleDuplicate} disabled={isDuplicatingItem} title="Duplicar">
-              {isDuplicatingItem ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Copy className="h-3.5 w-3.5" />}
+            <button className="cursor-pointer p-3 sm:p-1.5 rounded-md hover:bg-[#F0EFEB] active:bg-[#F0EFEB] text-muted-foreground hover:text-primary transition-colors" onClick={handleDuplicate} disabled={isDuplicatingItem} title="Duplicar">
+              {isDuplicatingItem ? <Loader2 className="h-5 w-5 sm:h-3.5 sm:w-3.5 animate-spin" /> : <Copy className="h-5 w-5 sm:h-3.5 sm:w-3.5" />}
             </button>
-            <button className="cursor-pointer p-1.5 rounded-md hover:bg-[#F0EFEB] text-muted-foreground hover:text-primary transition-colors" onClick={(e) => { e.stopPropagation(); setIsEditing(true); }} title="Editar">
-              <Edit2 className="h-3.5 w-3.5" />
+            <button className="cursor-pointer p-3 sm:p-1.5 rounded-md hover:bg-[#F0EFEB] active:bg-[#F0EFEB] text-muted-foreground hover:text-primary transition-colors" onClick={(e) => { e.stopPropagation(); setIsEditing(true); }} title="Editar">
+              <Edit2 className="h-5 w-5 sm:h-3.5 sm:w-3.5" />
             </button>
             <Switch
               checked={item.active}
               onCheckedChange={(checked) => toggleCatalogItemActive({ id: item.id.toString(), active: checked })}
-              className="scale-[0.7] origin-center"
+              className="sm:scale-[0.7] origin-center"
             />
           </div>
         </div>

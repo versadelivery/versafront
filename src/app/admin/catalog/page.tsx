@@ -444,10 +444,10 @@ function CatalogPage() {
                                   <div className="flex items-center w-full sm:w-auto sm:flex-1 min-w-0 sm:mr-3 gap-2">
                                     {!isFiltering && (
                                       <div
-                                        className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors"
+                                        className="-ml-2 flex h-11 w-11 sm:h-8 sm:w-8 shrink-0 cursor-grab touch-none items-center justify-center rounded-md text-muted-foreground hover:text-foreground active:cursor-grabbing active:bg-[#F0EFEB] transition-colors"
                                         {...dragHandleProps}
                                       >
-                                        <GripVertical className="h-4 w-4" />
+                                        <GripVertical className="h-6 w-6 sm:h-4 sm:w-4" />
                                       </div>
                                     )}
                                     <div className="flex-1 min-w-0">
@@ -479,17 +479,17 @@ function CatalogPage() {
                                           onCheckedChange={(checked) => {
                                             toggleCatalogGroupActive({ id: group.id, active: checked });
                                           }}
-                                          className="scale-[0.6] origin-center"
+                                          className="scale-90 sm:scale-[0.6] origin-center"
                                         />
                                       </div>
 
                                       <div className="w-[1px] h-3 bg-[#E5E2DD]" />
 
                                       <button
-                                        className="cursor-pointer flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground hover:text-primary transition-colors uppercase tracking-tight"
+                                        className="cursor-pointer flex min-h-11 sm:min-h-0 items-center gap-1.5 text-xs sm:text-[10px] font-bold text-muted-foreground hover:text-primary transition-colors uppercase tracking-tight"
                                         onClick={() => handleEditGroup(group.id)}
                                       >
-                                        <Edit2 className="h-3 w-3" />
+                                        <Edit2 className="h-4 w-4 sm:h-3 sm:w-3" />
                                         Editar
                                       </button>
                                     </div>

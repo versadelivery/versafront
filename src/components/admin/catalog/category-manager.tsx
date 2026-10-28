@@ -33,33 +33,33 @@ function CategoryRow({ category, position, onEdit, onDelete, onToggle }: {
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`flex items-center gap-2 rounded-md border bg-white px-2 py-1.5 text-sm ${isDragging ? "relative z-10 border-primary shadow-md" : "border-[#E5E2DD] hover:border-primary/40"} ${inactive ? "opacity-60" : ""}`}
+      className={`flex w-full sm:w-auto items-center gap-1 sm:gap-2 rounded-md border bg-white px-1 sm:px-2 py-1 sm:py-1.5 text-sm ${isDragging ? "relative z-10 border-primary shadow-md" : "border-[#E5E2DD] hover:border-primary/40"} ${inactive ? "opacity-60" : ""}`}
     >
       <button
         type="button"
-        className="flex h-6 w-4 shrink-0 cursor-grab touch-none items-center justify-center text-muted-foreground hover:text-gray-900 active:cursor-grabbing"
+        className="flex h-11 w-10 sm:h-6 sm:w-4 shrink-0 cursor-grab touch-none items-center justify-center rounded-md text-muted-foreground hover:text-gray-900 active:cursor-grabbing active:bg-[#F0EFEB]"
         aria-label={`Arrastar para reordenar ${name}`}
         {...attributes}
         {...listeners}
       >
-        <GripVertical className="h-3.5 w-3.5" />
+        <GripVertical className="h-5 w-5 sm:h-3.5 sm:w-3.5" />
       </button>
       <span className="text-xs font-semibold text-primary">{position}</span>
-      <span className="font-medium text-gray-900">{name}</span>
+      <span className="min-w-0 flex-1 truncate font-medium text-gray-900 sm:flex-none">{name}</span>
       {(inactive || days) && (
         <span className="text-xs text-muted-foreground">{inactive ? "Inativa" : days}</span>
       )}
       <Switch
-        className="h-5 w-9 cursor-pointer shadow-sm [&>span]:size-4"
+        className="h-6 w-11 sm:h-5 sm:w-9 cursor-pointer shadow-sm [&>span]:size-5 sm:[&>span]:size-4"
         checked={!inactive}
         onCheckedChange={onToggle}
         aria-label={`Ativar ou desativar ${name}`}
       />
-      <button type="button" className="cursor-pointer" onClick={onEdit} aria-label={`Editar ${name}`} title="Editar">
-        <Edit2 className="h-3.5 w-3.5 text-muted-foreground hover:text-gray-900" />
+      <button type="button" className="flex h-11 w-11 sm:h-auto sm:w-auto cursor-pointer items-center justify-center rounded-md active:bg-[#F0EFEB]" onClick={onEdit} aria-label={`Editar ${name}`} title="Editar">
+        <Edit2 className="h-5 w-5 sm:h-3.5 sm:w-3.5 text-muted-foreground hover:text-gray-900" />
       </button>
-      <button type="button" className="cursor-pointer" onClick={onDelete} aria-label={`Remover ${name}`} title="Remover">
-        <Trash2 className="h-3.5 w-3.5 text-destructive" />
+      <button type="button" className="flex h-11 w-11 sm:h-auto sm:w-auto cursor-pointer items-center justify-center rounded-md active:bg-red-50" onClick={onDelete} aria-label={`Remover ${name}`} title="Remover">
+        <Trash2 className="h-5 w-5 sm:h-3.5 sm:w-3.5 text-destructive" />
       </button>
     </div>
   );

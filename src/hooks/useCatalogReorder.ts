@@ -34,8 +34,6 @@ export const useCatalogReorder = () => {
         queryClient.setQueryData(["catalog"], context.previousCatalog);
       }
       toast.error("Erro ao reordenar grupos");
-    },
-    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["catalog"] });
     },
   });
