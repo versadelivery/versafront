@@ -99,7 +99,6 @@ export interface ShopResponse {
             name: string
             description: string
             priority: number
-            image_url: string | null
             items: Array<{
               data: {
                 id: string
@@ -185,7 +184,6 @@ export interface Group {
   id: string
   name: string
   description: string
-  image: string
   order: number
   isActive: boolean
   items: Item[]

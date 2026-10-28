@@ -29,7 +29,6 @@ export const useGroups = () => {
           name: group.attributes.name,
           description: group.attributes.description,
           priority: group.attributes.priority,
-          image: group.attributes.image_url,
           products: products
         };
       });

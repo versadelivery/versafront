@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,14 +10,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Camera, Info, Loader2, Power } from "lucide-react";
+import { Info, Loader2, Power } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 import { useCatalogGroup } from "@/hooks/useCatalogGroup";
 import { DeleteConfirmation } from "@/components/ui/delete-confirmation";
-import Image from "next/image";
-import { fixImageUrl } from "@/utils/image-url";
 import { useCatalogCategories } from "@/hooks/useCatalogCategories";
 import {
   Tooltip,
@@ -47,15 +45,12 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState("1");
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [active, setActive] = useState(true);
   const [categoryId, setCategoryId] = useState("none");
   const { categories } = useCatalogCategories();
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isEditing = !!editingGroup;
   const isLoading = isCreatingGroup || isUpdatingGroup;
@@ -71,7 +66,6 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
       setName(attrs.name || "");
       setDescription(attrs.description || "");
       setPriority(attrs.priority?.toString() || "1");
-      setImagePreview(attrs.image_url || null);
       setActive(attrs.active ?? true);
       setCategoryId(attrs.catalog_category_id?.toString() || "none");
 
@@ -82,8 +76,6 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
     setName("");
     setDescription("");
     setPriority("1");
-    setImageFile(null);
-    setImagePreview(null);
     setActive(true);
     setCategoryId("none");
 
@@ -118,29 +110,8 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
       newErrors.priority = "Deve ser um número maior que 0";
     }
 
-    if (!isEditing && !imageFile && !imagePreview) {
-      newErrors.image = "Imagem é obrigatória";
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSelectImage = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-      clearError("image");
-    }
   };
 
   const handlePriorityChange = (value: string) => {
@@ -159,10 +130,6 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
     formData.append("active", active.toString());
     formData.append("catalog_category_id", categoryId === "none" ? "" : categoryId);
 
-
-    if (imageFile) {
-      formData.append("image", imageFile);
-    }
 
     if (isEditing && editingGroup) {
       formData.append("id", editingGroup);
@@ -204,47 +171,6 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
           ) : (
             <>
               <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-foreground mb-1.5 block">
-                    Imagem do Grupo {!isEditing && "*"}
-                  </label>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleImageChange}
-                  />
-                  <button
-                    type="button"
-                    onClick={handleSelectImage}
-                    disabled={isLoading}
-                    className={`w-full h-40 rounded-lg border border-dashed overflow-hidden transition-colors hover:bg-gray-50 ${
-                      errors.image ? "border-destructive" : "border-gray-200"
-                    }`}
-                  >
-                    {imagePreview ? (
-                      <div className="relative w-full h-full">
-                        <Image
-                          src={fixImageUrl(imagePreview) || imagePreview}
-                          alt="Preview"
-                          fill
-                          className="object-cover"
-                          unoptimized
-                        />
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center h-full gap-2 text-muted-foreground">
-                        <Camera className="h-8 w-8" />
-                        <span className="text-sm">Clique para adicionar</span>
-                      </div>
-                    )}
-                  </button>
-                  {errors.image && (
-                    <p className="text-xs text-destructive mt-1">{errors.image}</p>
-                  )}
-                </div>
-
                 <div>
                   <label className="text-sm font-medium text-foreground mb-1.5 block">
                     Nome do grupo *
