@@ -1,7 +1,7 @@
 "use client";
 
 import ProtectedRoute from "@/components/protected-route";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import GroupModal from "@/components/admin/catalog/group-modal-create";
 import { NewItemModal } from "@/components/admin/catalog/item-modal";
 import { ActionBar } from "@/components/admin/catalog/action-bar";
@@ -97,6 +97,11 @@ function CatalogPage() {
   const [editingCategory, setEditingCategory] = useState<any | null>(null);
 
   const [adminLayout, setAdminLayout] = useState<'grid' | 'list'>('grid');
+
+  // Celular: lista compacta (o toggle grade/lista só aparece a partir de sm)
+  useEffect(() => {
+    if (window.matchMedia('(max-width: 639px)').matches) setAdminLayout('list');
+  }, []);
 
   const { isLoading, catalog, deleteCatalogGroup, isDeletingGroup, toggleCatalogGroupActive, toggleCatalogItemActive } = useCatalogGroup();
   const { reorderGroups, reorderItems } = useCatalogReorder();
@@ -435,8 +440,8 @@ function CatalogPage() {
                             {({ dragHandleProps }) => (
                               <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
                                 {/* Header do grupo */}
-                                <div className="flex items-center justify-between px-4 py-3 border-b border-[#E5E2DD]">
-                                  <div className="flex items-center flex-1 min-w-0 mr-3 gap-2">
+                                <div className="flex flex-wrap items-center justify-between gap-y-2 px-4 py-3 border-b border-[#E5E2DD]">
+                                  <div className="flex items-center w-full sm:w-auto sm:flex-1 min-w-0 sm:mr-3 gap-2">
                                     {!isFiltering && (
                                       <div
                                         className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors"
@@ -462,7 +467,7 @@ function CatalogPage() {
                                     </div>
                                   </div>
 
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex w-full sm:w-auto items-center justify-end gap-2">
                                     {/* Container Status/Editar do Grupo */}
                                     <div className="bg-white rounded-md py-1 px-3 flex items-center border border-[#E5E2DD] gap-3">
                                       <div className="flex items-center gap-2">
