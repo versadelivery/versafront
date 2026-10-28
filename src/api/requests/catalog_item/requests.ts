@@ -148,3 +148,13 @@ export async function reorderCatalogItems(catalogGroupId: string, orderedIds: st
   });
   return response.data;
 }
+
+export interface CodeCheckResult {
+  barcode_item: string | null;
+  scale_code_item: string | null;
+}
+
+export async function checkCatalogItemCodes(params: { barcode?: string; scale_code?: string; except_id?: string }): Promise<CodeCheckResult> {
+  const response = await api.get('/catalog_items/code_check', { params });
+  return response.data;
+}

@@ -937,6 +937,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
             barcode={barcode}
             scaleCode={scaleCode}
             showScaleCode={itemType !== 'unit'}
+            exceptId={id}
             errors={errors}
             onBarcodeChange={(value) => { setBarcode(value); clearError('barcode'); markDirty(); }}
             onScaleCodeChange={(value) => { setScaleCode(value); clearError('scaleCode'); markDirty(); }}
