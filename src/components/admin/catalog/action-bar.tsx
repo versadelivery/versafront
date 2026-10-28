@@ -10,6 +10,7 @@ import {
 } from "@/types/catalog-filters";
 
 interface ActionBarProps {
+  onNewCategory: () => void;
   onNewGroup: () => void;
   onNewItem: () => void;
   hasGroups?: boolean;
@@ -25,6 +26,7 @@ interface ActionBarProps {
 }
 
 export function ActionBar({
+  onNewCategory,
   onNewGroup,
   onNewItem,
   hasGroups = true,
@@ -41,7 +43,7 @@ export function ActionBar({
   return (
     <div className="mb-6">
       <div className="flex gap-3 mb-3">
-        <div className="relative flex-[2]">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             value={searchQuery}
@@ -51,23 +53,34 @@ export function ActionBar({
           />
         </div>
 
-        <Button
-          variant="outline"
-          className="flex-1 py-2.5 px-4 flex items-center justify-center gap-2 text-sm text-muted-foreground border border-gray-300 cursor-pointer"
-          onClick={onNewGroup}
-        >
-          <Plus className="w-4 h-4" />
-          <span>Novo Grupo</span>
-        </Button>
+        <div className="flex shrink-0 gap-2">
+          <Button
+            variant="outline"
+            className="py-2.5 px-4 flex items-center justify-center gap-2 text-sm text-muted-foreground border border-gray-300 cursor-pointer"
+            onClick={onNewCategory}
+          >
+            <Plus className="w-4 h-4" />
+            <span>Categoria</span>
+          </Button>
 
-        <Button
-          className="flex-1 py-2.5 px-4 flex items-center justify-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed border border-gray-300 cursor-pointer"
-          onClick={onNewItem}
-          disabled={!hasGroups}
-        >
-          <Plus className="w-4 h-4" />
-          <span>Novo Item</span>
-        </Button>
+          <Button
+            variant="outline"
+            className="py-2.5 px-4 flex items-center justify-center gap-2 text-sm text-muted-foreground border border-gray-300 cursor-pointer"
+            onClick={onNewGroup}
+          >
+            <Plus className="w-4 h-4" />
+            <span>Grupo</span>
+          </Button>
+
+          <Button
+            className="py-2.5 px-4 flex items-center justify-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed border border-gray-300 cursor-pointer"
+            onClick={onNewItem}
+            disabled={!hasGroups}
+          >
+            <Plus className="w-4 h-4" />
+            <span>Item</span>
+          </Button>
+        </div>
       </div>
 
       <CatalogFilters
