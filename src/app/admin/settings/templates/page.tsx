@@ -29,7 +29,7 @@ function Row({ checked, onCheck, title, subtitle, open, onToggle }: {
           <Minus className="size-3.5" />
         </button>
       ) : (
-        <Checkbox checked={checked} onCheckedChange={onCheck} className="size-6 sm:size-5" aria-label={title} />
+        <Checkbox checked={checked} onCheckedChange={onCheck} className="size-6 border-gray-500 bg-gray-200 sm:size-5" aria-label={title} />
       )}
       <button type="button" onClick={onToggle ?? onCheck} className="flex min-h-11 flex-1 cursor-pointer items-center justify-between gap-2 text-left">
         <span className="min-w-0">
