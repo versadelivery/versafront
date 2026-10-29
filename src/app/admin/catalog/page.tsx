@@ -16,6 +16,7 @@ import { DeleteConfirmation } from "@/components/ui/delete-confirmation";
 import { ComplementManagement } from "@/components/admin/catalog/complement-management";
 import { IngredientManagement } from "@/components/admin/catalog/ingredient-management";
 import { CategoryModal } from "@/components/admin/catalog/category-modal";
+import { PricePanel } from "@/components/admin/catalog/price-panel";
 import { CategoryManager } from "@/components/admin/catalog/category-manager";
 import {
   DndContext,
@@ -90,7 +91,7 @@ function CatalogPage() {
   const [editingGroup, setEditingGroup] = useState<string | null>(null);
   const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] = useState(false);
   const [groupIdToDelete, setGroupIdToDelete] = useState<string | null>(null);
-  const [tab, setTab] = useState<"catalog" | "complements" | "ingredients">("catalog");
+  const [tab, setTab] = useState<"catalog" | "prices" | "complements" | "ingredients">("catalog");
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<CatalogFiltersState>(DEFAULT_FILTERS);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
@@ -101,6 +102,7 @@ function CatalogPage() {
   // Celular: lista compacta (o toggle grade/lista só aparece a partir de sm)
   useEffect(() => {
     if (window.matchMedia('(max-width: 639px)').matches) setAdminLayout('list');
+    if (new URLSearchParams(window.location.search).get('tab') === 'prices') setTab('prices');
   }, []);
 
   const { isLoading, catalog, deleteCatalogGroup, isDeletingGroup, toggleCatalogGroupActive, toggleCatalogItemActive } = useCatalogGroup();
@@ -345,6 +347,16 @@ function CatalogPage() {
                   Cardápio
                 </button>
                 <button
+                  onClick={() => setTab("prices")}
+                  className={`px-2.5 sm:px-4 py-1.5 text-[13px] sm:text-sm font-medium rounded-md transition-all cursor-pointer whitespace-nowrap ${
+                    tab === "prices"
+                      ? "bg-white text-primary border border-[#E5E2DD]"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Ajuste R$
+                </button>
+                <button
                   onClick={() => setTab("complements")}
                   className={`px-2.5 sm:px-4 py-1.5 text-[13px] sm:text-sm font-medium rounded-md transition-all cursor-pointer whitespace-nowrap ${
                     tab === "complements"
@@ -372,7 +384,9 @@ function CatalogPage() {
 
         <div className="max-w-[1920px] mx-auto px-4 sm:px-6 py-6">
 
-          {tab === "catalog" ? (
+          {tab === "prices" ? (
+            <PricePanel />
+          ) : tab === "catalog" ? (
             <>
               <ActionBar
                 onNewCategory={() => { setEditingCategory(null); setIsCategoryModalOpen(true); }}
