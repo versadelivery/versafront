@@ -56,6 +56,15 @@ export default function PrinterSettingsPage() {
               {availableStatuses.map(status => <option key={status} value={status}>{statusLabels[status] || status}</option>)}
             </select>
           </div>
+          {key === 'complete' && <div className="sm:col-span-2">
+            <legend className="mb-1 text-sm font-medium text-gray-800">Campos visíveis no cupom</legend>
+            <p className="mb-2 text-xs text-gray-500">Escolha quais dados aparecem na impressão completa.</p>
+            <div className="grid gap-1 sm:grid-cols-3">
+              {([['complete_show_cnpj', 'CNPJ da loja'], ['complete_show_address', 'Endereço completo'], ['complete_show_phone', 'Telefone do cliente']] as const).map(([field, label]) => <label key={field} className="flex min-h-8 cursor-pointer items-center gap-2 text-sm text-gray-700">
+                <input type="checkbox" className="h-4 w-4 rounded border-gray-300 accent-emerald-600" checked={draft[field]} onChange={event => setField(field, event.target.checked)} />{label}
+              </label>)}
+            </div>
+          </div>}
         </fieldset>
       </section>
     );
