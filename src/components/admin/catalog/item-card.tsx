@@ -8,7 +8,7 @@ import React, { useState } from "react";
 import { ItemDetailsModal } from "./item-details-modal";
 import { EditItemModal } from "./edit-item-modal";
 import { fixImageUrl } from "@/utils/image-url";
-import { Switch } from "@/components/ui/switch";
+import { BusySwitch } from "./busy-switch";
 import { toast } from "sonner";
 
 // =============================================================================
@@ -55,7 +55,7 @@ export function ItemCard({ item, layout = 'grid' }: ItemCardProps) {
     e.stopPropagation();
     duplicateCatalogItem(item.id.toString());
   };
-  const { toggleCatalogItemActive } = useCatalogGroup();
+  const { toggleCatalogItemActive, isTogglingItem } = useCatalogGroup();
   const { shop } = useShop();
 
   const handleCopyLink = (e: React.MouseEvent) => {
@@ -186,7 +186,9 @@ export function ItemCard({ item, layout = 'grid' }: ItemCardProps) {
             <button className="cursor-pointer p-3 sm:p-1.5 rounded-md hover:bg-[#F0EFEB] active:bg-[#F0EFEB] text-muted-foreground hover:text-primary transition-colors" onClick={(e) => { e.stopPropagation(); setIsEditing(true); }} title="Editar">
               <Edit2 className="h-5 w-5 sm:h-3.5 sm:w-3.5" />
             </button>
-            <Switch
+            <BusySwitch
+              pending={isTogglingItem}
+              busyClassName="sm:scale-[0.7]"
               checked={item.active}
               onCheckedChange={(checked) => toggleCatalogItemActive({ id: item.id.toString(), active: checked })}
               className="sm:scale-[0.7] origin-center"
@@ -261,7 +263,9 @@ export function ItemCard({ item, layout = 'grid' }: ItemCardProps) {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center -ml-1">
-                <Switch
+                <BusySwitch
+                  pending={isTogglingItem}
+                  busyClassName="scale-[0.55]"
                   checked={item.active}
                   onCheckedChange={(checked) => {
                     toggleCatalogItemActive({ id: item.id.toString(), active: checked });

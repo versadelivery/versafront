@@ -11,7 +11,7 @@ import { ItemCard } from "@/components/admin/catalog/item-card";
 import { SortableItemCard } from "@/components/admin/catalog/sortable-item-card";
 import { ArrowLeft, Edit2, GripVertical, LayoutGrid, LayoutList, Loader2, Package, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
+import { BusySwitch } from "@/components/admin/catalog/busy-switch";
 import { DeleteConfirmation } from "@/components/ui/delete-confirmation";
 import { ComplementManagement } from "@/components/admin/catalog/complement-management";
 import { IngredientManagement } from "@/components/admin/catalog/ingredient-management";
@@ -105,8 +105,8 @@ function CatalogPage() {
     if (new URLSearchParams(window.location.search).get('tab') === 'prices') setTab('prices');
   }, []);
 
-  const { isLoading, catalog, deleteCatalogGroup, isDeletingGroup, toggleCatalogGroupActive, toggleCatalogItemActive } = useCatalogGroup();
-  const { reorderGroups, reorderItems } = useCatalogReorder();
+  const { isLoading, catalog, deleteCatalogGroup, isDeletingGroup, toggleCatalogGroupActive, toggleCatalogItemActive, togglingGroupId } = useCatalogGroup();
+  const { reorderGroups, reorderItems, isReorderingGroups, isReorderingItems } = useCatalogReorder();
 
   const groups = catalog?.data || [];
   const hasActiveFilters = filters.status !== "all" || filters.tags.length > 0 || filters.itemType !== "all" || filters.discountOnly || filters.outOfStockIngredientOnly;
@@ -305,6 +305,11 @@ function CatalogPage() {
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-[#FAF9F7]">
+        {(isReorderingGroups || isReorderingItems) && (
+          <div role="status" className="fixed bottom-4 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full bg-gray-900 px-4 py-2 text-sm text-white shadow-lg">
+            <Loader2 className="h-4 w-4 animate-spin" />Salvando ordem…
+          </div>
+        )}
         <div className="bg-white border-b border-[#E5E2DD]">
           <div className="max-w-[1920px] mx-auto px-4 sm:px-6">
             <div className="flex items-center justify-between h-16">
@@ -335,7 +340,7 @@ function CatalogPage() {
                     </button>
                   </div>
                 )}
-                <div className="flex items-center gap-1 bg-[#F0EFEB] p-1 rounded-md overflow-x-auto">
+                <div className="flex items-center gap-1 bg-[#F0EFEB] p-1 rounded-md overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <button
                   onClick={() => setTab("catalog")}
                   className={`px-2.5 sm:px-4 py-1.5 text-[13px] sm:text-sm font-medium rounded-md transition-all cursor-pointer whitespace-nowrap ${
@@ -348,10 +353,10 @@ function CatalogPage() {
                 </button>
                 <button
                   onClick={() => setTab("prices")}
-                  className={`px-2.5 sm:px-4 py-1.5 text-[13px] sm:text-sm font-medium rounded-md transition-all cursor-pointer whitespace-nowrap ${
+                  className={`px-2.5 sm:px-4 py-1.5 text-[13px] sm:text-sm font-semibold rounded-md text-white transition-all cursor-pointer whitespace-nowrap ${
                     tab === "prices"
-                      ? "bg-white text-primary border border-[#E5E2DD]"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? "bg-green-800 ring-2 ring-primary/40 shadow-inner"
+                      : "bg-primary hover:bg-primary/90"
                   }`}
                 >
                   Ajuste R$
@@ -488,7 +493,9 @@ function CatalogPage() {
                                         <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-tight">
                                           {group.attributes.active ? "Ativo" : "Pausado"}
                                         </span>
-                                        <Switch
+                                        <BusySwitch
+                                          pending={togglingGroupId === group.id}
+                                          busyClassName="h-8 w-12 scale-90 sm:scale-[0.6]"
                                           checked={group.attributes.active}
                                           onCheckedChange={(checked) => {
                                             toggleCatalogGroupActive({ id: group.id, active: checked });
