@@ -13,6 +13,9 @@ export interface PrinterConfig {
   complete_automation: PrintAutomation;
   complete_font_size: PrintFontSize;
   complete_trigger: PrintTrigger;
+  complete_show_cnpj: boolean;
+  complete_show_address: boolean;
+  complete_show_phone: boolean;
 }
 
 export const DEFAULT_PRINTER_CONFIG: PrinterConfig = {
@@ -24,6 +27,9 @@ export const DEFAULT_PRINTER_CONFIG: PrinterConfig = {
   complete_automation: 'manual',
   complete_font_size: 'medium',
   complete_trigger: 'received',
+  complete_show_cnpj: true,
+  complete_show_address: true,
+  complete_show_phone: true,
 };
 
 export async function getPrinterConfig(): Promise<PrinterConfig> {

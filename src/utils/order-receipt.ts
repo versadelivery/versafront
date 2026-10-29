@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { PrintFontSize } from '@/services/printer-config';
+import { PrinterConfig, PrintFontSize } from '@/services/printer-config';
 import { orderItemQuantityLabel } from '@/utils/order-item-quantity';
 
 export type ReceiptMode = 'summary' | 'complete';
@@ -39,7 +39,10 @@ function itemDetails(item: any, detailed: boolean) {
   </div>`;
 }
 
-export function buildOrderReceipt(order: ReceiptOrder, mode: ReceiptMode, fontSize: PrintFontSize) {
+type ReceiptVisibility = Pick<PrinterConfig, 'complete_show_cnpj' | 'complete_show_address' | 'complete_show_phone'>;
+const DEFAULT_VISIBILITY: ReceiptVisibility = { complete_show_cnpj: true, complete_show_address: true, complete_show_phone: true };
+
+export function buildOrderReceipt(order: ReceiptOrder, mode: ReceiptMode, fontSize: PrintFontSize, visibility: ReceiptVisibility = DEFAULT_VISIBILITY) {
   const attrs = order.socketData?.attributes || order.attributes || {};
   const items = attrs.items?.data || [];
   const customer = attrs.customer?.data?.attributes || {};
@@ -60,12 +63,12 @@ export function buildOrderReceipt(order: ReceiptOrder, mode: ReceiptMode, fontSi
 
   const completeHeader = mode === 'complete' ? `
     <section><strong>${escapeHtml(shop.name || 'VersaDelivery')}</strong><br>
-    ${shop.address ? `${escapeHtml(shop.address)}<br>` : ''}${shop.document ? `CNPJ: ${escapeHtml(shop.document)}` : ''}</section>
+    ${visibility.complete_show_address && shop.address ? `${escapeHtml(shop.address)}<br>` : ''}${visibility.complete_show_cnpj && shop.document ? `CNPJ: ${escapeHtml(shop.document)}` : ''}</section>
     <section><strong>PEDIDO #${escapeHtml(order.id)}</strong><br>Data/Hora: ${date} - ${time}<br>
     ${attrs.delivery_person ? `Entregador: ${escapeHtml(attrs.delivery_person)}` : ''}</section>
     <section><strong>CLIENTE:</strong><br>${escapeHtml(customer.name || order.customerName || 'Cliente')}<br>
-    ${!attrs.withdrawal && address.address ? `${escapeHtml(address.address)}${address.number ? `, ${escapeHtml(address.number)}` : ''}<br>` : 'Retirada na loja<br>'}
-    ${address.neighborhood ? `Bairro: ${escapeHtml(address.neighborhood)}<br>` : ''}${customer.cellphone ? `Fone: ${escapeHtml(customer.cellphone)}` : ''}</section>
+    ${visibility.complete_show_address && !attrs.withdrawal && address.address ? `${escapeHtml(address.address)}${address.number ? `, ${escapeHtml(address.number)}` : ''}<br>` : attrs.withdrawal ? 'Retirada na loja<br>' : ''}
+    ${visibility.complete_show_address && address.neighborhood ? `Bairro: ${escapeHtml(address.neighborhood)}<br>` : ''}${visibility.complete_show_phone && customer.cellphone ? `Fone: ${escapeHtml(customer.cellphone)}` : ''}</section>
     <h2>DETALHAMENTO DO PEDIDO:</h2>` : `
     <header><strong>PEDIDO #${escapeHtml(order.id)}</strong><br>[ ${type} ] &nbsp; ${date.slice(0, 5)} - ${time}<br>Cliente: ${escapeHtml(customer.name || order.customerName || 'Cliente')}</header>
     <h2>ITENS PARA SEPARAÇÃO:</h2>`;
@@ -161,19 +164,19 @@ export function buildWhatsAppReceiptMessage(order: ReceiptOrder) {
   return lines.filter((line, index, all) => line !== '' || (index > 0 && all[index - 1] !== '')).join('\n');
 }
 
-export function printOrderReceipt(order: ReceiptOrder, mode: ReceiptMode, fontSize: PrintFontSize) {
+export function printOrderReceipt(order: ReceiptOrder, mode: ReceiptMode, fontSize: PrintFontSize, visibility?: ReceiptVisibility) {
   const printWindow = window.open('', '_blank', 'width=420,height=720');
   if (!printWindow) return false;
-  printWindow.document.write(buildOrderReceipt(order, mode, fontSize));
+  printWindow.document.write(buildOrderReceipt(order, mode, fontSize, visibility));
   printWindow.document.close();
   printWindow.focus();
   window.setTimeout(() => { printWindow.print(); printWindow.close(); }, 250);
   return true;
 }
 
-export async function downloadOrderReceipt(order: ReceiptOrder, mode: ReceiptMode, fontSize: PrintFontSize) {
+export async function downloadOrderReceipt(order: ReceiptOrder, mode: ReceiptMode, fontSize: PrintFontSize, visibility?: ReceiptVisibility) {
   const { jsPDF } = await import('jspdf');
-  const html = buildOrderReceipt(order, mode, fontSize);
+  const html = buildOrderReceipt(order, mode, fontSize, visibility);
   const parsed = new DOMParser().parseFromString(
     html.replace(/<br\s*\/?>/gi, '\n').replace(/<\/(div|section|header|h2|footer)>/gi, '\n'),
     'text/html',
