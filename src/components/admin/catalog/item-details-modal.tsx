@@ -47,8 +47,9 @@ export function ItemDetailsModal({ id, isOpen, onClose }: ItemDetailsModalProps)
   // FUNÇÕES AUXILIARES
   // =============================================================================
 
-  const formatPrice = (price: string | number) => {
+  const formatPrice = (price: string | number | null) => {
     const num = typeof price === 'string' ? parseFloat(price) : price;
+    if (price == null) return 'Sem preço';
     return `R$ ${(num || 0).toFixed(2).replace('.', ',')}`;
   };
 

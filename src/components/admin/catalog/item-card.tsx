@@ -73,7 +73,8 @@ export function ItemCard({ item, layout = 'grid' }: ItemCardProps) {
   // FUNÇÕES AUXILIARES
   // =============================================================================
 
-  const formatPrice = (price: number) => {
+  const formatPrice = (price?: number | null) => {
+    if (price == null) return 'Sem preço';
     return `R$ ${price.toFixed(2).replace('.', ',')}`;
   };
 
