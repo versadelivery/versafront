@@ -208,7 +208,7 @@ export function PricePanel() {
                                   <span className="min-w-0 break-words text-sm font-medium text-gray-900">{row.name}</span>
                                   <label className="flex min-h-11 shrink-0 cursor-pointer items-center gap-2 text-sm text-muted-foreground">
                                     <Checkbox
-                                      checked={current.active} disabled={!priced} className="size-6 sm:size-5"
+                                      checked={current.active} disabled={!priced} className="size-6 border-transparent bg-gray-200 sm:size-5"
                                       onCheckedChange={(value) => setDraft(row, { active: value === true })}
                                     />
                                     {current.active ? "Ativo" : "Inativo"}
