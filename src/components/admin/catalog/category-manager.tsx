@@ -4,10 +4,10 @@ import { useState } from "react";
 import { DndContext, closestCenter, DragEndEvent, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, rectSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Edit2, GripVertical, Tags, Trash2 } from "lucide-react";
+import { Edit2, GripVertical, Loader2, Tags, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
+import { BusySwitch } from "./busy-switch";
 import { DeleteConfirmation } from "@/components/ui/delete-confirmation";
 import { useCatalogCategories } from "@/hooks/useCatalogCategories";
 import { getApiErrorMessage } from "@/utils/api-error";
@@ -17,8 +17,10 @@ interface CategoryManagerProps {
   onEdit: (category: any) => void;
 }
 
-function CategoryRow({ category, position, onEdit, onDelete, onToggle }: {
+function CategoryRow({ category, position, updating, deleting, onEdit, onDelete, onToggle }: {
   category: any;
+  updating: boolean;
+  deleting: boolean;
   position: number;
   onEdit: () => void;
   onDelete: () => void;
@@ -33,7 +35,7 @@ function CategoryRow({ category, position, onEdit, onDelete, onToggle }: {
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`flex w-full sm:w-auto items-center gap-1 sm:gap-2 rounded-md border bg-white px-1 sm:px-2 py-1 sm:py-1.5 text-sm ${isDragging ? "relative z-10 border-primary shadow-md" : "border-[#E5E2DD] hover:border-primary/40"} ${inactive ? "opacity-60" : ""}`}
+      className={`flex w-full sm:w-auto items-center gap-1 sm:gap-2 rounded-md border bg-white px-1 sm:px-2 py-1 sm:py-1.5 text-sm ${isDragging ? "relative z-10 border-primary shadow-md" : "border-[#E5E2DD] hover:border-primary/40"} ${inactive || deleting ? "opacity-60" : ""}`}
     >
       <button
         type="button"
@@ -49,7 +51,9 @@ function CategoryRow({ category, position, onEdit, onDelete, onToggle }: {
       {(inactive || days) && (
         <span className="text-xs text-muted-foreground">{inactive ? "Inativa" : days}</span>
       )}
-      <Switch
+      <BusySwitch
+        pending={updating}
+        busyClassName="h-6 w-11 sm:h-5 sm:w-9"
         className="h-6 w-11 sm:h-5 sm:w-9 cursor-pointer shadow-sm [&>span]:size-5 sm:[&>span]:size-4"
         checked={!inactive}
         onCheckedChange={onToggle}
@@ -58,15 +62,15 @@ function CategoryRow({ category, position, onEdit, onDelete, onToggle }: {
       <button type="button" className="flex h-11 w-11 sm:h-auto sm:w-auto cursor-pointer items-center justify-center rounded-md active:bg-[#F0EFEB]" onClick={onEdit} aria-label={`Editar ${name}`} title="Editar">
         <Edit2 className="h-5 w-5 sm:h-3.5 sm:w-3.5 text-muted-foreground hover:text-gray-900" />
       </button>
-      <button type="button" className="flex h-11 w-11 sm:h-auto sm:w-auto cursor-pointer items-center justify-center rounded-md active:bg-red-50" onClick={onDelete} aria-label={`Remover ${name}`} title="Remover">
-        <Trash2 className="h-5 w-5 sm:h-3.5 sm:w-3.5 text-destructive" />
+      <button type="button" className="flex h-11 w-11 sm:h-auto sm:w-auto cursor-pointer items-center justify-center rounded-md active:bg-red-50" onClick={onDelete} disabled={deleting} aria-label={`Remover ${name}`} title="Remover">
+        {deleting ? <Loader2 className="h-5 w-5 sm:h-3.5 sm:w-3.5 animate-spin text-destructive" /> : <Trash2 className="h-5 w-5 sm:h-3.5 sm:w-3.5 text-destructive" />}
       </button>
     </div>
   );
 }
 
 export function CategoryManager({ onEdit }: CategoryManagerProps) {
-  const { categories, updateCategory, deleteCategory, reorderCategories } = useCatalogCategories();
+  const { categories, updateCategory, deleteCategory, reorderCategories, updatingCategoryId, deletingCategoryId, isReordering } = useCatalogCategories();
   const [toDelete, setToDelete] = useState<any | null>(null);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -93,6 +97,9 @@ export function CategoryManager({ onEdit }: CategoryManagerProps) {
             <p className="text-xs text-muted-foreground">Arraste pelo ícone <GripVertical className="inline h-3 w-3" /> para definir a ordem em que aparecem na loja.</p>
           </div>
         </div>
+        {isReordering && (
+          <span role="status" className="flex items-center gap-1.5 text-xs text-muted-foreground"><Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />Salvando ordem…</span>
+        )}
       </div>
 
       {categories.length === 0 ? (
@@ -108,6 +115,8 @@ export function CategoryManager({ onEdit }: CategoryManagerProps) {
                 <CategoryRow
                   key={category.id}
                   category={category}
+                  updating={updatingCategoryId === category.id}
+                  deleting={deletingCategoryId === category.id}
                   position={index + 1}
                   onEdit={() => onEdit(category)}
                   onDelete={() => setToDelete(category)}
