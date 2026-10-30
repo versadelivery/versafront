@@ -7,6 +7,9 @@ interface BarcodeFieldsProps {
   scaleCode: string;
   showScaleCode: boolean;
   exceptId?: string;
+  // Cadastro rápido do PDV: o código lido vem travado, ou nem existe (etiqueta de balança)
+  barcodeReadOnly?: boolean;
+  hideBarcode?: boolean;
   errors: { barcode?: string; scaleCode?: string };
   onBarcodeChange: (value: string) => void;
   onScaleCodeChange: (value: string) => void;
@@ -48,11 +51,12 @@ function CodeStatus({ error, owner, free, checking }: CodeStatusProps) {
   return null;
 }
 
-export function BarcodeFields({ barcode, scaleCode, showScaleCode, exceptId, errors, onBarcodeChange, onScaleCodeChange }: BarcodeFieldsProps) {
+export function BarcodeFields({ barcode, scaleCode, showScaleCode, exceptId, barcodeReadOnly, hideBarcode, errors, onBarcodeChange, onScaleCodeChange }: BarcodeFieldsProps) {
   const check = useCodeCheck({ barcode, scaleCode: showScaleCode ? scaleCode : '', exceptId });
 
   return (
     <>
+      {!hideBarcode && (
       <div className="space-y-1.5">
         <label className="text-sm font-medium" htmlFor="item-barcode">Código de barras</label>
         <Input
@@ -63,11 +67,13 @@ export function BarcodeFields({ barcode, scaleCode, showScaleCode, exceptId, err
           onChange={(e) => onBarcodeChange(e.target.value.replace(/\D/g, ''))}
           onKeyDown={ignoreEnter}
           placeholder="Opcional"
-          className={errors.barcode || check.barcodeOwner ? 'border-destructive' : ''}
+          readOnly={barcodeReadOnly}
+          className={errors.barcode || check.barcodeOwner ? 'border-destructive' : barcodeReadOnly ? 'bg-muted' : ''}
         />
         <CodeStatus error={errors.barcode} owner={check.barcodeOwner} free={check.barcodeFree} checking={check.checking && barcode.length >= 8} />
-        <Hint>Clique no campo e bipe o produto. O leitor digita o número sozinho.</Hint>
+        {!barcodeReadOnly && <Hint>Clique no campo e bipe o produto. O leitor digita o número sozinho.</Hint>}
       </div>
+      )}
 
       {showScaleCode && (
         <div className="space-y-1.5">

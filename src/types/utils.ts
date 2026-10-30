@@ -153,6 +153,7 @@ export interface UserData {
   email: string;
   name: string;
   role: string;
+  permissions?: string[];
   shop: {
     id: string;
     type: string;

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,11 +25,25 @@ import { usePayment } from "@/app/admin/settings/payment/usePayment";
 import { useDelivery } from "@/hooks/use-delivery";
 import { KmDeliveryAddress, KmDeliveryState, emptyKmDeliveryState } from "@/components/map/km-delivery-address";
 import { ItemOptionsDialog } from "./item-options-dialog";
+import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
+import { toScanItem } from "@/lib/barcode/to-scan-item";
+import { scanErrorMessage } from "@/lib/barcode/scan-messages";
+import { needsOptions } from "@/lib/barcode/needs-options";
+import { parseBarcode } from "@/lib/barcode/parse-barcode";
+import type { ScanResult } from "@/lib/barcode/parse-barcode";
+import { hasPermission } from "@/lib/permissions";
+import { useAuthContext } from "@/contexts/auth-context";
+import { QuickCreateItemModal } from "@/components/admin/pdv/quick-create-item-modal";
+import type { QuickCreateRequest } from "@/components/admin/pdv/quick-create-item-modal";
+import type { CatalogItemLike } from "@/lib/barcode/to-scan-item";
 import { tableService, Table, TableSession, CloseTableSessionPayload } from "@/app/admin/mesas/services/table-service";
 import CloseTableModal from "@/app/admin/mesas/components/close-table-modal";
 
+const formatWeight = (weight: number) => weight.toLocaleString("pt-BR", { maximumFractionDigits: 3 });
+
 interface CartItem {
   id: string;
+  catalogItemId?: string;
   name: string;
   price: number;
   quantity: number;
@@ -39,6 +54,8 @@ interface CartItem {
   selectedSharedComplements?: { id: string; name: string; price: number }[];
   totalPrice: number;
   weight?: number;
+  // Preço do kg (ou do g) do catálogo; `price` já é o total da linha
+  weightUnitPrice?: number;
   itemType?: string;
 }
 
@@ -57,6 +74,11 @@ export default function PDVPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartIdCounter, setCartIdCounter] = useState(0);
   const [optionsItem, setOptionsItem] = useState<any>(null);
+  // Peso lido da etiqueta quando o item ainda precisa passar pelo modal de opções
+  const [scaleWeight, setScaleWeight] = useState<number | undefined>(undefined);
+  const [quickCreate, setQuickCreate] = useState<QuickCreateRequest | null>(null);
+  const queryClient = useQueryClient();
+  const { user } = useAuthContext();
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
     name: "",
     phone: "",
@@ -109,6 +131,89 @@ export default function PDVPage() {
     };
     fetchTablesAndSessions();
   }, []);
+
+  // Itens do catálogo no formato do leitor (o payload de admin traz barcode, scale_code e os inativos)
+  const scanItems = useMemo(
+    () =>
+      (catalog?.data ?? []).flatMap((group) => {
+        // O tipo do catálogo descreve `items` como objeto, mas a API devolve uma lista.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const items: any[] = (group.attributes as { items?: unknown }).items as any[] ?? [];
+        return items.map((item) => toScanItem(item, group.attributes.active !== false));
+      }),
+    [catalog]
+  );
+
+  const handleScanResult = (result: ScanResult<(typeof scanItems)[number]>, code: string) => {
+    if (result.kind === "error") {
+      // Cadastro rápido: só se a loja escolheu essa ação e quem bipou pode mexer no catálogo
+      const canQuickCreate = shop?.barcode_not_found_action === "quick_create" && hasPermission(user, "catalog.manage");
+      if (canQuickCreate && result.reason === "not_found") {
+        setQuickCreate({ code, kind: "barcode" });
+        return;
+      }
+      if (canQuickCreate && result.reason === "unknown_scale_code") {
+        setQuickCreate({ code, kind: "scale", scaleCode: Number(code.slice(1, 7)) });
+        return;
+      }
+      toast.error(scanErrorMessage(result.reason, code));
+      return;
+    }
+
+    const item = result.item.raw;
+
+    if (result.kind === "needs_weight") {
+      setOptionsItem(item);
+      return;
+    }
+
+    if (result.kind === "scale") {
+      // Cada etiqueta é uma linha própria: dá para tirar uma bandeja sem mexer nas outras.
+      if (needsOptions(item.attributes)) {
+        setScaleWeight(result.weight);
+        setOptionsItem(item);
+      } else {
+        addToCart(item, { weight: result.weight });
+      }
+      return;
+    }
+
+    if (needsOptions(item.attributes)) {
+      setOptionsItem(item);
+      return;
+    }
+
+    const existingLine = cart.find((line) => line.catalogItemId === String(item.id) && !line.weight);
+    if (existingLine) {
+      updateQuantity(existingLine.id, existingLine.quantity + 1);
+      toast.success(`${item.attributes.name} adicionado ao carrinho`);
+    } else {
+      addToCart(item);
+    }
+  };
+
+  const scaleMode = shop?.scale_label_mode ?? "weight";
+
+  // Depois do cadastro, repete a bipada com o item novo: unidade entra no carrinho, etiqueta entra com o peso lido
+  const handleQuickCreated = (created: CatalogItemLike, request: QuickCreateRequest) => {
+    setQuickCreate(null);
+    queryClient.invalidateQueries({ queryKey: ["catalog"] });
+    toast.success("Produto cadastrado");
+    handleScanResult(parseBarcode(request.code, scaleMode, [toScanItem(created)]), request.code);
+    scanner.focusInput();
+  };
+
+  const scanner = useBarcodeScanner({
+    items: scanItems,
+    mode: scaleMode,
+    onResult: handleScanResult,
+    clearSearch: () => setSearchTerm(""),
+  });
+
+  // A busca abre em foco, pronta para o primeiro bip
+  useEffect(() => {
+    if (!isLoading) scanner.focusInput();
+  }, [isLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Filtrar cardápio — somente itens e grupos ativos
   const filteredCatalog =
@@ -244,6 +349,7 @@ export default function PDVPage() {
 
     const cartItem: CartItem = {
       id: `${item.id}-${cartIdCounter}`,
+      catalogItemId: String(item.id),
       name: attrs.name,
       price: unitPrice,
       quantity: 1,
@@ -253,12 +359,16 @@ export default function PDVPage() {
       selectedMethods: options?.selectedMethods,
       selectedStepOptions: options?.selectedOptions,
       selectedSharedComplements: options?.selectedSharedComplements,
-      ...(isWeightBased && itemWeight && { weight: itemWeight, itemType: attrs.item_type }),
+      ...(isWeightBased && itemWeight && { weight: itemWeight, itemType: attrs.item_type, weightUnitPrice: basePrice }),
     };
 
     setCartIdCounter((prev) => prev + 1);
     setCart((prev) => [...prev, cartItem]);
-    toast.success(`${attrs.name} adicionado ao carrinho`);
+    const weightLabel = isWeightBased && itemWeight
+      ? ` (${itemWeight.toLocaleString("pt-BR", { maximumFractionDigits: 3 })} ${attrs.item_type === "weight_per_g" ? "g" : "kg"})`
+      : "";
+    toast.success(`${attrs.name}${weightLabel} adicionado ao carrinho`);
+    scanner.focusInput();
   };
 
   const handleOptionsAddToCart = (options: {
@@ -271,7 +381,13 @@ export default function PDVPage() {
     weight?: number;
   }) => {
     if (optionsItem) addToCart(optionsItem, options);
+    closeOptions();
+  };
+
+  const closeOptions = () => {
     setOptionsItem(null);
+    setScaleWeight(undefined);
+    scanner.focusInput();
   };
 
   const updateQuantity = (itemId: string, newQuantity: number) => {
@@ -628,9 +744,14 @@ export default function PDVPage() {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
-                    placeholder="Buscar produtos..."
+                    ref={scanner.inputRef}
+                    autoFocus
+                    autoComplete="off"
+                    placeholder="Buscar produtos ou bipar o código..."
                     value={searchTerm}
                     onChange={(e: any) => setSearchTerm(e.target.value)}
+                    onKeyDown={scanner.handleKeyDown}
+                    {...scanner.focusProps}
                     className="pl-10"
                   />
                   {searchTerm && (
@@ -644,6 +765,20 @@ export default function PDVPage() {
                     </Button>
                   )}
                 </div>
+
+                <p className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span
+                    aria-hidden
+                    className={`h-2 w-2 shrink-0 rounded-full ${scanner.hasFocus ? "bg-green-500" : "bg-gray-300"}`}
+                  />
+                  {scanner.hasFocus ? (
+                    "Leitor pronto: bipe para adicionar."
+                  ) : (
+                    <button type="button" onClick={scanner.focusInput} className="cursor-pointer text-left underline-offset-2 hover:underline">
+                      Clique aqui para o leitor voltar a funcionar.
+                    </button>
+                  )}
+                </p>
 
                 {allGroups.length > 1 && (
                   <div className="space-y-2">
@@ -987,13 +1122,13 @@ export default function PDVPage() {
                           {/* Peso (itens por kg/g) */}
                           {item.weight && item.itemType && (
                             <p className="text-[11px] text-muted-foreground mt-1">
-                              {item.weight} {item.itemType === 'weight_per_g' ? 'g' : 'kg'} × {formatPrice(item.price)}/{item.itemType === 'weight_per_g' ? 'g' : 'kg'}
+                              {formatWeight(item.weight)} {item.itemType === 'weight_per_g' ? 'g' : 'kg'} × {formatPrice(item.weightUnitPrice ?? item.price)}/{item.itemType === 'weight_per_g' ? 'g' : 'kg'}
                             </p>
                           )}
 
                           <span className="text-xs text-muted-foreground mt-1">
                             {item.weight && item.itemType
-                              ? `${item.weight} ${item.itemType === 'weight_per_g' ? 'g' : 'kg'}`
+                              ? `${formatWeight(item.weight)} ${item.itemType === 'weight_per_g' ? 'g' : 'kg'}`
                               : `${formatPrice(item.price)} × ${item.quantity}`}
                           </span>
                         </div>
@@ -1537,11 +1672,22 @@ export default function PDVPage() {
         </div>
       </div>
 
+      {/* Cadastro rápido de produto bipado que não existe */}
+      <QuickCreateItemModal
+        request={quickCreate}
+        groups={allGroups.map((group) => ({ id: String(group.id), name: group.attributes.name }))}
+        onClose={() => setQuickCreate(null)}
+        onCloseAutoFocus={scanner.focusInput}
+        onCreated={handleQuickCreated}
+      />
+
       {/* Modal de opções do item */}
       <ItemOptionsDialog
         item={optionsItem}
         open={optionsItem !== null}
-        onClose={() => setOptionsItem(null)}
+        initialWeight={scaleWeight}
+        onCloseAutoFocus={scanner.focusInput}
+        onClose={closeOptions}
         onAddToCart={handleOptionsAddToCart}
       />
 
