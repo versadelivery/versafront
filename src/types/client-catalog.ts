@@ -27,6 +27,8 @@ export interface ShopResponse {
             min_value_free_delivery: string | null
             minimum_order_value: number | null
             pickup_adjustment_type?: 'none' | 'discount' | 'surcharge'
+            accepts_delivery?: boolean
+            accepts_pickup?: boolean
             pickup_adjustment_value?: number | string
             pickup_value_type?: 'fixed' | 'percentage'
             latitude: string | null

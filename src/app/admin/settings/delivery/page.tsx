@@ -43,6 +43,7 @@ import {
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { DeleteConfirmation } from "@/components/ui/delete-confirmation";
 import { Switch } from "@/components/ui/switch";
+import { OrderTypeToggles } from "@/components/admin/order-type-toggles";
 import { useDelivery } from "@/hooks/use-delivery";
 import { useShop } from "@/hooks/use-shop";
 import { toast } from "sonner";
@@ -363,6 +364,21 @@ export default function DeliverySettingsPage() {
       </div>
 
       <div className="max-w-[1920px] mx-auto px-4 sm:px-6 py-6 space-y-6">
+        {/* Entrega e retirada: liga/desliga com salvamento imediato (independe do botão Salvar) */}
+        <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+          <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
+            <Truck className="h-4 w-4 text-primary" />
+            <h2 className="font-tomato text-base font-semibold text-gray-900">Modalidades de atendimento</h2>
+          </div>
+          <div className="px-5 py-5 space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Escolha o que os clientes podem pedir. Ao desligar, a opção some para novos pedidos na hora. Você também
+              encontra estes botões no painel de Pedidos.
+            </p>
+            <OrderTypeToggles className="sm:max-w-md" />
+          </div>
+        </div>
+
         {/* Valor Minimo do Pedido */}
         <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
           <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">

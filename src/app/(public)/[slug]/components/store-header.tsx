@@ -13,6 +13,7 @@ import favicon from "@/public/logo/favicon.svg";
 import logoInlineBlack from "@/public/logo/logo-inline-black.svg";
 
 import { getTextColors } from '../theme-utils';
+import { getAvailability } from '@/lib/order-type-availability';
 
 interface StoreHeaderProps {
   shop: any;
@@ -49,8 +50,11 @@ export default function StoreHeader({ shop: initialShop }: StoreHeaderProps) {
     () => getTextColors(headerColor), [headerColor]
   );
 
+  const acceptsDelivery = getAvailability(attributes.shop_delivery_config?.data?.attributes).delivery;
+
   const deliveryFee = () => {
     const config = attributes.shop_delivery_config?.data?.attributes;
+    if (!acceptsDelivery) return 'Sem entrega';
     if (!config) return 'A combinar';
     if (config.delivery_fee_kind === 'fixed') {
       return `R$ ${Number(config.amount).toFixed(2).replace('.', ',')}`;
@@ -67,6 +71,8 @@ export default function StoreHeader({ shop: initialShop }: StoreHeaderProps) {
   };
 
   const minimumOrder = () => {
+    // O pedido mínimo só vale para entrega
+    if (!acceptsDelivery) return 'Sem mínimo';
     const min = attributes.shop_delivery_config?.data?.attributes?.minimum_order_value || 0;
     return `R$ ${Number(min).toFixed(2).replace('.', ',')}`;
   };

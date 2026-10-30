@@ -11,6 +11,7 @@ import { CatalogItem } from "../types"
 import Link from "next/link"
 import Image from "next/image"
 import { hiddenCategoryIds } from "../category-availability"
+import { getAvailability } from "@/lib/order-type-availability"
 import favicon from "@/public/logo/favicon.svg"
 import logoInlineBlack from "@/public/logo/logo-inline-black.svg"
 
@@ -43,6 +44,7 @@ export default function CartPage() {
   const slug = params.slug as string
 
   const minimumOrderValue = Number(contextShop?.data?.attributes?.shop_delivery_config?.data?.attributes?.minimum_order_value) || 0
+  const acceptsDelivery = getAvailability(contextShop?.data?.attributes?.shop_delivery_config?.data?.attributes).delivery
   const isBelowMinOrder = minimumOrderValue > 0 && totalPrice < minimumOrderValue
 
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
@@ -400,7 +402,7 @@ export default function CartPage() {
                     <span className="text-sm text-gray-600">Subtotal</span>
                     <span className="text-sm font-medium text-gray-900">{formatPrice(totalPrice)}</span>
                   </div>
-                  {minimumOrderValue > 0 && (
+                  {minimumOrderValue > 0 && acceptsDelivery && (
                     <div className="flex justify-between items-center px-5 py-4">
                       <span className="text-sm text-gray-600">Pedido mínimo (entrega)</span>
                       <span className={`text-sm font-medium ${isBelowMinOrder ? 'text-red-500' : 'text-green-600'}`}>

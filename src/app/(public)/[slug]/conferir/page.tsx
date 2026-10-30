@@ -16,11 +16,13 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useCart } from '../cart/cart-context'
 import { useParams, useRouter } from 'next/navigation'
 import { useState, useEffect, useMemo } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CreateOrderRequest, Order } from '@/types/order'
 import { createOrder } from '@/services/order-service'
 import { validateCoupon, ValidateCouponData } from '@/services/coupon-validate-service'
 import { useShopBySlug } from '../use-slug'
+import { getAvailability, resolveOrderType } from '@/lib/order-type-availability'
 import { formatPrice } from '../format-price'
 import { useShopStatusContext } from '@/contexts/ShopStatusContext'
 import Image from 'next/image'
@@ -341,6 +343,7 @@ export default function CheckoutPage() {
   const { isOpen: isShopOpen, loading: shopStatusLoading, checkStatus } = useShopStatusContext()
 
   const { data: shopData, isLoading: isLoadingShop } = useShopBySlug(storeSlug)
+  const queryClient = useQueryClient()
 
   const { items, totalPrice, removeItem, updateItemQuantity, clearCart } = useCart()
 
@@ -421,6 +424,16 @@ export default function CheckoutPage() {
 
   const shopDeliveryConfig = shopData?.data?.attributes?.shop_delivery_config?.data?.attributes || null
   const shopPaymentConfig = shopData?.data?.attributes?.shop_payment_config?.data?.attributes || null
+  const acceptsDelivery = shopDeliveryConfig?.accepts_delivery
+  const acceptsPickup = shopDeliveryConfig?.accepts_pickup
+  const orderTypeAvailability = useMemo(
+    () => getAvailability({ accepts_delivery: acceptsDelivery, accepts_pickup: acceptsPickup }),
+    [acceptsDelivery, acceptsPickup]
+  )
+  // O lojista pode desligar entrega ou retirada; se a escolhida sumir, a tela passa para a outra.
+  useEffect(() => {
+    setDeliveryOption(current => resolveOrderType(current, orderTypeAvailability))
+  }, [orderTypeAvailability])
   const shop = shopData
   const isKmDelivery = shopDeliveryConfig?.delivery_fee_kind === 'per_km'
 
@@ -723,6 +736,12 @@ export default function CheckoutPage() {
       return
     }
 
+    if (!orderTypeAvailability[deliveryOption]) {
+      toast.error(`A loja não está aceitando ${deliveryOption === 'delivery' ? 'entrega' : 'retirada'} no momento.`)
+      queryClient.invalidateQueries({ queryKey: ['shop', storeSlug] })
+      return
+    }
+
     const minOrderValue = Number(shopDeliveryConfig?.minimum_order_value) || 0
     const effectiveOrderValue = (totalPrice || 0) - (couponDiscount || 0) + (paymentAdjustment || 0)
     if (deliveryOption === 'delivery' && effectiveOrderValue < minOrderValue) {
@@ -924,6 +943,8 @@ export default function CheckoutPage() {
         }
       } else if (raw) {
         message = raw
+        // Loja desligou entrega/retirada depois que a tela abriu: recarrega para mostrar o que está disponível
+        if (raw.includes('não está aceitando')) queryClient.invalidateQueries({ queryKey: ['shop', storeSlug] })
       }
       toast.error(message)
       setIsSubmitting(false)
@@ -1321,25 +1342,37 @@ export default function CheckoutPage() {
                 <div className="flex bg-gray-100 rounded-md p-1 gap-1">
                   <button
                     onClick={() => setDeliveryOption('delivery')}
-                    className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-all cursor-pointer ${
-                      deliveryOption === 'delivery'
-                        ? 'bg-white text-gray-900 border border-[#E5E2DD]'
-                        : 'text-muted-foreground hover:text-gray-700'
+                    disabled={!orderTypeAvailability.delivery}
+                    className={`flex-1 flex flex-col items-center justify-center py-2 px-3 rounded-md text-sm font-medium transition-all ${
+                      !orderTypeAvailability.delivery
+                        ? 'text-muted-foreground/60 cursor-not-allowed'
+                        : deliveryOption === 'delivery'
+                          ? 'bg-white text-gray-900 border border-[#E5E2DD] cursor-pointer'
+                          : 'text-muted-foreground hover:text-gray-700 cursor-pointer'
                     }`}
                   >
-                    <Truck className="h-4 w-4" />
-                    Entrega
+                    <span className="flex items-center gap-2">
+                      <Truck className="h-4 w-4" />
+                      Entrega
+                    </span>
+                    {!orderTypeAvailability.delivery && <span className="text-xs font-normal">Indisponível no momento</span>}
                   </button>
                   <button
                     onClick={() => setDeliveryOption('pickup')}
-                    className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-all cursor-pointer ${
-                      deliveryOption === 'pickup'
-                        ? 'bg-white text-gray-900 border border-[#E5E2DD]'
-                        : 'text-muted-foreground hover:text-gray-700'
+                    disabled={!orderTypeAvailability.pickup}
+                    className={`flex-1 flex flex-col items-center justify-center py-2 px-3 rounded-md text-sm font-medium transition-all ${
+                      !orderTypeAvailability.pickup
+                        ? 'text-muted-foreground/60 cursor-not-allowed'
+                        : deliveryOption === 'pickup'
+                          ? 'bg-white text-gray-900 border border-[#E5E2DD] cursor-pointer'
+                          : 'text-muted-foreground hover:text-gray-700 cursor-pointer'
                     }`}
                   >
-                    <Store className="h-4 w-4" />
-                    Retirada
+                    <span className="flex items-center gap-2">
+                      <Store className="h-4 w-4" />
+                      Retirada
+                    </span>
+                    {!orderTypeAvailability.pickup && <span className="text-xs font-normal">Indisponível no momento</span>}
                   </button>
                 </div>
 
