@@ -18,6 +18,7 @@ import { useShop } from "@/hooks/use-shop";
 import { ShopAttributes } from "@/services/shop";
 import { useUsers } from "@/app/admin/settings/users/hooks/useUsers";
 import ScheduleSettings from "./components/ScheduleSettings";
+import BarcodeSettings from "./components/BarcodeSettings";
 import { usePhoneMask } from "@/hooks/use-phone-mask";
 import Link from "next/link";
 
@@ -49,6 +50,8 @@ export default function GeneralSettingsPage() {
         slug: shop.slug,
         image: null,
         auto_accept_orders: shop.auto_accept_orders ?? false,
+        barcode_not_found_action: shop.barcode_not_found_action ?? "notice",
+        scale_label_mode: shop.scale_label_mode ?? "weight",
         auto_open_cash_register: shop.auto_open_cash_register ?? false,
         auto_open_cash_register_time: shop.auto_open_cash_register_time ?? null,
         estimated_prep_time: shop.estimated_prep_time ?? 30,
@@ -565,6 +568,13 @@ export default function GeneralSettingsPage() {
               </div>
             </div>
           </div>
+
+          <BarcodeSettings
+            notFoundAction={formData.barcode_not_found_action ?? "notice"}
+            scaleMode={formData.scale_label_mode ?? "weight"}
+            onNotFoundActionChange={(value) => setFormData(prev => ({ ...prev, barcode_not_found_action: value }))}
+            onScaleModeChange={(value) => setFormData(prev => ({ ...prev, scale_label_mode: value }))}
+          />
 
           {/* SectionCard: Tempo Estimado */}
           <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">

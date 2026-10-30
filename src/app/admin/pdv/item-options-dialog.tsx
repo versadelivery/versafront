@@ -117,6 +117,10 @@ function WeightPicker({ min, max, step, value, onChange, unit = 'kg' }: {
 interface ItemOptionsDialogProps {
   item: any | null;
   open: boolean;
+  // Peso já lido da etiqueta da balança: fica fixo no modal (a roleta só tem valores de min + n x passo)
+  initialWeight?: number;
+  // Chamado depois de fechar, para o PDV devolver o foco à busca (o Radix devolveria ao botão)
+  onCloseAutoFocus?: () => void;
   onClose: () => void;
   onAddToCart: (options: {
     extrasPrice: number;
@@ -132,6 +136,8 @@ interface ItemOptionsDialogProps {
 export function ItemOptionsDialog({
   item,
   open,
+  initialWeight,
+  onCloseAutoFocus,
   onClose,
   onAddToCart,
 }: ItemOptionsDialogProps) {
@@ -141,7 +147,8 @@ export function ItemOptionsDialog({
   const [selectedOptions, setSelectedOptions] = useState<
     Record<string, string>
   >({});
-  const [weight, setWeight] = useState<number>(1);
+  const [pickedWeight, setWeight] = useState<number>(1);
+  const weight = initialWeight ?? pickedWeight;
 
   // Reset e pré-selecionar primeira opção de cada step ao abrir
   useEffect(() => {
@@ -320,7 +327,14 @@ export function ItemOptionsDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-[640px] p-0 bg-white max-h-[90vh] flex flex-col overflow-hidden">
+      <DialogContent
+        className="sm:max-w-[640px] p-0 bg-white max-h-[90vh] flex flex-col overflow-hidden"
+        onCloseAutoFocus={(event) => {
+          if (!onCloseAutoFocus) return;
+          event.preventDefault();
+          onCloseAutoFocus();
+        }}
+      >
         {/* Header com nome do produto */}
         <DialogHeader className="px-6 pt-6 pb-4 border-b border-[#E5E2DD] flex-shrink-0">
           <DialogTitle className="font-tomato text-lg font-bold text-gray-900 truncate">
@@ -389,14 +403,21 @@ export function ItemOptionsDialog({
                     <Scale className="h-4 w-4 text-primary" />
                     <h3 className="text-sm font-semibold text-gray-900">Quantidade ({weightUnit})</h3>
                   </div>
-                  <WeightPicker
-                    min={item.attributes.min_weight || (isGrams ? 100 : 0.1)}
-                    max={item.attributes.max_weight || (isGrams ? 5000 : 10)}
-                    step={item.attributes.measure_interval || (isGrams ? 50 : 0.1)}
-                    value={weight}
-                    onChange={setWeight}
-                    unit={weightUnit}
-                  />
+                  {initialWeight !== undefined ? (
+                    <p className="text-center text-2xl font-bold text-foreground">
+                      {initialWeight.toLocaleString('pt-BR', { maximumFractionDigits: 3 })} {weightUnit}
+                      <span className="block text-xs font-normal text-muted-foreground">Peso lido da etiqueta da balança</span>
+                    </p>
+                  ) : (
+                    <WeightPicker
+                      min={item.attributes.min_weight || (isGrams ? 100 : 0.1)}
+                      max={item.attributes.max_weight || (isGrams ? 5000 : 10)}
+                      step={item.attributes.measure_interval || (isGrams ? 50 : 0.1)}
+                      value={weight}
+                      onChange={setWeight}
+                      unit={weightUnit}
+                    />
+                  )}
                   <div className="text-center text-sm text-muted-foreground">
                     {weight} {weightUnit} × {formatPrice(basePrice)}/{weightUnit}
                     {' = '}

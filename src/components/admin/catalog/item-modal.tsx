@@ -15,6 +15,7 @@ import { useCatalogGroup } from "@/hooks/useCatalogGroup";
 import { useCatalogComplement } from "@/hooks/useCatalogComplement";
 import { useIngredient } from "@/hooks/useIngredient";
 import { Checkbox } from "@/components/ui/checkbox";
+import { BarcodeFields } from "@/components/admin/catalog/barcode-fields";
 
 
 // =============================================================================
@@ -89,6 +90,8 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
   const [minWeight, setMinWeight] = useState('');
   const [maxWeight, setMaxWeight] = useState('');
   const [measureInterval, setMeasureInterval] = useState('');
+  const [barcode, setBarcode] = useState('');
+  const [scaleCode, setScaleCode] = useState('');
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
 
@@ -169,6 +172,8 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
     setMinWeight('');
     setMaxWeight('');
     setMeasureInterval('');
+    setBarcode('');
+    setScaleCode('');
     setPreviewImage(null);
     setImageFile(null);
     setHasDiscount(false);
@@ -470,7 +475,10 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
       if (minWeight) formData.append('min_weight', minWeight);
       if (maxWeight) formData.append('max_weight', maxWeight);
       if (measureInterval) formData.append('measure_interval', measureInterval);
+      if (scaleCode) formData.append('scale_code', scaleCode);
     }
+
+    if (barcode) formData.append('barcode', barcode);
 
     // Imagem
     if (imageFile) {
@@ -666,6 +674,16 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
               </div>
             </>
           )}
+
+          {/* Código de barras e código da balança */}
+          <BarcodeFields
+            barcode={barcode}
+            scaleCode={scaleCode}
+            showScaleCode={itemType !== 'unit'}
+            errors={errors}
+            onBarcodeChange={(value) => { setBarcode(value); markDirty(); }}
+            onScaleCodeChange={(value) => { setScaleCode(value); markDirty(); }}
+          />
 
           {/* Preço */}
           <div className="space-y-1.5">
