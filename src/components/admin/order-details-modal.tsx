@@ -439,7 +439,12 @@ export default function OrderDetailsModal({
     if (currentItems.length <= 1) {
       return;
     }
-    setRemovedItemIds(prev => [...prev, itemId]);
+    // Linha nova ainda não existe na API: sai da lista de itens a criar e não vai em removed_item_ids
+    if (itemId.startsWith('new_')) {
+      setNewItemsToAdd(prev => prev.filter(ni => ni._tempId !== itemId));
+    } else {
+      setRemovedItemIds(prev => [...prev, itemId]);
+    }
     setEditedOrder(prev => ({
       ...prev,
       items: prev.items.filter((i: any) => i.id !== itemId),
@@ -454,6 +459,7 @@ export default function OrderDetailsModal({
       setCatalogGroups(response.data || []);
     } catch (error) {
       console.error('Erro ao carregar cardápio:', error);
+      toast.error('Não foi possível carregar o cardápio para bipar. Feche e abra a edição de novo.');
     } finally {
       setLoadingCatalog(false);
     }
@@ -559,6 +565,8 @@ export default function OrderDetailsModal({
     mode: scaleMode,
     onResult: handleScanResult,
     clearSearch: () => setScanText(''),
+    ready: !loadingCatalog && catalogGroups.length > 0,
+    onNotReady: () => toast.error('Cardápio carregando. Bipe de novo em instantes.'),
   });
 
   // Ao entrar na edição o cardápio carrega e o campo de bipagem já fica em foco
@@ -1662,6 +1670,10 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
                   e.preventDefault();
                   const text = e.currentTarget.value;
                   setCatalogSearch('');
+                  if (loadingCatalog || catalogGroups.length === 0) {
+                    toast.error('Cardápio carregando. Bipe de novo em instantes.');
+                    return;
+                  }
                   const result = parseBarcode(text, scaleMode, scanItems);
                   if (result.kind !== 'error') setShowAddItemModal(false);
                   handleScanResult(result, text.trim());

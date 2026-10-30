@@ -182,7 +182,16 @@ export default function PDVPage() {
       return;
     }
 
-    const existingLine = cart.find((line) => line.catalogItemId === String(item.id) && !line.weight);
+    // Só soma na linha simples; uma linha montada com extras ou modos de preparo não deve ganhar unidades por bipada
+    const existingLine = cart.find(
+      (line) =>
+        line.catalogItemId === String(item.id) &&
+        !line.weight &&
+        !line.selectedExtras?.length &&
+        !line.selectedMethods?.length &&
+        !line.selectedSharedComplements?.length &&
+        !Object.keys(line.selectedStepOptions ?? {}).length
+    );
     if (existingLine) {
       updateQuantity(existingLine.id, existingLine.quantity + 1);
       toast.success(`${item.attributes.name} adicionado ao carrinho`);
@@ -207,6 +216,8 @@ export default function PDVPage() {
     mode: scaleMode,
     onResult: handleScanResult,
     clearSearch: () => setSearchTerm(""),
+    ready: !isLoading,
+    onNotReady: () => toast.error("Cardápio carregando. Bipe de novo em instantes."),
   });
 
   // A busca abre em foco, pronta para o primeiro bip
@@ -344,7 +355,8 @@ export default function PDVPage() {
     const unitPrice = isWeightBased && itemWeight
       ? basePrice * itemWeight + extrasPrice + complementsPrice
       : basePrice + extrasPrice + complementsPrice;
-    const finalTotal = unitPrice;
+    // A API grava o total da linha com 2 casas; o carrinho arredonda igual para o total bater
+    const finalTotal = Math.round(unitPrice * 100) / 100;
 
     const cartItem: CartItem = {
       id: `${item.id}-${cartIdCounter}`,
@@ -367,6 +379,8 @@ export default function PDVPage() {
       ? ` (${itemWeight.toLocaleString("pt-BR", { maximumFractionDigits: 3 })} ${attrs.item_type === "weight_per_g" ? "g" : "kg"})`
       : "";
     toast.success(`${attrs.name}${weightLabel} adicionado ao carrinho`);
+    // Texto antigo na busca grudaria nos dígitos do próximo bip e a leitura deixaria de valer
+    setSearchTerm("");
     scanner.focusInput();
   };
 
@@ -746,6 +760,7 @@ export default function PDVPage() {
                     ref={scanner.inputRef}
                     autoFocus
                     autoComplete="off"
+                    aria-label="Buscar produtos ou bipar o código de barras"
                     placeholder="Buscar produtos ou bipar o código..."
                     value={searchTerm}
                     onChange={(e: any) => setSearchTerm(e.target.value)}
@@ -765,7 +780,7 @@ export default function PDVPage() {
                   )}
                 </div>
 
-                <p className="flex items-center gap-2 text-xs text-muted-foreground">
+                <p className="flex items-center gap-2 text-xs text-muted-foreground" aria-live="polite">
                   <span
                     aria-hidden
                     className={`h-2 w-2 shrink-0 rounded-full ${scanner.hasFocus ? "bg-green-500" : "bg-gray-300"}`}

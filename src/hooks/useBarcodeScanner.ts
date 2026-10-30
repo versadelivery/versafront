@@ -8,11 +8,14 @@ interface UseBarcodeScannerOptions<T extends ScanItem> {
   mode: ScaleMode;
   onResult: (result: ScanResult<T>, code: string) => void;
   clearSearch: () => void;
+  // Com o catálogo ainda carregando, todo código pareceria "não cadastrado" (e abriria o cadastro rápido por engano)
+  ready?: boolean;
+  onNotReady?: () => void;
 }
 
 // O leitor USB digita o número e termina com Enter. Este hook decide se o texto do campo é uma
 // leitura (8+ dígitos, sem letras) e, só nesse caso, interpreta; texto comum continua sendo busca por nome.
-export function useBarcodeScanner<T extends ScanItem>({ items, mode, onResult, clearSearch }: UseBarcodeScannerOptions<T>) {
+export function useBarcodeScanner<T extends ScanItem>({ items, mode, onResult, clearSearch, ready = true, onNotReady }: UseBarcodeScannerOptions<T>) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [hasFocus, setHasFocus] = useState(false);
 
@@ -33,6 +36,10 @@ export function useBarcodeScanner<T extends ScanItem>({ items, mode, onResult, c
 
     event.preventDefault();
     clearSearch();
+    if (!ready) {
+      onNotReady?.();
+      return;
+    }
     onResult(parseBarcode(text, mode, items), text.trim());
     focusInput();
   };

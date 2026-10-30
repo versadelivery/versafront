@@ -24,9 +24,10 @@ interface CodeCheckInput {
 
 // Asks the API (300ms after the last keystroke or scan) which item already uses these codes.
 export function useCodeCheck({ barcode, scaleCode, exceptId }: CodeCheckInput) {
-  const current = { barcode: barcode.length >= MIN_BARCODE_LENGTH ? barcode : '', scaleCode };
-  const settled = useDebounced(current, DEBOUNCE_MS);
-  const typing = current.barcode !== settled.barcode || current.scaleCode !== settled.scaleCode;
+  const barcodeValue = barcode.length >= MIN_BARCODE_LENGTH ? barcode : '';
+  // Cada valor é debounced separado: um objeto novo a cada render rearmaria o timer para sempre
+  const settled = { barcode: useDebounced(barcodeValue, DEBOUNCE_MS), scaleCode: useDebounced(scaleCode, DEBOUNCE_MS) };
+  const typing = barcodeValue !== settled.barcode || scaleCode !== settled.scaleCode;
   const hasCode = !!(settled.barcode || settled.scaleCode);
 
   const { data, isFetching } = useQuery({
