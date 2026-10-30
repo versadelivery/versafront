@@ -36,6 +36,7 @@ import {
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import OrderDetailsModal from '@/components/admin/order-details-modal';
+import { OrderTypeToggles } from '@/components/admin/order-type-toggles';
 import { formatPrice } from '@/app/(public)/[slug]/format-price';
 import { useAdminActionCable, AdminOrderData } from '@/lib/admin-cable';
 import OrderCard from '@/components/admin/order-card';
@@ -766,6 +767,9 @@ export default function OrderManagement() {
       </div>
 
       <div className="max-w-[1920px] mx-auto px-4 sm:px-6 py-4">
+        {/* Entrega/retirada ligam e desligam aqui porque a operação muda durante o turno */}
+        <OrderTypeToggles className="mb-4 sm:max-w-md" />
+
         {/* Busca rápida por ID + Busca geral + Filtros */}
         <div className="mb-4 space-y-3">
           {/* Linha principal: Busca rápida por ID e busca geral */}

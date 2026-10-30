@@ -21,6 +21,8 @@ export interface ShopData {
             amount: number;
             min_value_free_delivery: number | null;
             minimum_order_value: number | null;
+            accepts_delivery?: boolean;
+            accepts_pickup?: boolean;
             latitude: string | number | null;
             longitude: string | number | null;
             location_address: string | null;

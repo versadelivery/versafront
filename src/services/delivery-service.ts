@@ -30,12 +30,18 @@ export interface DeliveryConfig {
   pickup_adjustment_type: "none" | "discount" | "surcharge";
   pickup_adjustment_value: number;
   pickup_value_type: "fixed" | "percentage";
+  accepts_delivery: boolean;
+  accepts_pickup: boolean;
   distanceTiers: DeliveryDistanceTier[];
 }
 
+export type OrderTypeAvailabilityInput = Partial<Pick<DeliveryConfig, "accepts_delivery" | "accepts_pickup">>;
+
+// Entrega/retirada têm salvamento próprio (botões): o "Salvar" geral não envia esses campos,
+// senão uma tela aberta há tempo desfaria o que foi mudado no painel de pedidos.
 export type DeliveryConfigInput = Omit<
   DeliveryConfig,
-  "id" | "neighborhoods" | "distanceTiers"
+  "id" | "neighborhoods" | "distanceTiers" | "accepts_delivery" | "accepts_pickup"
 > & {
   distance_tiers?: DeliveryDistanceTier[];
 };
@@ -52,6 +58,8 @@ interface ApiDeliveryConfig {
       pickup_adjustment_type?: "none" | "discount" | "surcharge";
       pickup_adjustment_value?: number | string;
       pickup_value_type?: "fixed" | "percentage";
+      accepts_delivery?: boolean;
+      accepts_pickup?: boolean;
       latitude: string | null;
       longitude: string | null;
       location_address: string | null;
@@ -99,6 +107,8 @@ export const deliveryService = {
       pickup_adjustment_type: data.attributes.pickup_adjustment_type || "none",
       pickup_adjustment_value: parseFloat(String(data.attributes.pickup_adjustment_value || 0)),
       pickup_value_type: data.attributes.pickup_value_type || "fixed",
+      accepts_delivery: data.attributes.accepts_delivery ?? true,
+      accepts_pickup: data.attributes.accepts_pickup ?? true,
       latitude: toNumber(data.attributes.latitude),
       longitude: toNumber(data.attributes.longitude),
       location_address: data.attributes.location_address,
@@ -123,6 +133,17 @@ export const deliveryService = {
       shop_delivery_config: data
     });
     return response.data.data;
+  },
+
+  updateOrderTypeAvailability: async (data: OrderTypeAvailabilityInput) => {
+    const response = await api.put<ApiDeliveryConfig>("/shop_delivery_configs", {
+      shop_delivery_config: data
+    });
+    const attributes = response.data.data.attributes;
+    return {
+      accepts_delivery: attributes.accepts_delivery ?? true,
+      accepts_pickup: attributes.accepts_pickup ?? true,
+    };
   },
 
   createNeighborhood: async (data: Omit<DeliveryNeighborhood, "id">) => {
