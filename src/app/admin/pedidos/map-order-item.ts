@@ -12,6 +12,7 @@ export function mapOrderItem(item: any) {
     image: item.attributes.catalog_item?.data?.attributes?.image_url,
     weight: (item.attributes as any).weight != null ? parseFloat((item.attributes as any).weight) : undefined,
     item_type: item.attributes.item_type,
+    weight_confirmed: !!item.attributes.weight_confirmed,
     selected_extras: (item.attributes as any).selected_extras?.map((e: any) => ({
       id: e.id,
       name: e.name,

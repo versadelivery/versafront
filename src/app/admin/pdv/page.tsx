@@ -29,6 +29,7 @@ import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
 import { toScanItem } from "@/lib/barcode/to-scan-item";
 import { scanErrorMessage } from "@/lib/barcode/scan-messages";
 import { needsOptions } from "@/lib/barcode/needs-options";
+import { formatWeight } from "@/utils/order-item-quantity";
 import { parseBarcode } from "@/lib/barcode/parse-barcode";
 import type { ScanResult } from "@/lib/barcode/parse-barcode";
 import { hasPermission } from "@/lib/permissions";
@@ -38,8 +39,6 @@ import type { QuickCreateRequest } from "@/components/admin/pdv/quick-create-ite
 import type { CatalogItemLike } from "@/lib/barcode/to-scan-item";
 import { tableService, Table, TableSession, CloseTableSessionPayload } from "@/app/admin/mesas/services/table-service";
 import CloseTableModal from "@/app/admin/mesas/components/close-table-modal";
-
-const formatWeight = (weight: number) => weight.toLocaleString("pt-BR", { maximumFractionDigits: 3 });
 
 interface CartItem {
   id: string;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useUsers } from '@/app/admin/settings/users/hooks/useUsers';
 import { Dialog, DialogContent } from '@/components/ui/order-dialog';
 import { Button } from '@/components/ui/button';
@@ -34,11 +34,20 @@ import {
   Search,
   Loader2,
   Navigation,
+  ScanBarcode,
+  Check,
 } from 'lucide-react';
 import { getCatalog } from '@/api/requests/catalog/requests';
 import { RouteMap } from '@/components/map/route-map';
 import { DeliveryRoute, getOrderDeliveryRoute } from '@/services/geocoding-service';
 import { ItemOptionsDialog } from '@/app/admin/pdv/item-options-dialog';
+import { useShop } from '@/hooks/use-shop';
+import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
+import { toScanItem } from '@/lib/barcode/to-scan-item';
+import { scanErrorMessage } from '@/lib/barcode/scan-messages';
+import { needsOptions } from '@/lib/barcode/needs-options';
+import { isScannable, parseBarcode } from '@/lib/barcode/parse-barcode';
+import type { ScanResult } from '@/lib/barcode/parse-barcode';
 
 interface OrderItem {
   id: string;
@@ -50,6 +59,10 @@ interface OrderItem {
   observation?: string;
   image?: string;
   weight?: number;
+  // Peso conferido pela etiqueta da balança (a bipada marca; a API grava junto com o peso)
+  weight_confirmed?: boolean;
+  // Linha adicionada nesta edição, ainda não salva
+  _isNew?: boolean;
   item_type?: string;
   prepare_methods_limit?: number | null;
   assembly_pricing_mode?: string;
@@ -206,6 +219,10 @@ export default function OrderDetailsModal({
   const [catalogSearch, setCatalogSearch] = useState('');
   const [newItemsToAdd, setNewItemsToAdd] = useState<any[]>([]);
   const [optionsItem, setOptionsItem] = useState<any>(null);
+  const [scanText, setScanText] = useState('');
+  // Peso lido da etiqueta quando o item novo ainda precisa passar pelo modal de opções
+  const [scaleWeight, setScaleWeight] = useState<number | undefined>(undefined);
+  const { shop } = useShop();
   const isSavingRef = useRef(false);
   const lastSyncedOrderRef = useRef(order);
 
@@ -322,8 +339,11 @@ export default function OrderDetailsModal({
           hasChange = true;
         }
 
-        if (isWeightItem(editedItem) && Number(editedItem.weight) !== Number(originalItem.weight)) {
+        // A API só grava weight_confirmed junto com o peso, então confirmar sem mudar o peso também envia o peso
+        const confirmedNow = !!editedItem.weight_confirmed && !originalItem.weight_confirmed;
+        if (isWeightItem(editedItem) && (Number(editedItem.weight) !== Number(originalItem.weight) || confirmedNow)) {
           itemChange.weight = editedItem.weight;
+          if (editedItem.weight_confirmed) itemChange.weight_confirmed = true;
           hasChange = true;
         }
 
@@ -384,6 +404,7 @@ export default function OrderDetailsModal({
           steps: ni.steps || [],
           observation: ni.observation || '',
           weight: ni.weight,
+          ...(ni.weight_confirmed && { weight_confirmed: true }),
         }));
       }
 
@@ -425,20 +446,127 @@ export default function OrderDetailsModal({
     }));
   };
 
-  const handleOpenAddItemModal = async () => {
-    setShowAddItemModal(true);
-    if (catalogGroups.length === 0) {
-      setLoadingCatalog(true);
-      try {
-        const response = await getCatalog();
-        setCatalogGroups(response.data || []);
-      } catch (error) {
-        console.error('Erro ao carregar cardápio:', error);
-      } finally {
-        setLoadingCatalog(false);
-      }
+  const ensureCatalogLoaded = async () => {
+    if (catalogGroups.length > 0 || loadingCatalog) return;
+    setLoadingCatalog(true);
+    try {
+      const response = await getCatalog();
+      setCatalogGroups(response.data || []);
+    } catch (error) {
+      console.error('Erro ao carregar cardápio:', error);
+    } finally {
+      setLoadingCatalog(false);
     }
   };
+
+  const handleOpenAddItemModal = async () => {
+    setShowAddItemModal(true);
+    await ensureCatalogLoaded();
+  };
+
+  // --- Leitor de código de barras ---------------------------------------------------------------
+  const scaleMode = shop?.scale_label_mode ?? 'weight';
+
+  // Itens do cardápio no formato do leitor (o payload de admin traz barcode e scale_code)
+  const scanItems = useMemo(
+    () =>
+      catalogGroups.flatMap((group) =>
+        (group.attributes?.items ?? []).map((item: unknown) => toScanItem(item as Parameters<typeof toScanItem>[0], group.attributes?.active !== false))
+      ),
+    [catalogGroups]
+  );
+
+  // Troca o peso estimado de uma linha do pedido pelo peso lido e marca como conferida
+  const confirmLineWeight = (itemId: string, weight: number) => {
+    setWeightDrafts(prev => Object.fromEntries(Object.entries(prev).filter(([id]) => id !== itemId)));
+    setEditedOrder(prev => ({
+      ...prev,
+      items: prev.items.map((item) => {
+        if (item.id !== itemId) return item;
+        const updated = { ...item, weight, weight_confirmed: true };
+        return { ...updated, total_price: calculateItemTotal(updated) };
+      }),
+    }));
+  };
+
+  const bumpNewItemQuantity = (itemId: string) => {
+    setEditedOrder(prev => ({
+      ...prev,
+      items: prev.items.map((item) => {
+        if (item.id !== itemId) return item;
+        const quantity = Number(item.quantity) + 1;
+        return { ...item, quantity, total_price: (Number(item.total_price) / Number(item.quantity)) * quantity };
+      }),
+    }));
+    setNewItemsToAdd(prev => prev.map(ni => (ni._tempId === itemId ? { ...ni, quantity: Number(ni.quantity) + 1 } : ni)));
+  };
+
+  const handleScanResult = (result: ScanResult<(typeof scanItems)[number]>, code: string) => {
+    if (result.kind === 'error') {
+      toast.error(scanErrorMessage(result.reason, code));
+      return;
+    }
+
+    const catalogItem = result.item.raw;
+    const catalogItemId = parseInt(catalogItem.id);
+
+    if (result.kind === 'needs_weight') {
+      setOptionsItem(catalogItem);
+      return;
+    }
+
+    if (result.kind === 'scale') {
+      const unit = catalogItem.attributes.item_type === 'weight_per_g' ? 'g' : 'kg';
+      // A primeira linha desse item ainda não conferida recebe o peso; sem linha livre entra uma linha nova
+      const freeLine = editedOrder.items.find(
+        (line) => !line._isNew && line.catalog_item_id === catalogItemId && !line.weight_confirmed
+      );
+      if (freeLine) {
+        confirmLineWeight(freeLine.id, result.weight);
+        toast.success(`${freeLine.name}: peso ${formatWeight(result.weight)} ${unit} conferido`);
+        return;
+      }
+      if (needsOptions(catalogItem.attributes)) {
+        setScaleWeight(result.weight);
+        setOptionsItem(catalogItem);
+        return;
+      }
+      addItemDirectly(catalogItem, 1, { weight: result.weight, weightConfirmed: true });
+      toast.success(`${catalogItem.attributes.name} (${formatWeight(result.weight)} ${unit}) adicionado ao pedido`);
+      return;
+    }
+
+    if (needsOptions(catalogItem.attributes)) {
+      setOptionsItem(catalogItem);
+      return;
+    }
+
+    // Item de unidade: bipar de novo soma +1 na linha que acabou de ser adicionada; linha já gravada não muda de quantidade aqui
+    const addedLine = editedOrder.items.find(
+      (line) => line._isNew && line.catalog_item_id === catalogItemId && !isWeightItem(line) &&
+        !(line.selected_extras?.length || line.selected_prepare_methods?.length)
+    );
+    if (addedLine) {
+      bumpNewItemQuantity(addedLine.id);
+    } else {
+      addItemDirectly(catalogItem, 1);
+    }
+    toast.success(`${catalogItem.attributes.name} adicionado ao pedido`);
+  };
+
+  const scanner = useBarcodeScanner({
+    items: scanItems,
+    mode: scaleMode,
+    onResult: handleScanResult,
+    clearSearch: () => setScanText(''),
+  });
+
+  // Ao entrar na edição o cardápio carrega e o campo de bipagem já fica em foco
+  useEffect(() => {
+    if (!isEditingMode) return;
+    ensureCatalogLoaded();
+    scanner.focusInput();
+  }, [isEditingMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAddItemFromCatalog = (catalogItem: any) => {
     const hasExtras = catalogItem.attributes?.extra?.data?.length > 0;
@@ -487,6 +615,13 @@ export default function OrderDetailsModal({
       })) || [],
       steps: [],
       complements: options?.selectedSharedComplements?.map((c: any) => ({ name: c.name, price: c.price })) || [],
+      // Linha por peso: mostra o peso (e o conferido) e guarda o preço do kg para a prévia do total
+      ...(options?.weight && {
+        weight: options.weight,
+        item_type: catalogItem.attributes.item_type,
+        price: basePrice,
+        weight_confirmed: !!options.weightConfirmed,
+      }),
       _isNew: true,
     };
 
@@ -502,6 +637,7 @@ export default function OrderDetailsModal({
         catalog_item_step_option_id: parseInt(opt.optionId),
       })) : [],
       weight: options?.weight,
+      ...(options?.weightConfirmed && { weight_confirmed: true }),
       _tempId: tempId,
     }]);
 
@@ -575,6 +711,7 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
         return { ...updated, total_price: calculateItemTotal(updated) };
       }),
     }));
+    setNewItemsToAdd(prev => prev.map(ni => (ni._tempId === itemId ? { ...ni, weight } : ni)));
   };
 
   // Atualiza uma opção do item e já recalcula o valor mostrado (a API recalcula de novo ao salvar)
@@ -1206,6 +1343,28 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
                   </Button>
                 )}
               </div>
+              {isEditingMode && (
+                <div className="px-4 pt-3 space-y-1.5">
+                  <div className="relative">
+                    <ScanBarcode className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden />
+                    <Input
+                      ref={scanner.inputRef}
+                      value={scanText}
+                      onChange={(e) => setScanText(e.target.value)}
+                      onKeyDown={scanner.handleKeyDown}
+                      {...scanner.focusProps}
+                      autoComplete="off"
+                      aria-label="Bipar etiqueta da balança ou código de barras"
+                      placeholder="Bipe a etiqueta ou o código de barras"
+                      className="pl-9 h-10 text-base"
+                    />
+                  </div>
+                  <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <span aria-hidden className={cn('h-2 w-2 shrink-0 rounded-full', scanner.hasFocus ? 'bg-green-500' : 'bg-gray-300')} />
+                    Bipe a etiqueta da balança para trocar o peso estimado pelo real.
+                  </p>
+                </div>
+              )}
               <div className="px-4 py-3">
               <div className="divide-y divide-[#E5E2DD]">
                 {editedOrder.items.map((item: any) => (
@@ -1236,6 +1395,12 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
                             {isWeightItem(item) && item.weight != null && (
                               <span className="text-xs px-1.5 py-0.5 rounded-md border border-[#E5E2DD] bg-white text-muted-foreground flex-shrink-0">
                                 {formatWeight(Number(item.weight))} {item.item_type === 'weight_per_g' ? 'g' : 'kg'}
+                              </span>
+                            )}
+                            {isWeightItem(item) && item.weight_confirmed && (
+                              <span className="inline-flex items-center gap-0.5 text-xs font-medium text-green-600 flex-shrink-0">
+                                <Check className="h-3 w-3" aria-hidden />
+                                peso conferido
                               </span>
                             )}
                           </div>
@@ -1490,7 +1655,18 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
               <Input
                 value={catalogSearch}
                 onChange={(e) => setCatalogSearch(e.target.value)}
-                placeholder="Buscar item no cardapio..."
+                autoFocus
+                autoComplete="off"
+                onKeyDown={(e) => {
+                  if (e.key !== 'Enter' || !isScannable(e.currentTarget.value)) return;
+                  e.preventDefault();
+                  const text = e.currentTarget.value;
+                  setCatalogSearch('');
+                  const result = parseBarcode(text, scaleMode, scanItems);
+                  if (result.kind !== 'error') setShowAddItemModal(false);
+                  handleScanResult(result, text.trim());
+                }}
+                placeholder="Buscar item ou bipar o código..."
                 className="pl-9 h-9 text-sm rounded-md border-[#E5E2DD]"
               />
             </div>
@@ -1553,11 +1729,14 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
       <ItemOptionsDialog
         item={optionsItem}
         open={!!optionsItem}
-        onClose={() => setOptionsItem(null)}
+        initialWeight={scaleWeight}
+        onCloseAutoFocus={isEditingMode ? scanner.focusInput : undefined}
+        onClose={() => { setOptionsItem(null); setScaleWeight(undefined); }}
         onAddToCart={(options) => {
           if (optionsItem) {
-            addItemDirectly(optionsItem, 1, options);
+            addItemDirectly(optionsItem, 1, { ...options, weightConfirmed: scaleWeight !== undefined });
             setOptionsItem(null);
+            setScaleWeight(undefined);
           }
         }}
       />
