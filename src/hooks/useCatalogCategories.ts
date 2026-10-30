@@ -34,8 +34,8 @@ export function useCatalogCategories() {
       if (context?.previous) queryClient.setQueryData(["catalog-categories"], context.previous);
       toast.error("Erro ao reordenar categorias");
     },
-    onSettled: () => { queryClient.invalidateQueries({ queryKey: ["catalog-categories"] }); queryClient.invalidateQueries({ queryKey: ["catalog"] }); },
+    onSettled: () => { queryClient.invalidateQueries({ queryKey: ["catalog-categories"] }); },
   });
 
-  return { reorderCategories: reorder.mutate, categories: query.data?.data ?? [], isLoading: query.isLoading, createCategory: create.mutate, updateCategory: update.mutate, deleteCategory: remove.mutate, isSaving: create.isPending || update.isPending };
+  return { reorderCategories: reorder.mutate, categories: query.data?.data ?? [], isLoading: query.isLoading, createCategory: create.mutate, updateCategory: update.mutate, deleteCategory: remove.mutate, isSaving: create.isPending || update.isPending, updatingCategoryId: update.isPending ? update.variables?.id : undefined, deletingCategoryId: remove.isPending ? remove.variables : undefined, isReordering: reorder.isPending };
 }

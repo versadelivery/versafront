@@ -30,6 +30,7 @@ import {
   Star,
   ListOrdered,
   Printer,
+  LayoutTemplate,
   type LucideIcon,
 } from "lucide-react"
 
@@ -68,7 +69,7 @@ export const adminSections: AdminSection[] = [
   },
   {
     id: "pedidos",
-    title: "Gerenciamento de Pedidos",
+    title: "Pedidos",
     description: "Gerencie os pedidos da sua loja",
     href: "/admin/pedidos",
     icon: ShoppingCart,
@@ -502,6 +503,16 @@ export const adminSections: AdminSection[] = [
     icon: Wallet,
     iconBgColor: "bg-gray-600",
     keywords: ["pagamento", "pix", "cartao", "dinheiro", "metodo"],
+    group: "Configurações",
+  },
+  {
+    id: "settings-templates",
+    title: "Templates de Loja",
+    description: "Monte seu cardápio rápido com categorias, grupos e itens prontos",
+    href: "/admin/settings/templates",
+    icon: LayoutTemplate,
+    iconBgColor: "bg-teal-600",
+    keywords: ["template", "modelo", "cardapio", "importar", "carnes", "categorias", "loja"],
     group: "Configurações",
   },
   {

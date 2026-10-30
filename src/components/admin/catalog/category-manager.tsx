@@ -1,114 +1,143 @@
 "use client";
 
-import { ReactNode, useState } from "react";
-import { useSortable } from "@dnd-kit/sortable";
+import { useState } from "react";
+import { DndContext, closestCenter, DragEndEvent, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, rectSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { ChevronDown, Edit2, GripVertical, Tags, Trash2 } from "lucide-react";
+import { Edit2, GripVertical, Loader2, Tags, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
+import { BusySwitch } from "./busy-switch";
 import { DeleteConfirmation } from "@/components/ui/delete-confirmation";
 import { useCatalogCategories } from "@/hooks/useCatalogCategories";
 import { getApiErrorMessage } from "@/utils/api-error";
 import { weekdaysSummary } from "./weekday-picker";
 
-interface CategorySectionProps {
-  /** undefined = grupos sem categoria (não arrasta, não edita) */
-  category?: any;
-  position?: number;
-  groupCount: number;
-  expanded: boolean;
-  onToggleExpanded: () => void;
-  onEdit?: () => void;
-  children: ReactNode;
+interface CategoryManagerProps {
+  onEdit: (category: any) => void;
 }
 
-export function CategorySection({ category, position, groupCount, expanded, onToggleExpanded, onEdit, children }: CategorySectionProps) {
-  const { updateCategory, deleteCategory } = useCatalogCategories();
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: category?.id ?? "uncategorized",
-    disabled: !category,
-  });
-
-  const name: string = category?.attributes.name ?? "Sem categoria";
-  const inactive = category?.attributes.active === false;
-  const days = category ? weekdaysSummary(category.attributes) : null;
-  const groupsLabel = `${groupCount} ${groupCount === 1 ? "grupo" : "grupos"}`;
-  const status = !category ? "Grupos que não pertencem a nenhuma categoria" : inactive ? "Inativa: oculta no cardápio" : days ? `Somente: ${days}` : "Todos os dias";
+function CategoryRow({ category, position, updating, deleting, onEdit, onDelete, onToggle }: {
+  category: any;
+  updating: boolean;
+  deleting: boolean;
+  position: number;
+  onEdit: () => void;
+  onDelete: () => void;
+  onToggle: (active: boolean) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: category.id });
+  const inactive = category.attributes.active === false;
+  const days = weekdaysSummary(category.attributes);
+  const name = category.attributes.name;
 
   return (
-    <section
+    <div
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`overflow-hidden rounded-md border bg-white ${isDragging ? "relative z-20 border-primary shadow-lg" : "border-[#E5E2DD]"}`}
+      className={`flex w-full sm:w-auto items-center gap-1 sm:gap-2 rounded-md border bg-white px-1 sm:px-2 py-1 sm:py-1.5 text-sm ${isDragging ? "relative z-10 border-primary shadow-md" : "border-[#E5E2DD] hover:border-primary/40"} ${inactive || deleting ? "opacity-60" : ""}`}
     >
-      <div className="flex items-center gap-2 px-2 py-2.5 sm:gap-3 sm:px-3">
-        {category ? (
-          <button
-            type="button"
-            className="flex h-8 w-6 shrink-0 cursor-grab touch-none items-center justify-center rounded text-muted-foreground hover:bg-[#FAF9F7] hover:text-gray-900 active:cursor-grabbing"
-            aria-label={`Arrastar para reordenar a categoria ${name}`}
-            title="Arraste para reordenar categorias"
-            {...attributes}
-            {...listeners}
-          >
-            <GripVertical className="h-4 w-4" />
-          </button>
-        ) : (
-          <span className="h-8 w-6 shrink-0" />
-        )}
+      <button
+        type="button"
+        className="flex h-11 w-10 sm:h-6 sm:w-4 shrink-0 cursor-grab touch-none items-center justify-center rounded-md text-muted-foreground hover:text-gray-900 active:cursor-grabbing active:bg-[#F0EFEB]"
+        aria-label={`Arrastar para reordenar ${name}`}
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="h-5 w-5 sm:h-3.5 sm:w-3.5" />
+      </button>
+      <span className="text-xs font-semibold text-primary">{position}</span>
+      <span className="min-w-0 flex-1 truncate font-medium text-gray-900 sm:flex-none">{name}</span>
+      {(inactive || days) && (
+        <span className="text-xs text-muted-foreground">{inactive ? "Inativa" : days}</span>
+      )}
+      <BusySwitch
+        pending={updating}
+        busyClassName="h-6 w-11 sm:h-5 sm:w-9"
+        className="h-6 w-11 sm:h-5 sm:w-9 cursor-pointer shadow-sm [&>span]:size-5 sm:[&>span]:size-4"
+        checked={!inactive}
+        onCheckedChange={onToggle}
+        aria-label={`Ativar ou desativar ${name}`}
+      />
+      <button type="button" className="flex h-11 w-11 sm:h-auto sm:w-auto cursor-pointer items-center justify-center rounded-md active:bg-[#F0EFEB]" onClick={onEdit} aria-label={`Editar ${name}`} title="Editar">
+        <Edit2 className="h-5 w-5 sm:h-3.5 sm:w-3.5 text-muted-foreground hover:text-gray-900" />
+      </button>
+      <button type="button" className="flex h-11 w-11 sm:h-auto sm:w-auto cursor-pointer items-center justify-center rounded-md active:bg-red-50" onClick={onDelete} disabled={deleting} aria-label={`Remover ${name}`} title="Remover">
+        {deleting ? <Loader2 className="h-5 w-5 sm:h-3.5 sm:w-3.5 animate-spin text-destructive" /> : <Trash2 className="h-5 w-5 sm:h-3.5 sm:w-3.5 text-destructive" />}
+      </button>
+    </div>
+  );
+}
 
-        <button
-          type="button"
-          onClick={onToggleExpanded}
-          aria-expanded={expanded}
-          className="group/toggle flex min-w-0 flex-1 cursor-pointer items-center gap-3 rounded-md py-1 text-left hover:bg-[#FAF9F7]"
-        >
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-black text-sm font-semibold text-white">
-            {position ?? <Tags className="h-3.5 w-3.5" />}
-          </span>
-          <span className={`min-w-0 flex-1 ${inactive ? "opacity-60" : ""}`}>
-            <span className="block truncate font-tomato text-base font-semibold text-gray-900">{name}</span>
-            <span className="block truncate text-xs text-muted-foreground">{groupsLabel} · {status}</span>
-          </span>
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-gray-300 bg-white text-gray-900 shadow-sm transition-colors group-hover/toggle:border-black group-hover/toggle:bg-gray-100" title={expanded ? "Recolher" : "Expandir"}>
-            <ChevronDown className={`h-6 w-6 transition-transform ${expanded ? "rotate-180" : ""}`} strokeWidth={2.5} />
-          </span>
-        </button>
+export function CategoryManager({ onEdit }: CategoryManagerProps) {
+  const { categories, updateCategory, deleteCategory, reorderCategories, updatingCategoryId, deletingCategoryId, isReordering } = useCatalogCategories();
+  const [toDelete, setToDelete] = useState<any | null>(null);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
-        {category && (
-          <>
-            <Switch
-              className="cursor-pointer"
-              checked={!inactive}
-              onCheckedChange={(active) => updateCategory(
-                { id: category.id, data: { active } },
-                { onError: (error) => toast.error(getApiErrorMessage(error, "Erro ao atualizar categoria"), { duration: 8000 }) },
-              )}
-              aria-label={`Ativar ou desativar ${name}`}
-            />
-            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 cursor-pointer" onClick={onEdit} aria-label={`Editar ${name}`} title="Editar categoria">
-              <Edit2 className="h-4 w-4 text-muted-foreground" />
-            </Button>
-            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 cursor-pointer hover:bg-red-50" onClick={() => setConfirmDelete(true)} aria-label={`Remover ${name}`} title="Remover categoria">
-              <Trash2 className="h-4 w-4 text-destructive" />
-            </Button>
-          </>
+  const ids = categories.map((category: any) => category.id);
+
+  const handleDragEnd = ({ active, over }: DragEndEvent) => {
+    if (!over || active.id === over.id) return;
+    const from = ids.indexOf(String(active.id));
+    const to = ids.indexOf(String(over.id));
+    if (from < 0 || to < 0) return;
+    reorderCategories(arrayMove(ids, from, to));
+  };
+
+  return (
+    <div className="mb-4 rounded-md border border-[#E5E2DD] bg-white p-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Tags className="h-4 w-4 text-primary" />
+          <div>
+            <p className="font-tomato text-sm font-semibold text-gray-900">Categorias</p>
+            <p className="text-xs text-muted-foreground">Arraste pelo ícone <GripVertical className="inline h-3 w-3" /> para definir a ordem em que aparecem na loja.</p>
+          </div>
+        </div>
+        {isReordering && (
+          <span role="status" className="flex items-center gap-1.5 text-xs text-muted-foreground"><Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />Salvando ordem…</span>
         )}
       </div>
 
-      {expanded && <div className="space-y-3 border-t border-[#E5E2DD] bg-[#FAF9F7] p-3">{children}</div>}
-
-      {category && (
-        <DeleteConfirmation
-          isOpen={confirmDelete}
-          onOpenChange={setConfirmDelete}
-          onConfirm={async () => { deleteCategory(category.id); setConfirmDelete(false); }}
-          isLoading={false}
-          type="categoria"
-        />
+      {categories.length === 0 ? (
+        <div className="mt-3 rounded-md border border-dashed border-[#E5E2DD] bg-[#FAF9F7] px-4 py-6 text-center">
+          <p className="text-sm font-medium text-gray-900">Nenhuma categoria ainda</p>
+          <p className="mt-1 text-xs text-muted-foreground">Crie categorias como Churrasco ou Bebidas para organizar os grupos do cardápio.</p>
+        </div>
+      ) : (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={ids} strategy={rectSortingStrategy}>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {categories.map((category: any, index: number) => (
+                <CategoryRow
+                  key={category.id}
+                  category={category}
+                  updating={updatingCategoryId === category.id}
+                  deleting={deletingCategoryId === category.id}
+                  position={index + 1}
+                  onEdit={() => onEdit(category)}
+                  onDelete={() => setToDelete(category)}
+                  onToggle={(active) => updateCategory(
+                    { id: category.id, data: { active } },
+                    { onError: (error) => toast.error(getApiErrorMessage(error, "Erro ao atualizar categoria"), { duration: 8000 }) },
+                  )}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
       )}
-    </section>
+
+      <DeleteConfirmation
+        isOpen={!!toDelete}
+        onOpenChange={(open) => { if (!open) setToDelete(null); }}
+        onConfirm={async () => { if (toDelete) deleteCategory(toDelete.id); setToDelete(null); }}
+        isLoading={false}
+        type="categoria"
+      />
+    </div>
   );
 }

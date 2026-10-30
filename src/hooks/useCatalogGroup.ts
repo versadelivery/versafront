@@ -326,6 +326,8 @@ export const useCatalogGroup = (id?: string) => {
     deleteCatalogGroup: deleteCatalogGroupMutation.mutate,
     toggleCatalogGroupActive: toggleCatalogGroupActiveMutation.mutate,
     toggleCatalogItemActive: toggleCatalogItemActiveMutation.mutate,
+    isTogglingItem: toggleCatalogItemActiveMutation.isPending,
+    togglingGroupId: toggleCatalogGroupActiveMutation.isPending ? toggleCatalogGroupActiveMutation.variables?.id : undefined,
     isCreatingGroup: createCatalogGroupMutation.isPending,
     isUpdatingGroup: updateCatalogGroupMutation.isPending,
     isDeletingGroup: deleteCatalogGroupMutation.isPending,

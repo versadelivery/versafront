@@ -1,4 +1,5 @@
 "use client";
+import { DiscountFields, DiscountType, convertDiscountValue, discountError, discountFinalPrice } from "./discount-fields";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -96,7 +97,7 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
 
   // Estados - Desconto
   const [hasDiscount, setHasDiscount] = useState(false);
-  const [discountType, setDiscountType] = useState<'fixed' | 'percentage'>('fixed');
+  const [discountType, setDiscountType] = useState<DiscountType>('final');
   const [discountValue, setDiscountValue] = useState('');
 
   // Estados - Extras/Adicionais
@@ -140,16 +141,7 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
   const priceNumber = parseFloat(price.replace(',', '.')) || 0;
   const allActiveDays = Object.values(activeDays).every(v => v);
 
-  const calculateFinalPrice = () => {
-    if (!hasDiscount || !discountValue) return priceNumber;
-    const discountNum = parseFloat(discountValue.replace(',', '.')) || 0;
-    if (discountType === 'percentage') {
-      return Math.max(0, priceNumber - (priceNumber * discountNum / 100));
-    }
-    return Math.max(0, priceNumber - discountNum);
-  };
-
-  const finalPrice = calculateFinalPrice();
+  const finalPrice = hasDiscount ? discountFinalPrice(priceNumber, discountType, discountValue) : priceNumber;
 
   // =============================================================================
   // EFEITOS
@@ -185,7 +177,7 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
     setPreviewImage(null);
     setImageFile(null);
     setHasDiscount(false);
-    setDiscountType('fixed');
+    setDiscountType('final');
     setDiscountValue('');
     setHasExtras(false);
     setExtras([{ name: '', price: '' }]);
@@ -263,14 +255,9 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
     }
 
     // Validação de desconto
-    if (hasDiscount && discountValue) {
-      const discountNum = parseFloat(discountValue.replace(',', '.')) || 0;
-      if (discountType === 'fixed' && discountNum >= priceNumber && priceNumber > 0) {
-        newErrors.discount = 'Desconto deve ser menor que o preço original';
-      }
-      if (discountType === 'percentage' && discountNum >= 100) {
-        newErrors.discount = 'Desconto não pode ser 100% ou mais';
-      }
+    if (hasDiscount) {
+      const message = discountError(priceNumber, discountType, discountValue);
+      if (message) newErrors.discount = message;
     }
 
     // Validação de campos de peso
@@ -636,7 +623,7 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
           <div className="space-y-1.5">
             <label className="text-sm font-medium">Grupo *</label>
             <Select value={selectedGroupId} onValueChange={(v) => { setSelectedGroupId(v); clearError('group'); }}>
-              <SelectTrigger className={errors.group ? 'border-destructive' : ''}>
+              <SelectTrigger className={`w-full ${errors.group ? 'border-destructive' : ''}`}>
                 <SelectValue placeholder={isLoading ? "Carregando..." : "Selecione um grupo"} />
               </SelectTrigger>
               <SelectContent>
@@ -654,7 +641,7 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
           <div className="space-y-1.5">
             <label className="text-sm font-medium">Precificação</label>
             <Select value={itemType} onValueChange={(v) => setItemType(v as any)}>
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -722,54 +709,19 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
           </div>
 
           {hasDiscount && (
-            <div className="space-y-3">
-              <div className="flex gap-1 bg-muted/40 rounded-lg p-1">
-                <button
-                  type="button"
-                  onClick={() => setDiscountType('fixed')}
-                  className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${discountType === 'fixed' ? 'bg-white shadow-sm' : 'text-muted-foreground'}`}
-                >
-                  R$ Fixo
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDiscountType('percentage')}
-                  className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${discountType === 'percentage' ? 'bg-white shadow-sm' : 'text-muted-foreground'}`}
-                >
-                  % Porcentagem
-                </button>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium">
-                  {discountType === 'percentage' ? 'Desconto (%)' : 'Valor do Desconto (R$)'}
-                </label>
-                <Input
-                  value={discountValue}
-                  onChange={(e) => {
-                    if (discountType === 'percentage') {
-                      const num = e.target.value.replace(/\D/g, '');
-                      const value = Math.min(100, parseInt(num) || 0);
-                      setDiscountValue(value ? value.toString() : '');
-                    } else {
-                      setDiscountValue(formatPrice(e.target.value));
-                    }
-                    clearError('discount');
-                    markDirty();
-                  }}
-                  placeholder={discountType === 'percentage' ? '0' : '0,00'}
-                  className={errors.discount ? 'border-destructive' : ''}
-                />
-                {errors.discount && <p className="text-xs text-destructive">{errors.discount}</p>}
-              </div>
-
-              {priceNumber > 0 && (
-                <div className="flex items-center gap-2 p-3 rounded-lg bg-white border border-gray-100">
-                  <span className="text-sm text-muted-foreground">Preço final:</span>
-                  <span className="text-sm font-bold">R$ {finalPrice.toFixed(2).replace('.', ',')}</span>
-                </div>
-              )}
-            </div>
+            <DiscountFields
+              price={priceNumber}
+              type={discountType}
+              value={discountValue}
+              error={errors.discount}
+              onTypeChange={(next) => {
+                setDiscountValue(convertDiscountValue(priceNumber, discountType, discountValue, next));
+                setDiscountType(next);
+                clearError('discount'); clearError('promotionTag');
+                markDirty();
+              }}
+              onValueChange={(next) => { setDiscountValue(next); clearError('discount'); clearError('promotionTag'); markDirty(); }}
+            />
           )}
 
           {/* Imagem */}
@@ -818,7 +770,7 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
           <hr className="border-gray-100" />
 
           {/* Disponibilidade Semanal */}
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 mb-2">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Disponibilidade Semanal</p>
             <button
               type="button"
@@ -957,7 +909,7 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
               <div className="rounded-md border border-gray-200 bg-white p-3 space-y-2">
                 <label className="text-xs font-medium text-muted-foreground">Forma de cobrança da montagem</label>
                 <Select value={assemblyPricingMode} onValueChange={(value: 'sum' | 'highest') => setAssemblyPricingMode(value)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="sum">Somar os valores das opções</SelectItem>
                     <SelectItem value="highest">Maior valor × quantidade de etapas</SelectItem>

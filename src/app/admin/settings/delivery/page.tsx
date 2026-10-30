@@ -407,8 +407,8 @@ export default function DeliverySettingsPage() {
             <h2 className="font-tomato text-base font-semibold text-gray-900">Ajuste para retirada</h2>
           </div>
           <div className="px-5 py-5 grid gap-4 sm:grid-cols-3">
-            <div><Label className="text-sm mb-1.5 block">Tipo</Label><Select value={pickupAdjustmentType} onValueChange={(v: any) => setPickupAdjustmentType(v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">Nenhum</SelectItem><SelectItem value="discount">Desconto</SelectItem><SelectItem value="surcharge">Acréscimo</SelectItem></SelectContent></Select></div>
-            {pickupAdjustmentType !== "none" && <><div><Label className="text-sm mb-1.5 block">Formato</Label><Select value={pickupValueType} onValueChange={(v: any) => setPickupValueType(v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="fixed">R$ (fixo)</SelectItem><SelectItem value="percentage">% (percentual)</SelectItem></SelectContent></Select></div><div><Label className="text-sm mb-1.5 block">Valor</Label><Input value={pickupAdjustmentValue} onChange={e => setPickupAdjustmentValue(formatCurrencyInput(e.target.value))} inputMode="decimal" placeholder="0,00" /></div></>}
+            <div><Label className="text-sm mb-1.5 block">Tipo</Label><Select value={pickupAdjustmentType} onValueChange={(v: any) => setPickupAdjustmentType(v)}><SelectTrigger className="w-full"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">Nenhum</SelectItem><SelectItem value="discount">Desconto</SelectItem><SelectItem value="surcharge">Acréscimo</SelectItem></SelectContent></Select></div>
+            {pickupAdjustmentType !== "none" && <><div><Label className="text-sm mb-1.5 block">Formato</Label><Select value={pickupValueType} onValueChange={(v: any) => setPickupValueType(v)}><SelectTrigger className="w-full"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="fixed">R$ (fixo)</SelectItem><SelectItem value="percentage">% (percentual)</SelectItem></SelectContent></Select></div><div><Label className="text-sm mb-1.5 block">Valor</Label><Input value={pickupAdjustmentValue} onChange={e => setPickupAdjustmentValue(formatCurrencyInput(e.target.value))} inputMode="decimal" placeholder="0,00" /></div></>}
           </div>
         </div>
 
@@ -433,7 +433,7 @@ export default function DeliverySettingsPage() {
             <div className="max-w-md">
               <Label className="text-sm font-medium mb-1.5 block">Tipo de Taxa</Label>
               <Select value={deliveryType} onValueChange={setDeliveryType}>
-                <SelectTrigger className="h-10 text-sm border-[#E5E2DD] rounded-md bg-white cursor-pointer">
+                <SelectTrigger className="w-full h-10 text-sm border-[#E5E2DD] rounded-md bg-white cursor-pointer">
                   <SelectValue placeholder="Selecione o tipo de taxa" />
                 </SelectTrigger>
                 <SelectContent className="rounded-md border-[#E5E2DD]">

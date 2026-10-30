@@ -247,7 +247,7 @@ export default function CaixaPage() {
 
       <div className="max-w-[1920px] mx-auto px-4 sm:px-6 py-6">
         {/* Nav buttons */}
-        <div className="flex gap-3 mb-6">
+        <div className="flex flex-wrap gap-2 sm:gap-3 mb-6">
           <Button
             variant={view === "caixa" ? "default" : "outline"}
             className="flex items-center gap-2"

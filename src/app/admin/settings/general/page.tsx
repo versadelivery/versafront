@@ -195,7 +195,7 @@ export default function GeneralSettingsPage() {
       <div className="bg-white border-b border-[#E5E2DD]">
         <div className="max-w-[1920px] mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
+            <div className="flex min-w-0 items-center gap-2 sm:gap-4">
               <Link
                 href="/admin/settings"
                 className="flex items-center gap-1.5 text-muted-foreground hover:text-gray-900 transition-colors"
@@ -204,10 +204,10 @@ export default function GeneralSettingsPage() {
                 <span className="text-sm font-medium hidden sm:block">Voltar</span>
               </Link>
               <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
-              <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900">Configurações Gerais</h1>
+              <h1 className="truncate font-tomato text-sm sm:text-lg font-bold text-gray-900">Configurações Gerais</h1>
             </div>
             {/* Botoes de acao */}
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-2">
               <Button
                 variant="outline"
                 type="button"
@@ -225,7 +225,7 @@ export default function GeneralSettingsPage() {
                 }}
                 className="rounded-md border border-gray-300 cursor-pointer bg-primary text-white hover:bg-primary/90 text-sm"
               >
-                {isUpdating ? "Salvando..." : "Salvar alterações"}
+                {isUpdating ? "Salvando..." : (<><span className="sm:hidden">Salvar</span><span className="hidden sm:inline">Salvar alterações</span></>)}
               </Button>
             </div>
           </div>

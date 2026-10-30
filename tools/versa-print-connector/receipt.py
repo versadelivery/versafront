@@ -111,6 +111,10 @@ def item_values(raw):
 
 def build_receipt(job, paper_width=DEFAULT_WIDTH):
     order, mode = unwrap(job["order"]), job["receipt_mode"]
+    options = job.get("receipt_options") or {}
+    show_cnpj = options.get("show_cnpj", True)
+    show_address = options.get("show_address", True)
+    show_phone = options.get("show_phone", True)
     large = job.get("font_size") == "large"
     size, gap = (31 if large else 27), (40 if mode == "summary" else 7)
     customer, shop, address = unwrap(order.get("customer")), unwrap(order.get("shop")), unwrap(order.get("address"))
@@ -124,17 +128,17 @@ def build_receipt(job, paper_width=DEFAULT_WIDTH):
         r.rule(); r.text("ITENS PARA SEPARAÇÃO:", 28, True); r.space(24)
     else:
         r.text(shop.get("name", "Loja"), 27, True, "center")
-        if shop.get("address"): r.text(shop["address"], 23, align="center")
-        if shop.get("document"): r.text(f'CNPJ: {shop["document"]}', 23, align="center")
+        if show_address and shop.get("address"): r.text(shop["address"], 23, align="center")
+        if show_cnpj and shop.get("document"): r.text(f'CNPJ: {shop["document"]}', 23, align="center")
         r.rule(); r.text(f'PEDIDO #{order.get("id")}', 29, True)
         r.pair("Data/Hora:", created.strftime("%d/%m/%Y %H:%M"), 23)
         if order.get("delivery_person"): r.pair("Entregador:", order["delivery_person"], 23)
         r.rule(False); r.text("CLIENTE:", 27, True); r.text(customer.get("name", "Cliente"), 24)
-        if not order.get("withdrawal") and address.get("address"):
+        if show_address and not order.get("withdrawal") and address.get("address"):
             r.text(f'{address["address"]}, {address.get("number", "")}', 23)
             if address.get("neighborhood"): r.pair("Bairro:", address["neighborhood"], 23)
         else: r.text("Retirada na loja", 23)
-        if customer.get("cellphone"): r.pair("Fone:", customer["cellphone"], 23)
+        if show_phone and customer.get("cellphone"): r.pair("Fone:", customer["cellphone"], 23)
         r.rule(); r.text("DETALHAMENTO DO PEDIDO:", 27, True); r.space(18)
 
     items = order.get("items", {}).get("data", []) if isinstance(order.get("items"), dict) else order.get("items", [])

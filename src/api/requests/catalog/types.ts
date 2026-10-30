@@ -8,7 +8,6 @@ interface CatalogGroup {
     active: boolean;
     description: string;
     priority: number;
-    image_url: string | null;
     items: {
       data: CatalogItemResponse[];
     };
