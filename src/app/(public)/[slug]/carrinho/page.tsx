@@ -275,8 +275,8 @@ export default function CartPage() {
                             </div>
 
                             {/* Actions row */}
-                            <div className="flex items-center justify-between mt-2.5">
-                              <div className="flex items-center gap-3">
+                            <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0 mt-2.5">
+                              <div className="flex items-center gap-2">
                                 <div className="flex items-center border border-[#E5E2DD] rounded-md">
                                   <button
                                     className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-l-md transition-colors disabled:opacity-30 cursor-pointer"
@@ -297,7 +297,7 @@ export default function CartPage() {
                                 </div>
                                 <button
                                   onClick={() => removeItem(item.cartId)}
-                                  className="text-xs text-red-500 hover:text-red-700 font-medium transition-colors cursor-pointer"
+                                  className="px-1 py-2 text-xs text-red-500 hover:text-red-700 font-medium transition-colors cursor-pointer"
                                 >
                                   Remover
                                 </button>
@@ -305,7 +305,7 @@ export default function CartPage() {
                               {hasDetails && (
                                 <button
                                   onClick={() => toggleExpand(item.cartId)}
-                                  className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+                                  className="flex flex-shrink-0 items-center gap-1 px-1 py-2 text-xs text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
                                 >
                                   {isExpanded ? 'Ocultar' : 'Detalhes'}
                                   <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />

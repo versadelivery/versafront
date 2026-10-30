@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import {
   Sheet,
   SheetContent,
@@ -9,16 +9,17 @@ import {
 } from "@/components/ui/sheet";
 import { CatalogItem } from "./types";
 import { formatPrice } from "./format-price";
-import { Minus, Plus, Utensils, X, Info } from "lucide-react";
+import { Minus, Plus, Utensils, X, Info, ChevronDown, ChevronsUpDown } from "lucide-react";
 import { useCart } from "./cart/cart-context";
 import { calculateAssemblyPrice } from "@/utils/assembly-pricing";
 
-// Altura do item vem da CSS var --item-h (60px no celular p/ facilitar o toque, 44px no desktop);
-// o JS lê o valor calculado, então o scroll acompanha o breakpoint sem estado.
+// Altura do item vem da CSS var --item-h (48px no celular, 44px no desktop) e o número de linhas visíveis
+// de --rows (3 no celular, 5 no desktop); o JS lê o valor calculado, então o scroll acompanha o breakpoint sem estado.
+// No celular a roleta curta deixa a seção seguinte aparecendo, o que avisa que há mais para rolar.
 const ITEM_H_FALLBACK = 44;
 const H = 'var(--item-h)';
-const VISIBLE = 5;
-const PAD = 2;
+const ROWS = 'var(--rows)';
+const PAD = 'var(--pad)';
 
 function WeightPicker({ min, max, step, value, onChange, unit = 'kg' }: {
   min: number; max: number; step: number; value: number; onChange: (v: number) => void; unit?: 'kg' | 'g';
@@ -68,8 +69,8 @@ function WeightPicker({ min, max, step, value, onChange, unit = 'kg' }: {
 
   return (
     <div
-      className="relative mx-auto w-full max-w-[160px] sm:max-w-[240px] [--item-h:60px] sm:[--item-h:44px] overflow-hidden rounded-md border border-[#E5E2DD]"
-      style={{ height: `calc(${H} * ${VISIBLE})` }}
+      className="relative mx-auto w-full max-w-[200px] sm:max-w-[240px] [--item-h:48px] [--rows:3] [--pad:1] sm:[--item-h:44px] sm:[--rows:5] sm:[--pad:2] overflow-hidden rounded-md border border-[#E5E2DD]"
+      style={{ height: `calc(${H} * ${ROWS})` }}
     >
       <div
         className="absolute inset-x-0 top-0 z-10 pointer-events-none"
@@ -160,6 +161,27 @@ interface ProductModalProps {
 
 export default function ProductModal({ product, trigger, externalOpen, onExternalOpenChange }: ProductModalProps) {
   const { addItem } = useCart();
+
+  // Aviso de "tem mais embaixo": aparece enquanto houver conteúdo escondido abaixo da área visível
+  const [scroller, setScroller] = useState<HTMLDivElement | null>(null);
+  const [canScrollDown, setCanScrollDown] = useState(false);
+  const updateScrollHint = useCallback(() => {
+    if (!scroller) return;
+    setCanScrollDown(scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight > 24);
+  }, [scroller]);
+
+  useEffect(() => {
+    if (!scroller) return;
+    updateScrollHint();
+    scroller.addEventListener("scroll", updateScrollHint, { passive: true });
+    const observer = new ResizeObserver(updateScrollHint);
+    observer.observe(scroller);
+    if (scroller.firstElementChild) observer.observe(scroller.firstElementChild);
+    return () => {
+      scroller.removeEventListener("scroll", updateScrollHint);
+      observer.disconnect();
+    };
+  }, [scroller, updateScrollHint]);
 
   if (!product) return null;
 
@@ -280,7 +302,9 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
         <SheetTitle className="sr-only">{attributes.name}</SheetTitle>
 
         {/* ── Scrollable area (image + info + options) ── */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="relative flex-1 min-h-0 flex flex-col">
+        <div ref={setScroller} className="flex-1 overflow-y-auto">
+          <div>
 
           {isUnavailable && (
             <div className="bg-destructive/10 border-b border-destructive/20 px-4 py-3 flex items-center gap-2">
@@ -292,7 +316,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
           )}
 
           {/* Hero image */}
-          <div className="relative w-full aspect-[4/3] bg-gray-100">
+          <div className="relative w-full aspect-[16/10] max-h-[26svh] sm:aspect-[4/3] sm:max-h-none bg-gray-100">
             {attributes.image_url ? (
               <img
                 src={attributes.image_url}
@@ -322,7 +346,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
           </div>
 
           {/* Item info */}
-          <div className="px-5 pt-5 pb-4">
+          <div className="px-5 pt-4 pb-3 sm:pt-5 sm:pb-4">
             <h2 className="font-tomato text-[22px] font-bold text-gray-900 leading-tight">
               {attributes.name}
             </h2>
@@ -344,7 +368,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
             </div>
 
             {attributes.description && (
-              <p className="mt-3 text-sm text-gray-500 leading-relaxed">
+              <p className="mt-2 sm:mt-3 text-sm text-gray-500 leading-relaxed line-clamp-3 [@media(max-height:700px)]:line-clamp-2 sm:line-clamp-none">
                 {attributes.description}
               </p>
             )}
@@ -355,9 +379,9 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
 
             {/* Weight picker */}
             {isWeightBased && (
-              <div className="border-t-[6px] border-[#E5E2DD]">
-                <div className="px-5 py-4">
-                  <div className="flex items-center justify-between mb-3">
+              <div className="border-t-4 sm:border-t-[6px] border-[#E5E2DD]">
+                <div className="px-5 py-3 sm:py-4">
+                  <div className="flex items-center justify-between mb-2 sm:mb-3">
                     <h3 className="font-tomato text-base font-bold text-gray-900">
                       Quanto você gostaria?
                     </h3>
@@ -365,7 +389,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
                       Obrigatório
                     </span>
                   </div>
-                  <p className="text-xs text-gray-400 flex items-center gap-1.5 mb-3">
+                  <p className="text-xs text-gray-400 flex items-center gap-1.5 mb-2 sm:mb-3">
                     <Info className="w-3.5 h-3.5 flex-shrink-0" />
                     {isGrams ? 'Produtos por grama podem variar na pesagem.' : 'Produtos por kg podem variar na pesagem.'}
                   </p>
@@ -377,7 +401,11 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
                     onChange={setWeight}
                     unit={isGrams ? 'g' : 'kg'}
                   />
-                  <div className="text-center text-sm text-gray-500 mt-3">
+                  <p className="mt-2 flex items-center justify-center gap-1 text-xs text-gray-400">
+                    <ChevronsUpDown className="h-3.5 w-3.5" aria-hidden />
+                    Deslize para escolher o peso
+                  </p>
+                  <div className="text-center text-sm text-gray-500 mt-1.5 sm:mt-3">
                     {weight} {isGrams ? 'g' : 'kg'} × {formatPrice(hasDiscount ? attributes.price_with_discount! : attributes.price)}/{isGrams ? 'g' : 'kg'}
                     {' = '}
                     <span className="font-semibold text-gray-900">
@@ -393,8 +421,8 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
               attributes.steps.data.map(step => {
                 const isRequired = step.attributes.required !== false;
                 return (
-                  <div key={step.id} className="border-t-[6px] border-[#E5E2DD]">
-                    <div className="px-5 py-4">
+                  <div key={step.id} className="border-t-4 sm:border-t-[6px] border-[#E5E2DD]">
+                    <div className="px-5 py-3 sm:py-4">
                       <div className="flex items-center justify-between mb-1">
                         <h3 className="font-tomato text-base font-bold text-gray-900">{step.attributes.name}</h3>
                         <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-md">
@@ -416,7 +444,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
                                 }
                                 return { ...prev, [step.id]: option.id };
                               })}
-                              className={`flex items-center justify-between gap-3 py-3.5 cursor-pointer ${
+                              className={`flex items-center justify-between gap-3 py-3 sm:py-3.5 cursor-pointer ${
                                 idx < step.attributes.options.data.length - 1 ? 'border-b border-[#E5E2DD]' : ''
                               }`}
                             >
@@ -441,8 +469,8 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
 
             {/* Prepare Methods */}
             {hasMethods && (
-              <div className="border-t-[6px] border-[#E5E2DD]">
-                <div className="px-5 py-4">
+              <div className="border-t-4 sm:border-t-[6px] border-[#E5E2DD]">
+                <div className="px-5 py-3 sm:py-4">
                   <div className="flex items-center justify-between mb-1">
                     <h3 className="font-tomato text-base font-bold text-gray-900">Modo de Preparo</h3>
                     <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-md">
@@ -457,7 +485,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
                         onClick={() =>
                           togglePrepareMethod(method.id)
                         }
-                        className={`flex items-center gap-3 py-3.5 cursor-pointer ${
+                        className={`flex items-center gap-3 py-3 sm:py-3.5 cursor-pointer ${
                           idx < attributes.prepare_method.data.length - 1 ? 'border-b border-[#E5E2DD]' : ''
                         }`}
                       >
@@ -472,8 +500,8 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
 
             {/* Extras */}
             {hasExtras && (
-              <div className="border-t-[6px] border-[#E5E2DD]">
-                <div className="px-5 py-4">
+              <div className="border-t-4 sm:border-t-[6px] border-[#E5E2DD]">
+                <div className="px-5 py-3 sm:py-4">
                   <div className="flex items-center justify-between mb-1">
                     <h3 className="font-tomato text-base font-bold text-gray-900">Adicionais</h3>
                     <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-md">
@@ -492,7 +520,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
                               : [...prev, extra.id]
                           )
                         }
-                        className={`flex items-center justify-between py-3.5 cursor-pointer ${
+                        className={`flex items-center justify-between py-3 sm:py-3.5 cursor-pointer ${
                           idx < attributes.extra.data.length - 1 ? 'border-b border-[#E5E2DD]' : ''
                         }`}
                       >
@@ -513,8 +541,8 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
             {/* Shared Complements */}
             {attributes.shared_complements?.data?.length > 0 &&
               attributes.shared_complements.data.map(group => (
-                <div key={group.id} className="border-t-[6px] border-[#E5E2DD]">
-                  <div className="px-5 py-4">
+                <div key={group.id} className="border-t-4 sm:border-t-[6px] border-[#E5E2DD]">
+                  <div className="px-5 py-3 sm:py-4">
                     <div className="flex items-center justify-between mb-1">
                       <h3 className="font-tomato text-base font-bold text-gray-900">{group.attributes.name}</h3>
                       <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-md">
@@ -533,7 +561,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
                                 : [...prev, option.id.toString()]
                             )
                           }
-                          className={`flex items-center justify-between py-3.5 cursor-pointer ${
+                          className={`flex items-center justify-between py-3 sm:py-3.5 cursor-pointer ${
                             idx < group.attributes.options.length - 1 ? 'border-b border-[#E5E2DD]' : ''
                           }`}
                         >
@@ -555,10 +583,24 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
             }
 
           </div>
+          </div>
+        </div>
+        {canScrollDown && (
+          <div data-scroll-hint className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-white/70 to-transparent">
+            <button
+              type="button"
+              aria-label="Role para ver mais"
+              onClick={() => scroller?.scrollBy({ top: scroller.clientHeight * 0.7, behavior: "smooth" })}
+              className="pointer-events-auto absolute bottom-2 right-3 flex h-8 w-8 animate-bounce cursor-pointer items-center justify-center rounded-full border border-[#E5E2DD] bg-white text-gray-600 shadow-md"
+            >
+              <ChevronDown className="h-4 w-4" aria-hidden />
+            </button>
+          </div>
+        )}
         </div>
 
         {/* ── Footer: quantity + add to cart ── */}
-        <div className="flex-shrink-0 border-t border-[#E5E2DD] bg-white px-5 py-4">
+        <div className="flex-shrink-0 border-t border-[#E5E2DD] bg-white px-4 py-3 sm:px-5 sm:py-4">
           <div className="flex items-center gap-4">
             {/* Quantity selector */}
             {!isWeightBased && (

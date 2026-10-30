@@ -170,8 +170,8 @@ export default function StoreHeader({ shop: initialShop }: StoreHeaderProps) {
           borderBottom: `1px solid ${borderColor}`,
         }}
       >
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-start gap-5 sm:gap-6">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+          <div className="flex items-start gap-4 sm:gap-6">
             <div
               className="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-md overflow-hidden"
               style={{ borderColor, borderWidth: '1px', backgroundColor: headerColor || '#FFFFFF' }}
@@ -217,7 +217,7 @@ export default function StoreHeader({ shop: initialShop }: StoreHeaderProps) {
           </div>
 
           {/* Mobile: linha compacta com separadores · / Desktop: blocos com ícone */}
-          <div className="mt-5 pt-5" style={{ borderTop: `1px solid ${borderColor}` }}>
+          <div className="mt-3 pt-3 sm:mt-5 sm:pt-5" style={{ borderTop: `1px solid ${borderColor}` }}>
             {/* Mobile */}
             <div className="flex items-center justify-center gap-3.5 sm:hidden">
               <Clock className="w-3.5 h-3.5 flex-shrink-0" style={{ color: mutedColor }} />
