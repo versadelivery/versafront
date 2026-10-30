@@ -17,6 +17,8 @@ export interface ShopAttributes {
   image?: File | string | any;
   image_url?: string | any;
   auto_accept_orders?: boolean;
+  barcode_not_found_action?: 'notice' | 'quick_create';
+  scale_label_mode?: 'weight' | 'total';
   auto_open_cash_register?: boolean;
   auto_open_cash_register_time?: string | null;
   welcome_message?: string | null;
