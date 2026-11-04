@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CreditCard, Calendar, TrendingUp, Eye } from "lucide-react";
 import { MonthlyCharge } from "../services/billingService";
+import { formatDateOnly } from "@/utils/date-only";
 
 interface BillingCardProps {
   charge: MonthlyCharge;
@@ -113,7 +114,7 @@ export default function BillingCard({ charge, onViewPayment }: BillingCardProps)
                   >
                     {attributes.status === "paid" && attributes.paid_at
                       ? formatDate(attributes.paid_at)
-                      : formatDate(attributes.due_date)}
+                      : formatDateOnly(attributes.due_date)}
                   </p>
                 </div>
               </div>

@@ -20,6 +20,7 @@ import {
 import { Commission } from "../services/reseller-service";
 import { useCommissions } from "../hooks/useReseller";
 import { Loader2 } from "lucide-react";
+import { formatDateOnly } from "@/utils/date-only";
 
 function formatCurrency(value: string | number) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(value));
@@ -100,7 +101,7 @@ export function CommissionsTable() {
                   {formatCurrency(c.attributes.amount)}
                 </TableCell>
                 <TableCell>
-                  {new Date(c.attributes.available_at).toLocaleDateString("pt-BR")}
+                  {formatDateOnly(c.attributes.available_at)}
                 </TableCell>
                 <TableCell>
                   {statusBadge(c.attributes.status, c.attributes.status_description)}
