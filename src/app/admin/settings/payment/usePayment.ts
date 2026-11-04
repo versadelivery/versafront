@@ -16,8 +16,10 @@ export const usePayment = () => {
       queryClient.invalidateQueries({ queryKey: ["payment-methods"] });
       toast.success("Métodos de pagamento atualizados com sucesso");
     },
-    onError: () => {
-      toast.error("Erro ao atualizar métodos de pagamento");
+    onError: (error: unknown) => {
+      // a API explica o motivo (ex.: chave PIX obrigatória, CPF/CNPJ inválido)
+      const message = (error as { response?: { data?: { error?: string } } })?.response?.data?.error;
+      toast.error(message || "Erro ao atualizar métodos de pagamento");
     },
   });
 

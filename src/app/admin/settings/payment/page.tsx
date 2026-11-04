@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
@@ -59,6 +60,7 @@ const adjustmentTypeLabels: Record<AdjustmentType, string> = {
 export default function PaymentSettingsPage() {
   const { paymentMethodsData, isLoading, updatePaymentMethodsMutation, isUpdating } = usePayment();
   const { shop } = useShop();
+  const queryClient = useQueryClient();
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [serviceFee, setServiceFee] = useState({ enabled: false, percentage: "10" });
   const [asaasPix, setAsaasPix] = useState<AsaasPixConfig>({
@@ -229,7 +231,9 @@ export default function PaymentSettingsPage() {
     );
   };
 
-  const handleOpenPixKeyOtp = async (pixKey: string) => {
+  const handleOpenPixKeyOtp = async (rawPixKey: string) => {
+    const pixKey = rawPixKey.trim();
+    if (!pixKey) return;
     setOtpLoading(true);
     try {
       await generatePixKeyOtp();
@@ -253,6 +257,8 @@ export default function PaymentSettingsPage() {
     try {
       await updatePixKey(otpModal.pendingPixKey, otpCode.trim());
       setManualPixConfig(prev => ({ ...prev, pixKey: otpModal.pendingPixKey, paymentMoment: 'on_order' }));
+      // the "Chave atual" label and the button text come from the server copy
+      queryClient.invalidateQueries({ queryKey: ["payment-methods"] });
       setOtpModal({ open: false, pendingPixKey: '' });
       setOtpCode('');
       setOtpSent(false);
@@ -275,6 +281,21 @@ export default function PaymentSettingsPage() {
     const pix = getMethod("pix");
     const foodVoucher = getMethod("food_voucher");
     const storeCredit = getMethod("store_credit");
+
+    // same rules the API enforces (shop_payment_config.rb), so the user gets a clear message
+    if (pix?.enabled && !asaasPix.enabled && manualPixConfig.paymentMoment === 'on_order' && !paymentMethodsData.data.attributes.pix_key) {
+      toast.error('Cadastre e confirme a chave PIX (código por e-mail) para receber PIX na realização do pedido');
+      return;
+    }
+    if (asaasPix.enabled && !asaasPix.apiKey.trim()) {
+      toast.error('Informe a API Key do ASAAS para usar o PIX Automático');
+      return;
+    }
+    const expiration = parseInt(asaasPix.expirationMinutes, 10);
+    if (asaasPix.enabled && !(expiration >= 1 && expiration <= 1440)) {
+      toast.error('A expiração do PIX deve ficar entre 1 e 1440 minutos');
+      return;
+    }
 
     await updatePaymentMethodsMutation.mutateAsync({
       data: {

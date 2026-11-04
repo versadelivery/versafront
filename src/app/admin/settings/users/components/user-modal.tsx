@@ -14,6 +14,7 @@ import {
 import { X, User, Mail, Shield, Loader2 } from "lucide-react";
 import { User as UserType } from "../services/userService";
 import { toast } from "sonner";
+import { useAuthContext } from "@/contexts/auth-context";
 
 interface UserModalProps {
   isOpen: boolean;
@@ -67,6 +68,10 @@ export default function UserModal({
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const { user: currentUser } = useAuthContext();
+  const isSelf = !!user && !!currentUser?.email &&
+    user.attributes.email.trim().toLowerCase() === currentUser.email.trim().toLowerCase();
 
   const isLastOwner = isEdit && user?.attributes.role === 'owner' &&
     users.filter(u => u.attributes.role === 'owner').length <= 1;
@@ -165,6 +170,12 @@ export default function UserModal({
 
     if (isLastOwner) {
       toast.error("Não é possível excluir o último proprietário da loja");
+      setShowDeleteConfirm(false);
+      return;
+    }
+
+    if (isSelf) {
+      toast.error("Você não pode excluir o seu próprio usuário");
       setShowDeleteConfirm(false);
       return;
     }
@@ -372,7 +383,7 @@ export default function UserModal({
 
               {/* Botoes */}
               <div className="flex items-center gap-3 pt-3">
-                {isEdit && onDelete && !isLastOwner && (
+                {isEdit && onDelete && !isLastOwner && !isSelf && (
                   <Button
                     type="button"
                     variant="outline"

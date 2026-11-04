@@ -193,7 +193,7 @@ export default function DeliverySettingsPage() {
     };
 
     const onError = (error: any) => {
-      const msg = error?.message || '';
+      const msg = error?.response?.data?.error || error?.message || '';
       if (msg.toLowerCase().includes('name') || msg.toLowerCase().includes('nome') || msg.toLowerCase().includes('already') || msg.toLowerCase().includes('já')) {
         setErrors({ neighborhoodName: "Já existe um bairro com este nome" });
       } else {
@@ -319,6 +319,9 @@ export default function DeliverySettingsPage() {
       setHasFreeDelivery(deliveryConfig.min_value_free_delivery !== null);
       setFreeDeliveryThreshold(deliveryConfig.min_value_free_delivery ? formatApiValue(deliveryConfig.min_value_free_delivery) : "");
       setMinOrderValue(deliveryConfig.minimum_order_value ? formatApiValue(deliveryConfig.minimum_order_value) : "");
+      setPickupAdjustmentType(deliveryConfig.pickup_adjustment_type || "none");
+      setPickupAdjustmentValue(deliveryConfig.pickup_adjustment_value ? formatApiValue(deliveryConfig.pickup_adjustment_value) : "");
+      setPickupValueType(deliveryConfig.pickup_value_type || "fixed");
       setStoreLocation({
         latitude: deliveryConfig.latitude,
         longitude: deliveryConfig.longitude,
@@ -630,7 +633,7 @@ export default function DeliverySettingsPage() {
                   )}
                   <p className="text-sm text-muted-foreground flex items-center gap-1">
                     <Info className="w-3.5 h-3.5 flex-shrink-0" />
-                    Endereços além desta distância recebem um aviso de fora da área de entrega. Deixe em branco para não limitar.
+                    Endereços além desta distância não poderão finalizar o pedido (fora da área de entrega). Deixe em branco para não limitar.
                   </p>
                 </div>
 

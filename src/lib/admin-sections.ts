@@ -3,6 +3,7 @@ import {
   BookOpen,
   CreditCard,
   Settings,
+  Bell,
   Target,
   Ticket,
   BarChart3,
@@ -478,7 +479,7 @@ export const adminSections: AdminSection[] = [
   {
     id: "settings-users",
     title: "Gerenciamento de Usuários",
-    description: "Gerencie usuários e permissões",
+    description: "Gerencie usuários e níveis de acesso",
     href: "/admin/settings/users",
     icon: Users,
     iconBgColor: "bg-gray-600",
@@ -503,6 +504,16 @@ export const adminSections: AdminSection[] = [
     icon: Wallet,
     iconBgColor: "bg-gray-600",
     keywords: ["pagamento", "pix", "cartao", "dinheiro", "metodo"],
+    group: "Configurações",
+  },
+  {
+    id: "settings-notifications",
+    title: "Notificações",
+    description: "Configure os templates de mensagem WhatsApp",
+    href: "/admin/settings/notifications",
+    icon: Bell,
+    iconBgColor: "bg-green-600",
+    keywords: ["notificacao", "whatsapp", "mensagem", "template", "aviso"],
     group: "Configurações",
   },
   {

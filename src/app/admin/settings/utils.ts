@@ -26,7 +26,7 @@ export const settingsCards = [
     href: "/admin/settings/users",
     icon: Users,
     title: "Gerenciamento de Usuários",
-    description: "Gerencie permissões e acessos dos usuários",
+    description: "Gerencie usuários e níveis de acesso",
     iconBgColor: "bg-emerald-600"
   },
   {

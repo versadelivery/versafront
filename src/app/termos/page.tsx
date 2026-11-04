@@ -230,8 +230,8 @@ export default function TermosPage() {
                 </h2>
                 <p className="text-[#444] leading-relaxed">
                   Qualquer das partes pode encerrar a relação contratual a qualquer momento.
-                  O usuário pode solicitar o cancelamento da conta diretamente na plataforma
-                  ou pelo e-mail de suporte. A VersaDelivery pode suspender ou encerrar
+                  O usuário pode solicitar o cancelamento da conta pelo e-mail de suporte
+                  (suporte@versa.delivery). A VersaDelivery pode suspender ou encerrar
                   contas que violem estes Termos, sem aviso prévio em casos de violação
                   grave. Ao encerrar a conta, os dados serão tratados conforme nossa{" "}
                   <Link href="/privacidade" className="text-[#009246] hover:underline">
