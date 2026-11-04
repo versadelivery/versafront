@@ -72,7 +72,7 @@ export default function ReviewsPage() {
                 <p className="text-2xl font-bold">
                   {averageRating > 0 ? averageRating.toFixed(1) : "-"}
                 </p>
-                <p className="text-sm text-muted-foreground">Nota media</p>
+                <p className="text-sm text-muted-foreground">Nota média</p>
               </div>
             </div>
           </Card>
@@ -116,7 +116,7 @@ export default function ReviewsPage() {
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
-                placeholder="Buscar por cliente ou comentario..."
+                placeholder="Buscar por cliente ou comentário..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 h-12 border-muted"
@@ -161,7 +161,7 @@ export default function ReviewsPage() {
                     Nota
                   </TableHead>
                   <TableHead className="font-semibold text-foreground py-4">
-                    Comentario
+                    Comentário
                   </TableHead>
                   <TableHead className="font-semibold text-foreground py-4">
                     Data
@@ -204,7 +204,7 @@ export default function ReviewsPage() {
                       </TableCell>
                       <TableCell className="py-4 text-sm text-muted-foreground max-w-xs truncate">
                         {review.attributes.comment || (
-                          <span className="italic">Sem comentario</span>
+                          <span className="italic">Sem comentário</span>
                         )}
                       </TableCell>
                       <TableCell className="py-4 text-sm text-muted-foreground whitespace-nowrap">

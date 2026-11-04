@@ -54,12 +54,17 @@ export default function PdfCatalogPage() {
     }
   };
 
-  const groupCount = catalogData?.data?.length || 0;
-  const itemCount =
-    catalogData?.data?.reduce((acc: number, group: any) => {
-      const items = group.attributes?.items || group.attributes?.items?.data || [];
-      return acc + (Array.isArray(items) ? items.length : 0);
-    }, 0) || 0;
+  type Raw = { attributes?: { active?: boolean } };
+  type RawGroup = { attributes?: { active?: boolean; items?: Array<Raw & { data?: Raw }> | { data?: Array<Raw & { data?: Raw }> } } };
+  const activeGroups: RawGroup[] = (catalogData?.data || []).filter(
+    (g: RawGroup) => g.attributes?.active !== false
+  );
+  const groupCount = activeGroups.length;
+  const itemCount = activeGroups.reduce((acc, group) => {
+    const raw = group.attributes?.items;
+    const items = Array.isArray(raw) ? raw : raw?.data || [];
+    return acc + items.filter((i) => (i.data ?? i)?.attributes?.active !== false).length;
+  }, 0);
 
   return (
     <div className="min-h-screen bg-[#FAF9F7]">

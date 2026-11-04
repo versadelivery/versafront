@@ -14,6 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Ticket, Search, Edit, Trash2, Plus, ArrowLeft } from "lucide-react";
+import { DeleteConfirmation } from "@/components/ui/delete-confirmation";
 import CouponModal from "./components/coupon-modal";
 import { useCoupons } from "./hooks/use-coupons";
 import { Coupon } from "./services/coupon-service";
@@ -25,6 +26,8 @@ export default function CouponsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCoupon, setSelectedCoupon] = useState<Coupon | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [couponToDelete, setCouponToDelete] = useState<Coupon | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const filteredCoupons = coupons.filter((coupon) =>
     coupon.attributes.code.toLowerCase().includes(searchTerm.toLowerCase())
@@ -116,6 +119,19 @@ export default function CouponsPage() {
 
   const handleDelete = async (id: string) => {
     await deleteCoupon(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!couponToDelete) return;
+    setIsDeleting(true);
+    try {
+      await deleteCoupon(couponToDelete.id);
+      setCouponToDelete(null);
+    } catch {
+      // toast ja exibido pelo hook
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -223,7 +239,7 @@ export default function CouponsPage() {
                             variant="outline"
                             size="sm"
                             className="h-8 px-3 text-xs border-red-200 text-red-600 hover:bg-red-50"
-                            onClick={() => handleDelete(coupon.id)}
+                            onClick={() => setCouponToDelete(coupon)}
                           >
                             <Trash2 className="h-3 w-3 mr-1" />
                             Excluir
@@ -250,6 +266,14 @@ export default function CouponsPage() {
           )}
         </Card>
       </div>
+
+      <DeleteConfirmation
+        isOpen={!!couponToDelete}
+        onOpenChange={(open) => !open && setCouponToDelete(null)}
+        onConfirm={confirmDelete}
+        isLoading={isDeleting}
+        type="cupom"
+      />
 
       {/* Modal */}
       <CouponModal

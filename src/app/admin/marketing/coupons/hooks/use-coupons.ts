@@ -2,6 +2,19 @@ import { useState, useEffect } from "react";
 import { couponService, Coupon, CreateCouponPayload, UpdateCouponPayload } from "../services/coupon-service";
 import { toast } from "sonner";
 
+// A API devolve a mensagem crua da excecao (ActiveRecord/Postgres, em ingles)
+export function translateCouponError(raw: string | undefined, fallback: string): string {
+  if (!raw) return fallback;
+  const s = raw.toLowerCase();
+  if (s.includes("already been taken")) return "Este código já está em uso";
+  if (s.includes("code") && s.includes("blank")) return "O código do cupom é obrigatório";
+  if (s.includes("máximo 100")) return "Percentual não pode ser maior que 100";
+  if (s.includes("expires at") || s.includes("expires_at")) return "A data de fim deve ser posterior à data de início";
+  if (s.includes("value") && s.includes("greater than")) return "O valor do desconto deve ser maior que zero";
+  if (s.includes("foreign key")) return "Este cupom já foi usado em pedidos e não pode ser excluído. Desative-o.";
+  return fallback;
+}
+
 export function useCoupons() {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,7 +45,7 @@ export function useCoupons() {
       toast.success("Cupom criado com sucesso!");
       await fetchCoupons();
     } catch (err: any) {
-      const errorMessage = err.response?.data?.error || err.message || "Erro ao criar cupom";
+      const errorMessage = translateCouponError(err.response?.data?.error, "Erro ao criar cupom");
       setError(errorMessage);
       toast.error(errorMessage);
       throw new Error(errorMessage);
@@ -46,7 +59,7 @@ export function useCoupons() {
       toast.success("Cupom atualizado com sucesso!");
       await fetchCoupons();
     } catch (err: any) {
-      const errorMessage = err.response?.data?.error || err.message || "Erro ao atualizar cupom";
+      const errorMessage = translateCouponError(err.response?.data?.error, "Erro ao atualizar cupom");
       setError(errorMessage);
       toast.error(errorMessage);
       throw new Error(errorMessage);
@@ -60,7 +73,7 @@ export function useCoupons() {
       toast.success("Cupom excluído com sucesso!");
       await fetchCoupons();
     } catch (err: any) {
-      const errorMessage = err.response?.data?.error || err.message || "Erro ao excluir cupom";
+      const errorMessage = translateCouponError(err.response?.data?.error, "Erro ao excluir cupom");
       setError(errorMessage);
       toast.error(errorMessage);
       throw new Error(errorMessage);
