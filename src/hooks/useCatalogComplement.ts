@@ -6,6 +6,7 @@ import {
     deleteCatalogComplementGroup
 } from "@/api/requests/catalog_complement/requests";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/utils/api-error";
 
 export const useCatalogComplement = () => {
     const queryClient = useQueryClient();
@@ -21,8 +22,8 @@ export const useCatalogComplement = () => {
             queryClient.invalidateQueries({ queryKey: ["catalog-complement-groups"] });
             toast.success("Lista de adicionais criada com sucesso");
         },
-        onError: () => {
-            toast.error("Erro ao criar lista de adicionais");
+        onError: (error) => {
+            toast.error(getApiErrorMessage(error, "Erro ao criar lista de adicionais"));
         },
     });
 
@@ -32,8 +33,8 @@ export const useCatalogComplement = () => {
             queryClient.invalidateQueries({ queryKey: ["catalog-complement-groups"] });
             toast.success("Lista de adicionais atualizada com sucesso");
         },
-        onError: () => {
-            toast.error("Erro ao atualizar lista de adicionais");
+        onError: (error) => {
+            toast.error(getApiErrorMessage(error, "Erro ao atualizar lista de adicionais"));
         },
     });
 
@@ -41,10 +42,11 @@ export const useCatalogComplement = () => {
         mutationFn: deleteCatalogComplementGroup,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["catalog-complement-groups"] });
+            queryClient.invalidateQueries({ queryKey: ["catalog"] });
             toast.success("Lista de adicionais deletada com sucesso");
         },
-        onError: () => {
-            toast.error("Erro ao deletar lista de adicionais");
+        onError: (error) => {
+            toast.error(getApiErrorMessage(error, "Erro ao deletar lista de adicionais"));
         },
     });
 
@@ -52,8 +54,10 @@ export const useCatalogComplement = () => {
         complementGroups: complementGroups?.data || [],
         isLoading,
         createComplementGroup: createComplementGroupMutation.mutate,
+        createComplementGroupAsync: createComplementGroupMutation.mutateAsync,
         isCreating: createComplementGroupMutation.isPending,
         updateComplementGroup: updateComplementGroupMutation.mutate,
+        updateComplementGroupAsync: updateComplementGroupMutation.mutateAsync,
         isUpdating: updateComplementGroupMutation.isPending,
         deleteComplementGroup: deleteComplementGroupMutation.mutate,
         isDeleting: deleteComplementGroupMutation.isPending,

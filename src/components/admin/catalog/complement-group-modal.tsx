@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Trash2, Plus, Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface ComplementGroupModalProps {
   isOpen: boolean;
@@ -21,25 +21,35 @@ interface Option {
 }
 
 export function ComplementGroupModal({ isOpen, onOpenChange, groupId }: ComplementGroupModalProps) {
-  const { complementGroups, createComplementGroup, isCreating, updateComplementGroup, isUpdating } = useCatalogComplement();
+  const { complementGroups, createComplementGroupAsync, isCreating, updateComplementGroupAsync, isUpdating } = useCatalogComplement();
   const [name, setName] = useState("");
   const [options, setOptions] = useState<Option[]>([{ name: "", price: "" }]);
 
   const isEditing = !!groupId;
   const isLoading = isCreating || isUpdating;
 
+  // preenche uma vez por abertura: um refetch (foco da janela) nao pode apagar o que o lojista digitou
+  const populatedFor = useRef<string | null>(null);
   useEffect(() => {
-    if (isOpen && groupId) {
+    if (!isOpen) {
+      populatedFor.current = null;
+      return;
+    }
+    const key = groupId ?? "new";
+    if (populatedFor.current === key) return;
+
+    if (groupId) {
       const group = complementGroups.find((g: any) => g.id === groupId);
-      if (group) {
-        setName(group.attributes.name);
-        setOptions(group.attributes.options.map((o: any) => ({
-          id: o.id,
-          name: o.name,
-          price: o.price.toFixed(2).replace('.', ',')
-        })));
-      }
-    } else if (isOpen) {
+      if (!group) return;
+      populatedFor.current = key;
+      setName(group.attributes.name);
+      setOptions(group.attributes.options.map((o: any) => ({
+        id: o.id,
+        name: o.name,
+        price: o.price.toFixed(2).replace('.', ',')
+      })));
+    } else {
+      populatedFor.current = key;
       setName("");
       setOptions([{ name: "", price: "" }]);
     }
@@ -76,7 +86,7 @@ export function ComplementGroupModal({ isOpen, onOpenChange, groupId }: Compleme
     const data = {
       name,
       catalog_complement_options_attributes: options
-        .filter(o => o.name.trim() !== '')
+        .filter(o => o.name.trim() !== '' || o._destroy)
         .map(o => ({
           id: o.id,
           name: o.name,
@@ -85,12 +95,16 @@ export function ComplementGroupModal({ isOpen, onOpenChange, groupId }: Compleme
         }))
     };
 
-    if (isEditing) {
-      await updateComplementGroup({ id: groupId!, data });
-    } else {
-      await createComplementGroup(data);
+    try {
+      if (isEditing) {
+        await updateComplementGroupAsync({ id: groupId!, data });
+      } else {
+        await createComplementGroupAsync(data);
+      }
+      onOpenChange(false);
+    } catch {
+      // o toast do hook mostra o erro da API; o modal fica aberto com o que foi digitado
     }
-    onOpenChange(false);
   };
 
   const visibleOptions = options.filter(o => !o._destroy);

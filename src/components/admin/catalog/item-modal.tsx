@@ -12,6 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Camera, Loader2, Plus, Trash2, Boxes, Egg, Copy } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useCatalogGroup } from "@/hooks/useCatalogGroup";
+import { getApiFieldErrors } from "@/utils/api-error";
 import { useCatalogComplement } from "@/hooks/useCatalogComplement";
 import { useIngredient } from "@/hooks/useIngredient";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -79,7 +80,7 @@ const DEFAULT_ACTIVE_DAYS: Record<DayKey, boolean> = {
 
 export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
   // Hooks
-  const { catalog, isLoading, createCatalogItem, isCreatingItem } = useCatalogGroup();
+  const { catalog, isLoading, createCatalogItemAsync, isCreatingItem } = useCatalogGroup();
 
   // Estados - Dados básicos
   const [name, setName] = useState('');
@@ -455,7 +456,7 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
   // SUBMIT
   // =============================================================================
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validateForm()) return;
 
     const formData = new FormData();
@@ -544,9 +545,23 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
       });
     }
 
-    createCatalogItem(formData);
-    resetForm();
-    onOpenChange(false);
+    try {
+      await createCatalogItemAsync(formData);
+      resetForm();
+      onOpenChange(false);
+    } catch (error) {
+      // o toast do hook mostra a mensagem; o modal fica aberto com o que foi digitado
+      const fieldMap: Record<string, string> = {
+        name: 'name', description: 'description', catalog_group: 'group', catalog_group_id: 'group',
+        price: 'price', price_with_discount: 'discount', promotion_tag: 'promotionTag',
+        min_weight: 'minWeight', max_weight: 'maxWeight', measure_interval: 'measureInterval',
+        prepare_methods_limit: 'prepareMethods', barcode: 'barcode', scale_code: 'scaleCode',
+      };
+      const serverErrors = Object.fromEntries(
+        Object.entries(getApiFieldErrors(error)).filter(([field]) => fieldMap[field]).map(([field, msgs]) => [fieldMap[field], msgs.join(' ')]),
+      );
+      setErrors((prev) => ({ ...prev, ...serverErrors }));
+    }
   };
 
   const handleClose = () => {

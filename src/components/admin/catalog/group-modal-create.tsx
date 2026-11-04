@@ -329,6 +329,7 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
         onConfirm={handleConfirmDelete}
         isLoading={isDeletingGroup}
         type="grupo"
+        consequence="Todos os itens deste grupo também serão excluídos."
       />
     </>
   );

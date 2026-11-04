@@ -118,6 +118,8 @@ export function ComplementManagement() {
         onConfirm={handleConfirmDelete}
         isLoading={isDeleting}
         type="lista de adicionais"
+        feminine
+        consequence="Ela será removida de todos os itens que a usam."
       />
     </div>
   );

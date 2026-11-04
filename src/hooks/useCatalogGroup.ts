@@ -332,6 +332,7 @@ export const useCatalogGroup = (id?: string) => {
     isUpdatingGroup: updateCatalogGroupMutation.isPending,
     isDeletingGroup: deleteCatalogGroupMutation.isPending,
     createCatalogItem: createCatalogItemMutation.mutate,
+    createCatalogItemAsync: createCatalogItemMutation.mutateAsync,
     isCreatingItem: createCatalogItemMutation.isPending,
     duplicateCatalogItem: duplicateCatalogItemMutation.mutate,
     isDuplicatingItem: duplicateCatalogItemMutation.isPending,

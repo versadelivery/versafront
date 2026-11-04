@@ -139,6 +139,8 @@ export function CategoryManager({ onEdit }: CategoryManagerProps) {
         onConfirm={async () => { if (toDelete) deleteCategory(toDelete.id); setToDelete(null); }}
         isLoading={false}
         type="categoria"
+        feminine
+        consequence="Os grupos desta categoria ficarão sem categoria."
       />
     </div>
   );
