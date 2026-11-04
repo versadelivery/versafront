@@ -8,13 +8,17 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import ProtectedRoute from "@/components/protected-route";
+import { CategoryThumb } from "@/components/category-thumb";
+import { CategoryImageField } from "@/components/category-image-field";
+import { getCatalogCategories, updateCatalogCategory } from "@/services/category-service";
 import { applyCatalogTemplate, getCatalogTemplate, TemplateCategory, TemplateGroup, TemplateSelection } from "@/services/catalog-template-service";
 import { getApiErrorMessage } from "@/utils/api-error";
 
 const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
 const itemId = (category: TemplateCategory, group: TemplateGroup, key: string) => `${category.key}|${group.key}|${key}`;
 
-function Row({ checked, onCheck, title, subtitle, open, onToggle }: {
+function Row({ checked, onCheck, title, subtitle, open, onToggle, leading }: {
+  leading?: React.ReactNode;
   checked: boolean | "indeterminate";
   onCheck: () => void;
   title: string;
@@ -31,6 +35,7 @@ function Row({ checked, onCheck, title, subtitle, open, onToggle }: {
       ) : (
         <Checkbox checked={checked} onCheckedChange={onCheck} className="size-6 border-transparent bg-gray-200 sm:size-5" aria-label={title} />
       )}
+      {leading}
       <button type="button" onClick={onToggle ?? onCheck} className="flex min-h-11 flex-1 cursor-pointer items-center justify-between gap-2 text-left">
         <span className="min-w-0">
           <span className="block break-words text-sm font-medium text-gray-900">{title}</span>
@@ -58,6 +63,13 @@ export default function TemplatesPage() {
   const categories = useMemo(() => data?.categories ?? [], [data]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [open, setOpen] = useState<Set<string>>(new Set());
+  // Imagem escolhida por categoria (chave do template); enviada depois do apply
+  const [images, setImages] = useState<Record<string, File>>({});
+  const setImage = (key: string, file: File | null) => setImages((current) => {
+    const next = { ...current };
+    if (file) next[key] = file; else delete next[key];
+    return next;
+  });
 
   const toggleOpen = (key: string, force?: boolean) => setOpen((current) => {
     const next = new Set(current);
@@ -98,6 +110,24 @@ export default function TemplatesPage() {
     return { categories: groups.filter((count) => count > 0).length, groups: groups.reduce((sum, count) => sum + count, 0), items: selected.size };
   }, [categories, selected]);
 
+  // So categorias com itens marcados foram criadas; devolve os nomes cujas imagens falharam
+  const uploadImages = async (): Promise<string[]> => {
+    const picked = categories.filter((category) => images[category.key] && countOf(categoryIds(category)) > 0);
+    if (!picked.length) return [];
+    let existing: { id: string; attributes?: { name?: string } }[];
+    try {
+      existing = (await getCatalogCategories()).data ?? [];
+    } catch {
+      return picked.map((category) => category.name);
+    }
+    const results = await Promise.allSettled(picked.map((category) => {
+      const found = existing.find((c) => c.attributes?.name === category.name);
+      if (!found) return Promise.reject(new Error("not found"));
+      return updateCatalogCategory(found.id, { image: images[category.key] });
+    }));
+    return picked.filter((_, index) => results[index].status === "rejected").map((category) => category.name);
+  };
+
   const apply = useMutation({
     mutationFn: () => {
       const selection: TemplateSelection = {};
@@ -107,9 +137,11 @@ export default function TemplatesPage() {
       }));
       return applyCatalogTemplate(selection);
     },
-    onSuccess: (created) => {
+    onSuccess: async (created) => {
+      const failed = await uploadImages();
       queryClient.invalidateQueries({ queryKey: ["catalog"] });
       queryClient.invalidateQueries({ queryKey: ["catalog-categories"] });
+      failed.forEach((name) => toast.error(`Template aplicado, mas a imagem de "${name}" não foi enviada. Adicione em Cardápio > Categorias.`, { duration: 10000 }));
       toast.success(`${plural(created.items, "item criado", "itens criados")}. Defina os preços para ativá-los.`);
       router.push("/admin/catalog?tab=prices");
     },
@@ -154,11 +186,13 @@ export default function TemplatesPage() {
                   <div key={category.key} className="space-y-2">
                     <Row
                       open={isOpen} checked={state(ids)} title={category.name}
+                      leading={<CategoryThumb name={category.name} file={images[category.key]} className="size-9" />}
                       subtitle={pickedGroups ? `${pickedGroups} de ${groupsLabel}` : groupsLabel}
                       onCheck={() => toggleCategory(category)} onToggle={() => toggleOpen(category.key)}
                     />
                     {isOpen && (
                       <div className="ml-3 space-y-2 border-l-2 border-[#E5E2DD] pl-3">
+                        <CategoryImageField name={category.name} file={images[category.key] ?? null} onChange={(file) => setImage(category.key, file)} compact />
                         <BulkButtons onAll={() => setItems(ids, true)} onNone={() => setItems(ids, false)} />
                         {category.groups.map((group) => {
                           const key = `${category.key}|${group.key}`;
