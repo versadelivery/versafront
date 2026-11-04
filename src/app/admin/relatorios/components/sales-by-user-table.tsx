@@ -14,6 +14,13 @@ interface SalesByUserTableProps {
   data: SalesByUserEntry[];
 }
 
+const ROLE_LABELS: Record<string, string> = {
+  owner: "Proprietário",
+  manager: "Gerente",
+  employee: "Funcionário",
+  delivery_man: "Entregador",
+};
+
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -50,7 +57,7 @@ export default function SalesByUserTable({ data }: SalesByUserTableProps) {
             </TableCell>
             <TableCell className="font-medium">{item.user_name}</TableCell>
             <TableCell className="text-muted-foreground">
-              {item.user_role}
+              {ROLE_LABELS[item.user_role] ?? item.user_role}
             </TableCell>
             <TableCell className="text-right">{item.order_count}</TableCell>
             <TableCell className="text-right">

@@ -55,10 +55,10 @@ export default function SalesByItemTab() {
           </div>
         </div>
         <ReportExportButton
-          filename="vendas-por-item"
-          headers={["Item", "Quantidade", "Receita", "% do Total"]}
-          rows={items?.map(d => [d.name, d.quantity, d.revenue, d.percentage]) ?? []}
-          disabled={loading || !items}
+          filename={view === "items" ? "vendas-por-item" : "vendas-por-grupo"}
+          headers={[view === "items" ? "Item" : "Grupo", "Quantidade", "Receita", "% do Total"]}
+          rows={currentData.map(d => [d.name, d.quantity, d.revenue, d.percentage])}
+          disabled={loading || !!error}
         />
       </div>
 

@@ -28,6 +28,14 @@ function formatCurrency(value: number) {
 function VariationBadge({ value }: { value: number | null }) {
   if (value === null) return null;
 
+  if (value === 0) {
+    return (
+      <div className="flex items-center gap-1 mt-1">
+        <Badge variant="outline" className="text-xs text-muted-foreground">0%</Badge>
+      </div>
+    );
+  }
+
   const isPositive = value > 0;
   const Icon = isPositive ? TrendingUp : TrendingDown;
   const colorClass = isPositive

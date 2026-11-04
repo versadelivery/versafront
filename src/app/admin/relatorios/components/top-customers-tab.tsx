@@ -51,7 +51,7 @@ export default function TopCustomersTab() {
           filename="top-clientes"
           headers={["Cliente", "Telefone", "Pedidos", "Total Gasto"]}
           rows={customers?.map(d => [d.name, d.phone || "—", d.order_count, d.total_spent]) ?? []}
-          summaryData={summary ? { "Clientes Únicos": summary.total_unique_customers, "Receita Total": summary.total_revenue, "Média por Cliente": summary.average_per_customer } : undefined}
+          summaryData={summary ? { "Clientes Únicos": summary.total_unique_customers, "Faturamento Total": summary.total_revenue, "Média por Cliente": summary.average_per_customer } : undefined}
           disabled={loading || !customers}
         />
       </div>
