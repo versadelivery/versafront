@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -34,6 +36,7 @@ import {
   ClipboardList,
   Eye,
   Loader2,
+  Wallet,
 } from "lucide-react";
 import CustomerModal from "../components/customer-modal";
 import OrderDetailDialog from "../components/order-detail-dialog";
@@ -75,9 +78,13 @@ const statusDotColors: Record<string, string> = {
 
 const paymentLabels: Record<string, string> = {
   cash: "Dinheiro",
-  debit: "Debito",
-  credit: "Credito",
+  debit: "Débito",
+  credit: "Crédito",
+  pix: "PIX",
   manual_pix: "PIX",
+  asaas_pix: "PIX Automático",
+  store_credit: "Fiado (a receber)",
+  food_voucher: "Vale alimentação / refeição",
 };
 
 function formatCurrency(value: string | number) {
@@ -114,8 +121,12 @@ export default function CustomerDetailPage() {
 
   const confirmToggleBlock = async () => {
     if (!customer) return;
-    await toggleBlock(!customer.attributes.blocked);
-    setShowBlockConfirm(false);
+    try {
+      await toggleBlock(!customer.attributes.blocked);
+      setShowBlockConfirm(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Erro ao alterar bloqueio do cliente");
+    }
   };
 
   const handleSave = async (data: any) => {
@@ -137,6 +148,9 @@ export default function CustomerDetailPage() {
     }
   };
 
+  const credit = customer?.attributes.store_credit_summary;
+  const hasOpenCredit = (credit?.open_orders_count ?? 0) > 0;
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#FAF9F7]">
@@ -144,13 +158,13 @@ export default function CustomerDetailPage() {
           <div className="max-w-[1920px] mx-auto px-4 sm:px-6">
             <div className="flex items-center h-16">
               <div className="flex items-center gap-4">
-                <a
+                <Link
                   href="/admin/clientes"
                   className="flex items-center gap-1.5 text-muted-foreground hover:text-gray-900 transition-colors"
                 >
                   <ArrowLeft className="w-5 h-5" />
                   <span className="text-sm font-medium hidden sm:block">Voltar</span>
-                </a>
+                </Link>
                 <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
                 <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900">Cliente</h1>
               </div>
@@ -171,13 +185,13 @@ export default function CustomerDetailPage() {
           <div className="max-w-[1920px] mx-auto px-4 sm:px-6">
             <div className="flex items-center h-16">
               <div className="flex items-center gap-4">
-                <a
+                <Link
                   href="/admin/clientes"
                   className="flex items-center gap-1.5 text-muted-foreground hover:text-gray-900 transition-colors"
                 >
                   <ArrowLeft className="w-5 h-5" />
                   <span className="text-sm font-medium hidden sm:block">Voltar</span>
-                </a>
+                </Link>
                 <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
                 <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900">Cliente</h1>
               </div>
@@ -205,13 +219,13 @@ export default function CustomerDetailPage() {
         <div className="max-w-[1920px] mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-4">
-              <a
+              <Link
                 href="/admin/clientes"
                 className="flex items-center gap-1.5 text-muted-foreground hover:text-gray-900 transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
                 <span className="text-sm font-medium hidden sm:block">Voltar</span>
-              </a>
+              </Link>
               <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
               <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900 truncate max-w-[300px]">
                 {customer.attributes.name}
@@ -230,14 +244,16 @@ export default function CustomerDetailPage() {
             </div>
 
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                className="gap-2 rounded-md border border-gray-300 cursor-pointer h-9 text-sm"
-                onClick={() => setIsModalOpen(true)}
-              >
-                <Edit className="h-4 w-4" />
-                <span className="hidden sm:inline">Editar</span>
-              </Button>
+              {customer.attributes.editable !== false && (
+                <Button
+                  variant="outline"
+                  className="gap-2 rounded-md border border-gray-300 cursor-pointer h-9 text-sm"
+                  onClick={() => setIsModalOpen(true)}
+                >
+                  <Edit className="h-4 w-4" />
+                  <span className="hidden sm:inline">Editar</span>
+                </Button>
+              )}
               <Button
                 variant="outline"
                 className={`gap-2 rounded-md border border-gray-300 cursor-pointer h-9 text-sm ${
@@ -316,6 +332,43 @@ export default function CustomerDetailPage() {
           </div>
         </div>
 
+        {/* Crediário (fiado) */}
+        <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+          <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
+            <Wallet className="h-4 w-4 text-primary" />
+            <h2 className="font-tomato text-base font-semibold text-gray-900">Crediário</h2>
+            <span
+              className={`ml-auto inline-flex items-center px-2.5 py-1 rounded-md border bg-white text-sm font-semibold ${
+                hasOpenCredit ? "border-red-400 text-red-700" : "border-green-400 text-green-700"
+              }`}
+            >
+              {hasOpenCredit ? "Em aberto" : "Sem dívida"}
+            </span>
+          </div>
+          <div className="px-5 py-5 grid grid-cols-2 lg:grid-cols-4 gap-6">
+            <div>
+              <p className="text-sm text-muted-foreground">Total em aberto</p>
+              <p className={`text-sm font-medium ${hasOpenCredit ? "text-red-700" : "text-gray-900"}`}>
+                {formatCurrency(credit?.outstanding_amount ?? 0)}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Pedidos abertos</p>
+              <p className="text-sm font-medium text-gray-900">{credit?.open_orders_count ?? 0}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Já pago</p>
+              <p className="text-sm font-medium text-gray-900">{formatCurrency(credit?.paid_amount ?? 0)}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Última dívida</p>
+              <p className="text-sm font-medium text-gray-900">
+                {credit?.last_open_order_at ? formatDate(credit.last_open_order_at) : "—"}
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Histórico de pedidos */}
         <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
           <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
@@ -366,6 +419,11 @@ export default function CustomerDetailPage() {
                     </TableCell>
                     <TableCell className="py-3 text-sm hidden sm:table-cell">
                       {paymentLabels[order.attributes.payment_method] || order.attributes.payment_method}
+                      {order.attributes.payment_method === "store_credit" &&
+                        !order.attributes.paid_at &&
+                        order.attributes.status !== "cancelled" && (
+                          <span className="text-red-600"> · devendo</span>
+                        )}
                     </TableCell>
                     <TableCell className="py-3 text-sm text-right font-medium">
                       {formatCurrency(order.attributes.total_price)}

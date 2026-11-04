@@ -31,8 +31,11 @@ const paymentLabels: Record<string, string> = {
   cash: "Dinheiro",
   debit: "Débito",
   credit: "Crédito",
+  pix: "PIX",
   manual_pix: "PIX",
   asaas_pix: "PIX Automático",
+  store_credit: "Fiado (a receber)",
+  food_voucher: "Vale alimentação / refeição",
 };
 
 function formatCurrency(value: string | number) {
