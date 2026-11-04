@@ -1,6 +1,7 @@
 "use client"
 
 import { memo, useMemo } from 'react';
+import { CategoryThumb } from '@/components/category-thumb';
 import { isDarkColor } from '../theme-utils';
 
 interface Category {
@@ -8,6 +9,7 @@ interface Category {
   attributes: {
     name: string;
     description?: string;
+    image_url?: string | null;
   };
 }
 
@@ -71,13 +73,14 @@ const CategoryNavigation = memo(function CategoryNavigation({ categories, active
             key={category.id}
             onClick={(e) => scrollToCategory(category.attributes.name, e.currentTarget)}
             className={`
-              whitespace-nowrap px-5 py-2 text-sm font-semibold transition-all duration-150 flex-shrink-0 border rounded-md cursor-pointer
+              whitespace-nowrap flex items-center gap-2 pl-2 pr-4 py-1.5 text-sm font-semibold transition-all duration-150 flex-shrink-0 border rounded-md cursor-pointer
               ${activeCategory === category.attributes.name
                 ? (accentColor ? '' : 'bg-primary text-white border-primary')
                 : 'bg-white text-gray-600 border-[#E5E2DD] hover:border-gray-400 hover:text-gray-900'}
             `}
             style={activeCategory === category.attributes.name ? activeStyle : undefined}
           >
+            <CategoryThumb name={category.attributes.name} src={category.attributes.image_url} className="size-6 rounded-[4px]" />
             {category.attributes.name}
           </button>
         ))}

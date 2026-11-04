@@ -8,13 +8,27 @@ export async function getCatalogCategories() {
   return response.data;
 }
 
-export async function createCatalogCategory(data: CategoryPayload) {
-  const response = await api.post("/catalog_categories", data);
+export type CategoryImageOptions = { image?: File | null; removeImage?: boolean };
+
+// Com imagem vira multipart (campos planos); sem imagem segue JSON
+function toBody(data: Partial<CategoryPayload>, { image, removeImage }: CategoryImageOptions) {
+  if (!image && !removeImage) return data;
+  const form = new FormData();
+  Object.entries(data).forEach(([key, value]) => { if (value !== undefined && value !== null) form.append(key, String(value)); });
+  if (image) form.append("image", image);
+  if (removeImage) form.append("remove_image", "true");
+  return form;
+}
+
+export async function createCatalogCategory(data: CategoryPayload & CategoryImageOptions) {
+  const { image, ...fields } = data;
+  const response = await api.post("/catalog_categories", toBody(fields, { image }));
   return response.data;
 }
 
-export async function updateCatalogCategory(id: string, data: Partial<CategoryPayload>) {
-  const response = await api.put(`/catalog_categories/${id}`, data);
+export async function updateCatalogCategory(id: string, data: Partial<CategoryPayload> & CategoryImageOptions) {
+  const { image, removeImage, ...fields } = data;
+  const response = await api.put(`/catalog_categories/${id}`, toBody(fields, { image, removeImage }));
   return response.data;
 }
 

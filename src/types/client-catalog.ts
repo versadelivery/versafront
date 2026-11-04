@@ -171,6 +171,7 @@ export interface ShopResponse {
           attributes: {
             name: string
             description?: string | null
+            image_url?: string | null
             priority: number
             active: boolean
             groups: { data: Array<any> }

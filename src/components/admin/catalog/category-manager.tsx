@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { BusySwitch } from "./busy-switch";
 import { DeleteConfirmation } from "@/components/ui/delete-confirmation";
+import { CategoryThumb } from "@/components/category-thumb";
 import { useCatalogCategories } from "@/hooks/useCatalogCategories";
 import { getApiErrorMessage } from "@/utils/api-error";
 import { weekdaysSummary } from "./weekday-picker";
@@ -47,6 +48,7 @@ function CategoryRow({ category, position, updating, deleting, onEdit, onDelete,
         <GripVertical className="h-5 w-5 sm:h-3.5 sm:w-3.5" />
       </button>
       <span className="text-xs font-semibold text-primary">{position}</span>
+      <CategoryThumb name={name} src={category.attributes.image_url} className="size-7" />
       <span className="min-w-0 flex-1 truncate font-medium text-gray-900 sm:flex-none">{name}</span>
       {(inactive || days) && (
         <span className="text-xs text-muted-foreground">{inactive ? "Inativa" : days}</span>

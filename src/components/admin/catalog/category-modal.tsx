@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Loader2 } from "lucide-react";
 import { useCatalogCategories } from "@/hooks/useCatalogCategories";
 import { getApiErrorMessage } from "@/utils/api-error";
+import { CategoryImageField } from "@/components/category-image-field";
 import { ALL_WEEKDAYS, WEEKDAYS, WeekdayPicker, WeekdayState, weekdaysFrom } from "./weekday-picker";
 
 export function CategoryModal({ open, onOpenChange, category }: { open: boolean; onOpenChange: (open: boolean) => void; category?: any | null }) {
@@ -19,6 +20,8 @@ export function CategoryModal({ open, onOpenChange, category }: { open: boolean;
   const [active, setActive] = useState(true);
   const [days, setDays] = useState<WeekdayState>(ALL_WEEKDAYS);
   const [error, setError] = useState("");
+  const [image, setImage] = useState<File | null>(null);
+  const [imageRemoved, setImageRemoved] = useState(false);
   const [position, setPosition] = useState("1");
   const total = categories.length + (category ? 0 : 1);
 
@@ -28,6 +31,8 @@ export function CategoryModal({ open, onOpenChange, category }: { open: boolean;
     setActive(category?.attributes?.active ?? true);
     setDays(weekdaysFrom(category?.attributes));
     setError("");
+    setImage(null);
+    setImageRemoved(false);
     const current = category ? categories.findIndex((c: any) => c.id === category.id) + 1 : categories.length + 1;
     setPosition(String(current || 1));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -47,6 +52,8 @@ export function CategoryModal({ open, onOpenChange, category }: { open: boolean;
       priority: category?.attributes?.priority ?? 0,
       active,
       ...days,
+      image,
+      removeImage: imageRemoved && !image,
     };
     const ids: string[] = categories.map((c: any) => c.id);
     const target = Math.min(Math.max(parseInt(position, 10) || 1, 1), total);
@@ -86,6 +93,16 @@ export function CategoryModal({ open, onOpenChange, category }: { open: boolean;
               className="w-24"
             />
             <p className="text-xs text-muted-foreground">1 aparece primeiro (de 1 a {total}). Você também pode arrastar as categorias na lista.</p>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-sm font-medium">Imagem de categoria (opcional)</Label>
+            <CategoryImageField
+              name={name}
+              file={image}
+              currentUrl={imageRemoved ? null : category?.attributes?.image_url}
+              onChange={(file) => { setImage(file); setImageRemoved(!file); }}
+            />
+            <p className="text-xs text-muted-foreground">Sem imagem, a loja mostra um ícone relacionado ao nome da categoria.</p>
           </div>
           <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Descrição (opcional)" />
 
