@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
-import { isScannable, parseBarcode } from "@/lib/barcode/parse-barcode";
+import { parseBarcode, scanCode } from "@/lib/barcode/parse-barcode";
 import type { ScaleMode, ScanItem, ScanResult } from "@/lib/barcode/parse-barcode";
 
 interface UseBarcodeScannerOptions<T extends ScanItem> {
@@ -31,8 +31,8 @@ export function useBarcodeScanner<T extends ScanItem>({ items, mode, onResult, c
     if (event.key !== "Enter") return;
 
     // O valor vem do DOM: o estado do React pode ainda não ter recebido o último dígito.
-    const text = event.currentTarget.value;
-    if (!isScannable(text)) return;
+    const text = scanCode(event.currentTarget.value);
+    if (!text) return;
 
     event.preventDefault();
     clearSearch();
@@ -40,7 +40,7 @@ export function useBarcodeScanner<T extends ScanItem>({ items, mode, onResult, c
       onNotReady?.();
       return;
     }
-    onResult(parseBarcode(text, mode, items), text.trim());
+    onResult(parseBarcode(text, mode, items), text);
     focusInput();
   };
 

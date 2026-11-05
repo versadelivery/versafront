@@ -38,6 +38,13 @@ export function isScannable(text: string): boolean {
   return /^\d{8,}$/.test(text.trim())
 }
 
+// Código lido no texto do campo: só dígitos, ou 8+ dígitos colados depois de algo que o operador já tinha digitado
+// ("pic" + leitura). Nome de produto não termina em 8 dígitos seguidos, então o prefixo é descartado.
+export function scanCode(text: string): string | null {
+  const match = text.trim().match(/(?:^|\D)(\d{8,})$/)
+  return match ? match[1] : null
+}
+
 export function isValidEan13(code: string): boolean {
   if (!/^\d{13}$/.test(code)) return false
 
