@@ -389,6 +389,19 @@ export interface SalesByUserResponse {
   summary: SalesByUserSummary;
 }
 
+export interface SalesByDeliveryPersonEntry {
+  delivery_person_id: number;
+  delivery_person_name: string;
+  order_count: number;
+  revenue: number;
+  average_ticket: number;
+}
+
+export interface SalesByDeliveryPersonResponse {
+  data: SalesByDeliveryPersonEntry[];
+  summary: { total_delivery_people: number; total_orders: number; total_revenue: number };
+}
+
 // Item Modifications
 export interface ItemModificationEntry {
   order_id: number;
@@ -451,6 +464,27 @@ export interface CashRegisterStatementSummary {
 export interface CashRegisterStatementResponse {
   transactions: CashRegisterTransactionEntry[];
   summary: CashRegisterStatementSummary;
+}
+
+export interface StatementPaymentBreakdown {
+  method: string;
+  label: string;
+  quantity: number;
+  revenue: number;
+}
+
+export interface StatementItem {
+  name: string;
+  quantity: number;
+  unit: string;
+  revenue: number;
+  payments: StatementPaymentBreakdown[];
+}
+
+export interface StatementResponse {
+  items: StatementItem[];
+  summary: { order_count: number; item_revenue: number; delivery_fees: number; total_revenue: number; total_item_quantity: number };
+  period: { date: string; start_time: string; end_time: string; full_day: boolean };
 }
 
 // Visitors
@@ -692,6 +726,13 @@ export const reportsService = {
     return response.data;
   },
 
+  getSalesByDeliveryPerson: async (startDate: string, endDate: string): Promise<SalesByDeliveryPersonResponse> => {
+    const response = await api.get(API_ENDPOINTS.REPORTS.SALES_BY_DELIVERY_PERSON, {
+      params: { start_date: startDate, end_date: endDate },
+    });
+    return response.data;
+  },
+
   getItemModifications: async (
     startDate: string,
     endDate: string
@@ -728,6 +769,13 @@ export const reportsService = {
         params: { start_date: startDate, end_date: endDate },
       }
     );
+    return response.data;
+  },
+
+  getStatement: async (date: string, startTime?: string, endTime?: string): Promise<StatementResponse> => {
+    const response = await api.get(API_ENDPOINTS.REPORTS.STATEMENT, {
+      params: { date, ...(startTime && endTime ? { start_time: startTime, end_time: endTime } : {}) },
+    });
     return response.data;
   },
 

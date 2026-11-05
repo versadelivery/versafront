@@ -28,6 +28,8 @@ import VisitorsTab from "./components/visitors-tab";
 import DeliveryFeesTab from "./components/delivery-fees-tab";
 import CouponUsageTab from "./components/coupon-usage-tab";
 import WeeklySummaryTab from "./components/weekly-summary-tab";
+import StatementTab from "./components/statement-tab";
+import SalesByDeliveryPersonTab from "./components/sales-by-delivery-person-tab";
 
 const CATEGORIES = [
   {
@@ -43,6 +45,7 @@ const CATEGORIES = [
       { key: "descontos", label: "Descontos" },
       { key: "lucratividade", label: "Lucratividade" },
       { key: "extrato-caixa", label: "Extrato Caixa" },
+      { key: "extrato", label: "Extrato" },
       { key: "cupons-utilizados", label: "Cupons" },
     ],
   },
@@ -56,6 +59,7 @@ const CATEGORIES = [
       { key: "vendas-por-dia-semana", label: "Por Dia" },
       { key: "vendas-por-bairro", label: "Por Bairro" },
       { key: "vendas-por-canal", label: "Por Canal" },
+      { key: "vendas-por-entregador", label: "Por Entregador" },
       { key: "tempo-preparo", label: "Tempo Preparo" },
       { key: "tempo-entrega", label: "Tempo Entrega" },
       { key: "por-atendente", label: "Por Atendente" },
@@ -95,6 +99,7 @@ const TAB_COMPONENTS: Record<string, React.ComponentType> = {
   "vendas-por-bairro": SalesByNeighborhoodTab,
   "top-clientes": TopCustomersTab,
   "vendas-por-canal": SalesByChannelTab,
+  "vendas-por-entregador": SalesByDeliveryPersonTab,
   "aquisicao-clientes": CustomerAcquisitionTab,
   "descontos": DiscountedOrdersTab,
   "tempo-preparo": AveragePrepTimeTab,
@@ -104,6 +109,7 @@ const TAB_COMPONENTS: Record<string, React.ComponentType> = {
   "itens-alterados": ItemModificationsTab,
   "pagamento-alterado": PaymentModificationsTab,
   "extrato-caixa": CashRegisterStatementTab,
+  extrato: StatementTab,
   "cupons-utilizados": CouponUsageTab,
   "visitantes": VisitorsTab,
   "taxas-entrega": DeliveryFeesTab,
