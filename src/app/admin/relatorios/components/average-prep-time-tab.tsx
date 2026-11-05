@@ -114,7 +114,7 @@ export default function AveragePrepTimeTab() {
                     <p className="text-2xl font-bold">
                       {summary.best_day
                         ? `${summary.best_day.average_minutes} min`
-                        : "—"}
+                        : "-"}
                     </p>
                     {summary.best_day && (
                       <p className="text-xs text-muted-foreground">
@@ -139,7 +139,7 @@ export default function AveragePrepTimeTab() {
                     <p className="text-2xl font-bold">
                       {summary.worst_day
                         ? `${summary.worst_day.average_minutes} min`
-                        : "—"}
+                        : "-"}
                     </p>
                     {summary.worst_day && (
                       <p className="text-xs text-muted-foreground">

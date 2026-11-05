@@ -64,7 +64,7 @@ export function RouteMap({ origin, destination, geometry, className }: RouteMapP
       const destinationPoint: [number, number] = [destination.latitude, destination.longitude];
       const line = geometry?.length ? (geometry as [number, number][]) : [originPoint, destinationPoint];
 
-      // Sem geometria da rota, o traçado vira uma reta pontilhada — deixa claro
+      // Sem geometria da rota, o traçado vira uma reta pontilhada, deixa claro
       // que é só uma referência visual, não o caminho real.
       L.polyline(line, {
         color: "#E8590C",

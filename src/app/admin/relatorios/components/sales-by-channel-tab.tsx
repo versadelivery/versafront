@@ -124,7 +124,7 @@ export default function SalesByChannelTab() {
                       Canal Principal
                     </p>
                     <p className="text-2xl font-bold">
-                      {summary.top_channel?.label || "—"}
+                      {summary.top_channel?.label || "-"}
                     </p>
                     {summary.top_channel && (
                       <p className="text-xs text-muted-foreground">

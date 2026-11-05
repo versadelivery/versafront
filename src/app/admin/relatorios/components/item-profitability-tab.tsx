@@ -51,7 +51,7 @@ export default function ItemProfitabilityTab() {
         <ReportExportButton
           filename="lucratividade"
           headers={["Item", "Qtd Vendida", "Receita", "Custo", "Lucro", "Margem (%)"]}
-          rows={items?.map(d => [d.name, d.quantity_sold, d.revenue, d.total_cost, d.profit, d.margin_percentage ?? "—"]) ?? []}
+          rows={items?.map(d => [d.name, d.quantity_sold, d.revenue, d.total_cost, d.profit, d.margin_percentage ?? "-"]) ?? []}
           summaryData={summary ? { "Receita Total": summary.total_revenue, "Custo Total": summary.total_cost, "Lucro Total": summary.total_profit, "Margem Geral": summary.overall_margin_percentage + "%" } : undefined}
           disabled={loading || !items}
         />

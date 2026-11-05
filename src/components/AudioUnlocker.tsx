@@ -32,13 +32,13 @@ export default function AudioUnlocker() {
         });
       }
     } catch (error) {
-      // Silencioso — não é crítico
+      // Silencioso, não é crítico
       console.warn('AudioUnlocker: falha ao desbloquear AudioContext', error);
     }
   }, []);
 
   useFirstUserGesture(unlock);
 
-  // Componente invisível — não renderiza nada
+  // Componente invisível, não renderiza nada
   return null;
 }

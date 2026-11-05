@@ -74,7 +74,7 @@ export default function PrivacidadePage() {
                 A <strong>VersaDelivery</strong> está comprometida com a proteção dos seus
                 dados pessoais e com a transparência sobre como as informações são coletadas,
                 utilizadas e armazenadas. Esta política está em conformidade com a{" "}
-                <strong>Lei Geral de Proteção de Dados (LGPD — Lei nº 13.709/2018)</strong>.
+                <strong>Lei Geral de Proteção de Dados (LGPD, Lei nº 13.709/2018)</strong>.
               </p>
 
               <section id="coleta">
@@ -126,7 +126,7 @@ export default function PrivacidadePage() {
                 <ul className="space-y-2 text-[#444]">
                   {[
                     "Criação e gestão da sua conta na plataforma;",
-                    "Prestação dos serviços contratados (cardápio, pedidos, relatórios, PDV);",
+                    "Prestação dos serviços contratados (catálogo, pedidos, relatórios, PDV);",
                     "Cobrança e emissão de faturas;",
                     "Comunicação sobre atualizações, manutenções e novidades da plataforma;",
                     "Melhoria contínua dos serviços, com base em dados agregados e anonimizados;",

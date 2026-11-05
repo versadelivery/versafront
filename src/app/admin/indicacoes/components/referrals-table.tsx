@@ -57,9 +57,9 @@ export function ReferralsTable({ referrals }: ReferralsTableProps) {
             <TableCell>
               {referral.last_charge_amount != null
                 ? formatCurrency(referral.last_charge_amount)
-                : "—"}
+                : "-"}
             </TableCell>
-            <TableCell>{referral.last_charge_period ?? "—"}</TableCell>
+            <TableCell>{referral.last_charge_period ?? "-"}</TableCell>
             <TableCell>{formatDate(referral.referred_at)}</TableCell>
           </TableRow>
         ))}

@@ -18,7 +18,7 @@ export const settingsCards = [
   {
     href: "/admin/settings/appearance",
     icon: Palette,
-    title: "Aparência do Cardápio",
+    title: "Aparência do Catálogo",
     description: "Cores, layout, mensagem de boas-vindas e banner",
     iconBgColor: "bg-pink-500"
   },
@@ -54,7 +54,7 @@ export const settingsCards = [
     href: "/admin/settings/templates",
     icon: LayoutTemplate,
     title: "Templates de Loja",
-    description: "Monte seu cardápio rápido escolhendo categorias, grupos e itens prontos",
+    description: "Monte seu catálogo rápido escolhendo categorias, grupos e itens prontos",
     iconBgColor: "bg-teal-600"
   },
   {

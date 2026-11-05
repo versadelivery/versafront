@@ -72,7 +72,7 @@ export default function PdfCatalogPage() {
                 <span className="text-sm font-medium hidden sm:block">Voltar</span>
               </a>
               <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
-              <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900">Cardápio em PDF</h1>
+              <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900">Catálogo em PDF</h1>
             </div>
           </div>
         </div>
@@ -90,7 +90,7 @@ export default function PdfCatalogPage() {
                 </h3>
                 <p className="text-sm text-muted-foreground">
                   {isLoading
-                    ? "Carregando cardapio..."
+                    ? "Carregando catalogo..."
                     : `${groupCount} grupos | ${itemCount} itens`}
                 </p>
               </div>
@@ -154,7 +154,7 @@ export default function PdfCatalogPage() {
 
             {itemCount === 0 && !isLoading && (
               <p className="text-sm text-center text-muted-foreground">
-                Nenhum item encontrado no cardapio. Adicione itens antes de gerar o PDF.
+                Nenhum item encontrado no catalogo. Adicione itens antes de gerar o PDF.
               </p>
             )}
           </div>

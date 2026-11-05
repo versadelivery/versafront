@@ -576,7 +576,7 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
         <DialogHeader className="px-4 sm:px-6 pt-5 sm:pt-6 pb-4 border-b border-gray-100">
           <DialogTitle className="font-tomato text-lg font-semibold">Novo Item</DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
-            Adicione um novo item ao cardápio
+            Adicione um novo item ao catálogo
           </DialogDescription>
         </DialogHeader>
 
@@ -588,7 +588,7 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
           <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">
             <div className="flex flex-col gap-0.5">
               <span className="text-sm font-medium">Item Ativo</span>
-              <span className="text-xs text-muted-foreground">O item aparecerá no cardápio se estiver ativo</span>
+              <span className="text-xs text-muted-foreground">O item aparecerá no catálogo se estiver ativo</span>
             </div>
             <Switch checked={active} onCheckedChange={setActive} />
           </div>

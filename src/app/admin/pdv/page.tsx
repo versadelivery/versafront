@@ -125,7 +125,7 @@ export default function PDVPage() {
         setTables(tablesRes.data);
         setOpenSessions(sessionsRes.data);
       } catch {
-        // silently fail — tables are optional
+        // silently fail, tables are optional
       }
     };
     fetchTablesAndSessions();
@@ -217,7 +217,7 @@ export default function PDVPage() {
     onResult: handleScanResult,
     clearSearch: () => setSearchTerm(""),
     ready: !isLoading,
-    onNotReady: () => toast.error("Cardápio carregando. Bipe de novo em instantes."),
+    onNotReady: () => toast.error("Catálogo carregando. Bipe de novo em instantes."),
   });
 
   // A busca abre em foco, pronta para o primeiro bip
@@ -225,7 +225,7 @@ export default function PDVPage() {
     if (!isLoading) scanner.focusInput();
   }, [isLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Filtrar cardápio — somente itens e grupos ativos
+  // Filtrar catálogo, somente itens e grupos ativos
   const filteredCatalog =
     catalog?.data
       ?.filter((group: any) => group.attributes.active !== false)
@@ -267,7 +267,7 @@ export default function PDVPage() {
   const cartTotal = cart.reduce((t, item) => t + item.totalPrice, 0);
   const cartCount = cart.reduce((t, i) => t + i.quantity, 0);
 
-  // Mobile: cardápio e carrinho são "páginas" separadas (no desktop ficam lado a lado)
+  // Mobile: catálogo e carrinho são "páginas" separadas (no desktop ficam lado a lado)
   const [mobileView, setMobileView] = useState<"catalog" | "cart">("catalog");
   const goMobileView = (v: "catalog" | "cart") => {
     setMobileView(v);
@@ -323,7 +323,7 @@ export default function PDVPage() {
   const getPaymentMethodLabel = (m: "cash" | "credit" | "debit" | "pix") =>
     m === "cash" ? "Dinheiro" : m === "credit" ? "Crédito" : m === "debit" ? "Débito" : "PIX";
 
-  // Clique no item — abre modal se tiver opções ou for peso, senão adiciona direto
+  // Clique no item, abre modal se tiver opções ou for peso, senão adiciona direto
   const handleItemClick = (item: any) => {
     const attrs = item.attributes;
     const hasExtras = (attrs.extra?.data?.length ?? 0) > 0;
@@ -339,7 +339,7 @@ export default function PDVPage() {
     }
   };
 
-  // Adicionar ao carrinho — aceita opções de personalização
+  // Adicionar ao carrinho, aceita opções de personalização
   const addToCart = (
     item: any,
     options?: {
@@ -754,13 +754,13 @@ export default function PDVPage() {
       <div className="max-w-[1920px] mx-auto px-4 sm:px-6 py-4">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
-        {/* ── Cardápio ─────────────────────────────────── */}
+        {/* ── Catálogo ─────────────────────────────────── */}
         <div className={`lg:col-span-2 space-y-4 ${mobileView === "cart" ? "hidden lg:block" : ""}`}>
           <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
             <div className="px-5 py-4 border-b border-[#E5E2DD]">
               <h2 className="font-tomato flex items-center gap-2 text-base font-semibold text-gray-900 mb-3">
                 <Package className="h-5 w-5 text-primary" />
-                Cardápio de Produtos
+                Catálogo de Produtos
               </h2>
 
               {/* Busca e filtros */}
@@ -1091,7 +1091,7 @@ export default function PDVPage() {
             className="lg:hidden flex items-center gap-1.5 text-sm font-medium text-primary cursor-pointer"
           >
             <ArrowLeft className="h-4 w-4" />
-            Voltar ao cardápio
+            Voltar ao catálogo
           </button>
           {/* Carrinho */}
           <div id="pdv-cart" className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
@@ -1415,7 +1415,7 @@ export default function PDVPage() {
                 </SelectContent>
               </Select>
 
-              {/* Grid de mesas — visível apenas quando tipo = mesa */}
+              {/* Grid de mesas, visível apenas quando tipo = mesa */}
               {orderType === "table" && tables.length > 0 && (
                 <>
                   <div className="grid grid-cols-3 gap-2">
@@ -1475,7 +1475,7 @@ export default function PDVPage() {
                       <div className="border border-primary/30 rounded-md px-3 py-2.5 space-y-1">
                         <p className="text-xs text-primary font-medium">
                           Pedido para Mesa {session?.attributes.table_number}
-                          {session?.attributes.customer_name ? ` — ${session.attributes.customer_name}` : ""}
+                          {session?.attributes.customer_name ? ` - ${session.attributes.customer_name}` : ""}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           Dados de cliente e entrega não são necessários
@@ -1488,7 +1488,7 @@ export default function PDVPage() {
             </div>
           </div>
 
-          {/* Dados do cliente — esconde quando tipo = mesa */}
+          {/* Dados do cliente, esconde quando tipo = mesa */}
           {orderType !== "table" && <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
             <div className="px-5 py-4 border-b border-[#E5E2DD]">
               <h2 className="font-tomato flex items-center gap-2 text-base font-semibold text-gray-900">
@@ -1713,7 +1713,7 @@ export default function PDVPage() {
                 <Plus className="h-5 w-5" />
                 {isProcessingOrder
                   ? "Enviando..."
-                  : `Enviar Pedido — ${formatPrice(orderTotal)}`}
+                  : `Enviar Pedido - ${formatPrice(orderTotal)}`}
               </Button>
               <Button
                 variant="outline"
@@ -1722,7 +1722,7 @@ export default function PDVPage() {
                 className="w-full h-10 text-sm font-medium gap-2 border border-red-400 text-red-600 hover:bg-[#FAF9F7] hover:text-red-700 cursor-pointer"
               >
                 <UtensilsCrossed className="h-4 w-4" />
-                Fechar Comanda — Mesa {selectedSession?.attributes.table_number}
+                Fechar Comanda - Mesa {selectedSession?.attributes.table_number}
               </Button>
             </div>
           ) : (
@@ -1735,7 +1735,7 @@ export default function PDVPage() {
               <ShoppingCart className="h-5 w-5" />
               {isProcessingOrder
                 ? "Processando..."
-                : `Finalizar Pedido — ${formatPrice(orderTotal)}`}
+                : `Finalizar Pedido - ${formatPrice(orderTotal)}`}
             </Button>
           )}
         </div>
@@ -1752,7 +1752,7 @@ export default function PDVPage() {
           >
             <span className="flex items-center gap-2 text-sm font-medium">
               <ShoppingCart className="h-5 w-5" />
-              {cartCount} {cartCount === 1 ? "item" : "itens"} — {formatPrice(cartTotal)}
+              {cartCount} {cartCount === 1 ? "item" : "itens"} · {formatPrice(cartTotal)}
             </span>
             <span className="text-sm font-bold">Ver carrinho ›</span>
           </button>

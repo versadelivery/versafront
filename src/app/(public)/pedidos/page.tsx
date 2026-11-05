@@ -120,7 +120,7 @@ export default function OrdersPage() {
   const nav = (
     <PedidosHeader
       backHref={shopSlug ? `/${shopSlug}` : '/'}
-      backLabel="Voltar ao cardápio"
+      backLabel="Voltar ao catálogo"
     />
   );
 
@@ -190,7 +190,7 @@ export default function OrdersPage() {
             <p className="text-sm text-muted-foreground mb-6">Seus pedidos aparecerão aqui após a primeira compra.</p>
             {shopSlug && (
               <Button asChild className="rounded-md">
-                <Link href={`/${shopSlug}`}>Ver cardápio</Link>
+                <Link href={`/${shopSlug}`}>Ver catálogo</Link>
               </Button>
             )}
           </div>

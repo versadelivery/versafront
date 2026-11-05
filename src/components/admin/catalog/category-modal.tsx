@@ -109,13 +109,13 @@ export function CategoryModal({ open, onOpenChange, category }: { open: boolean;
           <div className="flex items-center justify-between rounded-lg bg-muted/40 p-3">
             <div>
               <p className="text-sm font-medium">Categoria ativa</p>
-              <p className="text-xs text-muted-foreground">Desativada, a categoria e seus grupos somem do cardápio</p>
+              <p className="text-xs text-muted-foreground">Desativada, a categoria e seus grupos somem do catálogo</p>
             </div>
             <Switch checked={active} onCheckedChange={setActive} aria-label="Categoria ativa" />
           </div>
 
           <WeekdayPicker value={days} onChange={(next) => { setDays(next); setError(""); }} />
-          <p className="text-xs text-muted-foreground">Ex.: carnes bovinas só aos sábados — deixe marcado apenas Sáb.</p>
+          <p className="text-xs text-muted-foreground">Ex.: carnes bovinas só aos sábados. Deixe marcado apenas Sáb.</p>
 
           {error && (
             <div role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">

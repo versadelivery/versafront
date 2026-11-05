@@ -114,7 +114,7 @@ export function StoreLocationPicker({ shopId, value, onChange, error }: StoreLoc
               </span>
             </>
           ) : (
-            "Nenhuma localização definida ainda — busque o endereço ou mova o mapa."
+            "Nenhuma localização definida ainda. Busque o endereço ou mova o mapa."
           )}
         </p>
         {isResolvingPin && (

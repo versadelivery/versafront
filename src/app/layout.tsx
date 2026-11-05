@@ -64,12 +64,12 @@ const antarcticanMono = localFont({
 
 export const metadata: Metadata = {
   title: "VersaDelivery",
-  description: "VersaDelivery: gestão de delivery, cardápio digital, pedidos e vendas para o seu negócio.",
+  description: "VersaDelivery: gestão de delivery, catálogo digital, pedidos e vendas para o seu negócio.",
   applicationName: "VersaDelivery",
   openGraph: {
     siteName: "VersaDelivery",
     title: "VersaDelivery",
-    description: "Gestão de delivery, cardápio digital, pedidos e vendas para o seu negócio.",
+    description: "Gestão de delivery, catálogo digital, pedidos e vendas para o seu negócio.",
     locale: "pt_BR",
     type: "website",
   },

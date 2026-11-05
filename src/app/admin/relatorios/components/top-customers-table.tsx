@@ -49,7 +49,7 @@ export default function TopCustomersTable({ data }: TopCustomersTableProps) {
             </TableCell>
             <TableCell className="font-medium">{customer.name}</TableCell>
             <TableCell className="text-muted-foreground">
-              {customer.phone || "—"}
+              {customer.phone || "-"}
             </TableCell>
             <TableCell className="text-right">
               {customer.order_count}

@@ -35,7 +35,7 @@ export default function ClientStoreContent({ shop: initialShop }: ClientStoreCon
   const { totalItems, totalPrice } = useCart();
   const { setShop } = useClient();
 
-  // React Query com dado SSR como initialData — refetch automático em background
+  // React Query com dado SSR como initialData, refetch automático em background
   const { data: queryShop } = useQuery({
     queryKey: ['shop', slug],
     queryFn: () => fetchShopBySlug(slug),
@@ -198,7 +198,7 @@ export default function ClientStoreContent({ shop: initialShop }: ClientStoreCon
         </div>
       </div>
 
-      {/* Card de repetir pedido — logo abaixo da nav, sem padding grande */}
+      {/* Card de repetir pedido, logo abaixo da nav, sem padding grande */}
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-3">
         <ReorderCardCatalog accentColor={accentColor} />
       </div>
@@ -240,7 +240,7 @@ export default function ClientStoreContent({ shop: initialShop }: ClientStoreCon
           >
             <span className="flex items-center gap-2 text-sm font-medium">
               <ShoppingCart className="h-5 w-5" />
-              {totalItems} {totalItems === 1 ? 'item' : 'itens'} — {formatPrice(totalPrice)}
+              {totalItems} {totalItems === 1 ? 'item' : 'itens'} · {formatPrice(totalPrice)}
             </span>
             <span className="text-sm font-bold">Ver carrinho ›</span>
           </Link>

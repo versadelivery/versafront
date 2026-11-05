@@ -66,7 +66,7 @@ export default function DiscountedOrdersTable({
               {order.coupon_code ? (
                 <Badge variant="secondary">{order.coupon_code}</Badge>
               ) : (
-                <span className="text-muted-foreground">—</span>
+                <span className="text-muted-foreground">-</span>
               )}
             </TableCell>
             <TableCell className="text-muted-foreground">

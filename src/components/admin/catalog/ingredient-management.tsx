@@ -67,7 +67,7 @@ export function IngredientManagement() {
           <Egg className="h-10 w-10 text-muted-foreground" />
           <h3 className="font-tomato text-base font-semibold">Nenhum ingrediente cadastrado</h3>
           <p className="text-sm text-muted-foreground text-center max-w-xs">
-            Cadastre ingredientes para controlar automaticamente a disponibilidade dos itens do cardápio.
+            Cadastre ingredientes para controlar automaticamente a disponibilidade dos itens do catálogo.
           </p>
           <Button onClick={handleCreate} variant="outline" className="gap-2 border border-gray-300 cursor-pointer">
             <Plus className="h-4 w-4" />

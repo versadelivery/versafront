@@ -204,7 +204,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
       setActive(item.active ?? true);
 
 
-      // Desconto — abre no modo "Preço final" (o preço promocional que o lojista quer praticar)
+      // Desconto, abre no modo "Preço final" (o preço promocional que o lojista quer praticar)
       if (item.price_with_discount && item.price_with_discount < item.price) {
         setHasDiscount(true);
         setDiscountValue(Number(item.price_with_discount).toFixed(2).replace('.', ','));
@@ -831,7 +831,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
           <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">
             <div className="flex flex-col gap-0.5">
               <span className="text-sm font-medium">Item Ativo</span>
-              <span className="text-xs text-muted-foreground">O item aparecerá no cardápio se estiver ativo</span>
+              <span className="text-xs text-muted-foreground">O item aparecerá no catálogo se estiver ativo</span>
             </div>
             <Switch checked={active} onCheckedChange={(v) => { setActive(v); markDirty(); }} />
           </div>

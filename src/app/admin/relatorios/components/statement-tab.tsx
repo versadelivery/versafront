@@ -68,7 +68,7 @@ export default function StatementTab() {
       {data && <>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           {shift ? <Clock3 className="h-4 w-4" /> : <CalendarDays className="h-4 w-4" />}
-          {shift ? `Turno ${start}–${end}` : "Dia completo"} · {new Date(`${date}T12:00:00`).toLocaleDateString("pt-BR")}
+          {shift ? `Turno das ${start} às ${end}` : "Dia completo"} · {new Date(`${date}T12:00:00`).toLocaleDateString("pt-BR")}
         </div>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {[

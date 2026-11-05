@@ -19,7 +19,7 @@ export function getTextColors(bgHex: string | null | undefined) {
 
 export function getAccentTextColor(accentHex: string | null | undefined): string {
   return isDarkColor(accentHex) ? '#FFFFFF' : '#FFFFFF';
-  // Accent buttons always use white text — override below if needed for light accents
+  // Accent buttons always use white text, override below if needed for light accents
 }
 
 export function getAccentColors(accentHex: string | null | undefined) {

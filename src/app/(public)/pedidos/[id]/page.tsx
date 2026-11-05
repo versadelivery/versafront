@@ -168,12 +168,12 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
       complements: item.attributes?.complements ?? [],
     })),
     shop: {
-      name: orderData.attributes.shop?.data?.attributes?.name ?? '—',
+      name: orderData.attributes.shop?.data?.attributes?.name ?? '-',
       phone: orderData.attributes.shop?.data?.attributes?.cellphone ?? '',
       address: orderData.attributes.shop?.data?.attributes?.address ?? '',
     },
     customer: {
-      name: orderData.attributes.customer?.data?.attributes?.name ?? '—',
+      name: orderData.attributes.customer?.data?.attributes?.name ?? '-',
       phone: orderData.attributes.customer?.data?.attributes?.cellphone ?? '',
     },
     address: {
@@ -412,7 +412,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                 </InfoCard>
               )}
 
-              {/* PIX Automatico (ASAAS) — pago */}
+              {/* PIX Automatico (ASAAS), pago */}
               {order.payment_method === 'asaas_pix' && order.paid_at && (
                 <InfoCard title="Pagamento PIX">
                   <div className="flex items-center gap-2 text-green-600">
@@ -425,7 +425,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                 </InfoCard>
               )}
 
-              {/* PIX Automatico (ASAAS) — aguardando pagamento */}
+              {/* PIX Automatico (ASAAS), aguardando pagamento */}
               {order.payment_method === 'asaas_pix' && order.asaas_pix_code && !order.paid_at && (
                 <InfoCard title="Pague via PIX">
                   <div className="space-y-3">
@@ -471,7 +471,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                 </InfoCard>
               )}
 
-              {/* PIX Automatico (ASAAS) — código não gerado */}
+              {/* PIX Automatico (ASAAS), código não gerado */}
               {order.payment_method === 'asaas_pix' && !order.asaas_pix_code && !order.paid_at && order.status !== 'cancelled' && (
                 <InfoCard title="Pagamento PIX">
                   <p className="text-sm text-muted-foreground mb-3">

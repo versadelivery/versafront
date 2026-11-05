@@ -89,7 +89,7 @@ export async function generateCatalogPdf(
     }
   };
 
-  // Header — shop name
+  // Header, shop name
   doc.setFontSize(24);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(30, 30, 30);
@@ -262,7 +262,7 @@ export async function generateCatalogPdf(
   });
 
   doc.save(
-    `cardapio-${shopInfo.name
+    `catalogo-${shopInfo.name
       .toLowerCase()
       .replace(/\s+/g, "-")
       .replace(/[^a-z0-9-]/g, "")}.pdf`

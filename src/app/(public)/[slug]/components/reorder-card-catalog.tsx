@@ -35,7 +35,7 @@ export default function ReorderCardCatalog({ accentColor }: ReorderCardCatalogPr
   const cardColor = accentColor || "#1B1B1B"
   const theme = useMemo(() => getTextColors(cardColor), [cardColor])
 
-  // Busca pedidos do cliente — atualiza a cada 60s e ao focar a janela
+  // Busca pedidos do cliente, atualiza a cada 60s e ao focar a janela
   const phone = typeof window !== "undefined" ? getPhone() : null
 
   const { data: ordersData } = useQuery({
@@ -59,7 +59,7 @@ export default function ReorderCardCatalog({ accentColor }: ReorderCardCatalogPr
     )[0]
   }, [ordersData, shopId])
 
-  // Status de abertura da loja — reativo via React Query → contexto
+  // Status de abertura da loja, reativo via React Query → contexto
   const shopIsOpen = shop?.data?.attributes?.shop_status?.is_open ?? true
 
   // Validação reativa: recomputa sempre que o shop (React Query) ou o pedido mudar

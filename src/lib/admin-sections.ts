@@ -79,8 +79,8 @@ export const adminSections: AdminSection[] = [
   },
   {
     id: "catalogo",
-    title: "Cardápio",
-    description: "Gerencie seu cardápio de produtos",
+    title: "Catálogo",
+    description: "Gerencie seu catálogo de produtos",
     href: "/admin/catalog",
     icon: BookOpen,
     iconBgColor: "bg-emerald-600",
@@ -149,7 +149,7 @@ export const adminSections: AdminSection[] = [
   },
   {
     id: "marketing-qrcode",
-    title: "QR Code do Cardapio",
+    title: "QR Code do Catalogo",
     description: "Gere QR Codes para materiais impressos",
     href: "/admin/marketing/qrcode",
     icon: QrCode,
@@ -159,8 +159,8 @@ export const adminSections: AdminSection[] = [
   },
   {
     id: "marketing-pdf-catalog",
-    title: "Cardapio em PDF",
-    description: "Exporte seu cardápio completo como PDF",
+    title: "Catalogo em PDF",
+    description: "Exporte seu catálogo completo como PDF",
     href: "/admin/marketing/pdf-catalog",
     icon: FileText,
     iconBgColor: "bg-purple-500",
@@ -206,7 +206,7 @@ export const adminSections: AdminSection[] = [
     icon: Wallet,
     iconBgColor: "bg-purple-500",
     keywords: ["extrato", "itens", "turno", "pagamento", "relatorio", "dia"],
-    group: "Relatórios — Faturamento",
+    group: "Relatórios - Faturamento",
   },
   {
     id: "relatorios-resumo-semanal",
@@ -216,7 +216,7 @@ export const adminSections: AdminSection[] = [
     icon: BarChart3,
     iconBgColor: "bg-purple-500",
     keywords: ["resumo", "semanal", "semana", "kpi", "dashboard", "relatorio"],
-    group: "Relatórios — Faturamento",
+    group: "Relatórios - Faturamento",
   },
   {
     id: "relatorios-vendas-periodo",
@@ -226,7 +226,7 @@ export const adminSections: AdminSection[] = [
     icon: CalendarDays,
     iconBgColor: "bg-purple-500",
     keywords: ["vendas", "periodo", "relatorio", "diario", "ticket", "faturamento"],
-    group: "Relatórios — Faturamento",
+    group: "Relatórios - Faturamento",
   },
   {
     id: "relatorios-faturamento-mensal",
@@ -236,7 +236,7 @@ export const adminSections: AdminSection[] = [
     icon: TrendingUp,
     iconBgColor: "bg-purple-500",
     keywords: ["faturamento", "mensal", "relatorio", "receita", "revenue"],
-    group: "Relatórios — Faturamento",
+    group: "Relatórios - Faturamento",
   },
   {
     id: "relatorios-ticket-medio",
@@ -246,7 +246,7 @@ export const adminSections: AdminSection[] = [
     icon: TrendingUp,
     iconBgColor: "bg-purple-500",
     keywords: ["ticket", "medio", "relatorio", "pedido", "valor"],
-    group: "Relatórios — Faturamento",
+    group: "Relatórios - Faturamento",
   },
   {
     id: "relatorios-formas-pagamento",
@@ -256,7 +256,7 @@ export const adminSections: AdminSection[] = [
     icon: Wallet,
     iconBgColor: "bg-purple-500",
     keywords: ["pagamento", "pix", "cartao", "dinheiro", "debito", "credito"],
-    group: "Relatórios — Faturamento",
+    group: "Relatórios - Faturamento",
   },
   {
     id: "relatorios-descontos",
@@ -266,7 +266,7 @@ export const adminSections: AdminSection[] = [
     icon: Ticket,
     iconBgColor: "bg-purple-500",
     keywords: ["desconto", "cupom", "promocao", "relatorio", "descontos"],
-    group: "Relatórios — Faturamento",
+    group: "Relatórios - Faturamento",
   },
   // Relatórios > Vendas
   {
@@ -277,7 +277,7 @@ export const adminSections: AdminSection[] = [
     icon: Truck,
     iconBgColor: "bg-purple-500",
     keywords: ["vendas", "entregador", "entregadores", "delivery", "motoboy", "relatorio"],
-    group: "Relatórios — Vendas",
+    group: "Relatórios - Vendas",
   },
   {
     id: "relatorios-vendas-por-item",
@@ -287,7 +287,7 @@ export const adminSections: AdminSection[] = [
     icon: BarChart3,
     iconBgColor: "bg-purple-500",
     keywords: ["vendas", "item", "produto", "ranking", "grupo"],
-    group: "Relatórios — Vendas",
+    group: "Relatórios - Vendas",
   },
   {
     id: "relatorios-vendas-horario",
@@ -297,7 +297,7 @@ export const adminSections: AdminSection[] = [
     icon: Clock,
     iconBgColor: "bg-purple-500",
     keywords: ["vendas", "horario", "hora", "pico", "relatorio"],
-    group: "Relatórios — Vendas",
+    group: "Relatórios - Vendas",
   },
   {
     id: "relatorios-vendas-dia-semana",
@@ -307,7 +307,7 @@ export const adminSections: AdminSection[] = [
     icon: CalendarDays,
     iconBgColor: "bg-purple-500",
     keywords: ["vendas", "dia", "semana", "segunda", "terca", "relatorio"],
-    group: "Relatórios — Vendas",
+    group: "Relatórios - Vendas",
   },
   {
     id: "relatorios-vendas-bairro",
@@ -317,7 +317,7 @@ export const adminSections: AdminSection[] = [
     icon: MapPin,
     iconBgColor: "bg-purple-500",
     keywords: ["vendas", "bairro", "regiao", "entrega", "endereco", "relatorio"],
-    group: "Relatórios — Vendas",
+    group: "Relatórios - Vendas",
   },
   {
     id: "relatorios-vendas-canal",
@@ -327,7 +327,7 @@ export const adminSections: AdminSection[] = [
     icon: ShoppingCart,
     iconBgColor: "bg-purple-500",
     keywords: ["vendas", "canal", "mesa", "balcao", "delivery", "entrega", "relatorio"],
-    group: "Relatórios — Vendas",
+    group: "Relatórios - Vendas",
   },
   {
     id: "relatorios-tempo-preparo",
@@ -337,7 +337,7 @@ export const adminSections: AdminSection[] = [
     icon: Timer,
     iconBgColor: "bg-purple-500",
     keywords: ["tempo", "preparo", "preparacao", "media", "minutos", "relatorio"],
-    group: "Relatórios — Vendas",
+    group: "Relatórios - Vendas",
   },
   {
     id: "relatorios-tempo-entrega",
@@ -347,7 +347,7 @@ export const adminSections: AdminSection[] = [
     icon: Truck,
     iconBgColor: "bg-purple-500",
     keywords: ["tempo", "entrega", "delivery", "media", "minutos", "relatorio"],
-    group: "Relatórios — Vendas",
+    group: "Relatórios - Vendas",
   },
   // Relatórios > Clientes
   {
@@ -358,7 +358,7 @@ export const adminSections: AdminSection[] = [
     icon: Contact,
     iconBgColor: "bg-purple-500",
     keywords: ["clientes", "top", "ranking", "melhor", "compras"],
-    group: "Relatórios — Clientes",
+    group: "Relatórios - Clientes",
   },
   {
     id: "relatorios-aquisicao-clientes",
@@ -368,7 +368,7 @@ export const adminSections: AdminSection[] = [
     icon: UserPlus,
     iconBgColor: "bg-purple-500",
     keywords: ["aquisicao", "novos", "clientes", "primeiro", "pedido", "relatorio"],
-    group: "Relatórios — Clientes",
+    group: "Relatórios - Clientes",
   },
   // Relatórios > Faturamento (novos)
   {
@@ -379,7 +379,7 @@ export const adminSections: AdminSection[] = [
     icon: TrendingUp,
     iconBgColor: "bg-purple-500",
     keywords: ["lucratividade", "lucro", "margem", "custo", "profit", "relatorio"],
-    group: "Relatórios — Faturamento",
+    group: "Relatórios - Faturamento",
   },
   {
     id: "relatorios-extrato-caixa",
@@ -389,7 +389,7 @@ export const adminSections: AdminSection[] = [
     icon: DollarSign,
     iconBgColor: "bg-purple-500",
     keywords: ["extrato", "caixa", "movimentacao", "entrada", "saida", "sangria", "relatorio"],
-    group: "Relatórios — Faturamento",
+    group: "Relatórios - Faturamento",
   },
   {
     id: "relatorios-cupons-utilizados",
@@ -399,7 +399,7 @@ export const adminSections: AdminSection[] = [
     icon: Ticket,
     iconBgColor: "bg-purple-500",
     keywords: ["cupom", "cupons", "desconto", "uso", "utilizados", "relatorio"],
-    group: "Relatórios — Faturamento",
+    group: "Relatórios - Faturamento",
   },
   // Relatórios > Vendas (novos)
   {
@@ -410,7 +410,7 @@ export const adminSections: AdminSection[] = [
     icon: Users,
     iconBgColor: "bg-purple-500",
     keywords: ["atendente", "vendedor", "usuario", "funcionario", "relatorio"],
-    group: "Relatórios — Vendas",
+    group: "Relatórios - Vendas",
   },
   {
     id: "relatorios-visitantes",
@@ -420,7 +420,7 @@ export const adminSections: AdminSection[] = [
     icon: Eye,
     iconBgColor: "bg-purple-500",
     keywords: ["visitantes", "visitas", "conversao", "acessos", "relatorio"],
-    group: "Relatórios — Vendas",
+    group: "Relatórios - Vendas",
   },
   {
     id: "relatorios-taxas-entrega",
@@ -430,7 +430,7 @@ export const adminSections: AdminSection[] = [
     icon: Truck,
     iconBgColor: "bg-purple-500",
     keywords: ["taxa", "entrega", "motoboy", "delivery", "frete", "relatorio"],
-    group: "Relatórios — Vendas",
+    group: "Relatórios - Vendas",
   },
   // Relatórios > Auditoria
   {
@@ -441,7 +441,7 @@ export const adminSections: AdminSection[] = [
     icon: Shield,
     iconBgColor: "bg-purple-500",
     keywords: ["auditoria", "alteracao", "item", "remocao", "edicao", "relatorio"],
-    group: "Relatórios — Auditoria",
+    group: "Relatórios - Auditoria",
   },
   {
     id: "relatorios-pagamento-alterado",
@@ -451,7 +451,7 @@ export const adminSections: AdminSection[] = [
     icon: Shield,
     iconBgColor: "bg-purple-500",
     keywords: ["auditoria", "pagamento", "alteracao", "forma", "relatorio"],
-    group: "Relatórios — Auditoria",
+    group: "Relatórios - Auditoria",
   },
   {
     id: "suporte",
@@ -487,7 +487,7 @@ export const adminSections: AdminSection[] = [
   },
   {
     id: "settings-appearance",
-    title: "Aparência do Cardápio",
+    title: "Aparência do Catálogo",
     description: "Cores, layout, mensagem de boas-vindas e banner",
     href: "/admin/settings/appearance",
     icon: Palette,
@@ -528,7 +528,7 @@ export const adminSections: AdminSection[] = [
   {
     id: "settings-templates",
     title: "Templates de Loja",
-    description: "Monte seu cardápio rápido com categorias, grupos e itens prontos",
+    description: "Monte seu catálogo rápido com categorias, grupos e itens prontos",
     href: "/admin/settings/templates",
     icon: LayoutTemplate,
     iconBgColor: "bg-teal-600",

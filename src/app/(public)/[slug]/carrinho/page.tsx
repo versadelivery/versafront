@@ -188,14 +188,14 @@ export default function CartPage() {
             </div>
             <h2 className="font-tomato text-xl font-bold text-gray-900 mb-2">Seu carrinho está vazio</h2>
             <p className="text-gray-500 mb-8 max-w-sm mx-auto">
-              Explore nosso cardápio e adicione itens ao seu carrinho
+              Explore nosso catálogo e adicione itens ao seu carrinho
             </p>
             <Link
               href={`/${slug}`}
               className="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-white font-medium text-sm px-8 py-3.5 rounded-md transition-colors cursor-pointer"
             >
               <ArrowLeft className="w-4 h-4" />
-              Explorar cardápio
+              Explorar catálogo
             </Link>
           </div>
         ) : (
@@ -223,7 +223,7 @@ export default function CartPage() {
                           <div className="flex items-center justify-between gap-4">
                             <div>
                               <p className="text-sm font-semibold text-red-600">
-                                {attrs ? `"${attrs.name}" indisponível` : 'Item removido do cardápio'}
+                                {attrs ? `"${attrs.name}" indisponível` : 'Item removido do catálogo'}
                               </p>
                               <p className="text-xs text-red-400 mt-0.5">
                                 {attrs ? 'Desativado ou indisponível hoje.' : 'Não está mais disponível.'}

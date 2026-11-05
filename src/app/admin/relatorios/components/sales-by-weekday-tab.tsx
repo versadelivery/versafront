@@ -127,7 +127,7 @@ export default function SalesByWeekdayTab() {
                       Melhor Dia
                     </p>
                     <p className="text-2xl font-bold">
-                      {summary.best_day?.label || "—"}
+                      {summary.best_day?.label || "-"}
                     </p>
                     {summary.best_day && (
                       <p className="text-xs text-muted-foreground">

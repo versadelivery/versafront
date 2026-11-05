@@ -123,7 +123,7 @@ export function DistanceTiersEditor({ drafts, onChange, error }: DistanceTiersEd
         <Route className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
         <p className="text-sm text-muted-foreground">
           Defina o valor cobrado por faixa de distância. Cada faixa começa onde a anterior
-          termina e a distância limite pertence sempre à faixa seguinte — 3 km cai em
+          termina e a distância limite pertence sempre à faixa seguinte: 3 km cai em
           &ldquo;3 a 5 km&rdquo;, não em &ldquo;0 a 3 km&rdquo;.
         </p>
       </div>

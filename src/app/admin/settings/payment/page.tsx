@@ -457,7 +457,7 @@ export default function PaymentSettingsPage() {
                       <h3 className="font-tomato text-base font-semibold text-gray-900">{method.name}</h3>
                       <p className="text-sm text-muted-foreground">{method.description}</p>
                       {method.id === 'pix' && asaasPix.enabled && (
-                        <p className="text-xs text-amber-600 mt-0.5">Desativado — PIX Automático está ativo</p>
+                        <p className="text-xs text-amber-600 mt-0.5">Desativado: PIX Automático está ativo</p>
                       )}
                     </div>
                   </div>
@@ -568,7 +568,7 @@ export default function PaymentSettingsPage() {
                           </button>
                         </div>
 
-                        {/* Chave PIX — só exibida quando on_order */}
+                        {/* Chave PIX, só exibida quando on_order */}
                         {manualPixConfig.paymentMoment === 'on_order' && (
                           <div className="space-y-2">
                             <Label className="text-sm font-medium text-gray-700 block">
@@ -816,7 +816,7 @@ export default function PaymentSettingsPage() {
         )}
       </div>
 
-      {/* Modal OTP — confirmação de chave PIX */}
+      {/* Modal OTP, confirmação de chave PIX */}
       <Dialog open={otpModal.open} onOpenChange={(open) => { if (!otpLoading) { setOtpModal(prev => ({ ...prev, open })); setOtpCode(''); } }}>
         <DialogContent className="sm:max-w-md rounded-md border border-[#E5E2DD]">
           <DialogHeader>

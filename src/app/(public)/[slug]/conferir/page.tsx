@@ -294,7 +294,7 @@ function PixPaymentScreen({ pixCode, expiresAt, orderId, shopSlug, onPaymentConf
               variant="ghost"
               className="w-full rounded-md text-muted-foreground hover:text-gray-900 cursor-pointer"
             >
-              Voltar ao cardápio
+              Voltar ao catálogo
             </Button>
           </div>
         </div>
@@ -871,7 +871,7 @@ export default function CheckoutPage() {
           setIsSubmitting(false)
           return
         }
-        // PIX gerado sem código — pedido criado mas geração de PIX falhou
+        // PIX gerado sem código, pedido criado mas geração de PIX falhou
         toast.warning('Pedido criado! Houve um problema ao gerar o código PIX. Entre em contato com a loja para combinar o pagamento.')
         setOrderCompleted(true)
         if (orderId) router.push(`/${storeSlug}/meus-pedidos/${orderId}`)
@@ -1027,7 +1027,7 @@ export default function CheckoutPage() {
           </div>
           <Button onClick={() => router.push(`/${storeSlug}`)} variant="outline" size="sm" className="gap-2">
             <ChevronLeft className="h-4 w-4" />
-            Voltar ao cardápio
+            Voltar ao catálogo
           </Button>
         </div>
       </div>
@@ -1425,7 +1425,7 @@ export default function CheckoutPage() {
                             <p className={`text-xs mt-1.5 ${freeDeliveryRemaining <= 0 ? 'text-green-600 font-medium' : 'text-gray-500'}`}>
                               {freeDeliveryRemaining <= 0
                                 ? 'Você ganhou frete grátis neste bairro!'
-                                : `Frete grátis neste bairro a partir de ${formatPrice(selectedMinFree)} — faltam ${formatPrice(freeDeliveryRemaining)}`}
+                                : `Frete grátis neste bairro a partir de ${formatPrice(selectedMinFree)}, faltam ${formatPrice(freeDeliveryRemaining)}`}
                             </p>
                           )}
                         </>

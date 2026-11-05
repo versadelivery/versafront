@@ -8,7 +8,7 @@ import logo from "../../../public/logo/logo-inline.svg";
 const WHATSAPP_URL = "https://wa.me/5585991520090";
 
 const productItems = [
-  "Cardápio online",
+  "Catálogo online",
   "Gestão de pedidos",
   "Painel administrativo",
   "PDV integrado",

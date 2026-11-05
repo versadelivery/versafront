@@ -16,11 +16,11 @@ const features = [
     icon: <Scale className="w-6 h-6" />,
     title: "Venda por peso ou unidade",
     description:
-      "Atenda produtos com peso variável e produtos vendidos por unidade, conforme as configurações do cardápio.",
+      "Atenda produtos com peso variável e produtos vendidos por unidade, conforme as configurações do catálogo.",
   },
   {
     icon: <ShoppingBag className="w-6 h-6" />,
-    title: "Cardápio online",
+    title: "Catálogo online",
     description:
       "Organize categorias, grupos, produtos, imagens e adicionais para facilitar a escolha do cliente.",
   },
@@ -43,7 +43,7 @@ const features = [
   },
   {
     icon: <SlidersHorizontal className="w-6 h-6" />,
-    title: "Personalização do cardápio",
+    title: "Personalização do catálogo",
     description:
       "Configure produtos, adicionais, instruções de preparo e opções de acordo com a realidade do seu negócio.",
   },

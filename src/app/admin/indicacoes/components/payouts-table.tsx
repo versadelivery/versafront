@@ -61,7 +61,7 @@ export function PayoutsTable() {
               {formatCurrency(p.attributes.total_amount)}
             </TableCell>
             <TableCell>{p.attributes.commissions_count}</TableCell>
-            <TableCell className="font-mono text-sm">{p.attributes.pix_key ?? "—"}</TableCell>
+            <TableCell className="font-mono text-sm">{p.attributes.pix_key ?? "-"}</TableCell>
             <TableCell>
               {p.attributes.status === "paid" ? (
                 <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Pago</Badge>
@@ -70,7 +70,7 @@ export function PayoutsTable() {
               )}
             </TableCell>
             <TableCell className="text-sm text-muted-foreground">
-              {p.attributes.notes ?? "—"}
+              {p.attributes.notes ?? "-"}
             </TableCell>
           </TableRow>
         ))}

@@ -267,7 +267,7 @@ export default function GroupModal({ isOpen, onOpenChange, editingGroup }: Group
                     <div>
                       <p className="text-sm font-medium text-foreground">Status do Grupo</p>
                       <p className="text-xs text-muted-foreground">
-                        {active ? "O grupo está visível no cardápio" : "O grupo está oculto para clientes"}
+                        {active ? "O grupo está visível no catálogo" : "O grupo está oculto para clientes"}
                       </p>
                     </div>
                   </div>

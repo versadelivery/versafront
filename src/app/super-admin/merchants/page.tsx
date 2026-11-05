@@ -240,7 +240,7 @@ export default function MerchantsPage() {
                             <span className="text-emerald-700 font-medium">{shop.attributes.referred_by.name}</span>
                           </div>
                         ) : (
-                          <span className="text-gray-400 text-sm">—</span>
+                          <span className="text-gray-400 text-sm">-</span>
                         )}
                       </TableCell>
                       <TableCell>

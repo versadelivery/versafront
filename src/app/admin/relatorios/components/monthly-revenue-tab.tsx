@@ -47,7 +47,7 @@ export default function MonthlyRevenueTab() {
         <ReportExportButton
           filename="faturamento-mensal"
           headers={["Mês", "Receita", "Variação (%)"]}
-          rows={data.map(d => [d.label, d.revenue, d.variation_percentage ?? "—"])}
+          rows={data.map(d => [d.label, d.revenue, d.variation_percentage ?? "-"])}
           summaryData={summary ? {
             "Receita Total": summary.total_revenue,
             "Média Mensal": summary.average_monthly,
@@ -102,7 +102,7 @@ export default function MonthlyRevenueTab() {
                 <p className="text-2xl font-bold">
                   {summary?.best_month
                     ? formatCurrency(summary.best_month.revenue)
-                    : "—"}
+                    : "-"}
                 </p>
                 {summary?.best_month && (
                   <p className="text-xs text-muted-foreground">
@@ -125,7 +125,7 @@ export default function MonthlyRevenueTab() {
                 <p className="text-2xl font-bold">
                   {summary?.current_month
                     ? formatCurrency(summary.current_month.revenue)
-                    : "—"}
+                    : "-"}
                 </p>
                 {summary?.current_month && (
                   <p className="text-xs text-muted-foreground">

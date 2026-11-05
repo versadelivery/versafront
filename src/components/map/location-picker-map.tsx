@@ -25,7 +25,7 @@ interface LocationPickerMapProps {
 }
 
 /**
- * O pin fica fixo no centro da tela e quem se move é o mapa — mesmo padrão dos
+ * O pin fica fixo no centro da tela e quem se move é o mapa, mesmo padrão dos
  * apps de entrega. A posição escolhida é sempre o centro do mapa ao fim do
  * movimento, o que evita o alvo pequeno e difícil de acertar no celular.
  */

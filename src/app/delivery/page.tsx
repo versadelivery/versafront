@@ -93,7 +93,7 @@ function OrderCard({
               <span className="font-medium">{orderItemQuantityLabel(item)}</span>
               <span>{item.name}</span>
               {item.observation && (
-                <span className="text-xs text-gray-400">— {item.observation}</span>
+                <span className="text-xs text-gray-400">- {item.observation}</span>
               )}
             </div>
           ))}

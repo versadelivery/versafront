@@ -55,7 +55,7 @@ function VariationBadge({ variation }: { variation: number | null }) {
     return (
       <div className="flex items-center justify-end gap-1 text-muted-foreground">
         <Minus className="h-4 w-4" />
-        <span className="text-sm">—</span>
+        <span className="text-sm">-</span>
       </div>
     );
   }

@@ -441,7 +441,7 @@ export function ItemOptionsDialog({
                     <div className="flex items-center gap-2">
                       <ListChecks className="h-4 w-4 text-primary" />
                       <h3 className="text-sm font-semibold text-gray-900">{step.attributes.name}</h3>
-                      <span className="text-xs text-muted-foreground">— {isRequired ? 'obrigatório' : 'opcional'}</span>
+                      <span className="text-xs text-muted-foreground">({isRequired ? 'obrigatório' : 'opcional'})</span>
                     </div>
                     <RadioGroup
                       value={selectedOptions[step.id] ?? ""}
@@ -497,7 +497,7 @@ export function ItemOptionsDialog({
                     <ChefHat className="h-4 w-4 text-primary" />
                     <h3 className="text-sm font-semibold text-gray-900">Modo de preparo</h3>
                     <span className="text-xs text-muted-foreground">
-                      — {prepareMethodsLimit ? `selecione até ${prepareMethodsLimit}` : 'selecione quantos quiser'}
+                      ({prepareMethodsLimit ? `selecione até ${prepareMethodsLimit}` : 'selecione quantos quiser'})
                     </span>
                   </div>
                   <div className="space-y-2">
@@ -541,7 +541,7 @@ export function ItemOptionsDialog({
                   <div className="flex items-center gap-2">
                     <Plus className="h-4 w-4 text-primary" />
                     <h3 className="text-sm font-semibold text-gray-900">Adicionais</h3>
-                    <span className="text-xs text-muted-foreground">— selecione quantos quiser</span>
+                    <span className="text-xs text-muted-foreground">(selecione quantos quiser)</span>
                   </div>
                   <div className="space-y-2">
                     {extras.map((extra: any) => {
@@ -591,7 +591,7 @@ export function ItemOptionsDialog({
                         <div className="flex items-center gap-2">
                           <Plus className="h-4 w-4 text-primary" />
                           <h3 className="text-sm font-semibold text-gray-900">{group.attributes.name}</h3>
-                          <span className="text-xs text-muted-foreground">— selecione quantos quiser</span>
+                          <span className="text-xs text-muted-foreground">(selecione quantos quiser)</span>
                         </div>
                         <div className="space-y-2">
                           {options.map((option: any) => {

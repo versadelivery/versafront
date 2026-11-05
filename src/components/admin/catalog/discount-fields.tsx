@@ -106,11 +106,11 @@ export function DiscountFields({ price, type, value, error, onTypeChange, onValu
           </div>
           <div className="flex items-center justify-between p-3">
             <dt className="text-muted-foreground">Desconto em R$</dt>
-            <dd className="font-semibold">{hasValue ? `R$ ${formatMoney(saved)}` : "—"}</dd>
+            <dd className="font-semibold">{hasValue ? `R$ ${formatMoney(saved)}` : "-"}</dd>
           </div>
           <div className="flex items-center justify-between p-3">
             <dt className="text-muted-foreground">Desconto em %</dt>
-            <dd className="font-semibold">{hasValue ? `${formatPercent(percent)}%` : "—"}</dd>
+            <dd className="font-semibold">{hasValue ? `${formatPercent(percent)}%` : "-"}</dd>
           </div>
         </dl>
       )}

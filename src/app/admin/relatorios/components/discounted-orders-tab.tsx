@@ -51,7 +51,7 @@ export default function DiscountedOrdersTab() {
         <ReportExportButton
           filename="descontos"
           headers={["Pedido", "Data", "Subtotal", "Desconto", "Total", "Cupom", "Pagamento"]}
-          rows={orders?.map(d => [d.id, d.date_label, d.total_items_price, d.discount_amount, d.total_price, d.coupon_code || "—", d.payment_method_label]) ?? []}
+          rows={orders?.map(d => [d.id, d.date_label, d.total_items_price, d.discount_amount, d.total_price, d.coupon_code || "-", d.payment_method_label]) ?? []}
           summaryData={summary ? { "Pedidos com Desconto": summary.total_discounted_orders, "Total Descontos": summary.total_discount, "Desconto Médio": summary.average_discount } : undefined}
           disabled={loading || !orders}
         />

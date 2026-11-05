@@ -94,7 +94,7 @@ function KDSCard({ order, estimatedPrepTime, estimatedDeliveryTime, onMarkReady,
 					{order.items.map((it, idx) => (
 						<li key={idx} className="text-sm text-gray-700">
 							<span className="font-semibold">{it.qty}x</span> {it.name}
-							{it.note ? <span className="text-sm text-muted-foreground"> — {it.note}</span> : null}
+							{it.note ? <span className="text-sm text-muted-foreground"> - {it.note}</span> : null}
 						</li>
 					))}
 				</ul>

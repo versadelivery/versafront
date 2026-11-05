@@ -35,7 +35,7 @@ export default function QRCodePage() {
     ctx.drawImage(sourceCanvas, 0, 0, size, size);
 
     const link = document.createElement("a");
-    link.download = `qrcode-${shop?.slug || "cardapio"}.png`;
+    link.download = `qrcode-${shop?.slug || "catalogo"}.png`;
     link.href = tempCanvas.toDataURL("image/png");
     link.click();
   };
@@ -48,7 +48,7 @@ export default function QRCodePage() {
     const svgString = serializer.serializeToString(svgElement);
     const blob = new Blob([svgString], { type: "image/svg+xml" });
     const link = document.createElement("a");
-    link.download = `qrcode-${shop?.slug || "cardapio"}.svg`;
+    link.download = `qrcode-${shop?.slug || "catalogo"}.svg`;
     link.href = URL.createObjectURL(blob);
     link.click();
     URL.revokeObjectURL(link.href);
@@ -77,7 +77,7 @@ export default function QRCodePage() {
                   <span className="text-sm font-medium hidden sm:block">Voltar</span>
                 </a>
                 <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
-                <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900">QR Code do Cardápio</h1>
+                <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900">QR Code do Catálogo</h1>
               </div>
             </div>
           </div>
@@ -97,7 +97,7 @@ export default function QRCodePage() {
                 <span className="text-sm font-medium hidden sm:block">Voltar</span>
               </a>
               <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
-              <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900">QR Code do Cardápio</h1>
+              <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900">QR Code do Catálogo</h1>
             </div>
           </div>
         </div>
@@ -187,7 +187,7 @@ export default function QRCodePage() {
                   <p>
                     Imprima o QR Code em cartoes de visita, embalagens, panfletos
                     ou adesivos. Seus clientes podem escanear com a camera do
-                    celular para acessar seu cardapio online.
+                    celular para acessar seu catalogo online.
                   </p>
                 </div>
               </div>

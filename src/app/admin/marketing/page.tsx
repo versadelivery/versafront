@@ -12,15 +12,15 @@ const marketingModules = [
     iconBgColor: "bg-emerald-500",
   },
   {
-    title: "QR Code do Cardápio",
+    title: "QR Code do Catálogo",
     description: "Gere QR Codes para impressão em materiais de divulgação",
     href: "/admin/marketing/qrcode",
     icon: QrCode,
     iconBgColor: "bg-blue-500",
   },
   {
-    title: "Cardápio em PDF",
-    description: "Exporte seu cardápio completo como PDF profissional",
+    title: "Catálogo em PDF",
+    description: "Exporte seu catálogo completo como PDF profissional",
     href: "/admin/marketing/pdf-catalog",
     icon: FileText,
     iconBgColor: "bg-purple-500",

@@ -107,7 +107,7 @@ export function CategoryManager({ onEdit }: CategoryManagerProps) {
       {categories.length === 0 ? (
         <div className="mt-3 rounded-md border border-dashed border-[#E5E2DD] bg-[#FAF9F7] px-4 py-6 text-center">
           <p className="text-sm font-medium text-gray-900">Nenhuma categoria ainda</p>
-          <p className="mt-1 text-xs text-muted-foreground">Crie categorias como Churrasco ou Bebidas para organizar os grupos do cardápio.</p>
+          <p className="mt-1 text-xs text-muted-foreground">Crie categorias como Churrasco ou Bebidas para organizar os grupos do catálogo.</p>
         </div>
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>

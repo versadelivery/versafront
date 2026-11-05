@@ -58,7 +58,7 @@ export default function WeeklySummaryTab() {
       {currentWeek && (
         <div className="flex items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
-            Semana: {formatDate(currentWeek.start_date)} —{" "}
+            Semana: {formatDate(currentWeek.start_date)} a{" "}
             {formatDate(currentWeek.end_date)}
           </p>
           <ReportExportButton
@@ -68,9 +68,9 @@ export default function WeeklySummaryTab() {
               ["Total Vendido", currentWeek.total_revenue],
               ["Pedidos", currentWeek.total_orders],
               ["Ticket Médio", currentWeek.average_ticket],
-              ["Melhor Dia", currentWeek.best_day?.label || "—"],
+              ["Melhor Dia", currentWeek.best_day?.label || "-"],
               ["Receita Melhor Dia", currentWeek.best_day?.revenue || 0],
-              ["Produto Mais Vendido", currentWeek.top_product?.name || "—"],
+              ["Produto Mais Vendido", currentWeek.top_product?.name || "-"],
               ["Qtd Produto", currentWeek.top_product?.quantity || 0],
             ] : []}
             disabled={loading}
@@ -171,13 +171,13 @@ export default function WeeklySummaryTab() {
                           {currentWeek.best_day.label}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {formatCurrency(currentWeek.best_day.revenue)} —{" "}
+                          {formatCurrency(currentWeek.best_day.revenue)} ·{" "}
                           {currentWeek.best_day.orders} pedidos
                         </p>
                       </>
                     ) : (
                       <p className="text-xl font-bold text-muted-foreground">
-                        —
+                        -
                       </p>
                     )}
                   </div>
@@ -201,13 +201,13 @@ export default function WeeklySummaryTab() {
                           {currentWeek.top_product.name}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {currentWeek.top_product.quantity} unidades —{" "}
+                          {currentWeek.top_product.quantity} unidades ·{" "}
                           {formatCurrency(currentWeek.top_product.revenue)}
                         </p>
                       </>
                     ) : (
                       <p className="text-xl font-bold text-muted-foreground">
-                        —
+                        -
                       </p>
                     )}
                   </div>

@@ -115,7 +115,7 @@ export default function SalesByHourTab() {
                       Horário de Pico
                     </p>
                     <p className="text-2xl font-bold">
-                      {summary.peak_hour?.label || "—"}
+                      {summary.peak_hour?.label || "-"}
                     </p>
                     {summary.peak_hour && (
                       <p className="text-xs text-muted-foreground">

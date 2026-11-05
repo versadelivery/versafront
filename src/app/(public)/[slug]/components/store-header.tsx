@@ -30,7 +30,7 @@ export default function StoreHeader({ shop: initialShop }: StoreHeaderProps) {
     setHasCustomerInfo(!!localStorage.getItem('customer_info'));
   }, []);
 
-  // Publica altura real do header sticky como CSS var — o catalog nav usa como `top`
+  // Publica altura real do header sticky como CSS var, o catalog nav usa como `top`
   useEffect(() => {
     const el = stickyRef.current;
     if (!el) return;
@@ -82,7 +82,7 @@ export default function StoreHeader({ shop: initialShop }: StoreHeaderProps) {
 
   return (
     <>
-      {/* Banner + Nav header — sticky como uma unidade para não depender de altura fixa */}
+      {/* Banner + Nav header, sticky como uma unidade para não depender de altura fixa */}
       <div ref={stickyRef} className="sticky top-0 z-40 w-full">
         {/* Banner promocional */}
         {attributes.banner_active && attributes.banner_text && (
@@ -221,7 +221,7 @@ export default function StoreHeader({ shop: initialShop }: StoreHeaderProps) {
             {/* Mobile */}
             <div className="flex items-center justify-center gap-3.5 sm:hidden">
               <Clock className="w-3.5 h-3.5 flex-shrink-0" style={{ color: mutedColor }} />
-              <span className="text-xs font-semibold" style={{ color: textColor }}>30–45 min</span>
+              <span className="text-xs font-semibold" style={{ color: textColor }}>30 a 45 min</span>
               <span className="text-xs" style={{ color: mutedColor }}>·</span>
               <Truck className="w-3.5 h-3.5 flex-shrink-0" style={{ color: mutedColor }} />
               <span className="text-xs font-semibold" style={{ color: textColor }}>{deliveryFee()}</span>
@@ -235,7 +235,7 @@ export default function StoreHeader({ shop: initialShop }: StoreHeaderProps) {
               <div className="flex items-center gap-2.5">
                 <Clock className="w-5 h-5 flex-shrink-0" style={{ color: mutedColor }} />
                 <div>
-                  <p className="text-base font-semibold leading-none" style={{ color: textColor }}>30–45 min</p>
+                  <p className="text-base font-semibold leading-none" style={{ color: textColor }}>30 a 45 min</p>
                   <p className="text-xs mt-1" style={{ color: mutedColor }}>Entrega</p>
                 </div>
               </div>

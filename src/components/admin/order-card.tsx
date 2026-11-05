@@ -106,12 +106,12 @@ export default function OrderCard({
   // Buscar entregadores reais
   const { users, loading: loadingUsers } = useUsers();
 
-  // Cronômetro de preparo — ativo para pedidos aceitos, em análise ou em preparo
+  // Cronômetro de preparo, ativo para pedidos aceitos, em análise ou em preparo
   const acceptedAt = order.socketData?.attributes?.accepted_at;
   const isPrepping = ['aceitos', 'em_analise', 'em_preparo'].includes(order.status);
   const prepTimer = usePrepTimer(isPrepping ? acceptedAt : null, estimatedPrepTime, 'Preparo');
 
-  // Cronômetro de entrega — ativo a partir de pronto (ready_at) até ser entregue
+  // Cronômetro de entrega, ativo a partir de pronto (ready_at) até ser entregue
   const readyAt = order.socketData?.attributes?.ready_at;
   const isDelivering = ['prontos', 'saiu'].includes(order.status);
   const deliveryTimer = usePrepTimer(isDelivering ? readyAt : null, estimatedDeliveryTime, 'Entrega');
@@ -515,7 +515,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '', orde
         {/* ── Ações ── */}
         <hr className="border-[#E5E2DD]" />
         <div className="px-3 py-2.5 space-y-2">
-          {/* Botões utilitários (WhatsApp, Imprimir, Copiar) — aparecem após recebido */}
+          {/* Botões utilitários (WhatsApp, Imprimir, Copiar), aparecem após recebido */}
           {!isRecebido && !isEntregue && !isCancelled && (
             <div className="flex items-center justify-center gap-1">
               <Button
@@ -572,7 +572,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '', orde
             </Button>
           )}
 
-          {/* Botão PAGO — disponível enquanto o pedido está em andamento */}
+          {/* Botão PAGO, disponível enquanto o pedido está em andamento */}
           {!isRecebido && !isEntregue && !isCancelled && (
             <Button
               variant="ghost"

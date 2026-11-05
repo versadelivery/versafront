@@ -181,7 +181,7 @@ function ReviewItem({
             />
           ))}
         </div>
-        <span className="text-xs text-gray-400">—</span>
+        <span className="text-xs text-gray-400">-</span>
         <span className="text-xs font-medium text-gray-500">{displayName}</span>
         <span className="text-xs text-gray-300">{formatDate(created_at)}</span>
       </div>

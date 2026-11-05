@@ -274,7 +274,7 @@ export default function SuperAdminDashboard() {
           </div>
         )}
 
-        {/* KPIs — Lojas */}
+        {/* KPIs, Lojas */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <KpiCard
             label="Total de lojas"
@@ -313,10 +313,10 @@ export default function SuperAdminDashboard() {
           />
         </div>
 
-        {/* KPIs — Financeiro e Pedidos */}
+        {/* KPIs, Financeiro e Pedidos */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <KpiCard
-            label={`MRR — ${cm.period}`}
+            label={`MRR ${cm.period}`}
             value={formatCurrency(cm.mrr)}
             icon={TrendingUp}
             iconBg="bg-[#F9FFF6]"
@@ -354,7 +354,7 @@ export default function SuperAdminDashboard() {
         {/* MRR Chart + Breakdown do mês */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
-            <Section title="Evolução do MRR — últimos 6 meses" icon={TrendingUp}>
+            <Section title="Evolução do MRR: últimos 6 meses" icon={TrendingUp}>
               {billing.mrr_evolution.every((m) => m.amount === 0) ? (
                 <div className="h-[220px] flex items-center justify-center">
                   <p className="font-body text-sm text-[#858585]">
@@ -390,7 +390,7 @@ export default function SuperAdminDashboard() {
             </Section>
           </div>
 
-          <Section title={`Cobranças — ${cm.period}`} icon={DollarSign}>
+          <Section title={`Cobranças ${cm.period}`} icon={DollarSign}>
             <div className="divide-y divide-[#E8E4DF]">
               <div className="flex items-center justify-between py-3">
                 <div className="flex items-center gap-2">
@@ -437,7 +437,7 @@ export default function SuperAdminDashboard() {
                   </span>
                 </div>
                 <span className="font-body text-sm font-semibold text-[#858585]">
-                  —
+                  -
                 </span>
               </div>
             </div>

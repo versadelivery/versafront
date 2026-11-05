@@ -347,7 +347,7 @@ export default function OrderDetailsModal({
           hasChange = true;
         }
 
-        // Só ids do cardápio: adicionais/preparos/etapas cujo item foi apagado do cardápio (id nulo) a API preserva
+        // Só ids do catálogo: adicionais/preparos/etapas cujo item foi apagado do catálogo (id nulo) a API preserva
         const catalogIds = (list: any[] | undefined) =>
           (list || []).map((entry: any) => entry.id).filter((id: unknown) => id != null).sort();
         const origExtraIds = catalogIds(originalItem.selected_extras);
@@ -458,8 +458,8 @@ export default function OrderDetailsModal({
       const response = await getCatalog();
       setCatalogGroups(response.data || []);
     } catch (error) {
-      console.error('Erro ao carregar cardápio:', error);
-      toast.error('Não foi possível carregar o cardápio para bipar. Feche e abra a edição de novo.');
+      console.error('Erro ao carregar catálogo:', error);
+      toast.error('Não foi possível carregar o catálogo para bipar. Feche e abra a edição de novo.');
     } finally {
       setLoadingCatalog(false);
     }
@@ -473,7 +473,7 @@ export default function OrderDetailsModal({
   // --- Leitor de código de barras ---------------------------------------------------------------
   const scaleMode = shop?.scale_label_mode ?? 'weight';
 
-  // Itens do cardápio no formato do leitor (o payload de admin traz barcode e scale_code)
+  // Itens do catálogo no formato do leitor (o payload de admin traz barcode e scale_code)
   const scanItems = useMemo(
     () =>
       catalogGroups.flatMap((group) =>
@@ -566,10 +566,10 @@ export default function OrderDetailsModal({
     onResult: handleScanResult,
     clearSearch: () => setScanText(''),
     ready: !loadingCatalog && catalogGroups.length > 0,
-    onNotReady: () => toast.error('Cardápio carregando. Bipe de novo em instantes.'),
+    onNotReady: () => toast.error('Catálogo carregando. Bipe de novo em instantes.'),
   });
 
-  // Ao entrar na edição o cardápio carrega e o campo de bipagem já fica em foco
+  // Ao entrar na edição o catálogo carrega e o campo de bipagem já fica em foco
   useEffect(() => {
     if (!isEditingMode) return;
     ensureCatalogLoaded();
@@ -763,7 +763,7 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
       if (wasSelected) {
         newMethods = methods.filter((m: any) => m.id !== method.id);
       } else if (limit === 1) {
-        // limite 1: escolher outro troca o modo de preparo (mantém os sem id, que vêm de itens apagados do cardápio)
+        // limite 1: escolher outro troca o modo de preparo (mantém os sem id, que vêm de itens apagados do catálogo)
         newMethods = [...methods.filter((m: any) => m.id == null), method];
       } else {
         newMethods = [...methods, method];
@@ -1671,7 +1671,7 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
                   e.preventDefault();
                   setCatalogSearch('');
                   if (loadingCatalog || catalogGroups.length === 0) {
-                    toast.error('Cardápio carregando. Bipe de novo em instantes.');
+                    toast.error('Catálogo carregando. Bipe de novo em instantes.');
                     return;
                   }
                   const result = parseBarcode(text, scaleMode, scanItems);

@@ -163,7 +163,7 @@ export default function AppearanceSettingsPage() {
               </a>
               <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
               <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900">
-                Aparência do Cardápio
+                Aparência do Catálogo
               </h1>
             </div>
           </div>
@@ -180,7 +180,7 @@ export default function AppearanceSettingsPage() {
               <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
                 <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
                   <Palette className="h-4 w-4 text-primary" />
-                  <h2 className="font-tomato text-base font-semibold text-gray-900">Cores do Cardápio</h2>
+                  <h2 className="font-tomato text-base font-semibold text-gray-900">Cores do Catálogo</h2>
                 </div>
                 <div className="px-5 py-5 space-y-5">
                   {/* Presets */}
@@ -327,7 +327,7 @@ export default function AppearanceSettingsPage() {
               <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
                 <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
                   <LayoutGrid className="h-4 w-4 text-primary" />
-                  <h2 className="font-tomato text-base font-semibold text-gray-900">Layout do Cardápio</h2>
+                  <h2 className="font-tomato text-base font-semibold text-gray-900">Layout do Catálogo</h2>
                 </div>
                 <div className="px-5 py-5">
                   <div className="flex gap-3">
@@ -377,11 +377,11 @@ export default function AppearanceSettingsPage() {
                     onChange={(e) =>
                       setFormData((prev) => ({ ...prev, welcome_message: e.target.value }))
                     }
-                    placeholder="Bem-vindo ao nosso cardápio! Confira nossas promoções do dia 🎉"
+                    placeholder="Bem-vindo ao nosso catálogo. Confira as promoções do dia"
                     className="min-h-28 text-base rounded-md border-[#E5E2DD] focus-visible:ring-primary"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Esta mensagem aparecerá no topo do seu cardápio público. Aceita emojis e quebras de linha.
+                    Esta mensagem aparecerá no topo do seu catálogo público. Aceita emojis e quebras de linha.
                   </p>
                 </div>
               </div>
@@ -399,7 +399,7 @@ export default function AppearanceSettingsPage() {
                         Ativar banner no topo
                       </Label>
                       <p className="text-sm text-muted-foreground mt-0.5">
-                        Exibe uma faixa promocional fixa no topo do cardápio
+                        Exibe uma faixa promocional fixa no topo do catálogo
                       </p>
                     </div>
                     <Switch

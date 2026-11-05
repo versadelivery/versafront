@@ -237,7 +237,7 @@ export default function CloseTableModal({
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Campo de valor manual — só aparece quando não tem pedidos vinculados */}
+            {/* Campo de valor manual, só aparece quando não tem pedidos vinculados */}
             {!hasOrders && (
               <div className="space-y-2">
                 <Label htmlFor="total_amount" className="text-sm font-medium text-foreground">

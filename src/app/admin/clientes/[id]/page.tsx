@@ -131,7 +131,7 @@ export default function CustomerDetailPage() {
       const response = await customerService.getOrder(orderId);
       setOrderDetails(response.data);
     } catch {
-      // silently fail — dialog will show nothing
+      // silently fail, dialog will show nothing
     } finally {
       setIsLoadingOrder(false);
     }

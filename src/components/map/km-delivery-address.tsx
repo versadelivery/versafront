@@ -243,7 +243,7 @@ export function KmDeliveryAddress({
             className="flex cursor-pointer items-center gap-1.5 text-sm font-medium text-primary hover:underline"
           >
             <MapPin className="h-3.5 w-3.5" />
-            Não encontrei meu endereço — marcar no mapa
+            Não encontrei meu endereço, marcar no mapa
           </button>
         </div>
       )}
@@ -355,7 +355,7 @@ export function KmDeliveryAddress({
             Número e bairro são sempre digitados pelo cliente, nunca preenchidos
             pelo geocoder. Em cidades pequenas o OpenStreetMap quase não tem número
             de casa mapeado (Itapajé/CE tem 3 no município inteiro) e só dois
-            bairros para toda a cidade — qualquer palpite viria errado.
+            bairros para toda a cidade, qualquer palpite viria errado.
           */}
           <div className="grid grid-cols-3 gap-3">
             <div>
@@ -396,7 +396,7 @@ export function KmDeliveryAddress({
             <p className="text-sm text-red-500">{fieldErrors.number || fieldErrors.neighborhood}</p>
           ) : (
             <p className="text-sm text-muted-foreground">
-              O mapa não sabe o número nem o bairro — preencha para o entregador achar você.
+              O mapa não sabe o número nem o bairro. Preencha para o entregador achar você.
             </p>
           )}
 

@@ -141,7 +141,7 @@ export default function TemplatesPage() {
       const failed = await uploadImages();
       queryClient.invalidateQueries({ queryKey: ["catalog"] });
       queryClient.invalidateQueries({ queryKey: ["catalog-categories"] });
-      failed.forEach((name) => toast.error(`Template aplicado, mas a imagem de "${name}" não foi enviada. Adicione em Cardápio > Categorias.`, { duration: 10000 }));
+      failed.forEach((name) => toast.error(`Template aplicado, mas a imagem de "${name}" não foi enviada. Adicione em Catálogo > Categorias.`, { duration: 10000 }));
       toast.success(`${plural(created.items, "item criado", "itens criados")}. Defina os preços para ativá-los.`);
       router.push("/admin/catalog?tab=prices");
     },
@@ -168,7 +168,7 @@ export default function TemplatesPage() {
           <div>
             <h2 className="font-tomato text-xl font-bold text-gray-900">Monte sua loja</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Marque o que você vende. Os itens entram no cardápio inativos e sem preço; depois é só definir os preços na aba Ajuste R$. O que você já tem no cardápio não é alterado.
+              Marque o que você vende. Os itens entram no catálogo inativos e sem preço; depois é só definir os preços na aba Ajuste R$. O que você já tem no catálogo não é alterado.
             </p>
           </div>
 
@@ -233,7 +233,7 @@ export default function TemplatesPage() {
               {plural(totals.categories, "categoria", "categorias")} · {plural(totals.groups, "grupo", "grupos")} · {plural(totals.items, "item", "itens")}
             </p>
             <Button className="h-12 w-full cursor-pointer text-base" disabled={totals.items === 0 || apply.isPending} onClick={() => apply.mutate()}>
-              {apply.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Adicionar ao cardápio"}
+              {apply.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Adicionar ao catálogo"}
             </Button>
           </div>
         </div>

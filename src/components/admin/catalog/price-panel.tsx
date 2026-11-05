@@ -156,7 +156,7 @@ export function PricePanel() {
         </button>
       </div>
 
-      {tree.length === 0 && <p className="py-10 text-center text-sm text-muted-foreground">Nenhum item no cardápio ainda. Use Templates de Loja em Configurações para começar rápido.</p>}
+      {tree.length === 0 && <p className="py-10 text-center text-sm text-muted-foreground">Nenhum item no catálogo ainda. Use Templates de Loja em Configurações para começar rápido.</p>}
 
       {tree.map((category) => {
         const groups = category.groups.map((group) => ({ ...group, rows: group.items.filter(visible) })).filter((group) => !filtering || group.rows.length > 0);

@@ -54,7 +54,7 @@ const presets: Preset[] = [
   {
     id: "completo",
     name: "Completo",
-    description: "Todas as etapas — ideal para delivery com análise",
+    description: "Todas as etapas, ideal para delivery com análise",
     statuses: ["received", "accepted", "in_analysis", "in_preparation", "ready", "left_for_delivery", "delivered"],
   },
   {
@@ -66,19 +66,19 @@ const presets: Preset[] = [
   {
     id: "retirada",
     name: "Retirada / Balcão",
-    description: "Sem etapa de entrega — cliente retira no local",
+    description: "Sem etapa de entrega, cliente retira no local",
     statuses: ["received", "accepted", "in_preparation", "ready", "delivered"],
   },
   {
     id: "rapido",
     name: "Rápido",
-    description: "Fluxo enxuto — recebe, prepara e entrega",
+    description: "Fluxo enxuto: recebe, prepara e entrega",
     statuses: ["received", "in_preparation", "ready", "delivered"],
   },
   {
     id: "simples",
     name: "Simples",
-    description: "Mínimo possível — recebe, prepara e pronto",
+    description: "Mínimo possível: recebe, prepara e pronto",
     statuses: ["received", "in_preparation", "delivered"],
   },
 ];
@@ -143,7 +143,7 @@ export default function OrderFlowSettingsPage() {
 
     if (isInFlow(status)) {
       if (hasActiveOrders(status)) {
-        toast.error(`Não é possível remover "${statusLabels[status]}" — existem pedidos em andamento nesse status`);
+        toast.error(`Não é possível remover "${statusLabels[status]}", existem pedidos em andamento nesse status`);
         return;
       }
       if (flow.length <= 3) {
@@ -258,7 +258,7 @@ export default function OrderFlowSettingsPage() {
                     onClick={() => {
                       if (isBlocked) {
                         const names = blockedStatuses.map((s: string) => statusLabels[s] || s).join(", ");
-                        toast.error(`Preset indisponível — existem pedidos em: ${names}`);
+                        toast.error(`Preset indisponível: existem pedidos em: ${names}`);
                         return;
                       }
                       setFlow(preset.statuses);

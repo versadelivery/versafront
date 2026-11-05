@@ -105,7 +105,7 @@ export default function MeusPedidosPage() {
   const nav = (
     <PedidosHeader
       backHref={`/${slug}`}
-      backLabel="Voltar ao cardápio"
+      backLabel="Voltar ao catálogo"
     />
   );
 
@@ -174,7 +174,7 @@ export default function MeusPedidosPage() {
             <h2 className="font-tomato text-lg font-bold text-foreground mb-2">Nenhum pedido ainda</h2>
             <p className="text-sm text-muted-foreground mb-6">Seus pedidos nesta loja aparecerão aqui após a primeira compra.</p>
             <Button asChild className="rounded-md">
-              <Link href={`/${slug}`}>Ver cardápio</Link>
+              <Link href={`/${slug}`}>Ver catálogo</Link>
             </Button>
           </div>
         </div>
