@@ -199,6 +199,16 @@ export const adminSections: AdminSection[] = [
   },
   // Relatórios > Faturamento
   {
+    id: "relatorios-extrato",
+    title: "Extrato por Item",
+    description: "Resumo de itens, quantidades e formas de pagamento por dia ou turno",
+    href: "/admin/relatorios?cat=faturamento&tab=extrato",
+    icon: Wallet,
+    iconBgColor: "bg-purple-500",
+    keywords: ["extrato", "itens", "turno", "pagamento", "relatorio", "dia"],
+    group: "Relatórios — Faturamento",
+  },
+  {
     id: "relatorios-resumo-semanal",
     title: "Resumo Semanal",
     description: "KPIs da semana: receita, pedidos, ticket médio e comparação",
@@ -259,6 +269,16 @@ export const adminSections: AdminSection[] = [
     group: "Relatórios — Faturamento",
   },
   // Relatórios > Vendas
+  {
+    id: "relatorios-vendas-entregador",
+    title: "Vendas por Entregador",
+    description: "Pedidos pagos, faturamento e ticket médio por entregador",
+    href: "/admin/relatorios?cat=vendas&tab=vendas-por-entregador",
+    icon: Truck,
+    iconBgColor: "bg-purple-500",
+    keywords: ["vendas", "entregador", "entregadores", "delivery", "motoboy", "relatorio"],
+    group: "Relatórios — Vendas",
+  },
   {
     id: "relatorios-vendas-por-item",
     title: "Vendas por Item",
