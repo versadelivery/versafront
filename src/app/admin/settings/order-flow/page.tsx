@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, GripVertical, Check, X, ListOrdered, RotateCcw, Zap, AlertCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, Check, X, ListOrdered, RotateCcw, Zap, AlertCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -96,7 +96,6 @@ export default function OrderFlowSettingsPage() {
 
   const [flow, setFlow] = useState<string[]>(DEFAULT_FLOW);
   const [hasChanges, setHasChanges] = useState(false);
-  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
   const savedFlow = config?.data?.attributes?.statuses ?? DEFAULT_FLOW;
   const availableStatuses = config?.data?.attributes?.available_statuses ?? Object.keys(statusLabels);
@@ -167,28 +166,13 @@ export default function OrderFlowSettingsPage() {
     }
   };
 
-  const handleDragStart = (index: number) => {
-    if (index === 0 || index === flow.length - 1) return;
-    setDraggedIndex(index);
-  };
-
-  const handleDragOver = (e: React.DragEvent, index: number) => {
-    e.preventDefault();
-    if (index === 0 || index === flow.length - 1) return;
-    if (draggedIndex === null || draggedIndex === index) return;
-
-    const newFlow = [...flow];
-    const [dragged] = newFlow.splice(draggedIndex, 1);
-    newFlow.splice(index, 0, dragged);
-    setFlow(newFlow);
-    setDraggedIndex(index);
-  };
-
-  const handleDragEnd = () => {
-    setDraggedIndex(null);
-  };
-
   const handleReset = () => {
+    const blocked = activeOrderStatuses.filter((s: string) => !DEFAULT_FLOW.includes(s));
+    if (blocked.length > 0) {
+      const names = blocked.map((s: string) => statusLabels[s] || s).join(", ");
+      toast.error(`Não é possível restaurar o padrão — existem pedidos em: ${names}`);
+      return;
+    }
     setFlow(DEFAULT_FLOW);
   };
 
@@ -307,36 +291,23 @@ export default function OrderFlowSettingsPage() {
           </div>
           <div className="px-5 py-5">
             <p className="text-sm text-muted-foreground mb-4">
-              Configure as etapas que um pedido percorre na sua loja. Arraste para reordenar
-              os status intermediários. "Recebido" e "Entregue" são obrigatórios.
+              Configure as etapas que um pedido percorre na sua loja. As etapas seguem sempre a
+              ordem padrão; adicione ou remova as intermediárias. "Recebido" e "Entregue" são obrigatórios.
             </p>
 
             {/* Flow visual */}
             <div className="space-y-1">
               {flow.map((status, index) => {
                 const isFixed = status === "received" || status === "delivered";
-                const isDragging = draggedIndex === index;
 
                 return (
                   <div
                     key={status}
-                    draggable={!isFixed}
-                    onDragStart={() => handleDragStart(index)}
-                    onDragOver={(e) => handleDragOver(e, index)}
-                    onDragEnd={handleDragEnd}
                     className={cn(
                       "flex items-center gap-3 px-4 py-3 rounded-md border transition-all",
-                      isDragging
-                        ? "border-primary bg-[#FAF9F7] opacity-70"
-                        : "border-[#E5E2DD] bg-white",
-                      !isFixed && "cursor-grab active:cursor-grabbing"
+                      "border-[#E5E2DD] bg-white"
                     )}
                   >
-                    {/* Drag handle */}
-                    <div className={cn("flex-shrink-0", isFixed && "invisible")}>
-                      <GripVertical className="w-4 h-4 text-gray-400" />
-                    </div>
-
                     {/* Step number */}
                     <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#F0EFEB] flex items-center justify-center text-xs font-semibold text-gray-600">
                       {index + 1}

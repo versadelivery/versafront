@@ -152,6 +152,7 @@ export function IngredientManagement() {
         onConfirm={handleConfirmDelete}
         isLoading={isDeleting}
         type="ingrediente"
+        consequence="Ele será removido de todos os itens vinculados."
       />
     </div>
   );

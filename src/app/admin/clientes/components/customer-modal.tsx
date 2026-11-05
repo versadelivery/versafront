@@ -11,6 +11,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { User, Mail, Phone, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { Customer } from "../services/customerService";
 
 interface CustomerModalProps {
@@ -99,7 +100,7 @@ export default function CustomerModal({
       });
       onClose();
     } catch (error) {
-      console.error("Erro ao salvar cliente:", error);
+      toast.error(error instanceof Error ? error.message : "Erro ao salvar cliente");
     } finally {
       setIsSubmitting(false);
     }

@@ -55,8 +55,8 @@ export default function CouponModal({
       setFormData({
         code: attrs.code || "",
         discount_type: attrs.discount_type || "fixed_value",
-        value: attrs.value || "",
-        minimum_order_value: attrs.minimum_order_value || "0",
+        value: attrs.value ? String(Number(attrs.value)) : "",
+        minimum_order_value: attrs.minimum_order_value ? String(Number(attrs.minimum_order_value)) : "",
         usage_limit: attrs.usage_limit?.toString() || "",
         unlimited: attrs.usage_limit === null,
         starts_at: attrs.starts_at ? formatDatetimeLocal(attrs.starts_at) : "",
@@ -108,7 +108,7 @@ export default function CouponModal({
       newErrors.minimum_order_value = "Valor mínimo não pode ser negativo";
     }
 
-    if (!formData.unlimited && formData.usage_limit) {
+    if (!formData.unlimited) {
       if (Number(formData.usage_limit) <= 0 || !Number.isInteger(Number(formData.usage_limit))) {
         newErrors.usage_limit = "Limite deve ser um número inteiro positivo";
       }
@@ -135,9 +135,9 @@ export default function CouponModal({
         discount_type: formData.discount_type,
         value: Number(formData.value),
         minimum_order_value: Number(formData.minimum_order_value) || 0,
-        usage_limit: formData.unlimited ? null : Number(formData.usage_limit) || null,
-        starts_at: formData.starts_at || null,
-        expires_at: formData.expires_at || null,
+        usage_limit: formData.unlimited ? null : Number(formData.usage_limit),
+        starts_at: formData.starts_at ? new Date(formData.starts_at).toISOString() : null,
+        expires_at: formData.expires_at ? new Date(formData.expires_at).toISOString() : null,
         active: formData.active,
       };
 

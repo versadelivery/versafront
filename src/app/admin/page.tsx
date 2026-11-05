@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Info } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useState } from "react";
+import { toast } from "sonner";
 import { useSchedule, WeekSchedule } from "@/app/admin/settings/general/hooks/useSchedule";
 import { DEFAULT_BILLING_TIERS, formatTierAmount, formatTierRevenue } from "@/services/billing-tiers";
 
@@ -82,7 +83,7 @@ export default function AdminDashboard() {
       };
       await updateSchedule(newSchedule);
     } catch (err) {
-      console.error('Erro ao atualizar status da loja', err);
+      toast.error(err instanceof Error ? err.message : 'Erro ao atualizar status da loja');
     } finally {
       setIsToggling(false);
     }

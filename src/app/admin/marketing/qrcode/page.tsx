@@ -65,7 +65,7 @@ export default function QRCodePage() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || !catalogUrl) {
     return (
       <div className="min-h-screen bg-[#FAF9F7]">
         <div className="bg-white border-b border-[#E5E2DD]">
@@ -82,6 +82,11 @@ export default function QRCodePage() {
             </div>
           </div>
         </div>
+        {!isLoading && (
+          <p className="max-w-[1920px] mx-auto px-4 sm:px-6 py-6 text-sm text-center text-muted-foreground">
+            Não foi possível gerar o QR Code. Verifique se sua loja tem um slug configurado.
+          </p>
+        )}
       </div>
     );
   }

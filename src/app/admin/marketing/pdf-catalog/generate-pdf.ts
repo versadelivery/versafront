@@ -30,6 +30,8 @@ interface CatalogGroup {
             price_with_discount?: number | null;
             active?: boolean;
             image_url?: string | null;
+            item_type?: string;
+            starting_price?: number | null;
           };
         };
       }>;
@@ -55,16 +57,20 @@ function formatPrice(value: number): string {
   }).format(value);
 }
 
+// image_url is a WebP variant; jsPDF can't embed WebP, so re-encode as JPEG.
 async function loadImageAsBase64(url: string): Promise<string | null> {
   try {
     const response = await fetch(url);
-    const blob = await response.blob();
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = () => resolve(null);
-      reader.readAsDataURL(blob);
-    });
+    const bitmap = await createImageBitmap(await response.blob());
+    const canvas = document.createElement("canvas");
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(bitmap, 0, 0);
+    return canvas.toDataURL("image/jpeg", 0.85);
   } catch {
     return null;
   }
@@ -191,33 +197,39 @@ export async function generateCatalogPdf(
 
       // Price
       const hasDiscount =
-        attrs.price_with_discount != null && attrs.price_with_discount > 0;
+        attrs.price != null &&
+        !!attrs.price_with_discount &&
+        attrs.price_with_discount < attrs.price;
+      const unit =
+        attrs.item_type === "weight_per_kg" ? " / kg" : attrs.item_type === "weight_per_g" ? " / g" : "";
+      const base = hasDiscount ? attrs.price_with_discount! : attrs.price ?? 0;
+      const start = Number(attrs.starting_price ?? 0);
       doc.setFontSize(11);
       doc.setFont("helvetica", "bold");
 
-      if (hasDiscount) {
+      if (start > base) {
+        doc.setTextColor(30, 30, 30);
+        doc.text(`A partir de ${formatPrice(start)}`, pageWidth - margin, y + 4, { align: "right" });
+      } else if (hasDiscount) {
         // Original price (strikethrough)
         doc.setTextColor(150, 150, 150);
         doc.setFont("helvetica", "normal");
         doc.setFontSize(9);
-        const originalPrice = formatPrice(attrs.price);
+        const originalPrice = formatPrice(attrs.price!);
         doc.text(originalPrice, pageWidth - margin, y + 3, { align: "right" });
+        const w = doc.getTextWidth(originalPrice);
+        doc.setDrawColor(150, 150, 150);
+        doc.setLineWidth(0.2);
+        doc.line(pageWidth - margin - w, y + 2.2, pageWidth - margin, y + 2.2);
 
         // Discount price
         doc.setTextColor(76, 175, 80);
         doc.setFont("helvetica", "bold");
         doc.setFontSize(11);
-        doc.text(
-          formatPrice(attrs.price_with_discount!),
-          pageWidth - margin,
-          y + 8,
-          { align: "right" }
-        );
-      } else {
+        doc.text(formatPrice(base) + unit, pageWidth - margin, y + 8, { align: "right" });
+      } else if (base > 0) {
         doc.setTextColor(30, 30, 30);
-        doc.text(formatPrice(attrs.price), pageWidth - margin, y + 4, {
-          align: "right",
-        });
+        doc.text(formatPrice(base) + unit, pageWidth - margin, y + 4, { align: "right" });
       }
 
       y += nameLines.length * 5 + 2;

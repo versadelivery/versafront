@@ -7,6 +7,7 @@ import {
   toggleIngredientStock,
 } from "@/api/requests/ingredient/requests";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/utils/api-error";
 
 export const useIngredient = () => {
   const queryClient = useQueryClient();
@@ -22,8 +23,8 @@ export const useIngredient = () => {
       queryClient.invalidateQueries({ queryKey: ["ingredients"] });
       toast.success("Ingrediente criado com sucesso");
     },
-    onError: () => {
-      toast.error("Erro ao criar ingrediente");
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Erro ao criar ingrediente"));
     },
   });
 
@@ -32,10 +33,11 @@ export const useIngredient = () => {
       updateIngredient(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ingredients"] });
+      queryClient.invalidateQueries({ queryKey: ["catalog"] });
       toast.success("Ingrediente atualizado com sucesso");
     },
-    onError: () => {
-      toast.error("Erro ao atualizar ingrediente");
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Erro ao atualizar ingrediente"));
     },
   });
 
@@ -43,10 +45,11 @@ export const useIngredient = () => {
     mutationFn: deleteIngredient,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ingredients"] });
+      queryClient.invalidateQueries({ queryKey: ["catalog"] });
       toast.success("Ingrediente deletado com sucesso");
     },
-    onError: () => {
-      toast.error("Erro ao deletar ingrediente");
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Erro ao deletar ingrediente"));
     },
   });
 
@@ -56,8 +59,8 @@ export const useIngredient = () => {
       queryClient.invalidateQueries({ queryKey: ["ingredients"] });
       queryClient.invalidateQueries({ queryKey: ["catalog"] });
     },
-    onError: () => {
-      toast.error("Erro ao alterar estoque do ingrediente");
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Erro ao alterar estoque do ingrediente"));
     },
   });
 

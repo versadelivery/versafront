@@ -87,7 +87,7 @@ export function CategoryModal({ open, onOpenChange, category }: { open: boolean;
               id="category-position"
               inputMode="numeric"
               value={position}
-              onChange={(e) => setPosition(e.target.value.replace(/D/g, "").slice(0, 3))}
+              onChange={(e) => setPosition(e.target.value.replace(/\D/g, "").slice(0, 3))}
               onBlur={() => setPosition(String(Math.min(Math.max(parseInt(position, 10) || 1, 1), total)))}
               placeholder="1"
               className="w-24"

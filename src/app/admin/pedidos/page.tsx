@@ -564,7 +564,7 @@ export default function OrderManagement() {
       ...(lastLocalChangeRef.current[orderId] || {}),
       deliveryAt: Date.now(),
     };
-    setOrders(orders.map((order: Order) =>
+    setOrders((prev: Order[]) => prev.map((order: Order) =>
       order.id === orderId
         ? { ...order, deliveryPerson }
         : order
@@ -661,7 +661,10 @@ export default function OrderManagement() {
 
       // Filtro por forma de pagamento
       if (filterPaymentMethod !== 'all') {
-        if (order.socketData?.attributes?.payment_method !== filterPaymentMethod) return false;
+        const method = order.socketData?.attributes?.payment_method;
+        // PIX agrupa manual, automático e o enum antigo
+        const matches = filterPaymentMethod === 'manual_pix' ? ['manual_pix', 'asaas_pix', 'pix'].includes(method) : method === filterPaymentMethod;
+        if (!matches) return false;
       }
 
       // Filtro por status

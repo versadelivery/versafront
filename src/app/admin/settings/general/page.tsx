@@ -22,6 +22,16 @@ import BarcodeSettings from "./components/BarcodeSettings";
 import { usePhoneMask } from "@/hooks/use-phone-mask";
 import Link from "next/link";
 
+// Mesmas categorias do enum Shop.business_category da API (peixaria não existe na API)
+const BUSINESS_CATEGORIES: [string, string][] = [
+  ["hamburgueria", "Hamburgueria"], ["pizzaria", "Pizzaria"], ["acaiteria", "Açaiteria"], ["padaria", "Padaria"],
+  ["confeitaria", "Confeitaria"], ["restaurante", "Restaurante"], ["lanchonete", "Lanchonete"], ["sorveteria", "Sorveteria"],
+  ["cafeteria", "Cafeteria"], ["bar", "Bar"], ["doceria", "Doceria"], ["sushi", "Sushi"], ["churrascaria", "Churrascaria"],
+  ["pastelaria", "Pastelaria"], ["marmitaria", "Marmitaria"], ["petiscaria", "Petiscaria"], ["emporio", "Empório"],
+  ["mercado", "Mercado"], ["conveniencia", "Conveniência"], ["hortifruti", "Hortifrútis"], ["frigorifico", "Frigorífico"],
+  ["acougue", "Açougue"], ["other", "Outros"],
+];
+
 export default function GeneralSettingsPage() {
   const { shop, isLoading, updateShop, isUpdating } = useShop();
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -139,11 +149,12 @@ export default function GeneralSettingsPage() {
       errors.slug = "Este link é reservado pelo sistema";
     }
 
-    if (formData.cellphone) {
-      const digits = formData.cellphone.replace(/\D/g, '');
-      if (digits.length > 0 && (digits.length < 10 || digits.length > 11)) {
-        errors.cellphone = "Telefone deve ter formato (XX) XXXX-XXXX ou (XX) XXXXX-XXXX";
-      }
+    // A API exige telefone (obrigatório, mínimo 10 dígitos)
+    const phoneDigits = (formData.cellphone || '').replace(/\D/g, '');
+    if (phoneDigits.length === 0) {
+      errors.cellphone = "Telefone é obrigatório";
+    } else if (phoneDigits.length < 10 || phoneDigits.length > 11) {
+      errors.cellphone = "Telefone deve ter formato (XX) XXXX-XXXX ou (XX) XXXXX-XXXX";
     }
 
     // Endereço estruturado: vazio (loja antiga) ou completo. Preencher só uma parte deixa o endereço pela metade.
@@ -161,6 +172,11 @@ export default function GeneralSettingsPage() {
     if (formData.auto_open_cash_register && !formData.auto_open_cash_register_time) {
       errors.auto_open_cash_register_time = "Horário é obrigatório quando a abertura automática está ativa";
     }
+
+    ([["estimated_prep_time", "Tempo de preparo"], ["estimated_delivery_time", "Tempo de entrega"]] as const).forEach(([key, label]) => {
+      const n = formData[key];
+      if (n != null && (!Number.isInteger(n) || n < 1 || n > 240)) errors[key] = `${label} deve ficar entre 1 e 240 minutos`;
+    });
 
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
@@ -344,13 +360,9 @@ export default function GeneralSettingsPage() {
                         <SelectValue placeholder="Selecione a categoria" />
                       </SelectTrigger>
                       <SelectContent className="rounded-md border-[#E5E2DD]">
-                        <SelectItem value="acougue">Açougue</SelectItem>
-                        <SelectItem value="frigorifico">Frigorífico</SelectItem>
-                        <SelectItem value="peixaria">Peixaria</SelectItem>
-                        <SelectItem value="hortifruti">Hortifrútis</SelectItem>
-                        <SelectItem value="pizzaria">Pizzaria</SelectItem>
-                        <SelectItem value="hamburgueria">Hamburgueria</SelectItem>
-                        <SelectItem value="other">Outros</SelectItem>
+                        {BUSINESS_CATEGORIES.map(([value, label]) => (
+                          <SelectItem key={value} value={value}>{label}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground">
@@ -373,7 +385,7 @@ export default function GeneralSettingsPage() {
                 <div className="space-y-1.5">
                   <Label htmlFor="phone" className="flex items-center gap-2 text-sm font-medium">
                     <Phone className="w-3.5 h-3.5 text-muted-foreground" />
-                    Telefone
+                    Telefone <span className="text-red-500">*</span>
                   </Label>
                   <Input
                     id="phone"
@@ -604,7 +616,7 @@ export default function GeneralSettingsPage() {
                     }}
                     className="h-10 w-32 rounded-md border-[#E5E2DD]"
                   />
-                  <p className="text-xs text-muted-foreground">Usado no cronometro do painel e KDS</p>
+                  {fieldErrors.estimated_prep_time ? <p className="text-xs text-red-500">{fieldErrors.estimated_prep_time}</p> : <p className="text-xs text-muted-foreground">Usado no cronometro do painel e KDS</p>}
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="estimated_delivery_time" className="text-sm font-medium">
@@ -623,7 +635,7 @@ export default function GeneralSettingsPage() {
                     }}
                     className="h-10 w-32 rounded-md border-[#E5E2DD]"
                   />
-                  <p className="text-xs text-muted-foreground">Exibido ao cliente no checkout e acompanhamento</p>
+                  {fieldErrors.estimated_delivery_time ? <p className="text-xs text-red-500">{fieldErrors.estimated_delivery_time}</p> : <p className="text-xs text-muted-foreground">Exibido ao cliente no checkout e acompanhamento</p>}
                 </div>
               </div>
             </div>

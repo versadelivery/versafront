@@ -23,6 +23,7 @@ export default function MesasPage() {
   const {
     tables,
     loading,
+    error: tablesError,
     createTable,
     updateTable,
     deleteTable,
@@ -170,12 +171,21 @@ export default function MesasPage() {
                 <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
                   <Map className="h-12 w-12 mb-4" />
                   <p className="text-lg font-medium mb-2">
-                    {loading ? "Carregando mesas..." : "Nenhuma mesa configurada"}
+                    {loading
+                      ? "Carregando mesas..."
+                      : tablesError
+                        ? "Não foi possível carregar as mesas"
+                        : "Nenhuma mesa configurada"}
                   </p>
-                  {!loading && (
+                  {!loading && tablesError && (
+                    <Button variant="outline" className="border border-gray-300 cursor-pointer" onClick={() => refetchTables()}>
+                      Tentar novamente
+                    </Button>
+                  )}
+                  {!loading && !tablesError && (
                     <p className="text-sm mb-4">Comece criando sua primeira mesa</p>
                   )}
-                  {!loading && (
+                  {!loading && !tablesError && (
                     <Button
                       className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2"
                       onClick={handleCreateTable}

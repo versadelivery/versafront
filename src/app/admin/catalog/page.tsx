@@ -9,7 +9,7 @@ import { useCatalogGroup } from "@/hooks/useCatalogGroup";
 import { useCatalogReorder } from "@/hooks/useCatalogReorder";
 import { ItemCard } from "@/components/admin/catalog/item-card";
 import { SortableItemCard } from "@/components/admin/catalog/sortable-item-card";
-import { ArrowLeft, Edit2, GripVertical, LayoutGrid, LayoutList, Loader2, Package, Plus } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Edit2, GripVertical, LayoutGrid, LayoutList, Loader2, Package, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BusySwitch } from "@/components/admin/catalog/busy-switch";
 import { DeleteConfirmation } from "@/components/ui/delete-confirmation";
@@ -105,7 +105,7 @@ function CatalogPage() {
     if (new URLSearchParams(window.location.search).get('tab') === 'prices') setTab('prices');
   }, []);
 
-  const { isLoading, catalog, deleteCatalogGroup, isDeletingGroup, toggleCatalogGroupActive, toggleCatalogItemActive, togglingGroupId } = useCatalogGroup();
+  const { isLoading, error: catalogError, refetchCatalog, catalog, deleteCatalogGroup, isDeletingGroup, toggleCatalogGroupActive, toggleCatalogItemActive, togglingGroupId } = useCatalogGroup();
   const { reorderGroups, reorderItems, isReorderingGroups, isReorderingItems } = useCatalogReorder();
 
   const groups = catalog?.data || [];
@@ -428,6 +428,18 @@ function CatalogPage() {
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   <p className="text-sm text-muted-foreground">Carregando cardápio...</p>
                 </div>
+              ) : catalogError && validGroups.length === 0 ? (
+                /* Erro de carga: sem isto uma falha de rede parecia "nenhum grupo" */
+                <div className="flex flex-col items-center justify-center py-16 gap-4">
+                  <AlertTriangle className="h-10 w-10 text-red-500" />
+                  <h3 className="font-tomato text-base font-semibold text-foreground">Não foi possível carregar o cardápio</h3>
+                  <p className="text-sm text-muted-foreground text-center max-w-xs leading-relaxed">
+                    Verifique sua conexão e tente novamente.
+                  </p>
+                  <Button onClick={() => refetchCatalog()} variant="outline" className="border border-gray-300 cursor-pointer">
+                    Tentar novamente
+                  </Button>
+                </div>
               ) : validGroups.length === 0 ? (
                 /* Empty State */
                 <div className="flex flex-col items-center justify-center py-16 gap-4">
@@ -550,6 +562,7 @@ function CatalogPage() {
         onConfirm={handleDeleteGroup}
         isLoading={isDeletingGroup}
         type="grupo"
+        consequence="Todos os itens deste grupo também serão excluídos."
       />
     </ProtectedRoute>
   );

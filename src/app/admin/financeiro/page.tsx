@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -60,10 +61,10 @@ export default function FinanceiroPage() {
         <div className="max-w-[1920px] mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-4">
-              <a href="/admin" className="flex items-center gap-1.5 text-muted-foreground hover:text-gray-900 transition-colors">
+              <Link href="/admin" className="flex items-center gap-1.5 text-muted-foreground hover:text-gray-900 transition-colors">
                 <ArrowLeft className="w-5 h-5" />
                 <span className="text-sm font-medium hidden sm:block">Voltar</span>
-              </a>
+              </Link>
               <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
               <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900">Financeiro</h1>
             </div>

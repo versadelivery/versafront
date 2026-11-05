@@ -318,8 +318,12 @@ export default function ScheduleSettings() {
         return;
       }
 
-      if (closeMinutes <= openMinutes) {
-        setSaveError(`O fechamento deve ser depois da abertura em ${DAY_LABELS[day]}.`);
+      // A API aceita virada de meia-noite (fechamento < abertura, ex.: 18:00-02:00), mas não com 2º período
+      const hasSecond = Boolean(daySchedule.secondOpen || daySchedule.secondClose);
+      if (closeMinutes === openMinutes || (closeMinutes < openMinutes && hasSecond)) {
+        setSaveError(closeMinutes === openMinutes
+          ? `Abertura e fechamento não podem ser iguais em ${DAY_LABELS[day]}.`
+          : `Horário que passa da meia-noite não pode ter segundo período em ${DAY_LABELS[day]}.`);
         return;
       }
 

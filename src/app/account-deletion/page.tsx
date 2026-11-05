@@ -12,12 +12,7 @@ export default function AccountDeletionPage() {
           <h2 className="text-xl font-semibold mb-3">Como solicitar a exclusão</h2>
           <ol className="list-disc pl-6 space-y-2">
             <li>
-              Dentro do app, acesse <span className="font-medium">Configurações → Conta</span> e
-              selecione <span className="font-medium">Excluir conta</span>.
-            </li>
-            {/* <li>
-              Caso não encontre a opção no app ou tenha qualquer dificuldade, você pode
-              solicitar diretamente pelo e-mail
+              Envie uma solicitação para
               {" "}
               <a
                 href="mailto:suporte@versa.delivery?subject=Solicitar%20exclus%C3%A3o%20de%20conta%20e%20dados"
@@ -27,7 +22,7 @@ export default function AccountDeletionPage() {
               </a>
               {" "}
               informando o e-mail cadastrado e, se possível, o seu nome/ID de usuário.
-            </li> */}
+            </li>
           </ol>
         </section>
 

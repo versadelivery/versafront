@@ -49,7 +49,7 @@ export default function CashRegisterStatementTab() {
         <ReportExportButton
           filename="extrato-caixa"
           headers={["Data", "Tipo", "Descrição", "Valor"]}
-          rows={transactions?.map(d => [d.date_label, d.kind_label, d.description, d.amount]) ?? []}
+          rows={transactions?.map(d => [d.date_label, d.kind_label, d.description ?? "", d.type === "entry" ? d.amount : -d.amount]) ?? []}
           summaryData={summary ? { "Total Entradas": summary.total_entries, "Total Saídas": summary.total_exits, "Saldo": summary.balance } : undefined}
           disabled={loading || !transactions}
         />

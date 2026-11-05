@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { MonthlyCharge } from "../services/billingService";
+import { formatDateOnly } from "@/utils/date-only";
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -96,7 +97,7 @@ export default function PaymentModal({
                       attributes.is_overdue ? "text-red-500" : ""
                     }`}
                   >
-                    {formatDate(attributes.due_date)}
+                    {formatDateOnly(attributes.due_date)}
                   </p>
                 </div>
               </div>

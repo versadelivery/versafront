@@ -44,7 +44,7 @@ export default function ItemModificationsTab() {
         <ReportExportButton
           filename="itens-alterados"
           headers={["Pedido", "Data", "Item", "Ação", "Alterações", "Usuário"]}
-          rows={modifications?.map(d => [d.order_id, d.date_label, d.item_name, d.action, d.changes, d.user_name]) ?? []}
+          rows={modifications?.map(d => [d.order_id, d.date_label, d.item_name, d.action === "destroy" ? "Removido" : "Alterado", d.changes, d.user_name]) ?? []}
           disabled={loading || !modifications}
         />
       </div>

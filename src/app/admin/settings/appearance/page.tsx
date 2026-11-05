@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
 import { useShop } from "@/hooks/use-shop";
 import { ShopAttributes } from "@/services/shop";
 import {
@@ -93,6 +94,13 @@ export default function AppearanceSettingsPage() {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!hasChanges) return;
+    const invalid = (['header_color', 'background_color', 'group_color', 'accent_color'] as const).find(
+      (k) => !/^#[0-9a-fA-F]{6}$/.test(formData[k] || "")
+    );
+    if (invalid) {
+      toast.error("Cor inválida. Use o formato #RRGGBB");
+      return;
+    }
     updateShop(formData as Partial<ShopAttributes>);
   };
 

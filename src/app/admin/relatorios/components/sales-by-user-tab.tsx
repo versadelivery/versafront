@@ -15,6 +15,13 @@ import DateRangePicker from "./date-range-picker";
 import SalesByUserTable from "./sales-by-user-table";
 import ReportExportButton from "@/components/admin/report-export-button";
 
+const ROLE_LABELS: Record<string, string> = {
+  owner: "Proprietário",
+  manager: "Gerente",
+  employee: "Funcionário",
+  delivery_man: "Entregador",
+};
+
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -47,7 +54,7 @@ export default function SalesByUserTab() {
         <ReportExportButton
           filename="vendas-por-atendente"
           headers={["Atendente", "Cargo", "Pedidos", "Receita", "Ticket Médio"]}
-          rows={data?.map(d => [d.user_name, d.user_role, d.order_count, d.revenue, d.average_ticket]) ?? []}
+          rows={data?.map(d => [d.user_name, ROLE_LABELS[d.user_role] ?? d.user_role, d.order_count, d.revenue, d.average_ticket]) ?? []}
           disabled={loading || !data}
         />
       </div>

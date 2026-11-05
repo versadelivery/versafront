@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -70,8 +72,12 @@ export default function CustomersPage() {
 
   const confirmToggleBlock = async () => {
     if (!blockTarget) return;
-    await toggleBlock(blockTarget.id, !blockTarget.attributes.blocked);
-    setBlockTarget(null);
+    try {
+      await toggleBlock(blockTarget.id, !blockTarget.attributes.blocked);
+      setBlockTarget(null);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Erro ao alterar bloqueio do cliente");
+    }
   };
 
   const handleSaveCustomer = async (data: any) => {
@@ -89,13 +95,13 @@ export default function CustomersPage() {
         <div className="max-w-[1920px] mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-4">
-              <a
+              <Link
                 href="/admin"
                 className="flex items-center gap-1.5 text-muted-foreground hover:text-gray-900 transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
                 <span className="text-sm font-medium hidden sm:block">Voltar</span>
-              </a>
+              </Link>
               <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
               <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900">
                 Clientes
@@ -208,15 +214,17 @@ export default function CustomersPage() {
                           <Eye className="h-3.5 w-3.5 mr-1" />
                           Ver
                         </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 px-2.5 text-sm rounded-md border border-gray-300 cursor-pointer hover:bg-primary hover:text-white"
-                          onClick={() => handleEditCustomer(customer)}
-                        >
-                          <Edit className="h-3.5 w-3.5 mr-1" />
-                          Editar
-                        </Button>
+                        {customer.attributes.editable !== false && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 px-2.5 text-sm rounded-md border border-gray-300 cursor-pointer hover:bg-primary hover:text-white"
+                            onClick={() => handleEditCustomer(customer)}
+                          >
+                            <Edit className="h-3.5 w-3.5 mr-1" />
+                            Editar
+                          </Button>
+                        )}
                         <Button
                           variant="outline"
                           size="sm"

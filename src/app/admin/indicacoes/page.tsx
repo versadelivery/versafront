@@ -1,7 +1,8 @@
 "use client";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, AlertTriangle } from "lucide-react";
+import Link from "next/link";
+import { Loader2, AlertTriangle, ArrowLeft } from "lucide-react";
 import { ReferralLinkCard } from "./components/referral-link-card";
 import { CommissionSummaryCards } from "./components/commission-summary-cards";
 import { ReferralsTable } from "./components/referrals-table";
@@ -34,15 +35,23 @@ export default function IndicacoesPage() {
   return (
     <div className="min-h-screen bg-[#FAF9F7]">
       <div className="bg-white border-b border-[#E5E2DD]">
-        <div className="max-w-[1920px] mx-auto px-4 sm:px-6 py-6">
-          <h1 className="text-2xl font-bold">Programa de Indicações</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Indique outros lojistas e ganhe 12% de comissão sobre as mensalidades pagas.
-          </p>
+        <div className="max-w-[1920px] mx-auto px-4 sm:px-6">
+          <div className="flex items-center gap-4 h-16">
+            <Link href="/admin" className="flex items-center gap-1.5 text-muted-foreground hover:text-gray-900 transition-colors">
+              <ArrowLeft className="w-5 h-5" />
+              <span className="text-sm font-medium hidden sm:block">Voltar</span>
+            </Link>
+            <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
+            <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900">Programa de Indicações</h1>
+          </div>
         </div>
       </div>
 
       <div className="max-w-[1920px] mx-auto px-4 sm:px-6 py-6 space-y-6">
+        <p className="text-sm text-muted-foreground">
+          Indique outros lojistas e ganhe 12% de comissão sobre as mensalidades pagas.
+        </p>
+
         {referralsData && (
           <ReferralLinkCard
             referralCode={referralsData.referral_code}

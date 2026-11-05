@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ import { useCatalogGroup } from "@/hooks/useCatalogGroup";
 import Image from "next/image";
 import { toast } from "sonner";
 import { formatPrice } from "@/utils/format-price";
+import { getApiErrorMessage } from "@/utils/api-error";
 import { createPDVOrder } from "@/services/order-service";
 import { validateCoupon, ValidateCouponData } from "@/services/coupon-validate-service";
 import { useAdminActionCable } from "@/lib/admin-cable";
@@ -91,6 +92,8 @@ export default function PDVPage() {
   const [changeAmount, setChangeAmount] = useState("");
   const [notes, setNotes] = useState("");
   const [isProcessingOrder, setIsProcessingOrder] = useState(false);
+  // trava síncrona: dois cliques seguidos criavam o pedido duas vezes antes do re-render desabilitar o botão
+  const submittingRef = useRef(false);
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<ValidateCouponData | null>(null);
   const [couponError, setCouponError] = useState("");
@@ -482,7 +485,7 @@ export default function PDVPage() {
       setAppliedCoupon(couponData);
       toast.success("Cupom aplicado!");
     } catch (error: any) {
-      const msg = error.response?.data?.error || "Cupom inválido";
+      const msg = getApiErrorMessage(error, "Cupom inválido");
       setCouponError(msg);
     } finally {
       setCouponLoading(false);
@@ -551,6 +554,7 @@ export default function PDVPage() {
   const phoneValidationRegex = /^\(\d{2}\) \d{4,5}-\d{4}$/;
 
   const processOrder = async () => {
+    if (submittingRef.current) return;
     if (cart.length === 0) { toast.error("Adicione itens ao carrinho"); return; }
 
     if (availablePaymentMethods.length === 0) {
@@ -636,6 +640,7 @@ export default function PDVPage() {
       }
     }
 
+    submittingRef.current = true;
     setIsProcessingOrder(true);
     try {
       const selectedSession = openSessions.find((s) => s.id === selectedTableSessionId);
@@ -711,9 +716,9 @@ export default function PDVPage() {
         ]).then(([t, s]) => { setTables(t.data); setOpenSessions(s.data); }).catch(() => {});
       }
     } catch (error: any) {
-      const errorMessage = error.response?.data?.error || "Erro ao processar pedido";
-      toast.error(errorMessage);
+      toast.error(getApiErrorMessage(error, "Erro ao processar pedido"));
     } finally {
+      submittingRef.current = false;
       setIsProcessingOrder(false);
     }
   };
