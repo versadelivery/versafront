@@ -334,7 +334,7 @@ export function CartDrawer() {
                 </div>
               </ScrollArea>
               
-              <div className="p-4 border-t bg-white sticky bottom-0 z-10">
+              <div className="p-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t bg-white sticky bottom-0 z-10">
                 <div className="flex justify-between items-center mb-4">
                   <span className="font-medium">Total</span>
                   <span className="font-bold">{formatPrice(totalPrice)}</span>

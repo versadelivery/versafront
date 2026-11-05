@@ -19,8 +19,8 @@ import { formatPrice } from "@/utils/format-price";
 import { calculateAssemblyPrice } from "@/utils/assembly-pricing";
 
 const ITEM_H = 44;
-const VISIBLE = 5;
-const PAD = 2;
+const VISIBLE = 3;
+const PAD = 1;
 
 function WeightPicker({ min, max, step, value, onChange, unit = 'kg' }: {
   min: number; max: number; step: number; value: number; onChange: (v: number) => void; unit?: 'kg' | 'g';
@@ -328,7 +328,7 @@ export function ItemOptionsDialog({
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent
-        className="sm:max-w-[640px] p-0 bg-white max-h-[90vh] flex flex-col overflow-hidden"
+        className="sm:max-w-[640px] p-0 gap-0 bg-white max-h-[90vh] max-h-[90dvh] flex flex-col overflow-hidden"
         onCloseAutoFocus={(event) => {
           if (!onCloseAutoFocus) return;
           event.preventDefault();
@@ -336,17 +336,17 @@ export function ItemOptionsDialog({
         }}
       >
         {/* Header com nome do produto */}
-        <DialogHeader className="px-6 pt-6 pb-4 border-b border-[#E5E2DD] flex-shrink-0">
+        <DialogHeader className="px-4 sm:px-6 pt-5 sm:pt-6 pb-4 border-b border-[#E5E2DD] flex-shrink-0">
           <DialogTitle className="font-tomato text-lg font-bold text-gray-900 truncate">
             {attrs.name}
           </DialogTitle>
         </DialogHeader>
 
         {/* Body scrollável */}
-        <div className="flex-1 overflow-y-auto bg-[#FAF9F7]">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-[#FAF9F7] [background:linear-gradient(#FAF9F7_30%,transparent),linear-gradient(transparent,#FAF9F7_70%)_bottom,radial-gradient(farthest-side_at_50%_0,rgba(0,0,0,.18),transparent),radial-gradient(farthest-side_at_50%_100%,rgba(0,0,0,.18),transparent)_bottom] [background-repeat:no-repeat] [background-size:100%_24px,100%_24px,100%_8px,100%_8px] [background-attachment:local,local,scroll,scroll]">
           {/* Imagem do produto */}
           {attrs.image_url ? (
-            <div className="relative w-full h-48 bg-[#F0EFEB]">
+            <div className="relative w-full h-32 sm:h-48 bg-[#F0EFEB] [@media(max-height:700px)]:hidden">
               <Image
                 src={attrs.image_url}
                 alt={attrs.name}
@@ -363,12 +363,12 @@ export function ItemOptionsDialog({
               )}
             </div>
           ) : (
-            <div className="w-full h-32 bg-[#F0EFEB] flex items-center justify-center">
+            <div className="w-full h-20 sm:h-32 bg-[#F0EFEB] flex items-center justify-center [@media(max-height:700px)]:hidden">
               <Package className="h-10 w-10 text-[#E5E2DD]" />
             </div>
           )}
 
-          <div className="px-6 py-5 space-y-5">
+          <div className="px-4 sm:px-6 py-5 space-y-5">
             {/* Info do produto */}
             <div className="space-y-2">
               {attrs.description && (
@@ -636,8 +636,8 @@ export function ItemOptionsDialog({
         </div>
 
         {/* Footer fixo */}
-        <div className="flex items-center gap-3 px-6 py-4 border-t border-[#E5E2DD] bg-white flex-shrink-0">
-          <div className="flex items-center gap-2 mr-auto">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 sm:px-6 pt-3 sm:pt-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-[#E5E2DD] bg-white flex-shrink-0">
+          <div className="flex items-center gap-2 w-full sm:w-auto sm:mr-auto">
             <span className="text-sm text-muted-foreground">Total:</span>
             <span className="text-xl font-bold text-primary">
               {formatPrice(totalPrice)}
@@ -648,10 +648,10 @@ export function ItemOptionsDialog({
               </span>
             )}
           </div>
-          <Button variant="outline" onClick={onClose} className="shrink-0 border border-gray-300 cursor-pointer">
+          <Button variant="outline" onClick={onClose} className="flex-1 sm:flex-none border border-gray-300 cursor-pointer">
             Cancelar
           </Button>
-          <Button onClick={handleAddToCart} className="gap-2 shrink-0 border border-gray-300 cursor-pointer">
+          <Button onClick={handleAddToCart} className="gap-2 flex-[2] sm:flex-none border border-gray-300 cursor-pointer">
             <ShoppingCart className="h-4 w-4" />
             Adicionar
           </Button>

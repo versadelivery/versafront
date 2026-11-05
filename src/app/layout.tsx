@@ -1,9 +1,12 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 import { Toaster } from "sonner";
 import { Providers } from "./providers";
+
+// viewport-fit=cover: habilita env(safe-area-inset-*) (barra de navegação do Android)
+export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover" };
 
 const inter = Inter({
   variable: "--font-inter",

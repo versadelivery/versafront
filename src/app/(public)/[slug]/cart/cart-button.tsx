@@ -48,7 +48,7 @@ export function CartButton({ variant = 'header' }: CartButtonProps) {
         <Button
           variant="default"
           size="icon"
-          className="md:hidden fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90 transition-colors"
+          className="md:hidden fixed bottom-[max(1.5rem,calc(env(safe-area-inset-bottom)+1rem))] right-6 z-50 h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90 transition-colors"
         >
           <ShoppingCart className="h-6 w-6 text-white" />
           {totalItems > 0 && (
