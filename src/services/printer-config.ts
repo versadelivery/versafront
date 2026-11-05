@@ -3,6 +3,7 @@ import api from '@/api/config';
 export type PrintAutomation = 'manual' | 'automatic';
 export type PrintFontSize = 'medium' | 'large';
 export type PrintTrigger = string;
+export type PrintTarget = 'desktop' | 'mobile_bluetooth';
 
 export interface PrinterConfig {
   summary_enabled: boolean;
@@ -16,6 +17,7 @@ export interface PrinterConfig {
   complete_show_cnpj: boolean;
   complete_show_address: boolean;
   complete_show_phone: boolean;
+  print_target: PrintTarget;
 }
 
 export const DEFAULT_PRINTER_CONFIG: PrinterConfig = {
@@ -30,6 +32,7 @@ export const DEFAULT_PRINTER_CONFIG: PrinterConfig = {
   complete_show_cnpj: true,
   complete_show_address: true,
   complete_show_phone: true,
+  print_target: 'desktop',
 };
 
 export async function getPrinterConfig(): Promise<PrinterConfig> {
