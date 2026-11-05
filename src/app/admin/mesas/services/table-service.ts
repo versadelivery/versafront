@@ -80,7 +80,8 @@ export interface CreateTablePayload {
 
 export interface UpdateTablePayload {
   number?: number;
-  label?: string;
+  /** null limpa o nome (undefined some do JSON e o nome antigo continuava) */
+  label?: string | null;
   capacity?: number;
   shape?: "square" | "round" | "rectangle";
   active?: boolean;

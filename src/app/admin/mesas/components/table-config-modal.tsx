@@ -93,7 +93,8 @@ export default function TableConfigModal({
     try {
       const payload = {
         number: Number(formData.number),
-        label: formData.label || undefined,
+        // editar com o campo vazio manda null para limpar o nome
+        label: formData.label.trim() || (table ? null : undefined),
         capacity: Number(formData.capacity),
         shape: formData.shape,
         active: formData.active,
