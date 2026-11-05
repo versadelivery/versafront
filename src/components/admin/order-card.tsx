@@ -44,7 +44,11 @@ const getPaymentMethodLabel = (method: string, manualPixPaymentMoment?: string) 
   const methodMap: Record<string, string> = {
     'credit': 'Cartão de Crédito',
     'debit': 'Cartão de Débito',
-    'cash': 'Dinheiro'
+    'cash': 'Dinheiro',
+    'asaas_pix': 'PIX Automático',
+    'pix': 'PIX',
+    'store_credit': 'Fiado/Crediário',
+    'food_voucher': 'Vale-refeição'
   };
   return methodMap[method] || method;
 };
@@ -161,8 +165,8 @@ export default function OrderCard({
 
   const handleConfirmCancel = async (orderId: string, reason: string, justification?: string) => {
     if (onCancelOrder) {
-      const fullReason = justification ? `${reason} - ${justification}` : reason;
-      await onCancelOrder(orderId, fullReason, reason);
+      // o modal já monta "rótulo - justificativa"; a chave segue só como tipo
+      await onCancelOrder(orderId, justification || reason, reason);
     }
   };
 

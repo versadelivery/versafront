@@ -133,6 +133,9 @@ const getPaymentMethodLabel = (method: string) => {
     manual_pix: 'PIX',
     asaas_pix: 'PIX Automático',
     cash: 'Dinheiro',
+    pix: 'PIX',
+    store_credit: 'Fiado/Crediário',
+    food_voucher: 'Vale-refeição',
   };
   return methodMap[method] || method;
 };
@@ -1187,6 +1190,8 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
                           <SelectItem value="asaas_pix">PIX Automático</SelectItem>
                           <SelectItem value="credit">Cartão de Crédito</SelectItem>
                           <SelectItem value="debit">Cartão de Débito</SelectItem>
+                          <SelectItem value="store_credit">Fiado/Crediário</SelectItem>
+                          <SelectItem value="food_voucher">Vale-refeição</SelectItem>
                         </SelectContent>
                       </Select>
                     ) : (
