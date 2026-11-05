@@ -82,7 +82,7 @@ export default function PrinterSettingsPage() {
       <Button onClick={save} disabled={loading || saving}><Save className="mr-2 h-4 w-4" />{saving ? 'Salvando...' : 'Salvar'}</Button>
     </div></header>
     <div className="mx-auto max-w-4xl space-y-4 px-4 py-6">
-      <p className="text-sm text-gray-600">A impressão automática envia o pedido ao Conector Versa quando ele entrar no status escolhido. Os status disponíveis seguem o fluxo configurado para esta loja.</p>
+      <p className="text-sm text-gray-600">{draft.print_target === 'mobile_bluetooth' ? 'O app Versa está selecionado como destino da impressão. A impressora Bluetooth e a fila automática são configuradas no app Android.' : 'A impressão automática envia o pedido ao Conector Versa quando ele entrar no status escolhido. Os status disponíveis seguem o fluxo configurado para esta loja.'}</p>
       <section className="rounded-lg border border-gray-200 bg-white p-5">
         <div className="flex items-start gap-3"><Laptop className="mt-0.5 h-5 w-5 text-gray-600"/><div><h2 className="font-semibold text-gray-900">Instalar o Conector Versa</h2><p className="mt-1 text-sm text-gray-500">Baixe no computador conectado à impressora térmica.</p></div></div>
         <p className="mt-3 text-sm text-gray-600">No Windows, o instalador inclui o runtime e configura a inicialização automática; não é necessário instalar Python.</p>
