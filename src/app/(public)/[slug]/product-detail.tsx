@@ -297,7 +297,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
 
       <SheetContent
         side="right"
-        className="p-0 w-full sm:max-w-[520px] flex flex-col h-full [&>button:first-of-type]:hidden bg-white"
+        className="p-0 w-full sm:max-w-[520px] flex flex-col h-dvh [&>button:first-of-type]:hidden bg-white"
       >
         <SheetTitle className="sr-only">{attributes.name}</SheetTitle>
 
@@ -600,7 +600,7 @@ export default function ProductModal({ product, trigger, externalOpen, onExterna
         </div>
 
         {/* ── Footer: quantity + add to cart ── */}
-        <div className="flex-shrink-0 border-t border-[#E5E2DD] bg-white px-4 py-3 sm:px-5 sm:py-4">
+        <div className="flex-shrink-0 border-t border-[#E5E2DD] bg-white px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-5 sm:pt-4 sm:pb-[max(1rem,env(safe-area-inset-bottom))]">
           <div className="flex items-center gap-4">
             {/* Quantity selector */}
             {!isWeightBased && (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -265,6 +265,18 @@ export default function PDVPage() {
   };
 
   const cartTotal = cart.reduce((t, item) => t + item.totalPrice, 0);
+  const cartCount = cart.reduce((t, i) => t + i.quantity, 0);
+
+  // Barra fixa do carrinho (mobile) some quando o painel do carrinho já está na tela
+  const cartPanelRef = useRef<HTMLDivElement>(null);
+  const [cartInView, setCartInView] = useState(false);
+  useEffect(() => {
+    const el = cartPanelRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([e]) => setCartInView(e.isIntersecting), { threshold: 0.25 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   const isPerNeighborhood = deliveryConfig?.delivery_fee_kind === "per_neighborhood";
   const isPerKm = deliveryConfig?.delivery_fee_kind === "per_km";
@@ -719,7 +731,7 @@ export default function PDVPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF9F7]">
+    <div className="min-h-screen bg-[#FAF9F7] pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:pb-0">
       <div className="bg-white border-b border-[#E5E2DD]">
         <div className="max-w-[1920px] mx-auto px-4 sm:px-6">
           <div className="flex items-center h-16">
@@ -1038,7 +1050,7 @@ export default function PDVPage() {
         {/* ── Carrinho e Pedido ────────────────────────── */}
         <div className="space-y-6">
           {/* Carrinho */}
-          <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+          <div id="pdv-cart" ref={cartPanelRef} className="scroll-mt-4 bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
             <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center justify-between">
               <h2 className="font-tomato flex items-center gap-2 text-base font-semibold text-gray-900">
                 <ShoppingCart className="h-5 w-5 text-primary" />
@@ -1685,6 +1697,23 @@ export default function PDVPage() {
         </div>
         </div>
       </div>
+
+      {/* Barra do carrinho (mobile): sempre visível acima da navegação do celular */}
+      {cart.length > 0 && !cartInView && (
+        <div className="lg:hidden fixed inset-x-0 bottom-0 z-40 px-3 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-gradient-to-t from-[#FAF9F7] via-[#FAF9F7]/95 to-transparent">
+          <button
+            type="button"
+            onClick={() => cartPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+            className="w-full flex items-center justify-between gap-3 rounded-xl bg-primary text-primary-foreground px-4 py-3 shadow-lg cursor-pointer"
+          >
+            <span className="flex items-center gap-2 text-sm font-medium">
+              <ShoppingCart className="h-5 w-5" />
+              {cartCount} {cartCount === 1 ? "item" : "itens"} — {formatPrice(cartTotal)}
+            </span>
+            <span className="text-sm font-bold">Ver carrinho ›</span>
+          </button>
+        </div>
+      )}
 
       {/* Cadastro rápido de produto bipado que não existe */}
       <QuickCreateItemModal

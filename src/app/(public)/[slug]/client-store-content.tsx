@@ -17,6 +17,10 @@ import { getTextColors } from './theme-utils';
 import { hiddenCategoryIds } from './category-availability';
 import ReviewsSection from './components/reviews-section';
 import ReorderCardCatalog from './components/reorder-card-catalog';
+import Link from 'next/link';
+import { ShoppingCart } from 'lucide-react';
+import { useCart } from './cart/cart-context';
+import { formatPrice } from './format-price';
 
 interface ClientStoreContentProps {
   shop: ShopResponse;
@@ -28,6 +32,7 @@ export default function ClientStoreContent({ shop: initialShop }: ClientStoreCon
   const pathname = usePathname();
   const params = useParams();
   const slug = params.slug as string;
+  const { totalItems, totalPrice } = useCart();
   const { setShop } = useClient();
 
   // React Query com dado SSR como initialData — refetch automático em background
@@ -169,7 +174,7 @@ export default function ClientStoreContent({ shop: initialShop }: ClientStoreCon
   const groupTheme = useMemo(() => getTextColors(groupColor), [groupColor]);
 
   return (
-    <main className="min-h-screen pb-20" style={{ backgroundColor: bgColor }}>
+    <main className="min-h-screen pb-[calc(5rem+env(safe-area-inset-bottom))]" style={{ backgroundColor: bgColor }}>
       {/* Sticky search + nav bar */}
       <div
         className="sticky z-40 w-full bg-white border-b border-[#E5E2DD]"
@@ -225,6 +230,22 @@ export default function ClientStoreContent({ shop: initialShop }: ClientStoreCon
           backgroundColor={bgColor}
         />
       </div>
+
+      {/* Barra do carrinho (mobile): fixa acima dos comandos nativos do celular */}
+      {totalItems > 0 && (
+        <div className="md:hidden fixed inset-x-0 bottom-0 z-30 px-3 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-gradient-to-t from-white via-white/95 to-transparent">
+          <Link
+            href={`/${slug}/carrinho`}
+            className="flex items-center justify-between gap-3 rounded-xl bg-primary px-4 py-3 text-white shadow-lg"
+          >
+            <span className="flex items-center gap-2 text-sm font-medium">
+              <ShoppingCart className="h-5 w-5" />
+              {totalItems} {totalItems === 1 ? 'item' : 'itens'} — {formatPrice(totalPrice)}
+            </span>
+            <span className="text-sm font-bold">Ver carrinho ›</span>
+          </Link>
+        </div>
+      )}
 
       {linkedItem && (
         <ProductModal
