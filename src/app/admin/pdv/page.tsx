@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   ShoppingCart, Plus, Minus, Trash2, Search,
   CreditCard, MapPin, User, Package, Settings2,
-  Tag, X, CheckCircle2, Loader2, UtensilsCrossed, ArrowLeft, AlertCircle,
+  Tag, X, CheckCircle2, Loader2, UtensilsCrossed, ArrowLeft, AlertCircle, ChevronRight,
 } from "lucide-react";
 import { useCatalogGroup } from "@/hooks/useCatalogGroup";
 import Image from "next/image";
@@ -267,16 +267,14 @@ export default function PDVPage() {
   const cartTotal = cart.reduce((t, item) => t + item.totalPrice, 0);
   const cartCount = cart.reduce((t, i) => t + i.quantity, 0);
 
-  // Barra fixa do carrinho (mobile) some quando o painel do carrinho já está na tela
-  const cartPanelRef = useRef<HTMLDivElement>(null);
-  const [cartInView, setCartInView] = useState(false);
-  useEffect(() => {
-    const el = cartPanelRef.current;
-    if (!el) return;
-    const io = new IntersectionObserver(([e]) => setCartInView(e.isIntersecting), { threshold: 0.25 });
-    io.observe(el);
-    return () => io.disconnect();
-  }, []);
+  // Mobile: cardápio e carrinho são "páginas" separadas (no desktop ficam lado a lado)
+  const [mobileView, setMobileView] = useState<"catalog" | "cart">("catalog");
+  const goMobileView = (v: "catalog" | "cart") => {
+    setMobileView(v);
+    window.scrollTo({ top: 0 });
+  };
+  // Mobile: sem categoria e sem busca => lista de categorias em vez de todos os itens
+  const showCategoryList = !selectedGroupId && !searchTerm.trim();
 
   const isPerNeighborhood = deliveryConfig?.delivery_fee_kind === "per_neighborhood";
   const isPerKm = deliveryConfig?.delivery_fee_kind === "per_km";
@@ -706,6 +704,7 @@ export default function PDVPage() {
       if (result) {
         toast.success("Pedido criado com sucesso!");
         clearCart();
+        goMobileView("catalog");
         setNotes("");
         setChangeAmount("");
         handleRemoveCoupon();
@@ -756,7 +755,7 @@ export default function PDVPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
         {/* ── Cardápio ─────────────────────────────────── */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className={`lg:col-span-2 space-y-4 ${mobileView === "cart" ? "hidden lg:block" : ""}`}>
           <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
             <div className="px-5 py-4 border-b border-[#E5E2DD]">
               <h2 className="font-tomato flex items-center gap-2 text-base font-semibold text-gray-900 mb-3">
@@ -807,7 +806,7 @@ export default function PDVPage() {
                 </p>
 
                 {allGroups.length > 1 && (
-                  <div className="space-y-2">
+                  <div className="space-y-2 hidden lg:block">
                     <div className="flex items-center justify-between">
                       <Label className="text-sm font-medium">Filtrar por categoria:</Label>
                       {selectedGroupId && (
@@ -854,8 +853,22 @@ export default function PDVPage() {
                   </div>
                 )}
 
+                {selectedGroupId && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedGroupId(null)}
+                    className="lg:hidden flex items-center gap-1.5 text-sm font-medium text-primary cursor-pointer"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    Categorias
+                    <span className="text-muted-foreground font-normal">
+                      / {allGroups.find((g: any) => g.id === selectedGroupId)?.attributes?.name}
+                    </span>
+                  </button>
+                )}
+
                 {(searchTerm || selectedGroupId) && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="hidden lg:flex items-center gap-2 text-sm text-muted-foreground">
                     <span>Filtros ativos:</span>
                     {searchTerm && (
                       <Badge variant="outline" className="gap-1">
@@ -893,11 +906,33 @@ export default function PDVPage() {
                   )}
                 </div>
               ) : (
-                <div className="space-y-8">
+                <>
+                {showCategoryList && (
+                  <div className="lg:hidden grid grid-cols-2 gap-3">
+                    {filteredCatalog.map((group: any) => (
+                      <button
+                        key={group.id}
+                        type="button"
+                        onClick={() => setSelectedGroupId(group.id)}
+                        className="flex flex-col items-start justify-between gap-2 min-h-24 rounded-md border border-[#E5E2DD] bg-[#FAF9F7] p-4 text-left active:bg-[#F0EFEB] cursor-pointer"
+                      >
+                        <span className="font-tomato text-base font-semibold text-gray-900 line-clamp-2">
+                          {group.attributes.name}
+                        </span>
+                        <span className="flex w-full items-center justify-between text-xs text-muted-foreground">
+                          {group.attributes.items.length}{" "}
+                          {group.attributes.items.length === 1 ? "produto" : "produtos"}
+                          <ChevronRight className="h-4 w-4" />
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div className={`space-y-8 ${showCategoryList ? "hidden lg:block" : ""}`}>
                   {filteredCatalog.map((group: any) => (
                     <div key={group.id} className="space-y-4">
                       {/* Cabeçalho do grupo */}
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                      <div className={`flex-col sm:flex-row sm:items-center sm:justify-between gap-2 ${selectedGroupId ? "hidden lg:flex" : "flex"}`}>
                         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                           <h3 className="font-tomato text-lg sm:text-xl font-semibold text-primary">
                             {group.attributes.name}
@@ -932,7 +967,7 @@ export default function PDVPage() {
                               key={item.id}
                               className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden transition-all duration-200 group"
                             >
-                              <div className="aspect-video relative bg-[#F0EFEB]">
+                              <div className="aspect-[21/9] sm:aspect-video relative bg-[#F0EFEB]">
                                 {attrs.image_url ? (
                                   <Image
                                     src={attrs.image_url}
@@ -1042,15 +1077,24 @@ export default function PDVPage() {
                     </div>
                   ))}
                 </div>
+                </>
               )}
             </div>
           </div>
         </div>
 
         {/* ── Carrinho e Pedido ────────────────────────── */}
-        <div className="space-y-6">
+        <div className={`space-y-6 ${mobileView === "catalog" ? "hidden lg:block" : ""}`}>
+          <button
+            type="button"
+            onClick={() => goMobileView("catalog")}
+            className="lg:hidden flex items-center gap-1.5 text-sm font-medium text-primary cursor-pointer"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Voltar ao cardápio
+          </button>
           {/* Carrinho */}
-          <div id="pdv-cart" ref={cartPanelRef} className="scroll-mt-4 bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+          <div id="pdv-cart" className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
             <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center justify-between">
               <h2 className="font-tomato flex items-center gap-2 text-base font-semibold text-gray-900">
                 <ShoppingCart className="h-5 w-5 text-primary" />
@@ -1699,11 +1743,11 @@ export default function PDVPage() {
       </div>
 
       {/* Barra do carrinho (mobile): sempre visível acima da navegação do celular */}
-      {cart.length > 0 && !cartInView && (
+      {cart.length > 0 && mobileView === "catalog" && (
         <div className="lg:hidden fixed inset-x-0 bottom-0 z-40 px-3 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-gradient-to-t from-[#FAF9F7] via-[#FAF9F7]/95 to-transparent">
           <button
             type="button"
-            onClick={() => cartPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+            onClick={() => goMobileView("cart")}
             className="w-full flex items-center justify-between gap-3 rounded-xl bg-primary text-primary-foreground px-4 py-3 shadow-lg cursor-pointer"
           >
             <span className="flex items-center gap-2 text-sm font-medium">

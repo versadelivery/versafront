@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { isScannable, isValidEan13, parseBarcode } from './parse-barcode.ts'
+import { isScannable, isValidEan13, parseBarcode, scanCode } from './parse-barcode.ts'
 import type { ScanItem } from './parse-barcode.ts'
 
 const picanha: ScanItem = { id: 'picanha', barcode: null, scaleCode: 45, itemType: 'weight_per_kg', price: 69.9, active: true }
@@ -133,6 +133,17 @@ test('isScannable rejects text with letters and strings under 8 digits', () => {
   assert.equal(isScannable(''), false)
   assert.equal(isScannable('12345678'), true)
   assert.equal(isScannable('7908412514920\n'), true)
+})
+
+test('scanCode takes the digits glued after text the operator had already typed', () => {
+  assert.equal(scanCode('7908412514920\n'), '7908412514920')
+  assert.equal(scanCode('pic7908412514920'), '7908412514920')
+  assert.equal(scanCode('pic 7908412514920'), '7908412514920')
+  assert.equal(scanCode('12 7908412514920'), '7908412514920')
+  assert.equal(scanCode('Picanha'), null)
+  assert.equal(scanCode('pic1234567'), null)
+  assert.equal(scanCode('79084125149a'), null)
+  assert.equal(scanCode(''), null)
 })
 
 test('isValidEan13 accepts real codes and rejects wrong digits and wrong lengths', () => {

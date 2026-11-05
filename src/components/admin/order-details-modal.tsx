@@ -46,7 +46,7 @@ import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { toScanItem } from '@/lib/barcode/to-scan-item';
 import { scanErrorMessage } from '@/lib/barcode/scan-messages';
 import { needsOptions } from '@/lib/barcode/needs-options';
-import { isScannable, parseBarcode } from '@/lib/barcode/parse-barcode';
+import { parseBarcode, scanCode } from '@/lib/barcode/parse-barcode';
 import type { ScanResult } from '@/lib/barcode/parse-barcode';
 
 interface OrderItem {
@@ -1666,9 +1666,9 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
                 autoFocus
                 autoComplete="off"
                 onKeyDown={(e) => {
-                  if (e.key !== 'Enter' || !isScannable(e.currentTarget.value)) return;
+                  const text = e.key === 'Enter' ? scanCode(e.currentTarget.value) : null;
+                  if (!text) return;
                   e.preventDefault();
-                  const text = e.currentTarget.value;
                   setCatalogSearch('');
                   if (loadingCatalog || catalogGroups.length === 0) {
                     toast.error('Cardápio carregando. Bipe de novo em instantes.');
@@ -1676,7 +1676,7 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
                   }
                   const result = parseBarcode(text, scaleMode, scanItems);
                   if (result.kind !== 'error') setShowAddItemModal(false);
-                  handleScanResult(result, text.trim());
+                  handleScanResult(result, text);
                 }}
                 placeholder="Buscar item ou bipar o código..."
                 className="pl-9 h-9 text-sm rounded-md border-[#E5E2DD]"
