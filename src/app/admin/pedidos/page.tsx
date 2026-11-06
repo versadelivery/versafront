@@ -23,8 +23,7 @@ import {
   Search,
   Filter,
   X,
-  UtensilsCrossed,
-  Users
+  UtensilsCrossed
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
@@ -743,15 +742,6 @@ export default function OrderManagement() {
               >
                 <UtensilsCrossed className="h-4 w-4" />
                 <span className="hidden sm:inline">Mesas</span>
-              </Link>
-              <Link
-                href="/admin/settings/users"
-                aria-label="Gerenciar garçons"
-                title="Gerenciar garçons"
-                className="inline-flex h-9 items-center gap-2 rounded-md border border-[#E5E2DD] px-3 text-sm font-medium text-gray-700 transition-colors hover:border-primary/50 hover:text-primary"
-              >
-                <Users className="h-4 w-4" />
-                <span className="hidden sm:inline">Garçons</span>
               </Link>
               <Button
                 onClick={() => window.location.href = '/admin/pdv'}

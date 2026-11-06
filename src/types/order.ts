@@ -38,6 +38,8 @@ export interface CreateOrderRequest {
     coupon_code?: string;
     observation?: string;
     table_session_id?: number;
+    // PDV: grava o endereço de entrega como padrão do cliente
+    set_default_address?: boolean;
     address: {
       address: string;
       number?: string;

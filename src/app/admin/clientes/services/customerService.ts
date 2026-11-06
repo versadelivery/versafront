@@ -12,7 +12,25 @@ export interface Customer {
     blocked: boolean;
     orders_count: number;
     created_at: string;
+    last_address?: CustomerLastAddress | null;
+    addresses?: CustomerSavedAddress[] | null;
   };
+}
+
+export interface CustomerLastAddress {
+  address: string;
+  number: string | null;
+  neighborhood: string | null;
+  shop_delivery_neighborhood_id: number | null;
+  complement: string | null;
+  reference: string | null;
+  latitude: number | null;
+  longitude: number | null;
+}
+
+export interface CustomerSavedAddress extends CustomerLastAddress {
+  id: number;
+  is_default: boolean;
 }
 
 export interface CustomerOrderSummary {
@@ -44,7 +62,8 @@ export interface CustomerDetailResponse {
 export interface CreateCustomerRequest {
   customer: {
     name: string;
-    email: string;
+    // opcional: no PDV o cliente é cadastrado só com nome e telefone
+    email?: string;
     cellphone: string;
   };
 }
@@ -61,6 +80,12 @@ export const customerService = {
   getCustomers: async (search?: string): Promise<CustomersResponse> => {
     const params = search ? { search } : {};
     const response = await api.get(API_ENDPOINTS.ADMIN_CUSTOMERS, { params });
+    return response.data;
+  },
+
+  // PDV: busca por nome/telefone já trazendo o último endereço de entrega (máx. 20)
+  searchCustomers: async (search: string): Promise<CustomersResponse> => {
+    const response = await api.get(API_ENDPOINTS.ADMIN_CUSTOMERS, { params: { search, with_last_address: 1 } });
     return response.data;
   },
 

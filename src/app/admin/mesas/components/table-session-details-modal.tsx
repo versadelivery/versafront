@@ -206,7 +206,12 @@ export default function TableSessionDetailsModal({
               </div>
             )}
 
-            <div className="pt-4">
+            <div className="pt-4 space-y-2">
+              {attrs.status === "open" && (
+                <Button asChild className="w-full h-11">
+                  <a href={`/admin/pdv?table_session=${session.id}`}>Lançar pedido</a>
+                </Button>
+              )}
               <Button
                 variant="outline"
                 onClick={onClose}

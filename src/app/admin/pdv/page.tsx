@@ -12,6 +12,7 @@ import {
   ShoppingCart, Plus, Minus, Trash2,
   CreditCard, MapPin, User,
   Tag, X, CheckCircle2, Loader2, UtensilsCrossed, ArrowLeft, AlertCircle,
+  Bike, Store, Receipt, Pencil, ChevronRight, UserCheck,
 } from "lucide-react";
 import { useCatalogGroup } from "@/hooks/useCatalogGroup";
 import { useCatalogCategories } from "@/hooks/useCatalogCategories";
@@ -26,6 +27,10 @@ import { usePayment } from "@/app/admin/settings/payment/usePayment";
 import { useDelivery } from "@/hooks/use-delivery";
 import { KmDeliveryAddress, KmDeliveryState, emptyKmDeliveryState } from "@/components/map/km-delivery-address";
 import { ItemOptionsDialog } from "./item-options-dialog";
+import { CustomerSearchInput } from "./customer-search-input";
+import { customerService } from "@/app/admin/clientes/services/customerService";
+import type { Customer, CustomerLastAddress } from "@/app/admin/clientes/services/customerService";
+import { collectCustomerErrors as collectRules, PDV_PHONE_REGEX, phoneDigits } from "@/lib/pdv-customer-rules";
 import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
 import { toScanItem } from "@/lib/barcode/to-scan-item";
 import { scanErrorMessage } from "@/lib/barcode/scan-messages";
@@ -69,6 +74,22 @@ interface CustomerInfo {
   reference?: string;
 }
 
+// "table" só existe quando a Mesas abre o PDV com ?table_session=ID; a escolha inicial é só Delivery/Retirada/Balcão
+type OrderType = "delivery" | "pickup" | "counter" | "table";
+
+const ORDER_TYPES: { value: Exclude<OrderType, "table">; label: string; hint: string; Icon: typeof Bike }[] = [
+  { value: "delivery", label: "Delivery", hint: "Cliente com endereço de entrega", Icon: Bike },
+  { value: "pickup", label: "Retirada", hint: "Telefone do cliente", Icon: Store },
+  { value: "counter", label: "Balcão", hint: "Venda rápida, sem cadastro", Icon: Receipt },
+];
+
+const ORDER_TYPE_LABEL: Record<OrderType, string> = {
+  delivery: "Delivery",
+  pickup: "Retirada",
+  counter: "Balcão",
+  table: "Mesa",
+};
+
 export default function PDVPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -87,7 +108,13 @@ export default function PDVPage() {
     complement: "",
     reference: "",
   });
-  const [orderType, setOrderType] = useState<"delivery" | "pickup" | "table">("delivery");
+  // Sem tipo escolhido o PDV não avança: o atendente decide Delivery, Retirada ou Balcão primeiro
+  const [orderType, setOrderType] = useState<OrderType | null>(null);
+  const [step, setStep] = useState<"customer" | "items">("customer");
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [savedAddressId, setSavedAddressId] = useState("");
+  const [setDefaultAddress, setSetDefaultAddress] = useState(false);
+  const [registeringCustomer, setRegisteringCustomer] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "credit" | "debit" | "pix">("credit");
   const [changeAmount, setChangeAmount] = useState("");
   const [notes, setNotes] = useState("");
@@ -126,6 +153,17 @@ export default function PDVPage() {
         ]);
         setTables(tablesRes.data);
         setOpenSessions(sessionsRes.data);
+
+        // Vindo de Mesas ("Lançar pedido"): pula a escolha de tipo e já lança na comanda
+        const tableSessionId = new URLSearchParams(window.location.search).get("table_session");
+        const session = tableSessionId ? sessionsRes.data.find((s) => s.id === tableSessionId) : null;
+        if (session) {
+          setOrderType("table");
+          setSelectedTableSessionId(session.id);
+          setStep("items");
+        } else if (tableSessionId) {
+          toast.error("Comanda não encontrada ou já fechada");
+        }
       } catch {
         // silently fail, tables are optional
       }
@@ -402,46 +440,13 @@ export default function PDVPage() {
     setCart((prev) => prev.filter((item) => item.id !== itemId));
   };
 
-  const [openingTableId, setOpeningTableId] = useState<string | null>(null);
   const [showCloseModal, setShowCloseModal] = useState(false);
-
-  const handleSelectTableSession = (sessionId: string | null) => {
-    setSelectedTableSessionId(sessionId);
-    if (sessionId) {
-      const session = openSessions.find((s) => s.id === sessionId);
-      if (session?.attributes.customer_name) {
-        setCustomerInfo((prev) => ({ ...prev, name: session.attributes.customer_name || "" }));
-      }
-    } else {
-      setCustomerInfo((prev) => ({ ...prev, name: "" }));
-    }
-  };
-
-  const handleOpenSession = async (tableId: string) => {
-    setOpeningTableId(tableId);
-    try {
-      const result = await tableService.openTableSession({ table_id: tableId });
-      const newSession = result.data;
-      setOpenSessions((prev) => [...prev, newSession]);
-      setSelectedTableSessionId(newSession.id);
-      toast.success(`Comanda aberta para Mesa ${newSession.attributes.table_number}`);
-    } catch {
-      toast.error("Erro ao abrir comanda");
-    } finally {
-      setOpeningTableId(null);
-    }
-  };
 
   const handleCloseSession = async (id: string, data: CloseTableSessionPayload) => {
     await tableService.closeTableSession(id, data);
-    setSelectedTableSessionId(null);
     toast.success("Comanda fechada com sucesso!");
-    const [t, s] = await Promise.all([
-      tableService.getTables(),
-      tableService.getTableSessions({ status: "open" }),
-    ]);
-    setTables(t.data);
-    setOpenSessions(s.data);
+    // Comanda fechada: volta ao início do PDV (e tira ?table_session da URL)
+    window.location.href = "/admin/pdv";
   };
 
   const isTableOrder = orderType === "table" && !!selectedTableSessionId;
@@ -532,7 +537,146 @@ export default function PDVPage() {
     return ` (${sign}R$ ${adjValue.toFixed(2).replace(".", ",")})`;
   };
 
-  const phoneValidationRegex = /^\(\d{2}\) \d{4,5}-\d{4}$/;
+  const phoneValidationOk = (phone: string) => PDV_PHONE_REGEX.test(phone);
+
+  // Regras do cliente por tipo: Delivery exige nome, telefone e endereço; Retirada só telefone; Balcão nada
+  const collectCustomerErrors = () =>
+    collectRules({
+      orderType,
+      customer: customerInfo,
+      isPerKm,
+      isPerNeighborhood,
+      selectedNeighborhoodId,
+      km: { ...kmDelivery, hasQuote: !!kmDelivery.quote },
+    });
+
+  const chooseOrderType = (type: Exclude<OrderType, "table">) => {
+    setOrderType(type);
+    setFormErrors({});
+    // Balcão não tem telefone nem endereço: não carrega dados que sobraram de outro tipo
+    if (type === "counter") {
+      setSelectedCustomer(null);
+      setCustomerInfo((p) => ({ ...p, phone: "", address: "", neighborhood: "", complement: "", reference: "" }));
+      setSelectedNeighborhoodId("");
+      setKmDelivery(emptyKmDeliveryState);
+    } else if (type === "pickup") {
+      setCustomerInfo((p) => ({ ...p, address: "", neighborhood: "", complement: "", reference: "" }));
+      setSelectedNeighborhoodId("");
+      setKmDelivery(emptyKmDeliveryState);
+    }
+  };
+
+  const goToItems = () => {
+    const errors = collectCustomerErrors();
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      toast.error("Preencha os campos obrigatórios");
+      return;
+    }
+    setCustomerInfo((p) => ({ ...p, name: p.name.trim() }));
+    setFormErrors({});
+    setStep("items");
+    window.scrollTo({ top: 0 });
+    scanner.focusInput();
+  };
+
+  const handlePhoneInput = (raw: string) => {
+    const phone = formatPhone(raw);
+    setCustomerInfo((p) => ({ ...p, phone }));
+    if (selectedCustomer && selectedCustomer.attributes.cellphone !== phone.replace(/\D/g, "")) {
+      setSelectedCustomer(null);
+    }
+    if (formErrors.phone) setFormErrors((p) => ({ ...p, phone: "" }));
+  };
+
+  const handleNameInput = (name: string) => {
+    setCustomerInfo((p) => ({ ...p, name }));
+    if (formErrors.name) setFormErrors((p) => ({ ...p, name: "" }));
+  };
+
+  // Aplica um endereço salvo ao formulário de entrega (por km, por bairro ou livre)
+  const applyAddress = (last: CustomerLastAddress) => {
+    if (isPerKm) {
+      setKmDelivery({
+        ...emptyKmDeliveryState,
+        address: last.address ?? "",
+        number: last.number ?? "",
+        neighborhood: last.neighborhood ?? "",
+        complement: last.complement ?? "",
+        reference: last.reference ?? "",
+        latitude: last.latitude,
+        longitude: last.longitude,
+      });
+      return;
+    }
+
+    setCustomerInfo((p) => ({
+      ...p,
+      address: [last.address, last.number].filter(Boolean).join(", ").slice(0, 70),
+      neighborhood: last.neighborhood ?? "",
+      complement: last.complement ?? "",
+      reference: last.reference ?? "",
+    }));
+    if (isPerNeighborhood) {
+      const match =
+        neighborhoods.find((n) => String(n.id) === String(last.shop_delivery_neighborhood_id)) ??
+        neighborhoods.find((n) => n.name.trim().toLowerCase() === (last.neighborhood ?? "").trim().toLowerCase());
+      setSelectedNeighborhoodId(match ? String(match.id) : "");
+    }
+  };
+
+  // Cliente escolhido na busca: preenche nome/telefone e, no Delivery, o endereço padrão (ou o do último pedido)
+  const handleSelectCustomer = (customer: Customer) => {
+    const attrs = customer.attributes;
+    setSelectedCustomer(customer);
+    setSavedAddressId("");
+    setSetDefaultAddress(false);
+    setFormErrors({});
+    setCustomerInfo((p) => ({ ...p, name: attrs.name, phone: formatPhone(attrs.cellphone.replace(/D/g, "")) }));
+
+    if (orderType !== "delivery") return;
+    const saved = attrs.addresses ?? [];
+    const first = saved[0] ?? attrs.last_address;
+    if (saved[0]) setSavedAddressId(String(saved[0].id));
+    if (first) applyAddress(first);
+  };
+
+  // A config de entrega pode chegar depois da escolha do cliente: reaplica o endereço salvo no formato certo
+  useEffect(() => {
+    if (orderType !== "delivery" || !savedAddressId) return;
+    const saved = selectedCustomer?.attributes.addresses?.find((a) => String(a.id) === savedAddressId);
+    if (saved) applyAddress(saved);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPerKm, isPerNeighborhood]);
+
+  const handlePickSavedAddress = (id: string) => {
+    setSavedAddressId(id);
+    const address = selectedCustomer?.attributes.addresses?.find((a) => String(a.id) === id);
+    if (address) applyAddress(address);
+  };
+
+  // Cadastro explícito: só nome e telefone (a API reaproveita a conta se o telefone já existir)
+  const handleRegisterCustomer = async () => {
+    const errors: Record<string, string> = {};
+    if (!customerInfo.name.trim()) errors.name = "Informe o nome para cadastrar";
+    if (!phoneValidationOk(customerInfo.phone)) errors.phone = "Informe um telefone válido para cadastrar";
+    if (Object.keys(errors).length > 0) {
+      setFormErrors((p) => ({ ...p, ...errors }));
+      return;
+    }
+    setRegisteringCustomer(true);
+    try {
+      const response = await customerService.createCustomer({
+        customer: { name: customerInfo.name.trim(), cellphone: phoneDigits(customerInfo.phone) },
+      });
+      setSelectedCustomer(response.data);
+      toast.success("Cliente cadastrado");
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || "Erro ao cadastrar cliente");
+    } finally {
+      setRegisteringCustomer(false);
+    }
+  };
 
   const processOrder = async () => {
     if (cart.length === 0) { toast.error("Adicione itens ao carrinho"); return; }
@@ -543,60 +687,16 @@ export default function PDVPage() {
     }
 
     if (!isTableOrder) {
-      const errors: Record<string, string> = {};
-      const trimmedName = customerInfo.name.trim();
-
-      if (!trimmedName) {
-        errors.name = "Nome é obrigatório";
-      }
-
-      if (!customerInfo.phone) {
-        errors.phone = "Telefone é obrigatório";
-      } else if (!phoneValidationRegex.test(customerInfo.phone)) {
-        errors.phone = "Telefone inválido. Use o formato (XX) XXXXX-XXXX";
-      }
-
-      if (orderType === "delivery") {
-        if (isPerKm) {
-          if (!kmDelivery.address.trim()) {
-            errors.address = "Endereço é obrigatório";
-          }
-          if (!kmDelivery.number.trim()) {
-            errors.number = "Número é obrigatório";
-          }
-          if (!kmDelivery.neighborhood.trim()) {
-            errors.neighborhood = "Bairro é obrigatório";
-          }
-          if (kmDelivery.latitude === null || kmDelivery.longitude === null) {
-            errors.address = "Confirme a localização da entrega no mapa";
-          } else if (kmDelivery.error) {
-            errors.address = kmDelivery.error;
-          } else if (!kmDelivery.quote) {
-            errors.address = "Aguarde o cálculo da taxa de entrega";
-          }
-        } else {
-          if (!customerInfo.address.trim()) {
-            errors.address = "Endereço é obrigatório";
-          }
-          if (isPerNeighborhood) {
-            if (!selectedNeighborhoodId) {
-              errors.neighborhood = "Selecione um bairro";
-            }
-          } else {
-            if (!customerInfo.neighborhood.trim()) {
-              errors.neighborhood = "Bairro é obrigatório";
-            }
-          }
-        }
-      }
-
+      const errors = collectCustomerErrors();
       if (Object.keys(errors).length > 0) {
         setFormErrors(errors);
-        toast.error("Preencha os campos obrigatórios");
+        setStep("customer");
+        window.scrollTo({ top: 0 });
+        toast.error("Preencha os campos obrigatórios do cliente");
         return;
       }
 
-      setCustomerInfo((p) => ({ ...p, name: trimmedName }));
+      setCustomerInfo((p) => ({ ...p, name: p.name.trim() }));
     }
 
     if (isBelowMinOrder) {
@@ -626,17 +726,20 @@ export default function PDVPage() {
       const orderData = {
         order: {
           shop_id: Number(shopId) || 0,
-          withdrawal: isTableOrder ? true : orderType === "pickup",
+          withdrawal: isTableOrder ? true : orderType !== "delivery",
           payment_method:
             paymentMethod === "pix" ? ("manual_pix" as const) : (paymentMethod as "cash" | "credit" | "debit"),
           customer_name: isTableOrder
             ? (selectedSession?.attributes.customer_name || `Mesa ${selectedSession?.attributes.table_number}`)
-            : customerInfo.name.trim(),
-          customer_phone: isTableOrder ? undefined : customerInfo.phone.replace(/\D/g, "") || undefined,
+            // Balcão sem nome sai como "Balcão" para a cozinha e o caixa saberem a origem
+            : customerInfo.name.trim() || (orderType === "counter" ? "Balcão" : undefined),
+          customer_phone:
+            isTableOrder || orderType === "counter" ? undefined : customerInfo.phone.replace(/\D/g, "") || undefined,
           ...(appliedCoupon && { coupon_code: appliedCoupon.code }),
           ...(notes.trim() && { observation: notes.trim() }),
+          ...(orderType === "delivery" && setDefaultAddress && { set_default_address: true }),
           ...(selectedTableSessionId && { table_session_id: Number(selectedTableSessionId) }),
-          address: isPerKm && !isTableOrder
+          address: isPerKm && orderType === "delivery"
             ? {
                 address: kmDelivery.address,
                 number: kmDelivery.number,
@@ -647,13 +750,13 @@ export default function PDVPage() {
                 longitude: kmDelivery.longitude ?? undefined,
               }
             : {
-                address: isTableOrder ? "" : customerInfo.address,
-                neighborhood: isTableOrder ? "" : (isPerNeighborhood
+                address: orderType === "delivery" ? customerInfo.address : "",
+                neighborhood: orderType !== "delivery" ? "" : (isPerNeighborhood
                   ? (neighborhoods.find((n) => n.id === selectedNeighborhoodId)?.name ?? "")
                   : customerInfo.neighborhood),
-                complement: isTableOrder ? "" : customerInfo.complement,
-                reference: isTableOrder ? "" : customerInfo.reference,
-                ...(isPerNeighborhood && selectedNeighborhoodId && !isTableOrder && {
+                complement: orderType === "delivery" ? customerInfo.complement : "",
+                reference: orderType === "delivery" ? customerInfo.reference : "",
+                ...(isPerNeighborhood && selectedNeighborhoodId && orderType === "delivery" && {
                   shop_delivery_neighborhood_id: Number(selectedNeighborhoodId),
                 }),
               },
@@ -687,7 +790,12 @@ export default function PDVPage() {
           setCustomerInfo({ name: "", phone: "", address: "", neighborhood: "", complement: "", reference: "" });
           setSelectedNeighborhoodId("");
           setKmDelivery(emptyKmDeliveryState);
-          setSelectedTableSessionId(null);
+          setSelectedCustomer(null);
+          setSavedAddressId("");
+          setSetDefaultAddress(false);
+          // Pedido concluído: o próximo atendimento começa de novo na escolha do tipo
+          setOrderType(null);
+          setStep("customer");
         }
         // Refresh tables and sessions after order creation
         Promise.all([
@@ -726,6 +834,339 @@ export default function PDVPage() {
       </div>
 
       <div className="max-w-[1920px] mx-auto px-4 sm:px-6 py-4">
+        {step === "customer" && (
+          <div className="mx-auto max-w-2xl space-y-4" data-testid="pdv-customer-step">
+            {/* Escolha obrigatória do tipo de pedido */}
+            <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+              <div className="px-5 py-4 border-b border-[#E5E2DD]">
+                <h2 className="font-tomato flex items-center gap-2 text-base font-semibold text-gray-900">
+                  <MapPin className="h-5 w-5 text-primary" />
+                  Tipo de pedido <span className="text-red-500">*</span>
+                </h2>
+              </div>
+              <div className="px-5 py-4">
+                <div role="radiogroup" aria-label="Tipo de pedido" className="grid grid-cols-3 gap-2 sm:gap-3">
+                  {ORDER_TYPES.map(({ value, label, hint, Icon }) => {
+                    const active = orderType === value;
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        role="radio"
+                        aria-checked={active}
+                        data-testid={`order-type-${value}`}
+                        onClick={() => chooseOrderType(value)}
+                        className={`flex flex-col items-center justify-center gap-1.5 rounded-md border-2 px-2 py-4 text-center transition-all cursor-pointer ${
+                          active
+                            ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                            : formErrors.orderType
+                            ? "border-red-400 bg-white hover:border-red-500"
+                            : "border-[#E5E2DD] bg-white hover:border-gray-400"
+                        }`}
+                      >
+                        <Icon className={`h-6 w-6 ${active ? "text-primary" : "text-gray-500"}`} />
+                        <span className={`text-sm font-semibold ${active ? "text-primary" : "text-gray-800"}`}>{label}</span>
+                        <span className="hidden text-[11px] leading-tight text-muted-foreground sm:block">{hint}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {formErrors.orderType && <p className="mt-2 text-sm text-red-500">{formErrors.orderType}</p>}
+              </div>
+            </div>
+
+            {/* Cliente: campos variam por tipo */}
+            {orderType && orderType !== "table" && (
+              <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+                <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center justify-between gap-2">
+                  <h2 className="font-tomato flex items-center gap-2 text-base font-semibold text-gray-900">
+                    <User className="h-5 w-5 text-primary" />
+                    {orderType === "delivery" ? "Cliente e entrega" : orderType === "pickup" ? "Cliente" : "Cliente (opcional)"}
+                  </h2>
+                  {selectedCustomer && (
+                    <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700" data-testid="customer-registered">
+                      <UserCheck className="h-4 w-4" />
+                      Cliente cadastrado
+                    </span>
+                  )}
+                </div>
+                <div className="px-5 py-4 space-y-4">
+                  {orderType !== "counter" && (
+                    <div className="space-y-1.5">
+                      <Label htmlFor="phone" className="text-sm">Telefone com DDD <span className="text-red-500">*</span></Label>
+                      <CustomerSearchInput
+                        id="phone"
+                        mode="phone"
+                        value={customerInfo.phone}
+                        onChange={handlePhoneInput}
+                        onSelect={handleSelectCustomer}
+                        placeholder="(11) 99999-9999"
+                        inputMode="tel"
+                        maxLength={15}
+                        autoSelectExact
+                        hasError={!!formErrors.phone}
+                      />
+                      {formErrors.phone && <p className="text-xs text-red-500">{formErrors.phone}</p>}
+                    </div>
+                  )}
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="name" className="text-sm">
+                      Nome {orderType === "delivery" ? <span className="text-red-500">*</span> : <span className="text-muted-foreground">(opcional)</span>}
+                    </Label>
+                    {orderType === "counter" ? (
+                      <Input
+                        id="name"
+                        value={customerInfo.name}
+                        onChange={(e) => handleNameInput(e.target.value)}
+                        placeholder="Nome do cliente"
+                        className="h-11"
+                      />
+                    ) : (
+                      <CustomerSearchInput
+                        id="name"
+                        mode="name"
+                        value={customerInfo.name}
+                        onChange={handleNameInput}
+                        onSelect={handleSelectCustomer}
+                        placeholder="Nome do cliente"
+                        hasError={!!formErrors.name}
+                      />
+                    )}
+                    {formErrors.name && <p className="text-xs text-red-500">{formErrors.name}</p>}
+                  </div>
+
+                  {orderType !== "counter" && (
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                      {selectedCustomer ? (
+                        <a
+                          href={`/admin/clientes/${selectedCustomer.id}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-sm font-medium text-primary hover:underline"
+                          data-testid="customer-orders-link"
+                        >
+                          Ver pedidos do cliente
+                        </a>
+                      ) : (
+                        phoneValidationOk(customerInfo.phone) && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={registeringCustomer}
+                            onClick={handleRegisterCustomer}
+                            data-testid="register-customer"
+                            className="cursor-pointer gap-1.5 border-[#E5E2DD]"
+                          >
+                            {registeringCustomer ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserCheck className="h-3.5 w-3.5" />}
+                            Cadastrar cliente
+                          </Button>
+                        )
+                      )}
+                    </div>
+                  )}
+
+                  {orderType === "delivery" && (selectedCustomer?.attributes.addresses?.length ?? 0) > 0 && (
+                    <div className="space-y-1.5" data-testid="saved-addresses">
+                      <Label htmlFor="saved-address" className="text-sm">Endereços do cliente</Label>
+                      <Select value={savedAddressId} onValueChange={handlePickSavedAddress}>
+                        <SelectTrigger id="saved-address" className="h-11">
+                          <SelectValue placeholder="Escolha um endereço salvo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {selectedCustomer?.attributes.addresses?.map((a) => (
+                            <SelectItem key={a.id} value={String(a.id)}>
+                              {[a.address, a.number].filter(Boolean).join(", ")}
+                              {a.neighborhood ? ` · ${a.neighborhood}` : ""}
+                              {a.is_default ? " (padrão)" : ""}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {orderType === "delivery" && isPerKm && shopId && (
+                    <KmDeliveryAddress
+                      shopId={shopId}
+                      storeLatitude={deliveryConfig?.latitude ?? null}
+                      storeLongitude={deliveryConfig?.longitude ?? null}
+                      itemsTotal={cartTotal}
+                      value={kmDelivery}
+                      onChange={setKmDelivery}
+                      fieldErrors={formErrors}
+                    />
+                  )}
+
+                  {orderType === "delivery" && !isPerKm && (
+                    <>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="address" className="text-sm">Rua e número <span className="text-red-500">*</span></Label>
+                        <Input
+                          id="address"
+                          value={customerInfo.address}
+                          onChange={(e) => {
+                            setCustomerInfo((p) => ({ ...p, address: e.target.value }));
+                            if (formErrors.address) setFormErrors((p) => ({ ...p, address: "" }));
+                          }}
+                          placeholder="Rua, número"
+                          maxLength={70}
+                          className={`h-11 ${formErrors.address ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+                        />
+                        {formErrors.address && <p className="text-xs text-red-500">{formErrors.address}</p>}
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <Label htmlFor="neighborhood" className="text-sm">Bairro/Condomínio <span className="text-red-500">*</span></Label>
+                          {isPerNeighborhood ? (
+                            <>
+                              <Select
+                                value={selectedNeighborhoodId}
+                                onValueChange={(v) => {
+                                  setSelectedNeighborhoodId(v);
+                                  if (formErrors.neighborhood) setFormErrors((p) => ({ ...p, neighborhood: "" }));
+                                }}
+                              >
+                                <SelectTrigger id="neighborhood" className={`h-11 ${formErrors.neighborhood ? "border-red-500 focus-visible:ring-red-500" : ""}`}>
+                                  <SelectValue placeholder="Selecione o bairro" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {neighborhoods.map((nb) => (
+                                    <SelectItem key={nb.id} value={String(nb.id)}>
+                                      {nb.name} · {nb.amount > 0 ? formatPrice(nb.amount) : "Grátis"}
+                                      {nb.amount > 0 && (nb.min_value_free_delivery ?? 0) > 0 && ` · Grátis a partir de ${formatPrice(nb.min_value_free_delivery)}`}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              {formErrors.neighborhood && <p className="text-xs text-red-500">{formErrors.neighborhood}</p>}
+                            </>
+                          ) : (
+                            <>
+                              <Input
+                                id="neighborhood"
+                                value={customerInfo.neighborhood}
+                                onChange={(e) => {
+                                  setCustomerInfo((p) => ({ ...p, neighborhood: e.target.value }));
+                                  if (formErrors.neighborhood) setFormErrors((p) => ({ ...p, neighborhood: "" }));
+                                }}
+                                placeholder="Bairro"
+                                className={`h-11 ${formErrors.neighborhood ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+                              />
+                              {formErrors.neighborhood && <p className="text-xs text-red-500">{formErrors.neighborhood}</p>}
+                            </>
+                          )}
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="complement" className="text-sm">Complemento</Label>
+                          <Input
+                            id="complement"
+                            value={customerInfo.complement}
+                            onChange={(e) => setCustomerInfo((p) => ({ ...p, complement: e.target.value }))}
+                            placeholder="Apt, bloco"
+                            className="h-11"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="reference" className="text-sm">Referência</Label>
+                        <Input
+                          id="reference"
+                          value={customerInfo.reference}
+                          onChange={(e) => setCustomerInfo((p) => ({ ...p, reference: e.target.value }))}
+                          placeholder="Ponto de referência"
+                          className="h-11"
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {orderType === "delivery" && (
+                    <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={setDefaultAddress}
+                        onChange={(e) => setSetDefaultAddress(e.target.checked)}
+                        data-testid="set-default-address"
+                        className="h-4 w-4 accent-[var(--color-primary,#009444)]"
+                      />
+                      Definir como endereço padrão do cliente
+                    </label>
+                  )}
+
+                  {orderType !== "counter" && !selectedCustomer && customerInfo.phone && (
+                    <p className="text-xs text-muted-foreground">
+                      Cliente novo: é cadastrado automaticamente ao finalizar o pedido{orderType === "pickup" && !customerInfo.name.trim() ? " (informe o nome para cadastrar)" : ""}.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <Button
+              type="button"
+              onClick={goToItems}
+              data-testid="pdv-add-items"
+              className="w-full h-12 text-base font-semibold gap-2 cursor-pointer"
+              size="lg"
+            >
+              Adicionar itens
+              <ChevronRight className="h-5 w-5" />
+            </Button>
+          </div>
+        )}
+
+        {step === "items" && (
+        <>
+        {/* Resumo do atendimento: tipo + cliente, com atalho para corrigir */}
+        <div className="mb-4 flex items-center justify-between gap-3 rounded-md border border-[#E5E2DD] bg-white px-4 py-3" data-testid="pdv-summary">
+          <div className="min-w-0 text-sm">
+            <p className="font-semibold text-gray-900">
+              {orderType ? ORDER_TYPE_LABEL[orderType] : ""}
+              {isTableOrder && selectedSession ? ` ${selectedSession.attributes.table_number}` : ""}
+              {(isTableOrder ? selectedSession?.attributes.customer_name : customerInfo.name.trim()) &&
+                ` · ${isTableOrder ? selectedSession?.attributes.customer_name : customerInfo.name.trim()}`}
+            </p>
+            <p className="truncate text-xs text-muted-foreground">
+              {orderType === "delivery"
+                ? [customerInfo.phone, isPerKm ? kmDelivery.address : customerInfo.address].filter(Boolean).join(" · ")
+                : orderType === "pickup"
+                ? customerInfo.phone
+                : orderType === "counter"
+                ? "Sem cadastro"
+                : "Dados de cliente e entrega não são necessários"}
+            </p>
+          </div>
+          {!isTableOrder && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => { setStep("customer"); window.scrollTo({ top: 0 }); }}
+              className="shrink-0 gap-1.5 border-[#E5E2DD] cursor-pointer"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              Editar
+            </Button>
+          )}
+        </div>
+
+        {/* O cálculo de frete por km precisa continuar vivo com o total do carrinho */}
+        {orderType === "delivery" && isPerKm && shopId && (
+          <div className="hidden">
+            <KmDeliveryAddress
+              shopId={shopId}
+              storeLatitude={deliveryConfig?.latitude ?? null}
+              storeLongitude={deliveryConfig?.longitude ?? null}
+              itemsTotal={cartTotal}
+              value={kmDelivery}
+              onChange={setKmDelivery}
+              fieldErrors={formErrors}
+            />
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
         {/* ── Catálogo ─────────────────────────────────── */}
@@ -1046,242 +1487,6 @@ export default function PDVPage() {
             </div>
           </div>
 
-          {/* Tipo de Pedido */}
-          <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
-            <div className="px-5 py-4 border-b border-[#E5E2DD]">
-              <h2 className="font-tomato flex items-center gap-2 text-base font-semibold text-gray-900">
-                <MapPin className="h-5 w-5 text-primary" />
-                Tipo de Pedido
-              </h2>
-            </div>
-            <div className="px-5 py-4 space-y-4">
-              <Select
-                value={orderType}
-                onValueChange={(v: "delivery" | "pickup" | "table") => {
-                  setOrderType(v);
-                  setFormErrors({});
-                  if (v !== "table") setSelectedTableSessionId(null);
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="delivery">Entrega</SelectItem>
-                  <SelectItem value="pickup">Retirada</SelectItem>
-                  {tables.length > 0 && <SelectItem value="table">Mesa</SelectItem>}
-                </SelectContent>
-              </Select>
-
-              {/* Grid de mesas, visível apenas quando tipo = mesa */}
-              {orderType === "table" && tables.length > 0 && (
-                <>
-                  <div className="grid grid-cols-3 gap-2">
-                    {tables
-                      .sort((a, b) => a.attributes.number - b.attributes.number)
-                      .map((table) => {
-                        const session = openSessions.find(
-                          (s) => s.attributes.table_number === table.attributes.number
-                        );
-                        const hasSession = !!session;
-                        const isSelected = hasSession && selectedTableSessionId === session.id;
-                        const isOpening = openingTableId === table.id;
-
-                        return (
-                          <button
-                            key={table.id}
-                            type="button"
-                            disabled={isOpening}
-                            onClick={() => {
-                              if (hasSession) {
-                                handleSelectTableSession(isSelected ? null : session.id);
-                              } else {
-                                handleOpenSession(table.id);
-                              }
-                            }}
-                            className={`flex flex-col items-center justify-center rounded-md border-2 p-3 text-center transition-all cursor-pointer ${
-                              isSelected
-                                ? "border-primary bg-white ring-2 ring-primary/20"
-                                : hasSession
-                                ? "border-amber-400 bg-white hover:border-amber-500"
-                                : "border-dashed border-[#E5E2DD] bg-[#FAF9F7] hover:border-gray-400 hover:bg-[#F0EFEB]"
-                            }`}
-                          >
-                            <span className={`text-sm font-bold ${
-                              isSelected ? "text-primary" : hasSession ? "text-amber-700" : "text-gray-500"
-                            }`}>
-                              {table.attributes.number}
-                            </span>
-                            <span className={`text-[10px] mt-0.5 ${
-                              isSelected ? "text-primary/80" : hasSession ? "text-amber-600" : "text-gray-400"
-                            }`}>
-                              {isOpening
-                                ? "Abrindo..."
-                                : isSelected
-                                ? "Selecionada"
-                                : hasSession
-                                ? session.attributes.customer_name || "Ocupada"
-                                : "Abrir"}
-                            </span>
-                          </button>
-                        );
-                      })}
-                  </div>
-                  {isTableOrder && (() => {
-                    const session = openSessions.find((s) => s.id === selectedTableSessionId);
-                    return (
-                      <div className="border border-primary/30 rounded-md px-3 py-2.5 space-y-1">
-                        <p className="text-xs text-primary font-medium">
-                          Pedido para Mesa {session?.attributes.table_number}
-                          {session?.attributes.customer_name ? ` - ${session.attributes.customer_name}` : ""}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Dados de cliente e entrega não são necessários
-                        </p>
-                      </div>
-                    );
-                  })()}
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Dados do cliente, esconde quando tipo = mesa */}
-          {orderType !== "table" && <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
-            <div className="px-5 py-4 border-b border-[#E5E2DD]">
-              <h2 className="font-tomato flex items-center gap-2 text-base font-semibold text-gray-900">
-                <User className="h-5 w-5 text-primary" />
-                {orderType === "delivery" ? "Dados de Entrega" : "Dados do Cliente"}
-              </h2>
-            </div>
-            <div className="px-5 py-4 space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="name" className="text-sm">Nome <span className="text-red-500">*</span></Label>
-                  <Input
-                    id="name"
-                    value={customerInfo.name}
-                    onChange={(e: any) => {
-                      setCustomerInfo((p) => ({ ...p, name: e.target.value }));
-                      if (formErrors.name) setFormErrors((p) => ({ ...p, name: "" }));
-                    }}
-                    placeholder="Nome do cliente"
-                    className={formErrors.name ? "border-red-500 focus-visible:ring-red-500" : ""}
-                  />
-                  {formErrors.name && <p className="text-xs text-red-500">{formErrors.name}</p>}
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="phone" className="text-sm">Telefone <span className="text-red-500">*</span></Label>
-                  <Input
-                    id="phone"
-                    value={customerInfo.phone}
-                    onChange={(e: any) => {
-                      setCustomerInfo((p) => ({ ...p, phone: formatPhone(e.target.value) }));
-                      if (formErrors.phone) setFormErrors((p) => ({ ...p, phone: "" }));
-                    }}
-                    placeholder="(11) 99999-9999"
-                    maxLength={15}
-                    className={formErrors.phone ? "border-red-500 focus-visible:ring-red-500" : ""}
-                  />
-                  {formErrors.phone && <p className="text-xs text-red-500">{formErrors.phone}</p>}
-                </div>
-              </div>
-
-              {orderType === "delivery" && isPerKm && shopId && (
-                <KmDeliveryAddress
-                  shopId={shopId}
-                  storeLatitude={deliveryConfig?.latitude ?? null}
-                  storeLongitude={deliveryConfig?.longitude ?? null}
-                  itemsTotal={cartTotal}
-                  value={kmDelivery}
-                  onChange={setKmDelivery}
-                  fieldErrors={formErrors}
-                />
-              )}
-
-              {orderType === "delivery" && !isPerKm && (
-                <>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="address" className="text-sm">Endereço <span className="text-red-500">*</span></Label>
-                    <Input
-                      id="address"
-                      value={customerInfo.address}
-                      onChange={(e: any) => {
-                        setCustomerInfo((p) => ({ ...p, address: e.target.value }));
-                        if (formErrors.address) setFormErrors((p) => ({ ...p, address: "" }));
-                      }}
-                      placeholder="Rua, número"
-                      maxLength={70}
-                      className={formErrors.address ? "border-red-500 focus-visible:ring-red-500" : ""}
-                    />
-                    {formErrors.address && <p className="text-xs text-red-500">{formErrors.address}</p>}
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="neighborhood" className="text-sm">Bairro <span className="text-red-500">*</span></Label>
-                      {isPerNeighborhood ? (
-                        <>
-                          <Select
-                            value={selectedNeighborhoodId}
-                            onValueChange={(v) => {
-                              setSelectedNeighborhoodId(v);
-                              if (formErrors.neighborhood) setFormErrors((p) => ({ ...p, neighborhood: "" }));
-                            }}
-                          >
-                            <SelectTrigger className={formErrors.neighborhood ? "border-red-500 focus-visible:ring-red-500" : ""}>
-                              <SelectValue placeholder="Selecione o bairro" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {neighborhoods.map((nb) => (
-                                <SelectItem key={nb.id} value={nb.id}>
-                                  {nb.name} · {nb.amount > 0 ? formatPrice(nb.amount) : "Grátis"}
-                                  {nb.amount > 0 && (nb.min_value_free_delivery ?? 0) > 0 && ` · Grátis a partir de ${formatPrice(nb.min_value_free_delivery)}`}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          {formErrors.neighborhood && <p className="text-xs text-red-500">{formErrors.neighborhood}</p>}
-                        </>
-                      ) : (
-                        <>
-                          <Input
-                            id="neighborhood"
-                            value={customerInfo.neighborhood}
-                            onChange={(e: any) => {
-                              setCustomerInfo((p) => ({ ...p, neighborhood: e.target.value }));
-                              if (formErrors.neighborhood) setFormErrors((p) => ({ ...p, neighborhood: "" }));
-                            }}
-                            placeholder="Bairro"
-                            className={formErrors.neighborhood ? "border-red-500 focus-visible:ring-red-500" : ""}
-                          />
-                          {formErrors.neighborhood && <p className="text-xs text-red-500">{formErrors.neighborhood}</p>}
-                        </>
-                      )}
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="complement" className="text-sm">Complemento</Label>
-                      <Input
-                        id="complement"
-                        value={customerInfo.complement}
-                        onChange={(e: any) => setCustomerInfo((p) => ({ ...p, complement: e.target.value }))}
-                        placeholder="Apt, bloco"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="reference" className="text-sm">Referência</Label>
-                    <Input
-                      id="reference"
-                      value={customerInfo.reference}
-                      onChange={(e: any) => setCustomerInfo((p) => ({ ...p, reference: e.target.value }))}
-                      placeholder="Ponto de referência"
-                    />
-                  </div>
-                </>
-              )}
-            </div>
-          </div>}
-
           {/* Pagamento */}
           <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
             <div className="px-5 py-4 border-b border-[#E5E2DD]">
@@ -1398,10 +1603,12 @@ export default function PDVPage() {
           )}
         </div>
         </div>
+        </>
+        )}
       </div>
 
       {/* Barra do carrinho (mobile): sempre visível acima da navegação do celular */}
-      {cart.length > 0 && mobileView === "catalog" && (
+      {step === "items" && cart.length > 0 && mobileView === "catalog" && (
         <div className="lg:hidden fixed inset-x-0 bottom-0 z-40 px-3 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-gradient-to-t from-[#FAF9F7] via-[#FAF9F7]/95 to-transparent">
           <button
             type="button"
