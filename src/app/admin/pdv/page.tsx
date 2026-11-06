@@ -9,11 +9,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import {
-  ShoppingCart, Plus, Minus, Trash2, Search,
-  CreditCard, MapPin, User, Package, Settings2,
-  Tag, X, CheckCircle2, Loader2, UtensilsCrossed, ArrowLeft, AlertCircle, ChevronRight,
+  ShoppingCart, Plus, Minus, Trash2,
+  CreditCard, MapPin, User,
+  Tag, X, CheckCircle2, Loader2, UtensilsCrossed, ArrowLeft, AlertCircle,
 } from "lucide-react";
 import { useCatalogGroup } from "@/hooks/useCatalogGroup";
+import { useCatalogCategories } from "@/hooks/useCatalogCategories";
 import Image from "next/image";
 import { toast } from "sonner";
 import { formatPrice } from "@/utils/format-price";
@@ -34,6 +35,7 @@ import { parseBarcode } from "@/lib/barcode/parse-barcode";
 import type { ScanResult } from "@/lib/barcode/parse-barcode";
 import { hasPermission } from "@/lib/permissions";
 import { useAuthContext } from "@/contexts/auth-context";
+import { CatalogPanel } from "./catalog-panel";
 import { QuickCreateItemModal } from "@/components/admin/pdv/quick-create-item-modal";
 import type { QuickCreateRequest } from "@/components/admin/pdv/quick-create-item-modal";
 import type { CatalogItemLike } from "@/lib/barcode/to-scan-item";
@@ -69,7 +71,6 @@ interface CustomerInfo {
 
 export default function PDVPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartIdCounter, setCartIdCounter] = useState(0);
   const [optionsItem, setOptionsItem] = useState<any>(null);
@@ -108,6 +109,7 @@ export default function PDVPage() {
   const { deliveryConfig } = useDelivery();
 
   const { catalog, isLoading } = useCatalogGroup();
+  const { categories, isLoading: categoriesLoading } = useCatalogCategories();
   const { subscribeToAdminOrders } = useAdminActionCable();
 
   useEffect(() => {
@@ -225,32 +227,6 @@ export default function PDVPage() {
     if (!isLoading) scanner.focusInput();
   }, [isLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Filtrar catálogo, somente itens e grupos ativos
-  const filteredCatalog =
-    catalog?.data
-      ?.filter((group: any) => group.attributes.active !== false)
-      .map((group: any) => ({
-        ...group,
-        attributes: {
-          ...group.attributes,
-          items:
-            group.attributes.items?.filter(
-              (item: any) =>
-                item.attributes?.active !== false &&
-                (item.attributes?.name
-                  ?.toLowerCase()
-                  .includes(searchTerm.toLowerCase()) ||
-                item.attributes?.description
-                  ?.toLowerCase()
-                  .includes(searchTerm.toLowerCase()))
-            ) ?? [],
-        },
-      }))
-      .filter((group: any) => {
-        if (selectedGroupId && group.id !== selectedGroupId) return false;
-        return group.attributes.items.length > 0;
-      }) ?? [];
-
   const allGroups = (catalog?.data ?? []).filter(
     (group: any) =>
       group.attributes.active !== false &&
@@ -273,8 +249,6 @@ export default function PDVPage() {
     setMobileView(v);
     window.scrollTo({ top: 0 });
   };
-  // Mobile: sem categoria e sem busca => lista de categorias em vez de todos os itens
-  const showCategoryList = !selectedGroupId && !searchTerm.trim();
 
   const isPerNeighborhood = deliveryConfig?.delivery_fee_kind === "per_neighborhood";
   const isPerKm = deliveryConfig?.delivery_fee_kind === "per_km";
@@ -756,331 +730,15 @@ export default function PDVPage() {
 
         {/* ── Catálogo ─────────────────────────────────── */}
         <div className={`lg:col-span-2 space-y-4 ${mobileView === "cart" ? "hidden lg:block" : ""}`}>
-          <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
-            <div className="px-5 py-4 border-b border-[#E5E2DD]">
-              <h2 className="font-tomato flex items-center gap-2 text-base font-semibold text-gray-900 mb-3">
-                <Package className="h-5 w-5 text-primary" />
-                Catálogo de Produtos
-              </h2>
-
-              {/* Busca e filtros */}
-              <div className="space-y-3">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                  <Input
-                    ref={scanner.inputRef}
-                    autoFocus
-                    autoComplete="off"
-                    aria-label="Buscar produtos ou bipar o código de barras"
-                    placeholder="Buscar produtos ou bipar o código..."
-                    value={searchTerm}
-                    onChange={(e: any) => setSearchTerm(e.target.value)}
-                    onKeyDown={scanner.handleKeyDown}
-                    {...scanner.focusProps}
-                    className="pl-10"
-                  />
-                  {searchTerm && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setSearchTerm("")}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
-                    >
-                      ×
-                    </Button>
-                  )}
-                </div>
-
-                <p className="flex items-center gap-2 text-xs text-muted-foreground" aria-live="polite">
-                  <span
-                    aria-hidden
-                    className={`h-2 w-2 shrink-0 rounded-full ${scanner.hasFocus ? "bg-green-500" : "bg-gray-300"}`}
-                  />
-                  {scanner.hasFocus ? (
-                    "Leitor pronto: bipe para adicionar."
-                  ) : (
-                    <button type="button" onClick={scanner.focusInput} className="cursor-pointer text-left underline-offset-2 hover:underline">
-                      Clique aqui para o leitor voltar a funcionar.
-                    </button>
-                  )}
-                </p>
-
-                {allGroups.length > 1 && (
-                  <div className="space-y-2 hidden lg:block">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-sm font-medium">Filtrar por categoria:</Label>
-                      {selectedGroupId && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setSelectedGroupId(null)}
-                          className="text-xs text-muted-foreground hover:text-foreground"
-                        >
-                          Limpar filtro
-                        </Button>
-                      )}
-                    </div>
-                    <div className="flex gap-2 flex-wrap">
-                      <Button
-                        variant={selectedGroupId === null ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setSelectedGroupId(null)}
-                        className="h-8 border border-gray-300 cursor-pointer"
-                      >
-                        Todas as categorias
-                        <Badge variant="secondary" className="ml-2">
-                          {allGroups.reduce(
-                            (t: number, g: any) => t + (g.attributes.items?.length ?? 0),
-                            0
-                          )}
-                        </Badge>
-                      </Button>
-                      {allGroups.map((group: any) => (
-                        <Button
-                          key={group.id}
-                          variant={selectedGroupId === group.id ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setSelectedGroupId(group.id)}
-                          className="h-8 border border-gray-300 cursor-pointer"
-                        >
-                          {group.attributes.name}
-                          <Badge variant="secondary" className="ml-2">
-                            {group.attributes.items?.length ?? 0}
-                          </Badge>
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {selectedGroupId && (
-                  <button
-                    type="button"
-                    onClick={() => setSelectedGroupId(null)}
-                    className="lg:hidden flex items-center gap-1.5 text-sm font-medium text-primary cursor-pointer"
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                    Categorias
-                    <span className="text-muted-foreground font-normal">
-                      / {allGroups.find((g: any) => g.id === selectedGroupId)?.attributes?.name}
-                    </span>
-                  </button>
-                )}
-
-                {(searchTerm || selectedGroupId) && (
-                  <div className="hidden lg:flex items-center gap-2 text-sm text-muted-foreground">
-                    <span>Filtros ativos:</span>
-                    {searchTerm && (
-                      <Badge variant="outline" className="gap-1">
-                        Busca: "{searchTerm}"
-                        <button onClick={() => setSearchTerm("")} className="ml-1 hover:text-foreground">×</button>
-                      </Badge>
-                    )}
-                    {selectedGroupId && (
-                      <Badge variant="outline" className="gap-1">
-                        Categoria: {allGroups.find((g: any) => g.id === selectedGroupId)?.attributes?.name}
-                        <button onClick={() => setSelectedGroupId(null)} className="ml-1 hover:text-foreground">×</button>
-                      </Badge>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="px-5 py-4">
-              {isLoading ? (
-                <div className="text-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
-                  <p className="text-muted-foreground">Carregando produtos...</p>
-                </div>
-              ) : filteredCatalog.length === 0 ? (
-                <div className="text-center py-12">
-                  <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground text-lg">
-                    {searchTerm ? "Nenhum produto encontrado" : "Nenhum produto disponível"}
-                  </p>
-                  {searchTerm && (
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Tente buscar por outro termo ou limpe o filtro
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <>
-                {showCategoryList && (
-                  <div className="lg:hidden grid grid-cols-2 gap-3">
-                    {filteredCatalog.map((group: any) => (
-                      <button
-                        key={group.id}
-                        type="button"
-                        onClick={() => setSelectedGroupId(group.id)}
-                        className="flex flex-col items-start justify-between gap-2 min-h-24 rounded-md border border-[#E5E2DD] bg-[#FAF9F7] p-4 text-left active:bg-[#F0EFEB] cursor-pointer"
-                      >
-                        <span className="font-tomato text-base font-semibold text-gray-900 line-clamp-2">
-                          {group.attributes.name}
-                        </span>
-                        <span className="flex w-full items-center justify-between text-xs text-muted-foreground">
-                          {group.attributes.items.length}{" "}
-                          {group.attributes.items.length === 1 ? "produto" : "produtos"}
-                          <ChevronRight className="h-4 w-4" />
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-                <div className={`space-y-8 ${showCategoryList ? "hidden lg:block" : ""}`}>
-                  {filteredCatalog.map((group: any) => (
-                    <div key={group.id} className="space-y-4">
-                      {/* Cabeçalho do grupo */}
-                      <div className={`flex-col sm:flex-row sm:items-center sm:justify-between gap-2 ${selectedGroupId ? "hidden lg:flex" : "flex"}`}>
-                        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                          <h3 className="font-tomato text-lg sm:text-xl font-semibold text-primary">
-                            {group.attributes.name}
-                          </h3>
-                          <Badge variant="outline" className="text-xs">
-                            {group.attributes.items.length}{" "}
-                            {group.attributes.items.length === 1 ? "produto" : "produtos"}
-                          </Badge>
-                        </div>
-                        {group.attributes.description && (
-                          <p className="text-sm text-muted-foreground sm:max-w-md">
-                            {group.attributes.description}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Grid de itens */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4">
-                        {group.attributes.items.map((item: any) => {
-                          const attrs = item.attributes;
-                          const hasDiscount =
-                            attrs.price_with_discount &&
-                            attrs.price_with_discount !== attrs.price;
-                          const hasOptions =
-                            (attrs.extra?.data?.length ?? 0) > 0 ||
-                            (attrs.prepare_method?.data?.length ?? 0) > 0 ||
-                            (attrs.steps?.data?.length ?? 0) > 0 ||
-                            (attrs.shared_complements?.data?.length ?? 0) > 0;
-
-                          return (
-                            <div
-                              key={item.id}
-                              className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden transition-all duration-200 group"
-                            >
-                              <div className="aspect-[21/9] sm:aspect-video relative bg-[#F0EFEB]">
-                                {attrs.image_url ? (
-                                  <Image
-                                    src={attrs.image_url}
-                                    alt={attrs.name}
-                                    fill
-                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                    className="object-cover group-hover:scale-105 transition-transform duration-200"
-                                  />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center">
-                                    <Package className="h-8 w-8 text-muted-foreground" />
-                                  </div>
-                                )}
-
-                                {/* Tags */}
-                                <div className="absolute top-2 left-2 flex flex-col gap-0.5">
-                                  {attrs.new_tag && (
-                                    <span className="bg-green-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap">
-                                      NOVO!
-                                    </span>
-                                  )}
-                                  {attrs.best_seller_tag && (
-                                    <span className="bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap">
-                                      + VENDIDO
-                                    </span>
-                                  )}
-                                  {attrs.highlight && (
-                                    <span className="bg-blue-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap">
-                                      DESTAQUE
-                                    </span>
-                                  )}
-                                  {attrs.promotion_tag && !attrs.price_with_discount && (
-                                    <span className="bg-primary text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap">
-                                      PROMOÇÃO
-                                    </span>
-                                  )}
-                                </div>
-
-                                {hasDiscount && (
-                                  <div className="absolute top-2 right-2">
-                                    <Badge variant="destructive">PROMOÇÃO</Badge>
-                                  </div>
-                                )}
-
-                                {/* Indicador de opções */}
-                                {hasOptions && (
-                                  <div className="absolute bottom-2 right-2">
-                                    <span className="bg-black/60 text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-md flex items-center gap-1">
-                                      <Settings2 className="h-2.5 w-2.5" />
-                                      Personalizável
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-
-                              <div className="p-4 space-y-3">
-                                <div>
-                                  <h4 className="font-semibold text-lg mb-1 line-clamp-2">
-                                    {attrs.name}
-                                  </h4>
-                                  <p className="text-sm text-muted-foreground line-clamp-2">
-                                    {attrs.description}
-                                  </p>
-                                </div>
-
-                                <div className="flex items-center justify-between gap-2">
-                                  <div className="flex flex-col">
-                                    {hasDiscount ? (
-                                      <>
-                                        <span className="text-sm text-muted-foreground line-through">
-                                          {formatPrice(parseFloat(attrs.price))}
-                                        </span>
-                                        <span className="font-bold text-lg text-green-600">
-                                          {formatPrice(parseFloat(attrs.price_with_discount))}
-                                        </span>
-                                      </>
-                                    ) : (
-                                      <span className="font-bold text-lg text-primary">
-                                        {formatPrice(parseFloat(attrs.price))}
-                                      </span>
-                                    )}
-                                  </div>
-
-                                  <Button
-                                    onClick={() => handleItemClick(item)}
-                                    className="h-9 px-3 gap-1.5 shrink-0 border border-gray-300 cursor-pointer"
-                                    size="sm"
-                                  >
-                                    {hasOptions ? (
-                                      <>
-                                        <Settings2 className="h-3.5 w-3.5" />
-                                        Personalizar
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Plus className="h-3.5 w-3.5" />
-                                        Adicionar
-                                      </>
-                                    )}
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                </>
-              )}
-            </div>
-          </div>
+          <CatalogPanel
+            groups={catalog?.data ?? []}
+            categories={categories}
+            isLoading={isLoading || categoriesLoading}
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            scanner={scanner}
+            onItemClick={handleItemClick}
+          />
         </div>
 
         {/* ── Carrinho e Pedido ────────────────────────── */}

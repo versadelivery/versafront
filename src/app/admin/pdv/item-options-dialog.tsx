@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import { ShoppingCart, Scale, Plus, ChefHat, ListChecks } from "lucide-react";
+import { ShoppingCart, Scale, Plus, ChefHat, ListChecks, ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -150,9 +151,25 @@ export function ItemOptionsDialog({
   const [pickedWeight, setWeight] = useState<number>(1);
   const weight = initialWeight ?? pickedWeight;
 
+  // Celular: uma etapa por tela (Voltar / Próximo). No computador fica tudo numa tela só
+  const [page, setPage] = useState(0);
+  const [isPhone, setIsPhone] = useState(false);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    const update = () => setIsPhone(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+  useEffect(() => {
+    bodyRef.current?.scrollTo({ top: 0 });
+  }, [page]);
+
   // Reset e pré-selecionar primeira opção de cada step ao abrir
   useEffect(() => {
     if (open && item) {
+      setPage(0);
       setSelectedExtraIds([]);
       setSelectedMethodIds([]);
       setSelectedSharedComplementIds([]);
@@ -200,6 +217,23 @@ export function ItemOptionsDialog({
   }, [item]);
 
   const weightUnit = isGrams ? 'g' : 'kg';
+
+  // Etapas na ordem em que aparecem na tela
+  const pages: string[] = useMemo(() => {
+    const list: string[] = [];
+    if (isWeightBased) list.push("weight");
+    steps.forEach((step: any) => {
+      if ((step.attributes?.options?.data ?? []).length > 0) list.push("step:" + step.id);
+    });
+    if (methods.length > 0) list.push("methods");
+    if (extras.length > 0) list.push("extras");
+    if (sharedComplements.some((g: any) => (g.attributes?.options ?? []).length > 0)) list.push("shared");
+    return list;
+  }, [isWeightBased, steps, methods, extras, sharedComplements]);
+  const wizard = isPhone && pages.length > 1;
+  const current = Math.min(page, Math.max(pages.length - 1, 0));
+  const pageCls = (key: string) =>
+    wizard ? (pages[current] === key ? "[&_hr]:hidden" : "hidden") : "";
 
   const hasDiscount = useMemo(() => {
     if (!item) return false;
@@ -340,12 +374,17 @@ export function ItemOptionsDialog({
           <DialogTitle className="font-tomato text-lg font-bold text-gray-900 truncate">
             {attrs.name}
           </DialogTitle>
+          {wizard && (
+            <p className="text-xs text-muted-foreground">
+              Etapa {current + 1} de {pages.length}
+            </p>
+          )}
         </DialogHeader>
 
         {/* Body scrollável */}
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-[#FAF9F7] [background:linear-gradient(#FAF9F7_30%,transparent),linear-gradient(transparent,#FAF9F7_70%)_bottom,radial-gradient(farthest-side_at_50%_0,rgba(0,0,0,.18),transparent),radial-gradient(farthest-side_at_50%_100%,rgba(0,0,0,.18),transparent)_bottom] [background-repeat:no-repeat] [background-size:100%_24px,100%_24px,100%_8px,100%_8px] [background-attachment:local,local,scroll,scroll]">
+        <div ref={bodyRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-[#FAF9F7] [background:linear-gradient(#FAF9F7_30%,transparent),linear-gradient(transparent,#FAF9F7_70%)_bottom,radial-gradient(farthest-side_at_50%_0,rgba(0,0,0,.18),transparent),radial-gradient(farthest-side_at_50%_100%,rgba(0,0,0,.18),transparent)_bottom] [background-repeat:no-repeat] [background-size:100%_24px,100%_24px,100%_8px,100%_8px] [background-attachment:local,local,scroll,scroll]">
           {/* Imagem do produto */}
-          {attrs.image_url ? (
+          {wizard && current > 0 ? null : attrs.image_url ? (
             <div className="relative w-full h-32 sm:h-48 bg-[#F0EFEB] [@media(max-height:700px)]:hidden">
               <Image
                 src={attrs.image_url}
@@ -370,7 +409,7 @@ export function ItemOptionsDialog({
 
           <div className="px-4 sm:px-6 py-5 space-y-5">
             {/* Info do produto */}
-            <div className="space-y-2">
+            <div className={cn("space-y-2", wizard && current > 0 && "hidden")}>
               {attrs.description && (
                 <p className="text-sm text-muted-foreground">
                   {attrs.description}
@@ -396,8 +435,8 @@ export function ItemOptionsDialog({
 
             {/* Peso (kg / g) */}
             {isWeightBased && (
-              <>
-                <hr className="border-[#E5E2DD]" />
+              <div className={pageCls("weight")}>
+                <hr className="border-[#E5E2DD] mb-5" />
                 <section className="space-y-3">
                   <div className="flex items-center gap-2">
                     <Scale className="h-4 w-4 text-primary" />
@@ -426,7 +465,7 @@ export function ItemOptionsDialog({
                     </span>
                   </div>
                 </section>
-              </>
+              </div>
             )}
 
             {/* Etapas (steps) */}
@@ -435,7 +474,7 @@ export function ItemOptionsDialog({
               if (opts.length === 0) return null;
               const isRequired = step.attributes?.required !== false;
               return (
-                <div key={step.id}>
+                <div key={step.id} className={pageCls("step:" + step.id)}>
                   <hr className="border-[#E5E2DD] mb-5" />
                   <section className="space-y-3">
                     <div className="flex items-center gap-2">
@@ -490,8 +529,8 @@ export function ItemOptionsDialog({
 
             {/* Modo de preparo */}
             {methods.length > 0 && (
-              <>
-                <hr className="border-[#E5E2DD]" />
+              <div className={pageCls("methods")}>
+                <hr className="border-[#E5E2DD] mb-5" />
                 <section className="space-y-3">
                   <div className="flex items-center gap-2">
                     <ChefHat className="h-4 w-4 text-primary" />
@@ -530,13 +569,13 @@ export function ItemOptionsDialog({
                     })}
                   </div>
                 </section>
-              </>
+              </div>
             )}
 
             {/* Extras */}
             {extras.length > 0 && (
-              <>
-                <hr className="border-[#E5E2DD]" />
+              <div className={pageCls("extras")}>
+                <hr className="border-[#E5E2DD] mb-5" />
                 <section className="space-y-3">
                   <div className="flex items-center gap-2">
                     <Plus className="h-4 w-4 text-primary" />
@@ -575,13 +614,13 @@ export function ItemOptionsDialog({
                     })}
                   </div>
                 </section>
-              </>
+              </div>
             )}
 
             {/* Complementos Compartilhados */}
             {sharedComplements.length > 0 && (
-              <>
-                <hr className="border-[#E5E2DD]" />
+              <div className={pageCls("shared")}>
+                <hr className="border-[#E5E2DD] mb-5" />
                 <section className="space-y-4">
                   {sharedComplements.map((group: any) => {
                     const options: any[] = group.attributes?.options ?? [];
@@ -629,7 +668,7 @@ export function ItemOptionsDialog({
                     );
                   })}
                 </section>
-              </>
+              </div>
             )}
 
           </div>
@@ -648,13 +687,24 @@ export function ItemOptionsDialog({
               </span>
             )}
           </div>
-          <Button variant="outline" onClick={onClose} className="flex-1 sm:flex-none border border-gray-300 cursor-pointer">
-            Cancelar
+          <Button
+            variant="outline"
+            onClick={() => (wizard && current > 0 ? setPage(current - 1) : onClose())}
+            className="flex-1 sm:flex-none border border-gray-300 cursor-pointer"
+          >
+            {wizard && current > 0 ? "Voltar" : "Cancelar"}
           </Button>
-          <Button onClick={handleAddToCart} className="gap-2 flex-[2] sm:flex-none border border-gray-300 cursor-pointer">
-            <ShoppingCart className="h-4 w-4" />
-            Adicionar
-          </Button>
+          {wizard && current < pages.length - 1 ? (
+            <Button onClick={() => setPage(current + 1)} className="gap-2 flex-[2] border border-gray-300 cursor-pointer">
+              Próximo
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          ) : (
+            <Button onClick={handleAddToCart} className="gap-2 flex-[2] sm:flex-none border border-gray-300 cursor-pointer">
+              <ShoppingCart className="h-4 w-4" />
+              Adicionar
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>
