@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { ChangeEvent } from "react";
-import { ChevronRight, Package, Plus, Search } from "lucide-react";
+import { ArrowLeft, ChevronRight, Package, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
@@ -35,6 +35,22 @@ const opensDetails = (attrs: any) =>
 
 const unitLabel = (attrs: any) =>
   attrs.item_type === "weight_per_kg" ? "/kg" : attrs.item_type === "weight_per_g" ? "/g" : "";
+
+function NavCard({ title, count, onClick }: { title: string; count: number; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex min-h-24 flex-col items-start justify-between gap-2 rounded-md border border-[#E5E2DD] bg-[#FAF9F7] p-4 text-left transition-colors hover:border-primary/40 active:bg-[#F0EFEB] cursor-pointer"
+    >
+      <span className="line-clamp-2 font-tomato text-base font-semibold text-gray-900">{title}</span>
+      <span className="flex w-full items-center justify-between text-xs text-muted-foreground">
+        {count} {count === 1 ? "produto" : "produtos"}
+        <ChevronRight className="h-4 w-4" />
+      </span>
+    </button>
+  );
+}
 
 function ItemRow({ item, onClick }: { item: any; onClick: () => void }) {
   const attrs = item.attributes;
@@ -139,34 +155,27 @@ export function CatalogPanel({
   const categoryGroups = currentCategory ? currentCategory.groups : navGroups;
   const term = searchTerm.trim().toLowerCase();
 
-  // Seções na tela: categoria (faixa colorida) > grupo > itens. A busca vale para tudo
-  const sections = useMemo(() => {
-    const base = hasCategories ? categoryEntries : [{ id: "all", name: null as string | null, groups: navGroups }];
-    return base
-      .filter((c: any) => searching || !currentCategory || c.id === currentCategory.id)
-      .map((c: any) => ({
-        ...c,
-        groups: c.groups
-          .filter((g: any) => searching || !groupId || g.id === groupId)
-          .map((g: any) =>
-            searching
-              ? {
-                  ...g,
-                  attributes: {
-                    ...g.attributes,
-                    items: g.attributes.items.filter(
-                      (i: any) =>
-                        i.attributes?.name?.toLowerCase().includes(term) ||
-                        i.attributes?.description?.toLowerCase().includes(term),
-                    ),
-                  },
-                }
-              : g,
-          )
-          .filter((g: any) => g.attributes.items.length > 0),
+  // Sem grupo aberto e sem busca: cartões dos grupos. Com grupo aberto (ou busca): lista de itens
+  const showGroups = !searching && !groupId;
+  const openGroup = navGroups.find((g: any) => g.id === groupId) ?? null;
+  const itemSections = useMemo(() => {
+    if (showGroups) return [];
+    return (searching ? navGroups : openGroup ? [openGroup] : [])
+      .map((g: any) => ({
+        ...g,
+        attributes: {
+          ...g.attributes,
+          items: searching
+            ? g.attributes.items.filter(
+                (i: any) =>
+                  i.attributes?.name?.toLowerCase().includes(term) ||
+                  i.attributes?.description?.toLowerCase().includes(term),
+              )
+            : g.attributes.items,
+        },
       }))
-      .filter((c: any) => c.groups.length > 0);
-  }, [hasCategories, categoryEntries, navGroups, searching, currentCategory, groupId, term]);
+      .filter((g: any) => g.attributes.items.length > 0);
+  }, [showGroups, searching, navGroups, openGroup, term]);
 
   const pickCategory = (id: string | null) => {
     setCategoryId(id);
@@ -239,18 +248,16 @@ export function CatalogPanel({
             ))}
           </div>
         )}
-        {/* Grupos da categoria escolhida (no celular os grupos aparecem como subtítulo da lista) */}
-        {!searching && categoryGroups.length > 1 && (currentCategory || !hasCategories) && (
-          <div className="hidden flex-wrap gap-2 border-t border-dashed border-[#E5E2DD] pt-3 lg:flex">
-            <Chip active={groupId === null} onClick={() => setGroupId(null)}>
-              Todos os grupos
-            </Chip>
-            {categoryGroups.map((g: any) => (
-              <Chip key={g.id} active={groupId === g.id} onClick={() => setGroupId(g.id)}>
-                {g.attributes.name}
-              </Chip>
-            ))}
-          </div>
+        {!searching && openGroup && (
+          <button
+            type="button"
+            onClick={() => setGroupId(null)}
+            className="flex items-center gap-1.5 text-sm font-medium text-primary cursor-pointer"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Voltar
+            <span className="font-normal text-muted-foreground">/ {openGroup.attributes.name}</span>
+          </button>
         )}
       </div>
 
@@ -260,7 +267,7 @@ export function CatalogPanel({
             <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />
             <p className="text-muted-foreground">Carregando produtos...</p>
           </div>
-        ) : navGroups.length === 0 || sections.length === 0 ? (
+        ) : navGroups.length === 0 || (!showGroups && itemSections.length === 0) ? (
           <div className="py-12 text-center">
             <Package className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
             <p className="text-lg text-muted-foreground">
@@ -268,29 +275,27 @@ export function CatalogPanel({
             </p>
             {searching && <p className="mt-2 text-sm text-muted-foreground">Tente buscar por outro termo</p>}
           </div>
+        ) : showGroups ? (
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
+            {categoryGroups.map((g: any) => (
+              <NavCard
+                key={g.id}
+                title={g.attributes.name}
+                count={g.attributes.items.length}
+                onClick={() => setGroupId(g.id)}
+              />
+            ))}
+          </div>
         ) : (
-          <div className="space-y-6">
-            {sections.map((c: any) => (
-              <section key={c.id} className="overflow-hidden rounded-md border border-[#E5E2DD]">
-                {c.name && (
-                  <h3 className="bg-primary px-4 py-3 text-center font-tomato text-lg font-bold text-primary-foreground">
-                    {c.name}
-                  </h3>
+          <div className="space-y-5">
+            {itemSections.map((g: any) => (
+              <section key={g.id} className="space-y-2">
+                {searching && (
+                  <h3 className="font-tomato text-sm font-semibold text-primary">{g.attributes.name}</h3>
                 )}
-                <div className="space-y-4 bg-[#FAF9F7] p-3">
-                  {c.groups.map((g: any) => (
-                    <div key={g.id} className="space-y-2">
-                      {(c.groups.length > 1 || !c.name) && (
-                        <h4 className="px-1 font-tomato text-sm font-semibold uppercase tracking-wide text-gray-600">
-                          {g.attributes.name}
-                        </h4>
-                      )}
-                      <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
-                        {g.attributes.items.map((item: any) => (
-                          <ItemRow key={item.id} item={item} onClick={() => onItemClick(item)} />
-                        ))}
-                      </div>
-                    </div>
+                <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
+                  {g.attributes.items.map((item: any) => (
+                    <ItemRow key={item.id} item={item} onClick={() => onItemClick(item)} />
                   ))}
                 </div>
               </section>
