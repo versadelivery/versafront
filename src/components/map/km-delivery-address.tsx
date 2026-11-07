@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { AddressNumberField } from "@/components/address-number-field";
 import { AddressSearchInput } from "@/components/map/address-search-input";
 import { LocationPickerMap } from "@/components/map/location-picker-map";
 import {
@@ -357,25 +358,20 @@ export function KmDeliveryAddress({
             de casa mapeado (Itapajé/CE tem 3 no município inteiro) e só dois
             bairros para toda a cidade, qualquer palpite viria errado.
           */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="space-y-3">
             <div>
               <Label htmlFor="kmNumber" className="mb-1.5 block text-sm font-medium text-gray-700">
                 Número <span className="text-red-500">*</span>
               </Label>
-              <Input
+              <AddressNumberField
                 id="kmNumber"
                 value={value.number}
-                onChange={(event) => onChange(previous => ({ ...previous, number: event.target.value }))}
-                placeholder="123"
-                inputMode="numeric"
-                maxLength={10}
-                className={cn(
-                  "text-sm border-[#E5E2DD] focus:border-primary/40",
-                  fieldErrors.number && "border-red-400 focus:border-red-400"
-                )}
+                onChange={(number) => onChange(previous => ({ ...previous, number }))}
+                hasError={!!fieldErrors.number}
+                className="text-sm border-[#E5E2DD] focus:border-primary/40"
               />
             </div>
-            <div className="col-span-2">
+            <div>
               <Label htmlFor="kmNeighborhood" className="mb-1.5 block text-sm font-medium text-gray-700">
                 Bairro <span className="text-red-500">*</span>
               </Label>

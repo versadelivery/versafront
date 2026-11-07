@@ -6,6 +6,8 @@ import { formatCurrency, cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { isWeightItem, formatWeight, orderItemQuantityLabel } from '@/utils/order-item-quantity';
 import { calculateItemTotal } from '@/utils/order-item-total';
+import { NO_NUMBER, isNoNumber } from '@/utils/address-number';
+import { parseWeightInput } from '@/utils/weight-input';
 import { toast } from 'sonner';
 import {
   Select,
@@ -708,8 +710,8 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
   // Peso editado muda o valor do item na hora (mesma conta da API)
   const handleWeightChange = (itemId: string, raw: string) => {
     setWeightDrafts(prev => ({ ...prev, [itemId]: raw }));
-    const weight = parseFloat(raw.replace(',', '.'));
-    if (!Number.isFinite(weight) || weight <= 0) return;
+    const weight = parseWeightInput(raw);
+    if (weight === null) return;
 
     setEditedOrder(prev => ({
       ...prev,
@@ -1058,11 +1060,23 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
                         </div>
                         <div className="flex items-center justify-between py-1.5">
                           <span className="text-sm text-muted-foreground">Numero</span>
-                          <Input
-                            className="h-8 w-48 text-sm border-[#E5E2DD] rounded-md bg-white text-right"
-                            value={editedOrder.address?.number || ''}
-                            onChange={(e) => handleInputChange('customer', 'number', e.target.value)}
-                          />
+                          <div className="flex items-center gap-2">
+                            <label className="flex cursor-pointer items-center gap-1 text-xs text-muted-foreground">
+                              <input
+                                type="checkbox"
+                                checked={isNoNumber(editedOrder.address?.number)}
+                                onChange={(e) => handleInputChange('customer', 'number', e.target.checked ? NO_NUMBER : '')}
+                                className="h-3.5 w-3.5 accent-[var(--color-primary,#009444)]"
+                              />
+                              S/N
+                            </label>
+                            <Input
+                              className="h-8 w-32 text-sm border-[#E5E2DD] rounded-md bg-white text-right"
+                              value={editedOrder.address?.number || ''}
+                              disabled={isNoNumber(editedOrder.address?.number)}
+                              onChange={(e) => handleInputChange('customer', 'number', e.target.value)}
+                            />
+                          </div>
                         </div>
                         <div className="flex items-center justify-between py-1.5">
                           <span className="text-sm text-muted-foreground">Complemento</span>

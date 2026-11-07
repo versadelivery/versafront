@@ -17,6 +17,19 @@ const nextConfig: NextConfig = {
         port: '3001',
         pathname: '/**',
       },
+      // perfil de portas alternativas (npm run dev:3100): front 3100, API 3101
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '3100',
+        pathname: '/**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '3101',
+        pathname: '/**',
+      },
       {
         protocol: 'https',
         hostname: '289a818c45e4.ngrok-free.app',

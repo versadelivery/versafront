@@ -28,6 +28,8 @@ import { useDelivery } from "@/hooks/use-delivery";
 import { KmDeliveryAddress, KmDeliveryState, emptyKmDeliveryState } from "@/components/map/km-delivery-address";
 import { ItemOptionsDialog } from "./item-options-dialog";
 import { CustomerSearchInput } from "./customer-search-input";
+import { AddressNumberField } from "@/components/address-number-field";
+import { normalizeAddressNumber, splitStreetNumber } from "@/utils/address-number";
 import { customerService } from "@/app/admin/clientes/services/customerService";
 import type { Customer, CustomerLastAddress } from "@/app/admin/clientes/services/customerService";
 import { collectCustomerErrors as collectRules, PDV_PHONE_REGEX, phoneDigits } from "@/lib/pdv-customer-rules";
@@ -69,6 +71,7 @@ interface CustomerInfo {
   name: string;
   phone: string;
   address: string;
+  number: string;
   neighborhood: string;
   complement?: string;
   reference?: string;
@@ -104,6 +107,7 @@ export default function PDVPage() {
     name: "",
     phone: "",
     address: "",
+    number: "",
     neighborhood: "",
     complement: "",
     reference: "",
@@ -556,11 +560,11 @@ export default function PDVPage() {
     // Balcão não tem telefone nem endereço: não carrega dados que sobraram de outro tipo
     if (type === "counter") {
       setSelectedCustomer(null);
-      setCustomerInfo((p) => ({ ...p, phone: "", address: "", neighborhood: "", complement: "", reference: "" }));
+      setCustomerInfo((p) => ({ ...p, phone: "", address: "", number: "", neighborhood: "", complement: "", reference: "" }));
       setSelectedNeighborhoodId("");
       setKmDelivery(emptyKmDeliveryState);
     } else if (type === "pickup") {
-      setCustomerInfo((p) => ({ ...p, address: "", neighborhood: "", complement: "", reference: "" }));
+      setCustomerInfo((p) => ({ ...p, address: "", number: "", neighborhood: "", complement: "", reference: "" }));
       setSelectedNeighborhoodId("");
       setKmDelivery(emptyKmDeliveryState);
     }
@@ -599,8 +603,8 @@ export default function PDVPage() {
     if (isPerKm) {
       setKmDelivery({
         ...emptyKmDeliveryState,
-        address: last.address ?? "",
-        number: last.number ?? "",
+        address: splitStreetNumber(last.address, last.number).street,
+        number: splitStreetNumber(last.address, last.number).number,
         neighborhood: last.neighborhood ?? "",
         complement: last.complement ?? "",
         reference: last.reference ?? "",
@@ -610,9 +614,11 @@ export default function PDVPage() {
       return;
     }
 
+    const { street, number } = splitStreetNumber(last.address, last.number);
     setCustomerInfo((p) => ({
       ...p,
-      address: [last.address, last.number].filter(Boolean).join(", ").slice(0, 70),
+      address: street,
+      number,
       neighborhood: last.neighborhood ?? "",
       complement: last.complement ?? "",
       reference: last.reference ?? "",
@@ -742,7 +748,7 @@ export default function PDVPage() {
           address: isPerKm && orderType === "delivery"
             ? {
                 address: kmDelivery.address,
-                number: kmDelivery.number,
+                number: normalizeAddressNumber(kmDelivery.number),
                 neighborhood: kmDelivery.neighborhood,
                 complement: kmDelivery.complement,
                 reference: kmDelivery.reference,
@@ -750,7 +756,8 @@ export default function PDVPage() {
                 longitude: kmDelivery.longitude ?? undefined,
               }
             : {
-                address: orderType === "delivery" ? customerInfo.address : "",
+                address: orderType === "delivery" ? customerInfo.address.trim() : "",
+                number: orderType === "delivery" ? normalizeAddressNumber(customerInfo.number) : undefined,
                 neighborhood: orderType !== "delivery" ? "" : (isPerNeighborhood
                   ? (neighborhoods.find((n) => n.id === selectedNeighborhoodId)?.name ?? "")
                   : customerInfo.neighborhood),
@@ -787,7 +794,7 @@ export default function PDVPage() {
         handleRemoveCoupon();
         setFormErrors({});
         if (!isTableOrder) {
-          setCustomerInfo({ name: "", phone: "", address: "", neighborhood: "", complement: "", reference: "" });
+          setCustomerInfo({ name: "", phone: "", address: "", number: "", neighborhood: "", complement: "", reference: "" });
           setSelectedNeighborhoodId("");
           setKmDelivery(emptyKmDeliveryState);
           setSelectedCustomer(null);
@@ -1001,20 +1008,35 @@ export default function PDVPage() {
 
                   {orderType === "delivery" && !isPerKm && (
                     <>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="address" className="text-sm">Rua e número <span className="text-red-500">*</span></Label>
-                        <Input
-                          id="address"
-                          value={customerInfo.address}
-                          onChange={(e) => {
-                            setCustomerInfo((p) => ({ ...p, address: e.target.value }));
-                            if (formErrors.address) setFormErrors((p) => ({ ...p, address: "" }));
-                          }}
-                          placeholder="Rua, número"
-                          maxLength={70}
-                          className={`h-11 ${formErrors.address ? "border-red-500 focus-visible:ring-red-500" : ""}`}
-                        />
-                        {formErrors.address && <p className="text-xs text-red-500">{formErrors.address}</p>}
+                      <div className="space-y-4">
+                        <div className="space-y-1.5">
+                          <Label htmlFor="address" className="text-sm">Rua <span className="text-red-500">*</span></Label>
+                          <Input
+                            id="address"
+                            value={customerInfo.address}
+                            onChange={(e) => {
+                              setCustomerInfo((p) => ({ ...p, address: e.target.value }));
+                              if (formErrors.address) setFormErrors((p) => ({ ...p, address: "" }));
+                            }}
+                            placeholder="Nome da rua"
+                            maxLength={70}
+                            className={`h-11 ${formErrors.address ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+                          />
+                          {formErrors.address && <p className="text-xs text-red-500">{formErrors.address}</p>}
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="number" className="text-sm">Número <span className="text-red-500">*</span></Label>
+                          <AddressNumberField
+                            id="number"
+                            value={customerInfo.number}
+                            onChange={(number) => {
+                              setCustomerInfo((p) => ({ ...p, number }));
+                              if (formErrors.number) setFormErrors((p) => ({ ...p, number: "" }));
+                            }}
+                            hasError={!!formErrors.number}
+                          />
+                          {formErrors.number && <p className="text-xs text-red-500">{formErrors.number}</p>}
+                        </div>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-1.5">
@@ -1130,7 +1152,7 @@ export default function PDVPage() {
             </p>
             <p className="truncate text-xs text-muted-foreground">
               {orderType === "delivery"
-                ? [customerInfo.phone, isPerKm ? kmDelivery.address : customerInfo.address].filter(Boolean).join(" · ")
+                ? [customerInfo.phone, isPerKm ? [kmDelivery.address, normalizeAddressNumber(kmDelivery.number)].filter(Boolean).join(", ") : [customerInfo.address, normalizeAddressNumber(customerInfo.number)].filter(Boolean).join(", ")].filter(Boolean).join(" · ")
                 : orderType === "pickup"
                 ? customerInfo.phone
                 : orderType === "counter"

@@ -4,7 +4,7 @@ import { collectCustomerErrors, type PdvRuleContext } from './pdv-customer-rules
 
 const base: PdvRuleContext = {
   orderType: 'delivery',
-  customer: { name: '', phone: '', address: '', neighborhood: '' },
+  customer: { name: '', phone: '', address: '', number: '', neighborhood: '' },
   isPerKm: false,
   isPerNeighborhood: false,
   selectedNeighborhoodId: '',
@@ -29,18 +29,33 @@ test('pickup needs only a valid phone', () => {
 })
 
 test('delivery requires name, phone and address', () => {
-  assert.deepEqual(Object.keys(collectCustomerErrors(base)).sort(), ['address', 'name', 'neighborhood', 'phone'])
+  assert.deepEqual(Object.keys(collectCustomerErrors(base)).sort(), ['address', 'name', 'neighborhood', 'number', 'phone'])
 })
 
 test('delivery per neighborhood asks for the neighborhood list, not free text', () => {
-  const errors = collectCustomerErrors(ctx({ isPerNeighborhood: true, customer: { name: 'A', phone: '(85) 98877-6655', address: 'Rua', neighborhood: 'x' } }))
+  const errors = collectCustomerErrors(ctx({ isPerNeighborhood: true, customer: { name: 'A', phone: '(85) 98877-6655', address: 'Rua', number: '10', neighborhood: 'x' } }))
   assert.deepEqual(errors, { neighborhood: 'Selecione um bairro' })
 })
 
 test('delivery per km needs a confirmed location and a quote', () => {
   const km = { address: 'Rua A', number: '1', neighborhood: 'Centro', latitude: -3.7, longitude: -38.5, error: null, hasQuote: false }
-  const customer = { name: 'A', phone: '(85) 98877-6655', address: '', neighborhood: '' }
+  const customer = { name: 'A', phone: '(85) 98877-6655', address: '', number: '', neighborhood: '' }
   assert.match(collectCustomerErrors(ctx({ isPerKm: true, customer, km })).address, /taxa/)
   assert.deepEqual(collectCustomerErrors(ctx({ isPerKm: true, customer, km: { ...km, hasQuote: true } })), {})
   assert.match(collectCustomerErrors(ctx({ isPerKm: true, customer, km: { ...km, latitude: null } })).address, /mapa/)
+})
+
+test('delivery needs the house number in its own field, or S/N', () => {
+  const customer = { name: 'A', phone: '(85) 98877-6655', address: 'Major Barreto', number: '', neighborhood: 'Centro' }
+  assert.deepEqual(collectCustomerErrors(ctx({ customer })), { number: 'Informe o número ou marque S/N' })
+  assert.deepEqual(collectCustomerErrors(ctx({ customer: { ...customer, number: 'S/N' } })), {})
+  assert.deepEqual(collectCustomerErrors(ctx({ customer: { ...customer, number: 'sn' } })), {})
+  assert.deepEqual(collectCustomerErrors(ctx({ customer: { ...customer, number: '1300' } })), {})
+})
+
+test('per km also accepts S/N as the number', () => {
+  const km = { address: 'Rua A', number: 'S/N', neighborhood: 'Centro', latitude: -3.7, longitude: -38.5, error: null, hasQuote: true }
+  const customer = { name: 'A', phone: '(85) 98877-6655', address: '', number: '', neighborhood: '' }
+  assert.deepEqual(collectCustomerErrors(ctx({ isPerKm: true, customer, km })), {})
+  assert.deepEqual(Object.keys(collectCustomerErrors(ctx({ isPerKm: true, customer, km: { ...km, number: '' } }))), ['number'])
 })

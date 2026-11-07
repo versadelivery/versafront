@@ -18,6 +18,9 @@ import { Badge } from "@/components/ui/badge";
 import { Package } from "lucide-react";
 import { formatPrice } from "@/utils/format-price";
 import { calculateAssemblyPrice } from "@/utils/assembly-pricing";
+import { Input } from "@/components/ui/input";
+import { parseWeightInput } from "@/utils/weight-input";
+import { formatWeight } from "@/utils/order-item-quantity";
 
 const ITEM_H = 44;
 const VISIBLE = 3;
@@ -149,6 +152,8 @@ export function ItemOptionsDialog({
     Record<string, string>
   >({});
   const [pickedWeight, setWeight] = useState<number>(1);
+  // Texto do peso exato enquanto o atendente digita (ex.: "1," antes de "1,359")
+  const [weightDraft, setWeightDraft] = useState<string | null>(null);
   const weight = initialWeight ?? pickedWeight;
 
   // Celular: uma etapa por tela (Voltar / Próximo). No computador fica tudo numa tela só
@@ -180,6 +185,7 @@ export function ItemOptionsDialog({
         if (step.attributes?.required !== false && opts.length > 0) initOptions[step.id] = opts[0].id;
       });
       setSelectedOptions(initOptions);
+      setWeightDraft(null);
       // Inicializar peso para itens por peso (mesma lógica do client-side)
       const attrs = item.attributes;
       if (attrs?.item_type === 'weight_per_g') {
@@ -453,12 +459,33 @@ export function ItemOptionsDialog({
                       max={item.attributes.max_weight || (isGrams ? 5000 : 10)}
                       step={item.attributes.measure_interval || (isGrams ? 50 : 0.1)}
                       value={weight}
-                      onChange={setWeight}
+                      onChange={(v) => { setWeight(v); setWeightDraft(null); }}
                       unit={weightUnit}
                     />
                   )}
+                  {initialWeight === undefined && (
+                    <div className="flex items-center justify-center gap-2">
+                      <label htmlFor="exact-weight" className="text-sm text-muted-foreground">Peso exato</label>
+                      <Input
+                        id="exact-weight"
+                        type="text"
+                        inputMode="decimal"
+                        autoComplete="off"
+                        aria-label={`Peso exato em ${weightUnit}`}
+                        value={weightDraft ?? formatWeight(weight)}
+                        onChange={(e) => {
+                          setWeightDraft(e.target.value);
+                          const exact = parseWeightInput(e.target.value);
+                          if (exact !== null) setWeight(exact);
+                        }}
+                        onBlur={() => setWeightDraft(null)}
+                        className="h-10 w-32 text-center text-base"
+                      />
+                      <span className="text-sm text-muted-foreground">{weightUnit}</span>
+                    </div>
+                  )}
                   <div className="text-center text-sm text-muted-foreground">
-                    {weight} {weightUnit} × {formatPrice(basePrice)}/{weightUnit}
+                    {formatWeight(weight)} {weightUnit} × {formatPrice(basePrice)}/{weightUnit}
                     {' = '}
                     <span className="font-semibold text-primary">
                       {formatPrice(basePrice * weight)}

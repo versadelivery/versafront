@@ -1,3 +1,5 @@
+import { hasAddressNumber } from "../utils/address-number.ts";
+
 // Regras do cliente no PDV: o que cada tipo de pedido exige antes de ir para os itens.
 
 export type PdvOrderType = "delivery" | "pickup" | "counter" | "table";
@@ -6,6 +8,8 @@ export interface PdvCustomerFields {
   name: string;
   phone: string;
   address: string;
+  // número em campo próprio ("S/N" = sem número)
+  number: string;
   neighborhood: string;
 }
 
@@ -55,7 +59,7 @@ export function collectCustomerErrors(ctx: PdvRuleContext): Record<string, strin
 
   if (ctx.isPerKm) {
     if (!km.address.trim()) errors.address = "Endereço é obrigatório";
-    if (!km.number.trim()) errors.number = "Número é obrigatório";
+    if (!hasAddressNumber(km.number)) errors.number = "Número é obrigatório";
     if (!km.neighborhood.trim()) errors.neighborhood = "Bairro é obrigatório";
     if (km.latitude === null || km.longitude === null) {
       errors.address = "Confirme a localização da entrega no mapa";
@@ -67,7 +71,8 @@ export function collectCustomerErrors(ctx: PdvRuleContext): Record<string, strin
     return errors;
   }
 
-  if (!customer.address.trim()) errors.address = "Endereço é obrigatório";
+  if (!customer.address.trim()) errors.address = "Rua é obrigatória";
+  if (!hasAddressNumber(customer.number)) errors.number = "Informe o número ou marque S/N";
   if (ctx.isPerNeighborhood) {
     if (!ctx.selectedNeighborhoodId) errors.neighborhood = "Selecione um bairro";
   } else if (!customer.neighborhood.trim()) {
