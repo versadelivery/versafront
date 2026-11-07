@@ -135,7 +135,7 @@ def build_receipt(job, paper_width=DEFAULT_WIDTH):
         if order.get("delivery_person"): r.pair("Entregador:", order["delivery_person"], 23)
         r.rule(False); r.text("CLIENTE:", 27, True); r.text(customer.get("name", "Cliente"), 24)
         if show_address and not order.get("withdrawal") and address.get("address"):
-            r.text(f'{address["address"]}, {address.get("number", "")}', 23)
+            r.text(", ".join(str(part) for part in (address["address"], address.get("number")) if part), 23)
             if address.get("neighborhood"): r.pair("Bairro:", address["neighborhood"], 23)
         else: r.text("Retirada na loja", 23)
         if show_phone and customer.get("cellphone"): r.pair("Fone:", customer["cellphone"], 23)

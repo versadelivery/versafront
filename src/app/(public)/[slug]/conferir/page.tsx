@@ -31,6 +31,8 @@ import logoInlineBlack from "@/public/logo/logo-inline-black.svg"
 import Link from 'next/link'
 import PublicLoading from '@/components/public-loading'
 import { KmDeliveryAddress, KmDeliveryState, emptyKmDeliveryState } from '@/components/map/km-delivery-address'
+import { AddressNumberField } from '@/components/address-number-field'
+import { hasAddressNumber, normalizeAddressNumber, splitStreetNumber } from '@/utils/address-number'
 
 type DeliveryOption = 'delivery' | 'pickup'
 
@@ -350,6 +352,8 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('credit')
   const [deliveryOption, setDeliveryOption] = useState<DeliveryOption>('delivery')
   const [address, setAddress] = useState('')
+  // Número em campo próprio ("S/N" = sem número), igual ao PDV
+  const [addressNumber, setAddressNumber] = useState('')
   const [complement, setComplement] = useState('')
   const [reference, setReference] = useState('')
   const [changeFor, setChangeFor] = useState('')
@@ -470,8 +474,10 @@ export default function CheckoutPage() {
     }
   }, [shopPaymentConfig])
 
-  // Pré-preencher endereço do último pedido
+  // Pré-preencher o endereço do cliente (caderno de endereços da loja, o mesmo que o PDV usa)
+  const shopIdForPrefill = shopData?.data?.id
   useEffect(() => {
+    if (!shopIdForPrefill) return
     const phone = (() => {
       try {
         const info = JSON.parse(localStorage.getItem('customer_info') || '{}')
@@ -481,14 +487,19 @@ export default function CheckoutPage() {
     if (!phone || phone.length < 10) return
 
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-    fetch(`${baseUrl}/customers/orders/last_order_info?phone=${phone}`, {
+    fetch(`${baseUrl}/customers/orders/last_order_info?phone=${phone}&shop_id=${shopIdForPrefill}`, {
       headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' }
     })
       .then(res => res.ok ? res.json() : null)
       .then(data => {
         if (!data) return
         if (data.address) {
-          if (data.address.address && !address) setAddress(data.address.address)
+          if (data.address.address && !address) {
+            // endereços antigos guardavam "Rua, 123" inteiro na rua
+            const split = splitStreetNumber(data.address.address, data.address.number)
+            setAddress(split.street)
+            if (!addressNumber) setAddressNumber(split.number)
+          }
           if (data.address.complement && !complement) setComplement(data.address.complement)
           if (data.address.reference && !reference) setReference(data.address.reference)
           if (data.address.shop_delivery_neighborhood_id && !selectedNeighborhood) {
@@ -499,8 +510,8 @@ export default function CheckoutPage() {
           if (data.address.latitude && data.address.longitude) {
             setKmDelivery(prev => ({
               ...prev,
-              address: prev.address || data.address.address || '',
-              number: prev.number || data.address.number || '',
+              address: prev.address || splitStreetNumber(data.address.address, data.address.number).street,
+              number: prev.number || splitStreetNumber(data.address.address, data.address.number).number,
               neighborhood: prev.neighborhood || data.address.neighborhood || '',
               complement: prev.complement || data.address.complement || '',
               reference: prev.reference || data.address.reference || '',
@@ -511,7 +522,8 @@ export default function CheckoutPage() {
         }
       })
       .catch(() => {})
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shopIdForPrefill])
 
   // Set de IDs realmente disponíveis (ativo + grupo ativo + dia da semana)
   const availableItemIds = useMemo(() => {
@@ -778,7 +790,8 @@ export default function CheckoutPage() {
           errors.address = 'Aguarde o cálculo da taxa de entrega'
         }
       } else {
-        if (!address.trim()) errors.address = 'Endereço é obrigatório'
+        if (!address.trim()) errors.address = 'Rua é obrigatória'
+        if (!hasAddressNumber(addressNumber)) errors.number = 'Informe o número ou marque S/N'
         if (shopDeliveryConfig?.delivery_fee_kind === 'per_neighborhood' && !selectedNeighborhood) {
           errors.neighborhood = 'Selecione um bairro'
         } else if (!selectedNeighborhood.trim()) {
@@ -825,7 +838,7 @@ export default function CheckoutPage() {
         address: isKmDelivery
           ? {
               address: kmDelivery.address,
-              number: kmDelivery.number,
+              number: normalizeAddressNumber(kmDelivery.number),
               neighborhood: kmDelivery.neighborhood,
               complement: kmDelivery.complement,
               reference: kmDelivery.reference,
@@ -833,7 +846,8 @@ export default function CheckoutPage() {
               longitude: kmDelivery.longitude ?? undefined
             }
           : {
-              address,
+              address: address.trim(),
+              number: normalizeAddressNumber(addressNumber),
               neighborhood: neighborhoodName,
               complement,
               reference,
@@ -1038,7 +1052,7 @@ export default function CheckoutPage() {
     || (isKmDelivery
       ? !!kmDelivery.address.trim() && !!kmDelivery.number.trim() && !!kmDelivery.neighborhood.trim()
         && !!kmDelivery.quote && !kmDelivery.isCalculating && !kmDelivery.error
-      : !!address.trim())
+      : !!address.trim() && hasAddressNumber(addressNumber))
 
   const canSubmit = !isSubmitting && isShopOpen && !shopStatusLoading && !isBelowMinOrder && !noPaymentMethods &&
     hasValidDeliveryAddress &&
@@ -1391,16 +1405,28 @@ export default function CheckoutPage() {
                 {deliveryOption === 'delivery' && !isKmDelivery && (
                   <div className="space-y-3">
                     <div>
-                      <Label htmlFor="address" className="text-sm font-medium text-gray-700 mb-1.5 block">Endereço <span className="text-red-500">*</span></Label>
+                      <Label htmlFor="address" className="text-sm font-medium text-gray-700 mb-1.5 block">Rua <span className="text-red-500">*</span></Label>
                       <Input
                         id="address"
-                        placeholder="Rua, número"
+                        placeholder="Nome da rua"
                         value={address}
                         onChange={(e) => { setAddress(e.target.value); setFieldErrors(prev => ({ ...prev, address: '' })) }}
                         maxLength={70}
                         className={`border-[#E5E2DD] focus:border-primary/40 text-sm ${fieldErrors.address ? 'border-red-400 focus:border-red-400' : ''}`}
                       />
                       {fieldErrors.address && <p className="text-sm text-red-500 mt-1">{fieldErrors.address}</p>}
+                    </div>
+
+                    <div>
+                      <Label htmlFor="addressNumber" className="text-sm font-medium text-gray-700 mb-1.5 block">Número <span className="text-red-500">*</span></Label>
+                      <AddressNumberField
+                        id="addressNumber"
+                        value={addressNumber}
+                        onChange={(value) => { setAddressNumber(value); setFieldErrors(prev => ({ ...prev, number: '' })) }}
+                        hasError={!!fieldErrors.number}
+                        className="h-9 text-sm border-[#E5E2DD] focus:border-primary/40"
+                      />
+                      {fieldErrors.number && <p className="text-sm text-red-500 mt-1">{fieldErrors.number}</p>}
                     </div>
 
                     <div>

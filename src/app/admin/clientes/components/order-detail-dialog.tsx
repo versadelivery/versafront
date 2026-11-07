@@ -178,7 +178,7 @@ export default function OrderDetailDialog({
                 <p className="text-xs text-muted-foreground uppercase tracking-wide font-semibold mb-1">
                   Endereço de entrega
                 </p>
-                <p className="font-medium text-gray-900">{address.address}</p>
+                <p className="font-medium text-gray-900">{[address.address, address.number].filter(Boolean).join(', ')}</p>
                 <p className="text-muted-foreground">{address.neighborhood}</p>
                 {address.complement && (
                   <p className="text-muted-foreground">Complemento: {address.complement}</p>

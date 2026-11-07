@@ -39,7 +39,8 @@ export function AuthForm({ onClose }: AuthFormProps) {
   }
 
   const onRegisterSubmit = (data: RegisterInput) => {
-    register(data)
+    // O celular vai só com dígitos: é o mesmo formato do PDV, para o cadastro ser um só
+    register({ ...data, customer: { ...data.customer, cellphone: data.customer.cellphone.replace(/\D/g, '') } })
   }
 
   const phoneMask = (value: string) => {
