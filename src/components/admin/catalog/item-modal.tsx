@@ -25,6 +25,8 @@ import { BarcodeFields } from "@/components/admin/catalog/barcode-fields";
 interface NewItemModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  // Valores já preenchidos ao abrir (código bipado que não estava cadastrado)
+  initial?: { barcode?: string; scaleCode?: string; itemType?: 'unit' | 'weight_per_kg' | 'weight_per_g' };
 }
 
 interface Extra {
@@ -77,7 +79,7 @@ const DEFAULT_ACTIVE_DAYS: Record<DayKey, boolean> = {
 // COMPONENTE PRINCIPAL
 // =============================================================================
 
-export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
+export function NewItemModal({ isOpen, onOpenChange, initial }: NewItemModalProps) {
   // Hooks
   const { catalog, isLoading, createCatalogItem, isCreatingItem } = useCatalogGroup();
 
@@ -156,8 +158,12 @@ export function NewItemModal({ isOpen, onOpenChange }: NewItemModalProps) {
   useEffect(() => {
     if (!isOpen) {
       resetForm();
+    } else if (initial) {
+      if (initial.itemType) setItemType(initial.itemType);
+      setBarcode(initial.barcode ?? '');
+      setScaleCode(initial.scaleCode ?? '');
     }
-  }, [isOpen]);
+  }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // =============================================================================
   // FUNÇÕES AUXILIARES

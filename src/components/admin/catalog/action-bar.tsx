@@ -1,6 +1,8 @@
 import { Plus, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { BarcodeScannerStatus } from "@/components/admin/barcode-scanner-status";
+import type { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
 import { CatalogFilters } from "@/components/admin/catalog/catalog-filters";
 import {
   CatalogFiltersState,
@@ -23,6 +25,8 @@ interface ActionBarProps {
   onDiscountOnlyChange: (value: boolean) => void;
   onOutOfStockIngredientOnlyChange: (value: boolean) => void;
   onClearFilters: () => void;
+  // Leitor de código de barras ligado ao campo de busca
+  scanner?: ReturnType<typeof useBarcodeScanner>;
 }
 
 export function ActionBar({
@@ -39,6 +43,7 @@ export function ActionBar({
   onDiscountOnlyChange,
   onOutOfStockIngredientOnlyChange,
   onClearFilters,
+  scanner,
 }: ActionBarProps) {
   return (
     <div className="mb-6">
@@ -46,12 +51,21 @@ export function ActionBar({
         <div className="relative w-full sm:w-auto sm:flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
+            ref={scanner?.inputRef}
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Buscar por nome..."
+            onKeyDown={scanner?.handleKeyDown}
+            {...scanner?.focusProps}
+            autoComplete="off"
+            placeholder="Buscar por nome ou bipar o código..."
             className="pl-9 text-sm"
           />
         </div>
+        {scanner && (
+          <div className="w-full">
+            <BarcodeScannerStatus scanner={scanner} />
+          </div>
+        )}
 
         <div className="grid w-full grid-cols-3 gap-2 sm:flex sm:w-auto sm:shrink-0">
           <Button

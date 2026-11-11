@@ -4,6 +4,9 @@ import ProtectedRoute from "@/components/protected-route";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import GroupModal from "@/components/admin/catalog/group-modal-create";
 import { NewItemModal } from "@/components/admin/catalog/item-modal";
+import { EditItemModal } from "@/components/admin/catalog/edit-item-modal";
+import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
+import { toast } from "sonner";
 import { ActionBar } from "@/components/admin/catalog/action-bar";
 import { useCatalogGroup } from "@/hooks/useCatalogGroup";
 import { useCatalogReorder } from "@/hooks/useCatalogReorder";
@@ -96,6 +99,8 @@ function CatalogPage() {
   const [filters, setFilters] = useState<CatalogFiltersState>(DEFAULT_FILTERS);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<any | null>(null);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [newItemInitial, setNewItemInitial] = useState<{ barcode?: string; scaleCode?: string; itemType?: "weight_per_kg" } | undefined>();
 
   const [adminLayout, setAdminLayout] = useState<'grid' | 'list'>('grid');
 
@@ -119,6 +124,40 @@ function CatalogPage() {
   const handleDiscountOnlyChange = useCallback((value: boolean) => setFilters((f) => ({ ...f, discountOnly: value })), []);
   const handleOutOfStockIngredientOnlyChange = useCallback((value: boolean) => setFilters((f) => ({ ...f, outOfStockIngredientOnly: value })), []);
   const handleClearFilters = useCallback(() => setFilters(DEFAULT_FILTERS), []);
+
+  // Leitor de código de barras: acha o item (código de fábrica ou PLU da etiqueta de balança) e abre a edição;
+  // sem cadastro, abre o novo item com o código já preenchido.
+  const scanner = useBarcodeScanner({
+    items: [],
+    mode: "weight",
+    clearSearch: () => setSearchQuery(""),
+    ready: !isLoading,
+    onNotReady: () => toast.error("Catálogo carregando. Bipe de novo em instantes."),
+    shortcut: true,
+    onResult: (_result, code) => {
+      const nodes = groups.flatMap((group: any) => {
+        const raw = group.attributes?.items;
+        return (Array.isArray(raw) ? raw : raw?.data || []).map((entry: any) => entry?.data ?? entry);
+      });
+      const isScaleLabel = /^2\d{12}$/.test(code);
+      const plu = isScaleLabel ? Number(code.slice(1, 7)) : null;
+      const found =
+        nodes.find((node: any) => node.attributes?.barcode === code) ??
+        (plu !== null ? nodes.find((node: any) => node.attributes?.item_type !== "unit" && node.attributes?.scale_code === plu) : undefined);
+
+      if (found) {
+        setSearchQuery(found.attributes.name);
+        setEditingItemId(String(found.id));
+        return;
+      }
+      setNewItemInitial(isScaleLabel ? { scaleCode: String(plu), itemType: "weight_per_kg" } : { barcode: code });
+      setIsItemModalOpen(true);
+      toast.info(`Código ${code} não cadastrado. Preencha o cadastro do item.`);
+    },
+  });
+
+  // O Radix devolve o foco ao botão que abriu o modal; depois disso o campo do leitor volta a ser o foco.
+  const refocusScanner = () => setTimeout(scanner.focusInput, 200);
 
   const validGroups = useMemo(() =>
     [...groups]
@@ -396,7 +435,8 @@ function CatalogPage() {
               <ActionBar
                 onNewCategory={() => { setEditingCategory(null); setIsCategoryModalOpen(true); }}
                 onNewGroup={handleCreateGroup}
-                onNewItem={() => setIsItemModalOpen(true)}
+                onNewItem={() => { setNewItemInitial(undefined); setIsItemModalOpen(true); }}
+                scanner={scanner}
                 hasGroups={validGroups.length > 0}
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
@@ -420,7 +460,23 @@ function CatalogPage() {
                 }}
                 editingGroup={editingGroup}
               />
-              <NewItemModal isOpen={isItemModalOpen} onOpenChange={setIsItemModalOpen} />
+              <NewItemModal
+                isOpen={isItemModalOpen}
+                onOpenChange={(open) => {
+                  setIsItemModalOpen(open);
+                  if (open) return;
+                  if (newItemInitial) setSearchQuery(""); // abriu por bipagem: a busca não deve ficar presa
+                  refocusScanner();
+                }}
+                initial={newItemInitial}
+              />
+              {editingItemId && (
+                <EditItemModal
+                  id={editingItemId}
+                  isOpen
+                  onOpenChange={(open) => { if (!open) { setEditingItemId(null); setSearchQuery(""); refocusScanner(); } }}
+                />
+              )}
 
               {/* Loading */}
               {isLoading ? (

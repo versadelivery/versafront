@@ -134,7 +134,7 @@ export default function PDVPage() {
   const [selectedTableSessionId, setSelectedTableSessionId] = useState<string | null>(null);
   const [selectedNeighborhoodId, setSelectedNeighborhoodId] = useState<string>("");
   const [kmDelivery, setKmDelivery] = useState<KmDeliveryState>(emptyKmDeliveryState);
-  const { shop } = useShop();
+  const { shop, isLoading: isShopLoading } = useShop();
   const shopId = shop?.id;
   const { paymentMethodsData } = usePayment();
   const { deliveryConfig } = useDelivery();
@@ -144,7 +144,7 @@ export default function PDVPage() {
   const { subscribeToAdminOrders } = useAdminActionCable();
 
   useEffect(() => {
-    const unsubscribe = subscribeToAdminOrders(() => {});
+    const unsubscribe = subscribeToAdminOrders(() => {}, undefined, { initialData: false });
     return () => { if (unsubscribe) unsubscribe(); };
   }, [subscribeToAdminOrders]);
 
@@ -260,8 +260,10 @@ export default function PDVPage() {
     mode: scaleMode,
     onResult: handleScanResult,
     clearSearch: () => setSearchTerm(""),
-    ready: !isLoading,
+    // Sem a loja carregada o modo da etiqueta cairia em "peso" e o cadastro rápido não abriria
+    ready: !isLoading && !isShopLoading,
     onNotReady: () => toast.error("Catálogo carregando. Bipe de novo em instantes."),
+    shortcut: true,
   });
 
   // A busca abre em foco, pronta para o primeiro bip

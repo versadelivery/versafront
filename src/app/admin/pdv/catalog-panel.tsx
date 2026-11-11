@@ -6,6 +6,7 @@ import { Package, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
+import { BarcodeScannerStatus } from "@/components/admin/barcode-scanner-status";
 import { formatPrice } from "@/utils/format-price";
 import { cn } from "@/lib/utils";
 import { todayDayKey } from "@/app/(public)/[slug]/category-availability";
@@ -176,23 +177,7 @@ export function CatalogPanel({
           )}
         </div>
 
-        <p className="flex items-center gap-2 text-xs text-muted-foreground" aria-live="polite">
-          <span
-            aria-hidden
-            className={`h-2 w-2 shrink-0 rounded-full ${scanner.hasFocus ? "bg-green-500" : "bg-gray-300"}`}
-          />
-          {scanner.hasFocus ? (
-            "Leitor pronto: bipe para adicionar."
-          ) : (
-            <button
-              type="button"
-              onClick={scanner.focusInput}
-              className="cursor-pointer text-left underline-offset-2 hover:underline"
-            >
-              Clique aqui para o leitor voltar a funcionar.
-            </button>
-          )}
-        </p>
+        <BarcodeScannerStatus scanner={scanner} />
 
         {/* Categorias: uma linha que rola para o lado no celular */}
         {!searching && hasCategories && (

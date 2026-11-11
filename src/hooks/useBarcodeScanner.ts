@@ -11,11 +11,13 @@ interface UseBarcodeScannerOptions<T extends ScanItem> {
   // Com o catálogo ainda carregando, todo código pareceria "não cadastrado" (e abriria o cadastro rápido por engano)
   ready?: boolean;
   onNotReady?: () => void;
+  // Liga o atalho F2 (devolve o foco ao campo do leitor) em qualquer ponto da tela. Só o PDV usa.
+  shortcut?: boolean;
 }
 
 // O leitor USB digita o número e termina com Enter. Este hook decide se o texto do campo é uma
 // leitura (8+ dígitos, sem letras) e, só nesse caso, interpreta; texto comum continua sendo busca por nome.
-export function useBarcodeScanner<T extends ScanItem>({ items, mode, onResult, clearSearch, ready = true, onNotReady }: UseBarcodeScannerOptions<T>) {
+export function useBarcodeScanner<T extends ScanItem>({ items, mode, onResult, clearSearch, ready = true, onNotReady, shortcut = false }: UseBarcodeScannerOptions<T>) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [hasFocus, setHasFocus] = useState(false);
 
@@ -26,6 +28,17 @@ export function useBarcodeScanner<T extends ScanItem>({ items, mode, onResult, c
   useEffect(() => {
     setHasFocus(document.activeElement === inputRef.current);
   }, []);
+
+  useEffect(() => {
+    if (!shortcut) return;
+    const onKey = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== "F2") return;
+      event.preventDefault();
+      focusInput();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [shortcut, focusInput]);
 
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key !== "Enter") return;
