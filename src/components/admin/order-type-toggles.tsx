@@ -30,16 +30,16 @@ export function OrderTypeToggles({ className }: { className?: string }) {
             htmlFor={id}
             title={blocked ? LAST_ONE_HINT : undefined}
             className={cn(
-              'flex items-center justify-between gap-3 rounded-md border px-3 py-2 transition-colors',
-              on ? 'border-green-200 bg-green-50' : 'border-[#E5E2DD] bg-white',
+              // Mesmo card dos outros blocos da tela: fundo branco e borda neutra, ligado ou não
+              'flex items-center justify-between gap-3 rounded-md border border-[#E5E2DD] bg-white px-3 py-2 transition-colors hover:border-primary/40',
               blocked ? 'cursor-not-allowed' : 'cursor-pointer'
             )}
           >
             <span className="flex min-w-0 items-center gap-2">
-              <Icon className={cn('h-4 w-4 shrink-0', on ? 'text-green-700' : 'text-muted-foreground')} aria-hidden />
+              <Icon className="h-4 w-4 shrink-0 text-gray-700" aria-hidden />
               <span className="min-w-0">
                 <span className="block text-sm font-semibold leading-tight text-gray-900">{label}</span>
-                <span className={cn('block text-xs leading-tight', on ? 'text-green-700' : 'text-muted-foreground')}>
+                <span className="block text-xs leading-tight text-muted-foreground">
                   {on ? 'Ligada' : 'Desligada'}
                 </span>
               </span>
@@ -47,6 +47,7 @@ export function OrderTypeToggles({ className }: { className?: string }) {
             <Switch
               id={id}
               checked={on}
+              className="shadow-none data-[state=checked]:bg-gray-900"
               disabled={isLoading || isSaving || blocked}
               onCheckedChange={(checked) => setAvailable(type, checked)}
               aria-label={`${label}: ${on ? 'ligada' : 'desligada'}`}

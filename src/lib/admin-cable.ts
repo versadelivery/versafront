@@ -81,7 +81,9 @@ export function createAdminCableWithToken() {
 
   const base = process.env.NEXT_PUBLIC_CABLE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
   const parsed = new URL(base.includes('://') ? base : `https://${base}`)
-  const protocol = parsed.protocol === 'http:' ? 'ws:' : 'wss:'
+  // Só vira wss: quando a base é segura. Antes, `ws://localhost` (dev) virava `wss:` e o Puma recusava a conexão
+  // para sempre, deixando o painel sem tempo real.
+  const protocol = parsed.protocol === 'https:' || parsed.protocol === 'wss:' ? 'wss:' : 'ws:'
   const cableUrl = `${protocol}//${parsed.host}${parsed.pathname === '/' ? '' : parsed.pathname.replace(/\/$/, '')}/cable?token=${encodeURIComponent(token)}`
 
   try {
@@ -92,7 +94,38 @@ export function createAdminCableWithToken() {
   }
 }
 
+export type AdminCableStatus = 'connecting' | 'connected' | 'disconnected'
+// `snapshot`: lista completa do dia (substitui o que está na tela). `upsert`: um pedido que mudou (entra no lugar do antigo).
+export type AdminOrdersEventKind = 'snapshot' | 'upsert'
+
+// Uma conexão só por aba: o cabeçalho, o painel e o PDV usavam um WebSocket cada, e cada conexão extra era mais
+// trabalho para o servidor. Conta quantos componentes estão usando e fecha quando o último sai.
+let sharedAdminCable: { token: string; consumer: any; users: number } | null = null
+
+function acquireAdminCable() {
+  const token = getToken()
+  if (!token) return null
+  if (sharedAdminCable && sharedAdminCable.token === token) {
+    sharedAdminCable.users += 1
+    return sharedAdminCable.consumer
+  }
+  sharedAdminCable?.consumer.disconnect()
+  const consumer = createAdminCableWithToken()
+  sharedAdminCable = consumer ? { token, consumer, users: 1 } : null
+  return consumer
+}
+
+function releaseAdminCable(consumer: any) {
+  if (!sharedAdminCable || sharedAdminCable.consumer !== consumer) return
+  sharedAdminCable.users -= 1
+  if (sharedAdminCable.users <= 0) {
+    consumer.disconnect()
+    sharedAdminCable = null
+  }
+}
+
 export function useAdminActionCable() {
+  const [connectionStatus, setConnectionStatus] = useState<AdminCableStatus>('connecting')
   const [isConnected, setIsConnected] = useState(false)
   const [cableReady, setCableReady] = useState(false)
   const cableRef = useRef<any>(null)
@@ -110,7 +143,7 @@ export function useAdminActionCable() {
         retryTimer = setTimeout(connect, 250)
         return
       }
-      const cable = createAdminCableWithToken()
+      const cable = acquireAdminCable()
       if (cable) {
         cableRef.current = cable
         setCableReady(true)
@@ -123,7 +156,7 @@ export function useAdminActionCable() {
       disposed = true
       if (retryTimer) clearTimeout(retryTimer)
       if (cableRef.current) {
-        cableRef.current.disconnect()
+        releaseAdminCable(cableRef.current)
         cableRef.current = null
         setCableReady(false)
         setIsConnected(false)
@@ -131,7 +164,12 @@ export function useAdminActionCable() {
     }
   }, [])
 
-  const subscribeToAdminOrders = useCallback((onData: (data: AdminOrderData[]) => void) => {
+  const subscribeToAdminOrders = useCallback((
+    onData: (data: AdminOrderData[], kind: AdminOrdersEventKind) => void,
+    onStatus?: (status: AdminCableStatus) => void,
+    // `initialData: false`: só os eventos novos. A lista inicial vem pela API e a carga do socket atrasava a conexão.
+    options?: { initialData?: boolean },
+  ) => {
     if (!cableRef.current) {
       console.error('Admin Cable não está conectado')
       return () => {}
@@ -140,6 +178,7 @@ export function useAdminActionCable() {
     const subscription = cableRef.current.subscriptions.create(
       {
         channel: "OrderAdminChannel",
+        ...(options?.initialData === false && { initial: "none" }),
       },
       {
         received: (rawPayload: any) => {
@@ -148,19 +187,18 @@ export function useAdminActionCable() {
 
           // Evento inicial
           if (payload.event === "initial_order_admin_data") {
-            onData(payload.data.data)
+            onData(payload.data.data, 'snapshot')
           }
 
-          // Eventos futuros
-          if (payload.event === "order_updated") {
+          // Eventos futuros: `order_upserted` traz só o pedido alterado; `order_updated` (formato antigo) traz a lista
+          if (payload.event === "order_upserted" || payload.event === "order_updated") {
             // primeiro repassa os dados para o caller
-            onData(payload.data.data)
+            onData(payload.data.data, payload.event === "order_upserted" ? 'upsert' : 'snapshot')
 
             // então verifica se alguma confirmação pendente pode ser resolvida
             try {
               const orders: AdminOrderData[] = payload.data.data || []
               const pending = pendingConfirmationsRef.current || {}
-              console.log(pending)
 
               // Para cada pedido retornado, verificar promessas pendentes
               orders.forEach((socketOrder: AdminOrderData) => {
@@ -223,13 +261,17 @@ export function useAdminActionCable() {
           }
         },
         connected: () => {
-          console.log('Subscrição admin conectada')
+          setConnectionStatus('connected')
+          onStatus?.('connected')
         },
         disconnected: () => {
-          console.log('Subscrição admin desconectada')
+          setConnectionStatus('disconnected')
+          onStatus?.('disconnected')
         },
         rejected: () => {
           console.error('Subscrição admin rejeitada')
+          setConnectionStatus('disconnected')
+          onStatus?.('disconnected')
         }
       }
     )
@@ -359,13 +401,12 @@ export function useAdminActionCable() {
       if (cableRef.current) {
           console.log('🔄 Tentando reconectar...');
           try {
-            cableRef.current.disconnect();
+            // Reabre o mesmo consumidor (compartilhado com os outros componentes); as assinaturas voltam sozinhas
+            const consumer = cableRef.current;
+            consumer.disconnect();
             setTimeout(() => {
-              const newCable = createAdminCableWithToken();
-              if (newCable) {
-                cableRef.current = newCable;
-                console.log('✅ Reconectado com sucesso');
-              }
+              consumer.connect();
+              console.log('✅ Reconectado com sucesso');
             }, 1000);
           } catch (reconnectError) {
             console.error('❌ Erro ao reconectar:', reconnectError);
@@ -377,7 +418,8 @@ export function useAdminActionCable() {
     });
   }, [])
 
-  const updateOrderDetails = useCallback(async (orderId: string, data: any): Promise<boolean> => {
+  // Devolve o pedido já gravado (como o servidor o viu), para a tela se atualizar sem esperar o tempo real
+  const updateOrderDetails = useCallback(async (orderId: string, data: any): Promise<AdminOrderData | null> => {
     // Campos que a API de edição aceita (PATCH /orders/:id/edit)
     const order: any = {};
     for (const key of ['customer', 'address', 'shop', 'items', 'total', 'payment_method', 'removed_item_ids', 'new_items', 'withdrawal']) {
@@ -388,8 +430,8 @@ export function useAdminActionCable() {
     // Via REST (igual às ações de status): o WebSocket não confirma entrega e
     // descartava a edição em silêncio quando a conexão não estava ativa.
     try {
-      await api.patch(`/orders/${orderId}/edit`, { order });
-      return true;
+      const response = await api.patch(`/orders/${orderId}/edit`, { order });
+      return (response.data?.order?.data ?? null) as AdminOrderData | null;
     } catch (error: any) {
       console.error('❌ Falha ao editar pedido pela API:', error);
       const message = error?.response?.data?.error;
@@ -409,6 +451,7 @@ export function useAdminActionCable() {
     updateOrder,
     updateOrderDetails,
     disconnect,
+    connectionStatus,
     isConnected: () => isConnected
   }
 } 

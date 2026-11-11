@@ -45,6 +45,7 @@ import { DeliveryRoute, getOrderDeliveryRoute } from '@/services/geocoding-servi
 import { ItemOptionsDialog } from '@/app/admin/pdv/item-options-dialog';
 import { useShop } from '@/hooks/use-shop';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
+import { BarcodeScannerStatus } from '@/components/admin/barcode-scanner-status';
 import { toScanItem } from '@/lib/barcode/to-scan-item';
 import { scanErrorMessage } from '@/lib/barcode/scan-messages';
 import { needsOptions } from '@/lib/barcode/needs-options';
@@ -110,6 +111,7 @@ interface OrderDetailsModalProps {
     deliveryPerson?: string;
     discount_amount?: number;
     payment_adjustment_amount?: number;
+    pickup_adjustment_amount?: number;
     manual_adjustment?: number;
     coupon_code?: string;
   };
@@ -222,9 +224,10 @@ export default function OrderDetailsModal({
   const [newItemsToAdd, setNewItemsToAdd] = useState<any[]>([]);
   const [optionsItem, setOptionsItem] = useState<any>(null);
   const [scanText, setScanText] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
   // Peso lido da etiqueta quando o item novo ainda precisa passar pelo modal de opções
   const [scaleWeight, setScaleWeight] = useState<number | undefined>(undefined);
-  const { shop } = useShop();
+  const { shop, isLoading: isShopLoading } = useShop();
   const isSavingRef = useRef(false);
   const lastSyncedOrderRef = useRef(order);
 
@@ -252,6 +255,10 @@ export default function OrderDetailsModal({
     return () => { cancelled = true; };
   }, [open, hasRoute, order.id]);
 
+  // A página monta `order` como objeto novo a cada render; sem comparar o conteúdo, qualquer re-render
+  // (socket, relógio) zerava a edição em andamento: peso conferido, itens bipados, rascunhos.
+  const orderSignature = JSON.stringify(order);
+
   useEffect(() => {
     if (isSavingRef.current) {
       const prevIds = lastSyncedOrderRef.current.items.map((i: any) => i.id).sort().join(',');
@@ -264,7 +271,7 @@ export default function OrderDetailsModal({
     setRemovedItemIds([]);
     setNewItemsToAdd([]);
     setWeightDrafts({});
-  }, [order]);
+  }, [orderSignature]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const editedSubtotal = (editedOrder.items || []).reduce(
     (sum: number, item: any) => sum + (item.total_price ?? item.price * item.quantity),
@@ -276,9 +283,11 @@ export default function OrderDetailsModal({
     + (editedOrder.delivery_fee || 0)
     - (editedOrder.discount_amount || 0)
     + (editedOrder.payment_adjustment_amount || 0)
+    + (editedOrder.pickup_adjustment_amount || 0)
     + savedManualAdjustment;
 
   const handleSaveAllChanges = async () => {
+    if (isSaving) return;
     if (onUpdateOrder) {
       const changes: any = {};
 
@@ -412,12 +421,19 @@ export default function OrderDetailsModal({
 
       if (Object.keys(changes).length > 0) {
         isSavingRef.current = true;
+        setIsSaving(true);
+        // O servidor pode demorar: o aviso de progresso fica na tela até o resultado chegar
+        const toastId = toast.loading('Salvando alterações do pedido…');
         try {
           await onUpdateOrder(order.id, changes);
+          toast.success('Pedido salvo', { id: toastId });
         } catch {
-          // erro já exibido por quem salvou; mantém a edição aberta
+          // o erro já foi exibido por quem salvou; mantém a edição aberta
+          toast.dismiss(toastId);
           isSavingRef.current = false;
           return;
+        } finally {
+          setIsSaving(false);
         }
         setTimeout(() => {
           isSavingRef.current = false;
@@ -567,8 +583,9 @@ export default function OrderDetailsModal({
     mode: scaleMode,
     onResult: handleScanResult,
     clearSearch: () => setScanText(''),
-    ready: !loadingCatalog && catalogGroups.length > 0,
+    ready: !loadingCatalog && catalogGroups.length > 0 && !isShopLoading,
     onNotReady: () => toast.error('Catálogo carregando. Bipe de novo em instantes.'),
+    shortcut: isEditingMode, // F2 só vale com a edição aberta
   });
 
   // Ao entrar na edição o catálogo carrega e o campo de bipagem já fica em foco
@@ -976,16 +993,18 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
                   variant="outline"
                   size="sm"
                   onClick={handleSaveAllChanges}
-                  className="border border-green-400 text-green-700 cursor-pointer rounded-md hover:bg-green-50"
+                  disabled={isSaving}
+                  className="border border-green-400 text-green-700 cursor-pointer rounded-md hover:bg-green-50 disabled:cursor-not-allowed"
                 >
-                  <Save className="h-4 w-4 mr-1.5" />
-                  Salvar
+                  {isSaving ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Save className="h-4 w-4 mr-1.5" />}
+                  {isSaving ? 'Salvando…' : 'Salvar'}
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleCancelAllChanges}
-                  className="border border-red-400 text-red-700 cursor-pointer rounded-md hover:bg-red-50"
+                  disabled={isSaving}
+                  className="border border-red-400 text-red-700 cursor-pointer rounded-md hover:bg-red-50 disabled:cursor-not-allowed"
                 >
                   <X className="h-4 w-4 mr-1.5" />
                   Cancelar
@@ -1278,7 +1297,7 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
                     <InfoRow label="Taxa de entrega" value={formatCurrency(deliveryFee)} />
                   )}
 
-                  {!isEditingMode && order.coupon_code && order.discount_amount && order.discount_amount > 0 && (
+                  {order.coupon_code && order.discount_amount && order.discount_amount > 0 && (
                     <div className="flex items-start justify-between py-1.5">
                       <span className="text-sm text-muted-foreground flex items-center gap-1.5">
                         <Tag className="w-3.5 h-3.5 text-green-500" />
@@ -1290,7 +1309,7 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
                     </div>
                   )}
 
-                  {!isEditingMode && order.payment_adjustment_amount !== undefined && order.payment_adjustment_amount !== 0 && (
+                  {order.payment_adjustment_amount !== undefined && order.payment_adjustment_amount !== 0 && (
                     <div className="flex items-start justify-between py-1.5">
                       <span
                         className={cn(
@@ -1298,7 +1317,7 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
                           order.payment_adjustment_amount < 0 ? 'text-green-600' : 'text-orange-600',
                         )}
                       >
-                        {order.payment_adjustment_amount < 0 ? 'Desconto' : 'Acrescimo'}
+                        {order.payment_adjustment_amount < 0 ? 'Desconto no pagamento' : 'Acréscimo no pagamento'}
                       </span>
                       <span
                         className={cn(
@@ -1308,6 +1327,17 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
                       >
                         {order.payment_adjustment_amount < 0 ? '-' : '+'}
                         {formatCurrency(Math.abs(order.payment_adjustment_amount))}
+                      </span>
+                    </div>
+                  )}
+
+                  {!!order.pickup_adjustment_amount && (
+                    <div className="flex items-start justify-between py-1.5">
+                      <span className={cn('text-sm', order.pickup_adjustment_amount < 0 ? 'text-green-600' : 'text-orange-600')}>
+                        {order.pickup_adjustment_amount < 0 ? 'Desconto na retirada' : 'Acréscimo na retirada'}
+                      </span>
+                      <span className={cn('text-sm font-medium', order.pickup_adjustment_amount < 0 ? 'text-green-600' : 'text-orange-600')}>
+                        {order.pickup_adjustment_amount < 0 ? '-' : '+'}{formatCurrency(Math.abs(order.pickup_adjustment_amount))}
                       </span>
                     </div>
                   )}
@@ -1366,7 +1396,11 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
                 )}
               </div>
               {isEditingMode && (
-                <div className="px-4 pt-3 space-y-1.5">
+                <div className="mx-4 mt-3 space-y-2 rounded-md border border-[#E5E2DD] bg-[#FAF9F7] p-3">
+                  <p className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+                    <ScanBarcode className="h-4 w-4 text-primary" aria-hidden />
+                    Leitor de código de barras
+                  </p>
                   <div className="relative">
                     <ScanBarcode className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden />
                     <Input
@@ -1381,10 +1415,11 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
                       className="pl-9 h-10 text-base"
                     />
                   </div>
-                  <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <span aria-hidden className={cn('h-2 w-2 shrink-0 rounded-full', scanner.hasFocus ? 'bg-green-500' : 'bg-gray-300')} />
-                    Bipe a etiqueta da balança para trocar o peso estimado pelo real.
-                  </p>
+                  <BarcodeScannerStatus
+                    scanner={scanner}
+                    loading={loadingCatalog || catalogGroups.length === 0 || isShopLoading}
+                    readyText="Leitor pronto: bipe a etiqueta da balança para trocar o peso estimado pelo real."
+                  />
                 </div>
               )}
               <div className="px-4 py-3">
@@ -1684,7 +1719,7 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
                   if (!text) return;
                   e.preventDefault();
                   setCatalogSearch('');
-                  if (loadingCatalog || catalogGroups.length === 0) {
+                  if (loadingCatalog || catalogGroups.length === 0 || isShopLoading) {
                     toast.error('Catálogo carregando. Bipe de novo em instantes.');
                     return;
                   }

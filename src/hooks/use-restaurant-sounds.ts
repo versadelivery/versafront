@@ -18,6 +18,11 @@ export interface SoundSettings {
   orderOverdue?: boolean;
 }
 
+// O cabeçalho e a tela de pedidos escutam o mesmo evento e cada um chamava `newOrder`: o mesmo pedido tocava duas
+// vezes. A trava vale para a aba toda (fica fora do hook) e o som de moedas dura menos que isso.
+const NEW_ORDER_SOUND_COOLDOWN_MS = 2000
+let lastNewOrderSoundAt = 0
+
 export function useRestaurantSounds(): RestaurantSounds {
   const [settings, setSettings] = useState<SoundSettings>({
     enabled: true,
@@ -155,6 +160,10 @@ export function useRestaurantSounds(): RestaurantSounds {
     if (!settings.enabled || !settings.newOrder) {
       return;
     }
+
+    const clock = Date.now();
+    if (clock - lastNewOrderSoundAt < NEW_ORDER_SOUND_COOLDOWN_MS) return;
+    lastNewOrderSoundAt = clock;
 
     try {
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();

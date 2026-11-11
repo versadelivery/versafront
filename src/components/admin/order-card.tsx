@@ -257,6 +257,8 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '', orde
   const couponCode = order.socketData?.attributes?.coupon_code;
   const discountAmount = parseFloat(order.socketData?.attributes?.discount_amount || '0');
   const paymentAdj = order.socketData?.attributes?.payment_adjustment_amount ? parseFloat(order.socketData.attributes.payment_adjustment_amount) : 0;
+  const pickupAdj = parseFloat((order.socketData?.attributes as any)?.pickup_adjustment_amount || '0');
+  const manualAdj = parseFloat((order.socketData?.attributes as any)?.manual_adjustment || '0');
   const orderObservation = order.socketData?.attributes?.observation;
   const hasObservations = !!orderObservation || items?.some((item: any) => item.attributes.observation);
 
@@ -347,7 +349,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '', orde
         </div>
 
         {/* ── Detalhes financeiros (pagamento, taxa, cupom, ajuste) ── */}
-        {(paymentMethod || (order.deliveryType === 'delivery' && deliveryFee > 0) || couponCode || paymentAdj !== 0) && (
+        {(paymentMethod || (order.deliveryType === 'delivery' && deliveryFee > 0) || couponCode || paymentAdj !== 0 || pickupAdj !== 0 || manualAdj !== 0) && (
           <>
             <hr className="border-[#E5E2DD]" />
             <div className="px-3 py-2 space-y-1 text-xs">
@@ -372,7 +374,19 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '', orde
               {paymentAdj !== 0 && (
                 <div className={cn("flex items-center gap-1.5", paymentAdj < 0 ? "text-green-600" : "text-orange-600")}>
                   <span className={cn("w-2 h-2 rounded-full flex-shrink-0", paymentAdj < 0 ? "bg-green-500" : "bg-orange-500")} />
-                  <span>{paymentAdj < 0 ? "Desc." : "Acresc."}: {paymentAdj < 0 ? "-" : "+"}{formatPrice(Math.abs(paymentAdj))}</span>
+                  <span>{paymentAdj < 0 ? "Desc. pagamento" : "Acresc. pagamento"}: {paymentAdj < 0 ? "-" : "+"}{formatPrice(Math.abs(paymentAdj))}</span>
+                </div>
+              )}
+              {pickupAdj !== 0 && (
+                <div className={cn("flex items-center gap-1.5", pickupAdj < 0 ? "text-green-600" : "text-orange-600")}>
+                  <span className={cn("w-2 h-2 rounded-full flex-shrink-0", pickupAdj < 0 ? "bg-green-500" : "bg-orange-500")} />
+                  <span>{pickupAdj < 0 ? "Desc. retirada" : "Acresc. retirada"}: {pickupAdj < 0 ? "-" : "+"}{formatPrice(Math.abs(pickupAdj))}</span>
+                </div>
+              )}
+              {manualAdj !== 0 && (
+                <div className={cn("flex items-center gap-1.5", manualAdj < 0 ? "text-green-600" : "text-orange-600")}>
+                  <span className={cn("w-2 h-2 rounded-full flex-shrink-0", manualAdj < 0 ? "bg-green-500" : "bg-orange-500")} />
+                  <span>{manualAdj < 0 ? "Desc. da loja" : "Acresc. da loja"}: {manualAdj < 0 ? "-" : "+"}{formatPrice(Math.abs(manualAdj))}</span>
                 </div>
               )}
             </div>

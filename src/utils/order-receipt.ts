@@ -13,6 +13,19 @@ const money = (value: unknown) => Number(value || 0).toLocaleString('pt-BR', { s
 const number = (value: unknown) => Number(value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
 const whatsappMoney = (value: unknown) => Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
+// Descontos e acréscimos do pedido além do cupom, já com o sinal ("-R$ 2,62" / "+R$ 3,00"), para o total fechar na leitura.
+function adjustmentLines(attrs: any, format: (value: unknown) => string): string[] {
+  const entries: Array<[unknown, string, string]> = [
+    [attrs.payment_adjustment_amount, 'Desconto no pagamento', 'Acréscimo no pagamento'],
+    [attrs.pickup_adjustment_amount, 'Desconto na retirada', 'Acréscimo na retirada'],
+    [attrs.manual_adjustment, 'Desconto da loja', 'Acréscimo da loja'],
+  ];
+  return entries
+    .map(([raw, discountLabel, surchargeLabel]) => ({ value: Number(raw || 0), discountLabel, surchargeLabel }))
+    .filter(({ value }) => value !== 0)
+    .map(({ value, discountLabel, surchargeLabel }) => `${value < 0 ? discountLabel : surchargeLabel}: ${value < 0 ? '-' : '+'}${format(Math.abs(value))}`);
+}
+
 const paymentLabels: Record<string, string> = {
   cash: 'DINHEIRO', credit: 'CARTÃO DE CRÉDITO', debit: 'CARTÃO DE DÉBITO',
   manual_pix: 'PIX DIRETO', asaas_pix: 'PIX AUTOMÁTICO',
@@ -79,6 +92,7 @@ export function buildOrderReceipt(order: ReceiptOrder, mode: ReceiptMode, fontSi
     <section><strong>RESUMO FINANCEIRO:</strong><br><br>
     Subtotal dos produtos: ${money(subtotal)}<br>Taxa de Entrega: ${money(deliveryFee)}<br>
     ${Number(attrs.discount_amount || 0) ? `Desconto: -${money(attrs.discount_amount)}<br>` : ''}
+    ${adjustmentLines(attrs, money).map((line) => `${line}<br>`).join('')}
     <strong>TOTAL A PAGAR: ${money(total)}</strong></section>
     <section><strong>FORMA DE PAGAMENTO:</strong><br><br>Pagamento: ${escapeHtml(payment)}<br>
     ${changeFor ? `Troco para: ${money(changeFor)}<br>Levar de troco: ${money(change)}` : ''}</section>` : '';
@@ -157,6 +171,7 @@ export function buildWhatsAppReceiptMessage(order: ReceiptOrder) {
     `Taxa de entrega: ${whatsappMoney(deliveryFee)}`,
   );
   if (discount) lines.push(`Desconto: −${whatsappMoney(discount)}`);
+  lines.push(...adjustmentLines(attrs, whatsappMoney));
   lines.push(`*TOTAL A PAGAR: ${whatsappMoney(total)}*`, '', '💳 *FORMA DE PAGAMENTO*');
   lines.push(paymentLabels[attrs.payment_method] || attrs.payment_method || 'Não informado');
   if (changeFor) lines.push(`Troco para: ${whatsappMoney(changeFor)}`, `Levar de troco: ${whatsappMoney(Math.max(0, changeFor - total))}`);

@@ -201,6 +201,7 @@ const DEFAULT_ORDER_FLOW = ['received', 'accepted', 'in_preparation', 'ready', '
 export default function OrderManagement() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [quickSearchId, setQuickSearchId] = useState('');
   const [filterDeliveryType, setFilterDeliveryType] = useState<'all' | 'delivery' | 'pickup'>('all');
@@ -222,8 +223,9 @@ export default function OrderManagement() {
   const isUpdatingRef = useRef<Record<string, boolean>>({});
   const lastLocalChangeRef = useRef<Record<string, { statusAt?: number; paymentAt?: number; deliveryAt?: number }>>({});
   const socketOrdersCache = useRef<Map<string, Order>>(new Map());
+  const upsertedAtRef = useRef<Record<string, number>>({});
 
-  const { subscribeToAdminOrders, updateOrder, updateOrderDetails, isConnected } = useAdminActionCable();
+  const { subscribeToAdminOrders, updateOrder, updateOrderDetails, isConnected, connectionStatus } = useAdminActionCable();
   const { orderAccepted, orderReady, newOrder, orderOverdue } = useRestaurantSounds();
   const { shop } = useShop();
   const { config: printerConfig } = usePrinterConfig();
@@ -262,15 +264,107 @@ export default function OrderManagement() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Mescla o pedido vindo do servidor com a cópia local, preservando mudanças que o operador acabou de fazer
+  // (status, pagamento, entregador) por 5 s: a confirmação do servidor pode chegar depois do clique.
+  const mergeWithLocal = (current: Order | undefined, incoming: Order, now: number): Order => {
+    if (!current) return incoming;
+    const last = lastLocalChangeRef.current[incoming.id] || {};
+    const keepLocalStatus = last.statusAt !== undefined && (now - (last.statusAt as number)) < 5000;
+    const keepLocalPayment = last.paymentAt !== undefined && (now - (last.paymentAt as number)) < 5000;
+    const keepLocalDelivery = last.deliveryAt !== undefined && (now - (last.deliveryAt as number)) < 5000;
+
+    return {
+      ...current,
+      ...incoming,
+      status: keepLocalStatus ? current.status : incoming.status,
+      paymentStatus: keepLocalPayment ? current.paymentStatus : incoming.paymentStatus,
+      deliveryPerson: keepLocalDelivery ? current.deliveryPerson : incoming.deliveryPerson,
+    };
+  };
+
+  // Um (ou poucos) pedidos que mudaram: entram no lugar do antigo sem mexer no resto da lista.
+  const applyUpsert = (socketOrders: AdminOrderData[]) => {
+    const incomingOrders = socketOrders.map(convertSocketDataToOrder);
+    incomingOrders.forEach(order => {
+      socketOrdersCache.current.set(order.id, order);
+      upsertedAtRef.current[order.id] = Date.now();
+    });
+
+    setOrders((prevOrders) => {
+      const now = Date.now();
+      const next = [...prevOrders];
+      incomingOrders.forEach((incoming) => {
+        const index = next.findIndex(order => order.id === incoming.id);
+        if (index === -1) {
+          if (!seenOrderIdsRef.current.has(incoming.id)) {
+            seenOrderIdsRef.current.add(incoming.id);
+            newOrder();
+          }
+          next.unshift(incoming);
+        } else {
+          next[index] = mergeWithLocal(next[index], incoming, now);
+        }
+      });
+      return next;
+    });
+    setIsLoading(false);
+  };
+
+  // Lista do dia pela API (formato enxuto). Serve de carga inicial, de reserva quando o tempo real não conecta
+  // e de ressincronização depois que ele cai e volta (eventos perdidos nesse intervalo).
+  const loadOrdersFromApi = useCallback(async (options?: { onlyIfSocketSilent?: boolean }) => {
+    try {
+      const startedAt = Date.now();
+      const response = await api.get('/orders', { params: { summary: true }, timeout: 30000 });
+      if (options?.onlyIfSocketSilent && socketReceivedRef.current) return;
+
+      const fetched = ((response.data?.data || []) as AdminOrderData[]).map(convertSocketDataToOrder);
+      socketOrdersCache.current = new Map(fetched.map(order => [order.id, order]));
+
+      if (!isInitialLoadRef.current) {
+        fetched.filter(order => !seenOrderIdsRef.current.has(order.id)).forEach(() => newOrder());
+      }
+      fetched.forEach(order => seenOrderIdsRef.current.add(order.id));
+      isInitialLoadRef.current = false;
+
+      setOrders((prevOrders) => {
+        const now = Date.now();
+        const prevById = new Map(prevOrders.map(order => [order.id, order]));
+        // Evento em tempo real que chegou depois de a consulta sair é mais novo que a resposta: mantém o do evento
+        const newerThanQuery = (id: string) => (upsertedAtRef.current[id] ?? 0) > startedAt;
+        const merged = fetched.map(incoming =>
+          newerThanQuery(incoming.id) && prevById.has(incoming.id)
+            ? prevById.get(incoming.id)!
+            : mergeWithLocal(prevById.get(incoming.id), incoming, now)
+        );
+        const fetchedIds = new Set(fetched.map(order => order.id));
+        const createdMeanwhile = prevOrders.filter(order => !fetchedIds.has(order.id) && newerThanQuery(order.id));
+        return [...createdMeanwhile, ...merged];
+      });
+      setLoadError(false);
+    } catch {
+      setLoadError(true);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [newOrder]);
+
   useEffect(() => {
-    const unsubscribe = subscribeToAdminOrders((socketOrders: AdminOrderData[]) => {
+    let wasDisconnected = false;
+
+    const unsubscribe = subscribeToAdminOrders((socketOrders: AdminOrderData[], kind) => {
       socketReceivedRef.current = true;
-      
+
+      if (kind === 'upsert') {
+        applyUpsert(socketOrders);
+        return;
+      }
+
       // Verificar se algum pedido está sendo atualizado no momento
       const hasUpdatingOrders = Object.keys(isUpdatingRef.current).some(
         orderId => isUpdatingRef.current[orderId]
       );
-      
+
       if (hasUpdatingOrders) {
         // Aplicar atualização com delay para não conflitar com otimistic update
         setTimeout(() => {
@@ -280,33 +374,18 @@ export default function OrderManagement() {
           setOrders((prev) => {
             const now = Date.now();
             const prevById = new Map(prev.map(o => [o.id, o]));
-            return convertedOrders.map(incoming => {
-              const current = prevById.get(incoming.id);
-              if (!current) return incoming;
-              const last = lastLocalChangeRef.current[incoming.id] || {};
-              const keepLocalStatus = last.statusAt !== undefined && (now - (last.statusAt as number)) < 5000; // Aumentado para 5 segundos
-              const keepLocalPayment = last.paymentAt !== undefined && (now - (last.paymentAt as number)) < 5000;
-              const keepLocalDelivery = last.deliveryAt !== undefined && (now - (last.deliveryAt as number)) < 5000;
-
-              return {
-                ...current,
-                ...incoming,
-                status: keepLocalStatus ? current.status : incoming.status,
-                paymentStatus: keepLocalPayment ? current.paymentStatus : incoming.paymentStatus,
-                deliveryPerson: keepLocalDelivery ? current.deliveryPerson : incoming.deliveryPerson,
-              };
-            });
+            return convertedOrders.map(incoming => mergeWithLocal(prevById.get(incoming.id), incoming, now));
           });
-        }, 2000); // Reduzido para 2 segundos
+        }, 2000);
         return;
       }
-      
+
       // Detectar novos pedidos comparando com o estado atual
       setOrders((prevOrders) => {
         const convertedOrders = socketOrders.map(convertSocketDataToOrder);
         // atualizar cache com dados vindos do servidor
         socketOrdersCache.current = new Map(convertedOrders.map(o => [o.id, o]));
-        
+
         // No primeiro broadcast, apenas registrar os pedidos existentes sem tocar som
         if (isInitialLoadRef.current) {
           isInitialLoadRef.current = false;
@@ -332,52 +411,35 @@ export default function OrderManagement() {
         // Mesclar mantendo alterações locais recentes
         const now = Date.now();
         const prevById = new Map(prevOrders.map(o => [o.id, o]));
-        return convertedOrders.map(incoming => {
-          const current = prevById.get(incoming.id);
-          if (!current) return incoming;
-          const last = lastLocalChangeRef.current[incoming.id] || {};
-          const keepLocalStatus = last.statusAt !== undefined && (now - (last.statusAt as number)) < 5000; // Aumentado para 5 segundos
-          const keepLocalPayment = last.paymentAt !== undefined && (now - (last.paymentAt as number)) < 5000;
-          const keepLocalDelivery = last.deliveryAt !== undefined && (now - (last.deliveryAt as number)) < 5000;
-
-          return {
-            ...current,
-            ...incoming,
-            status: keepLocalStatus ? current.status : incoming.status,
-            paymentStatus: keepLocalPayment ? current.paymentStatus : incoming.paymentStatus,
-            deliveryPerson: keepLocalDelivery ? current.deliveryPerson : incoming.deliveryPerson,
-          };
-        });
+        return convertedOrders.map(incoming => mergeWithLocal(prevById.get(incoming.id), incoming, now));
       });
 
       setIsLoading(false);
-    });
+    }, (status) => {
+      if (status === 'disconnected') {
+        wasDisconnected = true;
+      } else if (status === 'connected' && wasDisconnected) {
+        // Voltou depois de cair: busca o que pode ter sido perdido enquanto estava fora
+        wasDisconnected = false;
+        loadOrdersFromApi();
+      }
+    }, { initialData: false });
 
-    // O Cable é usado para atualizações em tempo real, mas a listagem inicial
-    // não pode depender exclusivamente da assinatura do socket.
-    api.get('/orders').then((response) => {
-      if (socketReceivedRef.current) return;
-      const initialOrders = (response.data?.data || []) as AdminOrderData[];
-      const convertedOrders = initialOrders.map(convertSocketDataToOrder);
-      socketOrdersCache.current = new Map(convertedOrders.map(order => [order.id, order]));
-      convertedOrders.forEach(order => seenOrderIdsRef.current.add(order.id));
-      isInitialLoadRef.current = false;
-      setOrders(convertedOrders);
-      setIsLoading(false);
-    }).catch(() => {
-      // O timeout abaixo mantém a tela utilizável mesmo sem API ou Cable.
-    });
-
-    // Timeout de segurança para não deixar a tela presa indefinidamente.
-    const timeout = setTimeout(() => {
-      setIsLoading(false);
-    }, 5000);
+    // A listagem inicial não pode depender só da assinatura do socket (que pode demorar ou nem conectar).
+    // Sem limite de tempo artificial: a tela mostra "carregando" até chegar dado ou dar erro de verdade.
+    loadOrdersFromApi({ onlyIfSocketSilent: true });
 
     return () => {
       unsubscribe();
-      clearTimeout(timeout);
     };
-  }, [subscribeToAdminOrders]);
+  }, [subscribeToAdminOrders]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Sem tempo real conectado, o painel continua atualizando por consulta leve a cada 20 s
+  useEffect(() => {
+    if (connectionStatus === 'connected') return;
+    const timer = setInterval(() => { loadOrdersFromApi(); }, 20000);
+    return () => clearInterval(timer);
+  }, [connectionStatus, loadOrdersFromApi]);
 
   // Alerta sonoro para pedidos atrasados (preparo e entrega)
   useEffect(() => {
@@ -705,10 +767,32 @@ export default function OrderManagement() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#FAF9F7] flex items-center justify-center">
+      <div className="min-h-screen bg-[#FAF9F7] flex items-center justify-center px-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-10 w-10 border-2 border-primary border-t-transparent mx-auto mb-4"></div>
-          <p className="text-sm text-muted-foreground">Carregando pedidos...</p>
+          <p className="text-sm font-medium text-gray-900">Carregando pedidos...</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {connectionStatus === 'connected' ? 'Conectado. Buscando os pedidos do dia.' : 'Conectando ao servidor.'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Sem pedidos e com erro de verdade na carga: mostrar o erro, não uma lista vazia que parece "sem pedidos"
+  if (loadError && orders.length === 0) {
+    return (
+      <div className="min-h-screen bg-[#FAF9F7] flex items-center justify-center px-4">
+        <div className="text-center max-w-sm">
+          <p className="text-sm font-medium text-gray-900">Não foi possível carregar os pedidos.</p>
+          <p className="mt-1 text-xs text-muted-foreground">Confira a conexão e tente de novo.</p>
+          <Button
+            onClick={() => { setIsLoading(true); loadOrdersFromApi(); }}
+            variant="outline"
+            className="mt-4 cursor-pointer rounded-md border border-gray-300"
+          >
+            Tentar novamente
+          </Button>
         </div>
       </div>
     );
@@ -1190,19 +1274,26 @@ export default function OrderManagement() {
             deliveryPerson: selectedOrder.deliveryPerson || (selectedOrder.socketData.attributes as any).delivery_person || '',
             discount_amount: parseFloat(selectedOrder.socketData.attributes.discount_amount || '0'),
             payment_adjustment_amount: parseFloat(selectedOrder.socketData.attributes.payment_adjustment_amount || '0'),
+            pickup_adjustment_amount: parseFloat((selectedOrder.socketData.attributes as any).pickup_adjustment_amount || '0'),
             manual_adjustment: parseFloat((selectedOrder.socketData.attributes as any).manual_adjustment || '0'),
             coupon_code: selectedOrder.socketData.attributes.coupon_code || undefined
           }}
           onUpdateOrder={async (orderId, data) => {
             // Persiste primeiro: se a API recusar, a edição fica aberta e nada muda na tela
+            let savedOrder: AdminOrderData | null = null;
             try {
-              await updateOrderDetails(orderId, data);
+              savedOrder = await updateOrderDetails(orderId, data);
             } catch (error) {
               toast.error(error instanceof Error ? error.message : 'Erro ao salvar o pedido');
               throw error;
             }
 
-            
+            // A resposta já traz o pedido gravado (itens, pesos, totais): a tela atualiza na hora, sem esperar o tempo real
+            if (savedOrder) {
+              applyUpsert([savedOrder]);
+              return;
+            }
+
             // Atualizar localmente primeiro para feedback imediato
             setOrders(prev => prev.map(order => {
               if (order.id === orderId) {

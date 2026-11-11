@@ -26,31 +26,25 @@ export function Header() {
   const { subscribeToAdminOrders } = useAdminActionCable();
   const { newOrder, updateSettings } = useRestaurantSounds();
   const seenOrderIdsRef = useRef<Set<string>>(new Set());
-  const initializedRef = useRef(false);
 
   const handleSignOut = async () => {
     await logout();
   };
 
   useEffect(() => {
+    // Sem lista inicial: o cabeçalho só precisa saber quando chega um pedido novo. "Novo" = recebido, ainda não
+    // visto e criado há poucos minutos (um pedido antigo que só foi atualizado não toca o som).
+    const FRESH_ORDER_MS = 3 * 60 * 1000;
     const unsubscribe = subscribeToAdminOrders((socketOrders: AdminOrderData[]) => {
       try {
-        const idsInPayload = new Set<string>(socketOrders.map((o) => o.id));
-
-        if (!initializedRef.current) {
-          seenOrderIdsRef.current = idsInPayload;
-          initializedRef.current = true;
-          return;
-        }
-
         let hasNewReceived = false;
         socketOrders.forEach((o) => {
-          if (!seenOrderIdsRef.current.has(o.id) && o.attributes.status === 'received') {
+          const isFresh = Date.now() - new Date(o.attributes.created_at).getTime() < FRESH_ORDER_MS;
+          if (!seenOrderIdsRef.current.has(o.id) && o.attributes.status === 'received' && isFresh) {
             hasNewReceived = true;
           }
+          seenOrderIdsRef.current.add(o.id);
         });
-
-        seenOrderIdsRef.current = idsInPayload;
 
         if (hasNewReceived) {
           newOrder();
@@ -58,7 +52,7 @@ export function Header() {
       } catch (err) {
         console.warn('Header WS sound handler error:', err);
       }
-    });
+    }, undefined, { initialData: false });
 
     return () => {
       if (unsubscribe) unsubscribe();

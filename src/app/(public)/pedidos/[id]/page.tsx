@@ -189,6 +189,8 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
     },
     discount_amount: parseFloat((orderData.attributes as any).discount_amount ?? '0'),
     payment_adjustment_amount: parseFloat((orderData.attributes as any).payment_adjustment_amount ?? '0'),
+    pickup_adjustment_amount: parseFloat((orderData.attributes as any).pickup_adjustment_amount ?? '0'),
+    manual_adjustment: parseFloat((orderData.attributes as any).manual_adjustment ?? '0'),
     coupon_code: (orderData.attributes as any).coupon_code ?? null,
     asaas_pix_code: (orderData.attributes as any).asaas_pix_code ?? null,
     asaas_pix_expires_at: (orderData.attributes as any).asaas_pix_expires_at ?? null,
@@ -203,7 +205,9 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
   const deliveryFee = order.withdrawal ? 0 : order.delivery_fee;
   const discountAmount = order.discount_amount ?? 0;
   const paymentAdjustment = order.payment_adjustment_amount ?? 0;
-  const total = Math.max(subtotal + deliveryFee - discountAmount + paymentAdjustment, 0);
+  const pickupAdjustment = order.pickup_adjustment_amount ?? 0;
+  const manualAdjustment = order.manual_adjustment ?? 0;
+  const total = Math.max(subtotal + deliveryFee - discountAmount + paymentAdjustment + pickupAdjustment + manualAdjustment, 0);
 
   const handleWhatsApp = (context?: 'pix') => {
     if (!order.shop.phone) return;
@@ -340,6 +344,18 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                       <span>
                         {paymentAdjustment < 0 ? '-' : '+'}{formatCurrency(Math.abs(paymentAdjustment))}
                       </span>
+                    </div>
+                  )}
+                  {pickupAdjustment !== 0 && (
+                    <div className={`flex justify-between text-base ${pickupAdjustment < 0 ? 'text-green-600' : 'text-orange-600'}`}>
+                      <span>{pickupAdjustment < 0 ? 'Desconto na retirada' : 'Acréscimo na retirada'}</span>
+                      <span>{pickupAdjustment < 0 ? '-' : '+'}{formatCurrency(Math.abs(pickupAdjustment))}</span>
+                    </div>
+                  )}
+                  {manualAdjustment !== 0 && (
+                    <div className={`flex justify-between text-base ${manualAdjustment < 0 ? 'text-green-600' : 'text-orange-600'}`}>
+                      <span>{manualAdjustment < 0 ? 'Desconto da loja' : 'Acréscimo da loja'}</span>
+                      <span>{manualAdjustment < 0 ? '-' : '+'}{formatCurrency(Math.abs(manualAdjustment))}</span>
                     </div>
                   )}
                   <div className="flex justify-between text-lg font-bold text-foreground pt-1 border-t border-[#E5E2DD]">

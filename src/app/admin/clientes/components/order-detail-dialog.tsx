@@ -74,6 +74,7 @@ export default function OrderDetailDialog({
   const discount = parseFloat(attrs?.discount_amount || "0");
   const paymentAdj = parseFloat(attrs?.payment_adjustment_amount || "0");
   const manualAdj = parseFloat(attrs?.manual_adjustment || "0");
+  const pickupAdj = parseFloat(attrs?.pickup_adjustment_amount || "0");
   const total = parseFloat(attrs?.total_price || "0");
 
   return (
@@ -222,14 +223,26 @@ export default function OrderDetailDialog({
                 )}
                 {paymentAdj !== 0 && (
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Ajuste de pagamento</span>
-                    <span className="font-medium">{formatCurrency(paymentAdj)}</span>
+                    <span className="text-muted-foreground">{paymentAdj < 0 ? "Desconto no pagamento" : "Acréscimo no pagamento"}</span>
+                    <span className={`font-medium ${paymentAdj < 0 ? "text-green-600" : "text-orange-600"}`}>
+                      {paymentAdj < 0 ? "-" : "+"}{formatCurrency(Math.abs(paymentAdj))}
+                    </span>
+                  </div>
+                )}
+                {pickupAdj !== 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">{pickupAdj < 0 ? "Desconto na retirada" : "Acréscimo na retirada"}</span>
+                    <span className={`font-medium ${pickupAdj < 0 ? "text-green-600" : "text-orange-600"}`}>
+                      {pickupAdj < 0 ? "-" : "+"}{formatCurrency(Math.abs(pickupAdj))}
+                    </span>
                   </div>
                 )}
                 {manualAdj !== 0 && (
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Ajuste manual</span>
-                    <span className="font-medium">{formatCurrency(manualAdj)}</span>
+                    <span className="text-muted-foreground">{manualAdj < 0 ? "Desconto da loja" : "Acréscimo da loja"}</span>
+                    <span className={`font-medium ${manualAdj < 0 ? "text-green-600" : "text-orange-600"}`}>
+                      {manualAdj < 0 ? "-" : "+"}{formatCurrency(Math.abs(manualAdj))}
+                    </span>
                   </div>
                 )}
                 <div className="flex justify-between pt-2 border-t border-[#E5E2DD] font-semibold">
