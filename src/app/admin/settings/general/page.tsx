@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { ImageIcon, Upload, MapPin, Phone, Mail, ShoppingBag, Wallet, Settings, ArrowLeft, Timer, Tag, Truck, Globe } from "lucide-react";
+import { ImageIcon, Upload, MapPin, Phone, Mail, Settings, ArrowLeft, Tag, Globe } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -13,11 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { useShop } from "@/hooks/use-shop";
 import { ShopAttributes } from "@/services/shop";
-import { useUsers } from "@/app/admin/settings/users/hooks/useUsers";
-import BarcodeSettings from "./components/BarcodeSettings";
 import { usePhoneMask } from "@/hooks/use-phone-mask";
 import Link from "next/link";
 
@@ -29,8 +26,6 @@ export default function GeneralSettingsPage() {
   const [initialData, setInitialData] = useState<Partial<ShopAttributes>>({});
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const { formatPhone } = usePhoneMask();
-  const { users, loading: loadingUsers } = useUsers();
-  const deliveryPeople = users.filter((u: any) => u.attributes?.role === 'delivery_man');
 
   useEffect(() => {
     if (shop && !isLoading && !isUpdating) {
@@ -48,15 +43,7 @@ export default function GeneralSettingsPage() {
         email: shop.email || "",
         slug: shop.slug,
         image: null,
-        auto_accept_orders: shop.auto_accept_orders ?? false,
-        barcode_not_found_action: shop.barcode_not_found_action ?? "notice",
-        scale_label_mode: shop.scale_label_mode ?? "weight",
-        auto_open_cash_register: shop.auto_open_cash_register ?? false,
-        auto_open_cash_register_time: shop.auto_open_cash_register_time ?? null,
-        estimated_prep_time: shop.estimated_prep_time ?? 30,
-        estimated_delivery_time: shop.estimated_delivery_time ?? 40,
-        business_category: shop.business_category || "other",
-        default_delivery_person_id: shop.default_delivery_person_id ?? null
+        business_category: shop.business_category || "other"
       };
 
       if (!(initialData as any).slug || (initialData as any).slug !== shop.slug) {
@@ -157,10 +144,6 @@ export default function GeneralSettingsPage() {
       if (!/^[A-Za-z]{2}$/.test(String(formData.address_state ?? "").trim())) errors.address_state = "Informe a UF (2 letras)";
     }
 
-    if (formData.auto_open_cash_register && !formData.auto_open_cash_register_time) {
-      errors.auto_open_cash_register_time = "Horário é obrigatório quando a abertura automática está ativa";
-    }
-
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -206,7 +189,7 @@ export default function GeneralSettingsPage() {
                 <span className="text-sm font-medium hidden sm:block">Voltar</span>
               </Link>
               <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
-              <h1 className="truncate font-tomato text-sm sm:text-lg font-bold text-gray-900">Configurações Gerais</h1>
+              <h1 className="truncate font-tomato text-sm sm:text-lg font-bold text-gray-900">Cadastro da Loja</h1>
             </div>
             {/* Botoes de acao */}
             <div className="flex shrink-0 items-center gap-2">
@@ -495,190 +478,6 @@ export default function GeneralSettingsPage() {
                   />
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* SectionCard: Entregador Padrão */}
-          <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
-            <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
-              <Truck className="h-4 w-4 text-primary" />
-              <h2 className="font-tomato text-base font-semibold text-gray-900">Entregador Padrão</h2>
-            </div>
-            <div className="px-5 py-5">
-              <p className="text-sm text-muted-foreground mb-4">
-                Selecione o entregador que será pré-selecionado automaticamente ao despachar pedidos. O admin pode trocar antes de confirmar.
-              </p>
-              <div className="max-w-md">
-                <Label htmlFor="default_delivery_person_id" className="text-sm font-medium">
-                  Entregador
-                </Label>
-                <Select
-                  value={(() => {
-                    const v = formData.default_delivery_person_id !== undefined
-                      ? formData.default_delivery_person_id
-                      : shop?.default_delivery_person_id;
-                    return v ? String(v) : "none";
-                  })()}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, default_delivery_person_id: value === "none" ? null : value }))}
-                  disabled={loadingUsers}
-                >
-                  <SelectTrigger className="mt-1.5 h-10 w-full text-sm border-[#E5E2DD] rounded-md bg-white cursor-pointer">
-                    <SelectValue placeholder="Nenhum (selecionar manualmente)" />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-md border-[#E5E2DD]">
-                    <SelectItem value="none">Nenhum (selecionar manualmente)</SelectItem>
-                    {deliveryPeople.map((person: any) => (
-                      <SelectItem key={person.id} value={String(person.id)}>
-                        {person.attributes.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {loadingUsers && <p className="text-xs text-muted-foreground mt-1">Carregando entregadores...</p>}
-              </div>
-            </div>
-          </div>
-
-          {/* SectionCard: Pedidos */}
-          <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
-            <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
-              <ShoppingBag className="h-4 w-4 text-primary" />
-              <h2 className="font-tomato text-base font-semibold text-gray-900">Pedidos</h2>
-            </div>
-            <div className="px-5 py-5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div>
-                    <Label htmlFor="auto_accept_orders" className="text-sm font-medium">
-                      Aceitar pedidos automaticamente
-                    </Label>
-                    <p className="text-sm text-muted-foreground mt-0.5">
-                      Quando ativado, novos pedidos serão aceitos automaticamente sem necessidade de confirmação manual
-                    </p>
-                  </div>
-                </div>
-                <Switch
-                  id="auto_accept_orders"
-                  checked={formData.auto_accept_orders ?? false}
-                  onCheckedChange={(checked) =>
-                    setFormData(prev => ({ ...prev, auto_accept_orders: checked }))
-                  }
-                />
-              </div>
-            </div>
-          </div>
-
-          <BarcodeSettings
-            notFoundAction={formData.barcode_not_found_action ?? "notice"}
-            scaleMode={formData.scale_label_mode ?? "weight"}
-            onNotFoundActionChange={(value) => setFormData(prev => ({ ...prev, barcode_not_found_action: value }))}
-            onScaleModeChange={(value) => setFormData(prev => ({ ...prev, scale_label_mode: value }))}
-          />
-
-          {/* SectionCard: Tempo Estimado */}
-          <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
-            <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
-              <Timer className="h-4 w-4 text-primary" />
-              <h2 className="font-tomato text-base font-semibold text-gray-900">Tempo Estimado</h2>
-            </div>
-            <div className="px-5 py-5">
-              <p className="text-sm text-muted-foreground mb-4">
-                Defina o tempo medio de preparo e entrega. Esses valores sao usados no cronometro do painel de pedidos e exibidos ao cliente.
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div className="space-y-1.5">
-                  <Label htmlFor="estimated_prep_time" className="text-sm font-medium">
-                    Tempo de preparo (minutos)
-                  </Label>
-                  <Input
-                    id="estimated_prep_time"
-                    name="estimated_prep_time"
-                    type="number"
-                    min={1}
-                    max={240}
-                    value={formData.estimated_prep_time ?? ''}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setFormData(prev => ({ ...prev, estimated_prep_time: val === '' ? undefined : parseInt(val) }));
-                    }}
-                    className="h-10 w-32 rounded-md border-[#E5E2DD]"
-                  />
-                  <p className="text-xs text-muted-foreground">Usado no cronometro do painel e KDS</p>
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="estimated_delivery_time" className="text-sm font-medium">
-                    Tempo de entrega (minutos)
-                  </Label>
-                  <Input
-                    id="estimated_delivery_time"
-                    name="estimated_delivery_time"
-                    type="number"
-                    min={1}
-                    max={240}
-                    value={formData.estimated_delivery_time ?? ''}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setFormData(prev => ({ ...prev, estimated_delivery_time: val === '' ? undefined : parseInt(val) }));
-                    }}
-                    className="h-10 w-32 rounded-md border-[#E5E2DD]"
-                  />
-                  <p className="text-xs text-muted-foreground">Exibido ao cliente no checkout e acompanhamento</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* SectionCard: Caixa */}
-          <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
-            <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
-              <Wallet className="h-4 w-4 text-primary" />
-              <h2 className="font-tomato text-base font-semibold text-gray-900">Caixa</h2>
-            </div>
-            <div className="px-5 py-5 space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div>
-                    <Label htmlFor="auto_open_cash_register" className="text-sm font-medium">
-                      Abrir caixa automaticamente
-                    </Label>
-                    <p className="text-sm text-muted-foreground mt-0.5">
-                      Quando ativado, o caixa será aberto automaticamente no horário configurado todos os dias
-                    </p>
-                  </div>
-                </div>
-                <Switch
-                  id="auto_open_cash_register"
-                  checked={formData.auto_open_cash_register ?? false}
-                  onCheckedChange={(checked) => {
-                    setFormData(prev => ({
-                      ...prev,
-                      auto_open_cash_register: checked,
-                      ...(!checked && { auto_open_cash_register_time: null })
-                    }));
-                    if (!checked && fieldErrors.auto_open_cash_register_time) {
-                      setFieldErrors(prev => ({ ...prev, auto_open_cash_register_time: "" }));
-                    }
-                  }}
-                />
-              </div>
-              {formData.auto_open_cash_register && (
-                <div className="ml-0 pt-3 border-t border-[#E5E2DD] space-y-1.5">
-                  <Label htmlFor="auto_open_cash_register_time" className="text-sm font-medium">
-                    Horário de abertura <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="auto_open_cash_register_time"
-                    name="auto_open_cash_register_time"
-                    type="time"
-                    value={formData.auto_open_cash_register_time || ""}
-                    onChange={handleInputChange}
-                    className={`h-10 w-40 rounded-md border-[#E5E2DD] ${fieldErrors.auto_open_cash_register_time ? "border-red-400 focus-visible:ring-red-400" : ""}`}
-                  />
-                  {fieldErrors.auto_open_cash_register_time && (
-                    <p className="text-xs text-red-500">{fieldErrors.auto_open_cash_register_time}</p>
-                  )}
-                </div>
-              )}
             </div>
           </div>
 

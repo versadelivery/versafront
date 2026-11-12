@@ -1,4 +1,4 @@
-import { LayoutTemplate, Settings, Users, Truck, CreditCard, Bell, Palette, ListOrdered, Printer, Clock, CalendarClock } from "lucide-react";
+import { LayoutTemplate, Settings, Users, Truck, CreditCard, Palette, ListOrdered, Printer, Clock, CalendarClock, ScanBarcode } from "lucide-react";
 
 export const settingsCards = [
   {
@@ -9,10 +9,17 @@ export const settingsCards = [
     iconBgColor: "bg-gray-700",
   },
   {
+    href: "/admin/settings/barcode",
+    icon: ScanBarcode,
+    title: "Leitor de Código de Barras e Balança",
+    description: "Ação para código não cadastrado e formato da etiqueta da balança",
+    iconBgColor: "bg-slate-600"
+  },
+  {
     href: "/admin/settings/general",
     icon: Settings,
-    title: "Informações Gerais",
-    description: "Configure as configurações básicas do sistema",
+    title: "Cadastro da Loja",
+    description: "Nome, logo, link, endereço e contato da loja",
     iconBgColor: "bg-blue-500"
   },
   {
@@ -25,28 +32,14 @@ export const settingsCards = [
   {
     href: "/admin/settings/agendamento",
     icon: CalendarClock,
-    title: "Pedidos Agendados",
-    description: "Permita agendar pedidos de delivery e retirada para outro dia ou horário",
+    title: "Agendamento e Tempo de Entrega",
+    description: "Pedidos agendados e tempo estimado de preparo e entrega",
     iconBgColor: "bg-indigo-500"
-  },
-  {
-    href: "/admin/settings/appearance",
-    icon: Palette,
-    title: "Aparência do Catálogo",
-    description: "Cores, layout, mensagem de boas-vindas e banner",
-    iconBgColor: "bg-pink-500"
-  },
-  {
-    href: "/admin/settings/users",
-    icon: Users,
-    title: "Gerenciamento de Usuários",
-    description: "Gerencie permissões e acessos dos usuários",
-    iconBgColor: "bg-emerald-600"
   },
   {
     href: "/admin/settings/delivery",
     icon: Truck,
-    title: "Taxas de Entrega",
+    title: "Taxa de Entrega",
     description: "Configure a taxa de entrega e as zonas de entrega",
     iconBgColor: "bg-red-500"
   },
@@ -58,11 +51,18 @@ export const settingsCards = [
     iconBgColor: "bg-purple-500"
   },
   {
-    href: "/admin/settings/notifications",
-    icon: Bell,
-    title: "Notificações",
-    description: "Configure os templates de mensagem WhatsApp",
-    iconBgColor: "bg-green-600"
+    href: "/admin/settings/users",
+    icon: Users,
+    title: "Gerenciamento de Usuários",
+    description: "Usuários, permissões e entregador padrão",
+    iconBgColor: "bg-emerald-600"
+  },
+  {
+    href: "/admin/settings/appearance",
+    icon: Palette,
+    title: "Aparência da Loja",
+    description: "Cores, layout, mensagem de boas-vindas e banner",
+    iconBgColor: "bg-pink-500"
   },
   {
     href: "/admin/settings/templates",

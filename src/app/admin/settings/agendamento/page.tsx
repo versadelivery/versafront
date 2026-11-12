@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { useShop } from "@/hooks/use-shop";
 import { cn } from "@/lib/utils";
+import { EstimatedTimeCard } from "@/components/admin/shop-settings-cards";
 import { SCHEDULING_MODE_OPTIONS, type SchedulingMode } from "@/lib/scheduling";
 
 const LEAD_OPTIONS = [
@@ -76,7 +77,7 @@ export default function SchedulingSettingsPage() {
               <span className="text-sm font-medium hidden sm:block">Voltar</span>
             </Link>
             <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
-            <h1 className="truncate font-tomato text-sm sm:text-lg font-bold text-gray-900">Agendamento</h1>
+            <h1 className="truncate font-tomato text-sm sm:text-lg font-bold text-gray-900">Agendamento e Tempo de Entrega</h1>
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <Button
@@ -266,6 +267,8 @@ export default function SchedulingSettingsPage() {
             </div>
           </div>
         )}
+
+        <EstimatedTimeCard />
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import { AlertCircle, Bell, Check, PackagePlus, Receipt, Scale, ScanBarcode } from "lucide-react";
+import { AlertCircle, Bell, Check, PackagePlus, Receipt, Scale } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -101,39 +101,33 @@ function OptionGroup<T extends string>({
 
 export default function BarcodeSettings({ notFoundAction, scaleMode, onNotFoundActionChange, onScaleModeChange }: BarcodeSettingsProps) {
   return (
-    <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
-      <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
-        <ScanBarcode className="h-4 w-4 text-primary" />
-        <h2 className="font-tomato text-base font-semibold text-gray-900">Leitor de código de barras</h2>
-      </div>
-      <div className="px-5 py-5 space-y-6">
-        <p className="text-sm text-muted-foreground">
-          O leitor USB funciona como um teclado: digita o número do produto sozinho. No PDV, clique na busca e bipe.
-        </p>
+    <div className="space-y-6">
+      <p className="text-sm text-muted-foreground">
+        O leitor USB funciona como um teclado: digita o número do produto sozinho. No PDV, clique na busca e bipe.
+      </p>
 
+      <OptionGroup
+        label="Quando o código não estiver cadastrado (PDV)"
+        options={NOT_FOUND_OPTIONS}
+        value={notFoundAction}
+        onChange={onNotFoundActionChange}
+      />
+
+      <div className="space-y-3">
         <OptionGroup
-          label="Quando o código não estiver cadastrado (PDV)"
-          options={NOT_FOUND_OPTIONS}
-          value={notFoundAction}
-          onChange={onNotFoundActionChange}
+          label="Minha balança grava no código de barras"
+          options={SCALE_OPTIONS}
+          value={scaleMode}
+          onChange={onScaleModeChange}
         />
-
-        <div className="space-y-3">
-          <OptionGroup
-            label="Minha balança grava no código de barras"
-            options={SCALE_OPTIONS}
-            value={scaleMode}
-            onChange={onScaleModeChange}
-          />
-          {scaleMode === "total" && (
-            <p className="flex items-start gap-2 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-              <span>
-                O preço do kg na balança e no sistema precisam ser iguais. O total pode diferir em centavos por arredondamento.
-              </span>
-            </p>
-          )}
-        </div>
+        {scaleMode === "total" && (
+          <p className="flex items-start gap-2 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+            <span>
+              O preço do kg na balança e no sistema precisam ser iguais. O total pode diferir em centavos por arredondamento.
+            </span>
+          </p>
+        )}
       </div>
     </div>
   );

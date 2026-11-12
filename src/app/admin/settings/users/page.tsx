@@ -23,6 +23,7 @@ import {
 import Link from "next/link";
 import UserModal from "./components/user-modal";
 import { useUsers } from "./hooks/useUsers";
+import { DefaultDelivererCard } from "@/components/admin/shop-settings-cards";
 
 export default function UsersManagementPage() {
   const {
@@ -222,6 +223,10 @@ export default function UsersManagementPage() {
               <span>Total de usuários: {users.length}</span>
             </div>
           )}
+        </div>
+
+        <div className="mt-5">
+          <DefaultDelivererCard />
         </div>
       </div>
 

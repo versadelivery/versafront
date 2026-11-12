@@ -24,6 +24,8 @@ import {
   CashRegisterTransaction,
 } from "@/services/cash-register-service";
 
+import { AutoOpenCashCard } from "@/components/admin/shop-settings-cards";
+
 type View = "caixa" | "historico" | "movimentacoes";
 
 const KIND_LABELS: Record<string, string> = {
@@ -380,6 +382,7 @@ export default function CaixaPage() {
                 )}
               </CardContent>
             </Card>
+            <AutoOpenCashCard />
           </div>
         )}
 

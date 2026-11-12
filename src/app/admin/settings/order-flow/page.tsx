@@ -6,6 +6,7 @@ import { ArrowLeft, GripVertical, Check, X, ListOrdered, RotateCcw, Zap, AlertCi
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { AutoAcceptCard } from "@/components/admin/shop-settings-cards";
 import api from "@/api/config";
 import { API_ENDPOINTS } from "@/api/routes";
 
@@ -233,6 +234,8 @@ export default function OrderFlowSettingsPage() {
 
       {/* Conteudo */}
       <div className="max-w-[1920px] mx-auto px-4 sm:px-6 py-6 space-y-6">
+        <AutoAcceptCard />
+
         {/* Presets */}
         <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
           <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">

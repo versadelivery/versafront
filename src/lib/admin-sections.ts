@@ -32,6 +32,7 @@ import {
   ListOrdered,
   Printer,
   LayoutTemplate,
+  ScanBarcode,
   type LucideIcon,
 } from "lucide-react"
 
@@ -478,12 +479,22 @@ export const adminSections: AdminSection[] = [
   },
   {
     id: "settings-general",
-    title: "Configurações Gerais",
-    description: "Nome, logo, endereço e contato",
+    title: "Cadastro da Loja",
+    description: "Nome, logo, link, endereço e contato",
     href: "/admin/settings/general",
     icon: Store,
     iconBgColor: "bg-gray-600",
     keywords: ["loja", "nome", "logo", "endereco", "geral"],
+    group: "Configurações",
+  },
+  {
+    id: "settings-barcode",
+    title: "Leitor de Código de Barras e Balança",
+    description: "Ação para código não cadastrado e formato da etiqueta da balança",
+    href: "/admin/settings/barcode",
+    icon: ScanBarcode,
+    iconBgColor: "bg-slate-600",
+    keywords: ["codigo", "barras", "leitor", "balanca", "etiqueta", "scanner", "peso"],
     group: "Configurações",
   },
   {
@@ -498,17 +509,17 @@ export const adminSections: AdminSection[] = [
   },
   {
     id: "settings-scheduling",
-    title: "Pedidos Agendados",
-    description: "Permita agendar pedidos para outro dia ou horário",
+    title: "Agendamento e Tempo de Entrega",
+    description: "Pedidos agendados e tempo estimado de preparo e entrega",
     href: "/admin/settings/agendamento",
     icon: CalendarClock,
     iconBgColor: "bg-indigo-500",
-    keywords: ["agendar", "agendamento", "agendado", "reserva", "programar", "pedido"],
+    keywords: ["agendar", "agendamento", "agendado", "reserva", "programar", "pedido", "tempo", "preparo", "entrega", "estimado"],
     group: "Configurações",
   },
   {
     id: "settings-appearance",
-    title: "Aparência do Catálogo",
+    title: "Aparência da Loja",
     description: "Cores, layout, mensagem de boas-vindas e banner",
     href: "/admin/settings/appearance",
     icon: Palette,
@@ -528,7 +539,7 @@ export const adminSections: AdminSection[] = [
   },
   {
     id: "settings-delivery",
-    title: "Configurações de Entrega",
+    title: "Taxa de Entrega",
     description: "Zonas de entrega e taxas",
     href: "/admin/settings/delivery",
     icon: Truck,
