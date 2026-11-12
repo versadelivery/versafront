@@ -53,7 +53,7 @@ export const settingsCards = [
   {
     href: "/admin/settings/templates",
     icon: LayoutTemplate,
-    title: "Templates de Loja",
+    title: "Modelos de Loja",
     description: "Monte seu catálogo rápido escolhendo categorias, grupos e itens prontos",
     iconBgColor: "bg-teal-600"
   },

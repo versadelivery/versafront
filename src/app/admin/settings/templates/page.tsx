@@ -159,7 +159,7 @@ export default function TemplatesPage() {
                 <span className="hidden text-sm font-medium sm:block">Voltar</span>
               </a>
               <div className="hidden h-6 w-px bg-[#E5E2DD] sm:block" />
-              <h1 className="font-tomato text-base font-bold text-gray-900 sm:text-lg">Templates de Loja</h1>
+              <h1 className="font-tomato text-base font-bold text-gray-900 sm:text-lg">Modelos de Loja</h1>
             </div>
           </div>
         </div>

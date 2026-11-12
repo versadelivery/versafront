@@ -527,7 +527,7 @@ export const adminSections: AdminSection[] = [
   },
   {
     id: "settings-templates",
-    title: "Templates de Loja",
+    title: "Modelos de Loja",
     description: "Monte seu catálogo rápido com categorias, grupos e itens prontos",
     href: "/admin/settings/templates",
     icon: LayoutTemplate,
