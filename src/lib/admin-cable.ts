@@ -81,9 +81,10 @@ export function createAdminCableWithToken() {
 
   const base = process.env.NEXT_PUBLIC_CABLE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
   const parsed = new URL(base.includes('://') ? base : `https://${base}`)
-  // Só vira wss: quando a base é segura. Antes, `ws://localhost` (dev) virava `wss:` e o Puma recusava a conexão
-  // para sempre, deixando o painel sem tempo real.
-  const protocol = parsed.protocol === 'https:' || parsed.protocol === 'wss:' ? 'wss:' : 'ws:'
+  // ws: só em desenvolvimento local. Em qualquer outro host é wss: sempre — uma base configurada como http:/ws:
+  // (comum em NEXT_PUBLIC_API_URL) em página HTTPS lança SecurityError e derruba o painel inteiro.
+  const isLocal = /^(localhost$|127\.|10\.|192\.168\.|\[::1\]$)/.test(parsed.hostname)
+  const protocol = isLocal && (parsed.protocol === 'http:' || parsed.protocol === 'ws:') ? 'ws:' : 'wss:'
   const cableUrl = `${protocol}//${parsed.host}${parsed.pathname === '/' ? '' : parsed.pathname.replace(/\/$/, '')}/cable?token=${encodeURIComponent(token)}`
 
   try {
