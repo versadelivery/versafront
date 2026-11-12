@@ -478,11 +478,21 @@ export const adminSections: AdminSection[] = [
   {
     id: "settings-general",
     title: "Configurações Gerais",
-    description: "Nome, logo, endereço e horários",
+    description: "Nome, logo, endereço e contato",
     href: "/admin/settings/general",
     icon: Store,
     iconBgColor: "bg-gray-600",
-    keywords: ["loja", "nome", "logo", "endereco", "horario", "geral"],
+    keywords: ["loja", "nome", "logo", "endereco", "geral"],
+    group: "Configurações",
+  },
+  {
+    id: "settings-hours",
+    title: "Horário de Funcionamento",
+    description: "Dias e horários em que a loja abre e fecha",
+    href: "/admin/settings/horarios",
+    icon: Clock,
+    iconBgColor: "bg-sky-500",
+    keywords: ["horario", "funcionamento", "abre", "fecha", "expediente", "dias"],
     group: "Configurações",
   },
   {

@@ -394,7 +394,7 @@ export default function ScheduleSettings() {
       )}
 
       {/* Cabeçalho da tabela */}
-      <div className="grid grid-cols-2 sm:grid-cols-12 gap-3 sm:gap-4 items-center py-2 border-b border-[#E5E2DD]">
+      <div className="hidden sm:grid sm:grid-cols-12 gap-3 sm:gap-4 items-center py-2 border-b border-[#E5E2DD]">
         <div className="col-span-1 sm:col-span-2">
           <span className="text-sm font-medium text-muted-foreground">Dia</span>
         </div>

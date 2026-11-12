@@ -1,4 +1,4 @@
-import { LayoutTemplate, Settings, Users, Truck, CreditCard, Bell, Palette, ListOrdered, Printer } from "lucide-react";
+import { LayoutTemplate, Settings, Users, Truck, CreditCard, Bell, Palette, ListOrdered, Printer, Clock } from "lucide-react";
 
 export const settingsCards = [
   {
@@ -14,6 +14,13 @@ export const settingsCards = [
     title: "Informações Gerais",
     description: "Configure as configurações básicas do sistema",
     iconBgColor: "bg-blue-500"
+  },
+  {
+    href: "/admin/settings/horarios",
+    icon: Clock,
+    title: "Horário de Funcionamento",
+    description: "Dias e horários em que a loja abre e fecha",
+    iconBgColor: "bg-sky-500"
   },
   {
     href: "/admin/settings/appearance",

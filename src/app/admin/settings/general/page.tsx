@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { ImageIcon, Upload, MapPin, Phone, Mail, ShoppingBag, Wallet, Settings, Clock, ArrowLeft, Timer, Tag, Truck, Globe } from "lucide-react";
+import { ImageIcon, Upload, MapPin, Phone, Mail, ShoppingBag, Wallet, Settings, ArrowLeft, Timer, Tag, Truck, Globe } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -17,7 +17,6 @@ import { Switch } from "@/components/ui/switch";
 import { useShop } from "@/hooks/use-shop";
 import { ShopAttributes } from "@/services/shop";
 import { useUsers } from "@/app/admin/settings/users/hooks/useUsers";
-import ScheduleSettings from "./components/ScheduleSettings";
 import BarcodeSettings from "./components/BarcodeSettings";
 import { usePhoneMask } from "@/hooks/use-phone-mask";
 import Link from "next/link";
@@ -680,17 +679,6 @@ export default function GeneralSettingsPage() {
                   )}
                 </div>
               )}
-            </div>
-          </div>
-
-          {/* SectionCard: Horario de Funcionamento */}
-          <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
-            <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
-              <Clock className="h-4 w-4 text-primary" />
-              <h2 className="font-tomato text-base font-semibold text-gray-900">Horário de Funcionamento</h2>
-            </div>
-            <div className="px-5 py-5">
-              <ScheduleSettings />
             </div>
           </div>
 
