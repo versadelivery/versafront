@@ -67,9 +67,7 @@ export default function CustomerModal({
       newErrors.name = "Nome deve ter no mínimo 2 caracteres";
     }
 
-    if (!formData.email.trim()) {
-      newErrors.email = "E-mail é obrigatório";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+    if (formData.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
       newErrors.email = "E-mail inválido";
     }
 
