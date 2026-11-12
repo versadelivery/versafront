@@ -26,6 +26,7 @@ import {
   Edit,
   User,
   Mail,
+  MapPin,
   Phone,
   Calendar,
   ShoppingCart,
@@ -38,7 +39,7 @@ import {
 import CustomerModal from "../components/customer-modal";
 import OrderDetailDialog from "../components/order-detail-dialog";
 import { useCustomerDetail } from "../hooks/useCustomerDetail";
-import { customerService } from "../services/customerService";
+import { customerService, type CustomerSavedAddress } from "../services/customerService";
 
 const statusLabels: Record<string, string> = {
   received: "Recebido",
@@ -83,6 +84,13 @@ const paymentLabels: Record<string, string> = {
 function formatCurrency(value: string | number) {
   const num = typeof value === "string" ? parseFloat(value) : value;
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(num || 0);
+}
+
+// "Rua X, 42 · Centro · Apto 3 · Ref: perto da praça"
+function formatSavedAddress(a?: CustomerSavedAddress | null) {
+  if (!a) return "";
+  const street = [a.address, a.number].filter(Boolean).join(", ");
+  return [street, a.neighborhood, a.complement, a.reference && `Ref: ${a.reference}`].filter(Boolean).join(" · ");
 }
 
 function formatDate(dateStr: string) {
@@ -280,7 +288,7 @@ export default function CustomerDetailPage() {
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm text-muted-foreground">E-mail</p>
-                  <p className="text-sm font-medium text-gray-900 truncate">{customer.attributes.email}</p>
+                  <p className="text-sm font-medium text-gray-900 truncate">{customer.attributes.email || "—"}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -310,6 +318,17 @@ export default function CustomerDetailPage() {
                 <div className="min-w-0">
                   <p className="text-sm text-muted-foreground">Total de pedidos</p>
                   <p className="text-sm font-medium text-gray-900">{customer.attributes.orders_count}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 sm:col-span-2 lg:col-span-4" data-testid="customer-address">
+                <div className="w-9 h-9 rounded-md bg-[#F0EFEB] flex items-center justify-center flex-shrink-0">
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm text-muted-foreground">Endereço</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {formatSavedAddress(customer.attributes.default_address) || "—"}
+                  </p>
                 </div>
               </div>
             </div>

@@ -176,7 +176,7 @@ export default function CustomersPage() {
                     </TableCell>
                     <TableCell className="py-3 text-sm text-muted-foreground hidden md:table-cell">
                       <span className="block max-w-[220px] truncate">
-                        {customer.attributes.email}
+                        {customer.attributes.email || "—"}
                       </span>
                     </TableCell>
                     <TableCell className="py-3 text-center">

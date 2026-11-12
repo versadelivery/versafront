@@ -237,8 +237,8 @@ export default function CustomerModal({
                 <span className="text-sm font-semibold text-gray-900">Endereço</span>
                 <span className="text-xs text-muted-foreground">(opcional)</span>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="space-y-1.5 sm:col-span-2">
+              <div className="grid grid-cols-1 gap-3">
+                <div className="space-y-1.5">
                   <Label htmlFor="address" className="text-sm font-medium">Rua</Label>
                   <Input
                     id="address"
