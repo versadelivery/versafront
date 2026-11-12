@@ -14,6 +14,8 @@ export interface Customer {
     created_at: string;
     last_address?: CustomerLastAddress | null;
     addresses?: CustomerSavedAddress[] | null;
+    /** Endereço padrão da loja no cadastro (mesmo caderno do PDV e do checkout) */
+    default_address?: CustomerSavedAddress | null;
   };
 }
 
@@ -65,6 +67,7 @@ export interface CreateCustomerRequest {
     // opcional: no PDV o cliente é cadastrado só com nome e telefone
     email?: string;
     cellphone: string;
+    address?: CustomerAddressInput;
   };
 }
 
@@ -73,6 +76,7 @@ export interface UpdateCustomerRequest {
     name?: string;
     email?: string;
     cellphone?: string;
+    address?: CustomerAddressInput;
   };
 }
 
@@ -114,3 +118,13 @@ export const customerService = {
     return response.data;
   },
 };
+
+// Endereço opcional do cadastro: com `id` edita o endereço salvo, sem `id` cria/reaproveita
+export interface CustomerAddressInput {
+  id?: number;
+  address: string;
+  number?: string;
+  neighborhood?: string;
+  complement?: string;
+  reference?: string;
+}

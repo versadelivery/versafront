@@ -11,6 +11,9 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { User, Mail, Phone, Loader2 } from "lucide-react";
+import { MapPin } from "lucide-react";
+import { AddressNumberField } from "@/components/address-number-field";
+import { normalizeAddressNumber, splitStreetNumber } from "@/utils/address-number";
 import { Customer } from "../services/customerService";
 
 interface CustomerModalProps {
@@ -20,6 +23,8 @@ interface CustomerModalProps {
   customer?: Customer | null;
   isEdit?: boolean;
 }
+
+const emptyAddress = { id: undefined as number | undefined, address: "", number: "", neighborhood: "", complement: "", reference: "" };
 
 export default function CustomerModal({
   isOpen,
@@ -33,6 +38,8 @@ export default function CustomerModal({
     email: "",
     cellphone: "",
   });
+  // Endereço opcional (mesmos campos do checkout/PDV); id existe quando edita o endereço padrão salvo
+  const [addr, setAddr] = useState(emptyAddress);
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -52,8 +59,16 @@ export default function CustomerModal({
         email: customer.attributes.email || "",
         cellphone: maskPhone(customer.attributes.cellphone || ""),
       });
+      const saved = customer.attributes.default_address;
+      if (saved) {
+        const { street, number } = splitStreetNumber(saved.address, saved.number);
+        setAddr({ id: saved.id, address: street, number, neighborhood: saved.neighborhood ?? "", complement: saved.complement ?? "", reference: saved.reference ?? "" });
+      } else {
+        setAddr(emptyAddress);
+      }
     } else {
       setFormData({ name: "", email: "", cellphone: "" });
+      setAddr(emptyAddress);
     }
     setErrors({});
   }, [isEdit, customer, isOpen]);
@@ -70,6 +85,10 @@ export default function CustomerModal({
     if (formData.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
       newErrors.email = "E-mail inválido";
     }
+
+    // endereço é opcional, mas se preencheu algo precisa da rua
+    const hasAddr = [addr.address, addr.number, addr.neighborhood, addr.complement, addr.reference].some((v) => v.trim());
+    if (hasAddr && !addr.address.trim()) newErrors.address = "Informe a rua para salvar o endereço";
 
     const phoneDigits = formData.cellphone.replace(/\D/g, "");
     if (!phoneDigits) {
@@ -94,6 +113,16 @@ export default function CustomerModal({
         name: formData.name.trim(),
         email: formData.email.trim().toLowerCase(),
         cellphone: formData.cellphone.replace(/\D/g, ""),
+        ...(addr.address.trim() && {
+          address: {
+            ...(addr.id && { id: addr.id }),
+            address: addr.address.trim(),
+            number: normalizeAddressNumber(addr.number),
+            neighborhood: addr.neighborhood.trim(),
+            complement: addr.complement.trim(),
+            reference: addr.reference.trim(),
+          },
+        }),
       });
       onClose();
     } catch (error) {
@@ -116,9 +145,9 @@ export default function CustomerModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="sm:max-w-md p-0 rounded-md border-[#E5E2DD] gap-0">
+      <DialogContent className="sm:max-w-lg w-[calc(100vw-1rem)] max-h-[92dvh] flex flex-col overflow-hidden p-0 rounded-md border-[#E5E2DD] gap-0">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-[#E5E2DD] flex items-center gap-3">
+        <div className="px-4 sm:px-6 py-4 border-b border-[#E5E2DD] flex items-center gap-3 shrink-0">
           <div className="w-9 h-9 rounded-md bg-[#F0EFEB] flex items-center justify-center flex-shrink-0">
             <User className="w-4 h-4 text-primary" />
           </div>
@@ -135,8 +164,8 @@ export default function CustomerModal({
         </div>
 
         {/* Body */}
-        <form onSubmit={handleSubmit}>
-          <div className="px-6 py-5 bg-[#FAF9F7] space-y-4">
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 sm:px-6 py-5 bg-[#FAF9F7] space-y-4">
             {/* Nome */}
             <div className="space-y-1.5">
               <Label htmlFor="name" className="text-sm font-medium">
@@ -201,6 +230,47 @@ export default function CustomerModal({
               {errors.cellphone && <p className="text-sm text-red-600">{errors.cellphone}</p>}
             </div>
 
+            {/* Endereço (opcional) */}
+            <div className="space-y-3 border-t border-[#E5E2DD] pt-4">
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-primary" />
+                <span className="text-sm font-semibold text-gray-900">Endereço</span>
+                <span className="text-xs text-muted-foreground">(opcional)</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label htmlFor="address" className="text-sm font-medium">Rua</Label>
+                  <Input
+                    id="address"
+                    value={addr.address}
+                    onChange={(e) => { setAddr((p) => ({ ...p, address: e.target.value })); if (errors.address) setErrors((p) => ({ ...p, address: "" })); }}
+                    placeholder="Nome da rua"
+                    maxLength={70}
+                    className={`h-10 rounded-md border-[#E5E2DD] bg-white ${errors.address ? "border-red-400 focus:border-red-400" : ""}`}
+                  />
+                  {errors.address && <p className="text-sm text-red-600">{errors.address}</p>}
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="number" className="text-sm font-medium">Número</Label>
+                  <AddressNumberField id="number" value={addr.number} onChange={(number) => setAddr((p) => ({ ...p, number }))} className="h-10 border-[#E5E2DD] bg-white" />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="neighborhood" className="text-sm font-medium">Bairro/Condomínio</Label>
+                  <Input id="neighborhood" value={addr.neighborhood} onChange={(e) => setAddr((p) => ({ ...p, neighborhood: e.target.value }))} placeholder="Bairro" className="h-10 rounded-md border-[#E5E2DD] bg-white" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="complement" className="text-sm font-medium">Complemento</Label>
+                  <Input id="complement" value={addr.complement} onChange={(e) => setAddr((p) => ({ ...p, complement: e.target.value }))} placeholder="Apt, bloco" className="h-10 rounded-md border-[#E5E2DD] bg-white" />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="reference" className="text-sm font-medium">Referência</Label>
+                <Input id="reference" value={addr.reference} onChange={(e) => setAddr((p) => ({ ...p, reference: e.target.value }))} placeholder="Ponto de referência" className="h-10 rounded-md border-[#E5E2DD] bg-white" />
+              </div>
+            </div>
+
             {!isEdit && (
               <p className="text-sm text-muted-foreground">
                 Uma senha temporária será gerada automaticamente para o cliente.
@@ -209,7 +279,7 @@ export default function CustomerModal({
           </div>
 
           {/* Footer */}
-          <div className="flex gap-3 px-6 py-4 border-t border-[#E5E2DD]">
+          <div className="flex gap-3 px-4 sm:px-6 py-4 border-t border-[#E5E2DD] shrink-0">
             <Button
               type="button"
               variant="outline"

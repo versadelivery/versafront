@@ -476,14 +476,11 @@ export default function CheckoutPage() {
 
   // Pré-preencher o endereço do cliente (caderno de endereços da loja, o mesmo que o PDV usa)
   const shopIdForPrefill = shopData?.data?.id
+  // Telefone digitado (ou lembrado do último pedido): ao completar, traz nome e endereço já salvos
+  const phoneForPrefill = guestPhone.replace(/\D/g, '')
   useEffect(() => {
     if (!shopIdForPrefill) return
-    const phone = (() => {
-      try {
-        const info = JSON.parse(localStorage.getItem('customer_info') || '{}')
-        return info.phone?.replace(/\D/g, '') || ''
-      } catch { return '' }
-    })()
+    const phone = phoneForPrefill
     if (!phone || phone.length < 10) return
 
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
@@ -493,6 +490,7 @@ export default function CheckoutPage() {
       .then(res => res.ok ? res.json() : null)
       .then(data => {
         if (!data) return
+        if (data.customer_name) setGuestName((prev: string) => prev || data.customer_name)
         if (data.address) {
           if (data.address.address && !address) {
             // endereços antigos guardavam "Rua, 123" inteiro na rua
@@ -523,7 +521,7 @@ export default function CheckoutPage() {
       })
       .catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shopIdForPrefill])
+  }, [shopIdForPrefill, phoneForPrefill])
 
   // Set de IDs realmente disponíveis (ativo + grupo ativo + dia da semana)
   const availableItemIds = useMemo(() => {
