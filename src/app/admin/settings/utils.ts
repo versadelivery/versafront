@@ -1,4 +1,4 @@
-import { LayoutTemplate, Settings, Users, Truck, CreditCard, Bell, Palette, ListOrdered, Printer, Clock } from "lucide-react";
+import { LayoutTemplate, Settings, Users, Truck, CreditCard, Bell, Palette, ListOrdered, Printer, Clock, CalendarClock } from "lucide-react";
 
 export const settingsCards = [
   {
@@ -21,6 +21,13 @@ export const settingsCards = [
     title: "Horário de Funcionamento",
     description: "Dias e horários em que a loja abre e fecha",
     iconBgColor: "bg-sky-500"
+  },
+  {
+    href: "/admin/settings/agendamento",
+    icon: CalendarClock,
+    title: "Pedidos Agendados",
+    description: "Permita agendar pedidos de delivery e retirada para outro dia ou horário",
+    iconBgColor: "bg-indigo-500"
   },
   {
     href: "/admin/settings/appearance",

@@ -25,8 +25,10 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import PublicLoading from "@/components/public-loading";
+import { describeSchedule, SCHEDULE_PRICE_NOTICE } from "@/lib/scheduling";
 
 const statusConfig: Record<string, { label: string; dot: string; border: string; text: string; description: string }> = {
+  scheduled:      { label: "Agendado",    dot: "bg-indigo-500",  border: "border-indigo-300",  text: "text-indigo-700",  description: "Seu pedido está agendado. A loja vai confirmar e prepará-lo no horário combinado." },
   received:       { label: "Recebido",    dot: "bg-amber-400",   border: "border-amber-300",   text: "text-amber-700",   description: "Seu pedido foi recebido e será processado em breve." },
   accepted:       { label: "Aceito",      dot: "bg-blue-500",    border: "border-blue-300",    text: "text-blue-700",    description: "Seu pedido foi aceito e será preparado em breve." },
   in_analysis:    { label: "Em análise",  dot: "bg-orange-400",  border: "border-orange-300",  text: "text-orange-700",  description: "Estamos analisando seu pedido." },
@@ -148,7 +150,11 @@ export default function OrderDetailsPage() {
   const order = {
     id: orderData.attributes.id?.toString() ?? id,
     date: orderData.attributes.created_at ?? new Date().toISOString(),
-    status: orderData.attributes.status ?? 'received',
+    status: (orderData.attributes as any).scheduled_pending ? 'scheduled' : (orderData.attributes.status ?? 'received'),
+    // Agendado: horário combinado, e se a loja já confirmou
+    scheduled_for: ((orderData.attributes as any).scheduled_for as string | null) ?? null,
+    scheduled_confirmed: !!(orderData.attributes as any).scheduled_confirmed_at,
+    scheduled_pending: !!(orderData.attributes as any).scheduled_pending,
     withdrawal: orderData.attributes.withdrawal ?? false,
     payment_method: orderData.attributes.payment_method ?? 'cash',
     observation: orderData.attributes.observation ?? '',
@@ -232,6 +238,20 @@ export default function OrderDetailsPage() {
                 </div>
                 <p className="text-base font-medium text-foreground">{order.shop.name}</p>
                 <p className="text-sm text-muted-foreground mt-0.5">{dateInfo.date} às {dateInfo.time}</p>
+                {order.scheduled_for && (
+                  <div className="mt-3 rounded-md border border-indigo-200 bg-indigo-50 px-3 py-2.5 text-sm text-indigo-800" data-testid="order-scheduled-info">
+                    <p className="flex items-center gap-2 font-semibold">
+                      <Clock className="h-4 w-4" />
+                      Agendado para {describeSchedule(order.scheduled_for)}
+                    </p>
+                    {order.scheduled_pending && (
+                      <>
+                        <p className="mt-1">{order.scheduled_confirmed ? "A loja confirmou o seu agendamento." : "Aguardando a confirmação da loja."}</p>
+                        <p className="mt-1 text-indigo-700">{SCHEDULE_PRICE_NOTICE}</p>
+                      </>
+                    )}
+                  </div>
+                )}
                 {statusCfg.description && (
                   <p className="text-sm text-muted-foreground mt-2 italic">{statusCfg.description}</p>
                 )}

@@ -41,6 +41,7 @@ const formatDate = (dateString: string) => {
 };
 
 const statusConfig: Record<string, { label: string; dot: string; border: string; text: string }> = {
+  scheduled:      { label: "Agendado",    dot: "bg-indigo-500",  border: "border-indigo-300",  text: "text-indigo-700" },
   received:       { label: "Recebido",    dot: "bg-amber-400",   border: "border-amber-300",   text: "text-amber-700"  },
   accepted:       { label: "Aceito",      dot: "bg-blue-500",    border: "border-blue-300",    text: "text-blue-700"   },
   in_analysis:    { label: "Em análise",  dot: "bg-orange-400",  border: "border-orange-300",  text: "text-orange-700" },
@@ -217,7 +218,7 @@ export default function MeusPedidosPage() {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-base font-bold text-foreground">#{order.attributes.id}</span>
-                        <StatusBadge status={order.attributes.status} />
+                        <StatusBadge status={(order.attributes as any).scheduled_pending ? 'scheduled' : order.attributes.status} />
                       </div>
                       <p className="text-base font-medium text-foreground mt-0.5 truncate">{shopName}</p>
                       <p className="text-sm text-muted-foreground">{date.date} às {date.time}</p>

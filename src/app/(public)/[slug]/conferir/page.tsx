@@ -3,8 +3,11 @@
 import {
   CreditCard, Wallet, QrCode, Truck, ChevronDown, ChevronUp,
   Plus, Minus, X, CheckCircle2, Store, Clock, AlertTriangle,
-  ChevronLeft, ShoppingCart, Package, User, Phone, Tag, Loader2, Copy, ExternalLink, MessageSquare
+  ChevronLeft, ShoppingCart, Package, User, Phone, Tag, Loader2, Copy, ExternalLink, MessageSquare, CalendarClock
 } from 'lucide-react'
+import { SchedulePicker } from '@/components/scheduling/schedule-picker'
+import { useSchedulingSlots } from '@/hooks/use-scheduling-slots'
+import { describeSchedule, SCHEDULE_PRICE_NOTICE } from '@/lib/scheduling'
 import { QRCodeSVG } from 'qrcode.react'
 import { toast } from "sonner"
 import { Button } from '@/components/ui/button'
@@ -137,13 +140,17 @@ function SuccessScreen({ iconColor, title, subtitle, steps, onComplete }: {
   )
 }
 
-function OrderSuccessScreen({ onComplete }: { onComplete: () => void }) {
+function OrderSuccessScreen({ onComplete, scheduledLabel }: { onComplete: () => void; scheduledLabel?: string }) {
   return (
     <SuccessScreen
       iconColor="bg-[#7ED957]"
-      title="Pedido realizado!"
-      subtitle="Tudo certo, estamos cuidando de tudo pra você"
-      steps={[
+      title={scheduledLabel ? "Pedido agendado!" : "Pedido realizado!"}
+      subtitle={scheduledLabel ? `Agendado para ${scheduledLabel}` : "Tudo certo, estamos cuidando de tudo pra você"}
+      steps={scheduledLabel ? [
+        { icon: Clock, text: "Pedido agendado!" },
+        { icon: CheckCircle2, text: "A loja vai confirmar seu pedido" },
+        { icon: Truck, text: "O preço pode mudar até o dia da entrega" },
+      ] : [
         { icon: Package, text: "Preparando seu pedido..." },
         { icon: CheckCircle2, text: "Pedido confirmado!" },
         { icon: Truck, text: "Acompanhe em tempo real" },
@@ -351,6 +358,26 @@ export default function CheckoutPage() {
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('credit')
   const [deliveryOption, setDeliveryOption] = useState<DeliveryOption>('delivery')
+  // Agendamento: "agora" ou data/horário escolhido (os horários vêm da API, já dentro do funcionamento da loja)
+  const [scheduleMode, setScheduleMode] = useState<'now' | 'scheduled'>('now')
+  const [scheduledFor, setScheduledFor] = useState<string | null>(null)
+  const [scheduledLabel, setScheduledLabel] = useState('')
+  const { data: schedulingSlots } = useSchedulingSlots({
+    shopId: shopData?.data?.id,
+    withdrawal: deliveryOption === 'pickup',
+  })
+  const canSchedule = !!schedulingSlots?.allowed && schedulingSlots.days.length > 0
+  const scheduleActive = canSchedule && scheduleMode === 'scheduled'
+
+  // Loja fechada e com agendamento: o pedido só pode ser agendado. Sem agendamento disponível, volta ao normal.
+  useEffect(() => {
+    if (!canSchedule) {
+      setScheduleMode('now')
+      setScheduledFor(null)
+    } else if (!isShopOpen && !shopStatusLoading) {
+      setScheduleMode('scheduled')
+    }
+  }, [canSchedule, isShopOpen, shopStatusLoading])
   const [address, setAddress] = useState('')
   // Número em campo próprio ("S/N" = sem número), igual ao PDV
   const [addressNumber, setAddressNumber] = useState('')
@@ -457,7 +484,8 @@ export default function CheckoutPage() {
   // asaas_pix e manual_pix são mutuamente exclusivos: asaas_pix tem prioridade
   const availablePaymentMethods = shopPaymentConfig
     ? (Object.entries(PAYMENT_LABELS) as [PaymentMethod, any][]).filter(([method]) => {
-        if (method === 'asaas_pix') return shopPaymentConfig.asaas_pix
+        // Pix online é cobrado na criação pelo preço de hoje; o agendado tem o preço refeito na liberação
+        if (method === 'asaas_pix') return shopPaymentConfig.asaas_pix && !scheduleActive
         if (method === 'manual_pix') return !shopPaymentConfig.asaas_pix && shopPaymentConfig.manual_pix
         return shopPaymentConfig[method as keyof typeof shopPaymentConfig]
       })
@@ -734,11 +762,19 @@ export default function CheckoutPage() {
   }
 
   const handleSubmitOrder = async () => {
-    // Re-validar status da loja
-    await checkStatus()
-    if (!isShopOpen || shopStatusLoading) {
-      toast.error('A loja está fechada no momento.')
-      return
+    if (scheduleActive) {
+      // Agendado pode ser feito com a loja fechada: vale o horário escolhido (a API confere de novo)
+      if (!scheduledFor) {
+        toast.error('Escolha o dia e o horário do agendamento.')
+        return
+      }
+    } else {
+      // Re-validar status da loja
+      await checkStatus()
+      if (!isShopOpen || shopStatusLoading) {
+        toast.error('A loja está fechada no momento.')
+        return
+      }
     }
 
     if (noPaymentMethods) {
@@ -832,6 +868,7 @@ export default function CheckoutPage() {
         customer_name: guestName.trim(),
         customer_phone: guestPhone.replace(/\D/g, ''),
         ...(observation.trim() && { observation: observation.trim() }),
+        ...(scheduleActive && scheduledFor && { scheduled_for: scheduledFor }),
         ...(appliedCoupon && { coupon_code: appliedCoupon.code }),
         address: isKmDelivery
           ? {
@@ -890,6 +927,7 @@ export default function CheckoutPage() {
         return
       }
 
+      if (scheduleActive && scheduledFor) setScheduledLabel(describeSchedule(scheduledFor))
       setOrderCompleted(true)
       if (orderId) setTimeout(() => router.push(`/${storeSlug}/meus-pedidos/${orderId}`), 3500)
     } catch (error: any) {
@@ -1004,7 +1042,7 @@ export default function CheckoutPage() {
   }
 
   if (orderCompleted) {
-    return <OrderSuccessScreen onComplete={() => {}} />
+    return <OrderSuccessScreen onComplete={() => {}} scheduledLabel={scheduledLabel || undefined} />
   }
 
   if (pixPaidOrderId) {
@@ -1052,7 +1090,7 @@ export default function CheckoutPage() {
         && !!kmDelivery.quote && !kmDelivery.isCalculating && !kmDelivery.error
       : !!address.trim() && hasAddressNumber(addressNumber))
 
-  const canSubmit = !isSubmitting && isShopOpen && !shopStatusLoading && !isBelowMinOrder && !noPaymentMethods &&
+  const canSubmit = !isSubmitting && (scheduleActive ? !!scheduledFor : isShopOpen && !shopStatusLoading) && !isBelowMinOrder && !noPaymentMethods &&
     hasValidDeliveryAddress &&
     (guestName.trim().length >= 3 && guestPhone.replace(/\D/g, '').length >= 10)
 
@@ -1088,12 +1126,21 @@ export default function CheckoutPage() {
 
             {/* Loja fechada */}
             {!isShopOpen && !shopStatusLoading && (
-              <Alert className="border-red-400 bg-white rounded-md">
-                <AlertTriangle className="h-4 w-4 text-red-500" />
-                <AlertDescription className="text-red-700 text-sm">
-                  Loja fechada no momento. Você não pode finalizar a compra agora.
-                </AlertDescription>
-              </Alert>
+              canSchedule ? (
+                <Alert className="border-amber-400 bg-white rounded-md" data-testid="closed-can-schedule">
+                  <CalendarClock className="h-4 w-4 text-amber-500" />
+                  <AlertDescription className="text-amber-700 text-sm">
+                    Loja fechada no momento, mas você pode agendar o seu pedido para um horário em que ela esteja aberta.
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <Alert className="border-red-400 bg-white rounded-md">
+                  <AlertTriangle className="h-4 w-4 text-red-500" />
+                  <AlertDescription className="text-red-700 text-sm">
+                    Loja fechada no momento. Você não pode finalizar a compra agora.
+                  </AlertDescription>
+                </Alert>
+              )
             )}
 
             {/* Identificação */}
@@ -1509,6 +1556,48 @@ export default function CheckoutPage() {
               </div>
             </div>
 
+            {/* ── Agendar pedido (só se a loja aceita agendar este tipo de pedido) ── */}
+            {canSchedule && (
+              <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden" data-testid="schedule-card">
+                <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
+                  <CalendarClock className="h-4 w-4 text-primary" />
+                  <h2 className="font-tomato text-base font-semibold text-gray-900">Quando você quer receber?</h2>
+                </div>
+                <div className="px-5 py-4 space-y-4">
+                  <div className="flex bg-gray-100 rounded-md p-1 gap-1" role="group" aria-label="Quando">
+                    {([
+                      { value: 'now', label: 'Agora', disabled: !isShopOpen && !shopStatusLoading },
+                      { value: 'scheduled', label: 'Agendar', disabled: false },
+                    ] as const).map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        disabled={option.disabled}
+                        aria-pressed={scheduleMode === option.value}
+                        data-testid={`schedule-mode-${option.value}`}
+                        onClick={() => { setScheduleMode(option.value); if (option.value === 'now') setScheduledFor(null) }}
+                        className={`flex-1 py-2 rounded-md text-sm font-medium transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 ${
+                          scheduleMode === option.value ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {scheduleMode === 'scheduled' && schedulingSlots && (
+                    <>
+                      <SchedulePicker slots={schedulingSlots} value={scheduledFor} onChange={setScheduledFor} idPrefix="checkout" />
+                      <p className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                        {SCHEDULE_PRICE_NOTICE}
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* ── Pagamento ── */}
             <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
               <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
@@ -1529,6 +1618,7 @@ export default function CheckoutPage() {
                   {(Object.entries(PAYMENT_LABELS) as [PaymentMethod, { label: string; icon: React.ReactNode }][]).map(([method, cfg]) => {
                     const available = shopPaymentConfig?.[method === 'manual_pix' ? 'manual_pix' : method]
                     if (!available) return null
+                    if (method === 'asaas_pix' && scheduleActive) return null
                     const isSelected = paymentMethod === method
                     const badge = getPaymentAdjustmentBadge(method)
                     return (
@@ -1614,9 +1704,10 @@ export default function CheckoutPage() {
                 isBelowMinOrder={isBelowMinOrder}
                 minOrderValue={minOrderValue}
                 isSubmitting={isSubmitting}
-                isShopOpen={isShopOpen}
+                isShopOpen={isShopOpen || scheduleActive}
                 shopStatusLoading={shopStatusLoading}
                 canSubmit={canSubmit}
+                scheduled={scheduleActive}
                 onSubmit={handleSubmitOrder}
                 couponDiscount={couponDiscount}
                 appliedCouponCode={appliedCoupon?.code}
@@ -1650,9 +1741,10 @@ export default function CheckoutPage() {
                 isBelowMinOrder={isBelowMinOrder}
                 minOrderValue={minOrderValue}
                 isSubmitting={isSubmitting}
-                isShopOpen={isShopOpen}
+                isShopOpen={isShopOpen || scheduleActive}
                 shopStatusLoading={shopStatusLoading}
                 canSubmit={canSubmit}
+                scheduled={scheduleActive}
                 onSubmit={handleSubmitOrder}
                 couponDiscount={couponDiscount}
                 appliedCouponCode={appliedCoupon?.code}
@@ -1682,6 +1774,7 @@ interface OrderSummaryProps {
   isShopOpen: boolean
   shopStatusLoading: boolean
   canSubmit: boolean
+  scheduled?: boolean
   onSubmit: () => void
   couponDiscount?: number
   appliedCouponCode?: string
@@ -1693,7 +1786,7 @@ interface OrderSummaryProps {
 function OrderSummary({
   totalPrice, deliveryOption, deliveryFeeDisplay, calculateTotal,
   cartItems, isBelowMinOrder, minOrderValue, isSubmitting, isShopOpen,
-  shopStatusLoading, canSubmit, onSubmit, couponDiscount = 0, appliedCouponCode,
+  shopStatusLoading, canSubmit, scheduled = false, onSubmit, couponDiscount = 0, appliedCouponCode,
   paymentAdjustment = 0, pickupAdjustment = 0, paymentMethodLabel
 }: OrderSummaryProps) {
   const totalDiscount = cartItems.reduce((sum, item) => {
@@ -1796,8 +1889,8 @@ function OrderSummary({
             </>
           ) : (
             <>
-              <CheckCircle2 className="h-4 w-4" />
-              Finalizar pedido
+              {scheduled ? <CalendarClock className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
+              {scheduled ? 'Agendar pedido' : 'Finalizar pedido'}
             </>
           )}
         </button>

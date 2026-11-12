@@ -34,6 +34,10 @@ import { customerService } from "@/app/admin/clientes/services/customerService";
 import type { Customer, CustomerLastAddress } from "@/app/admin/clientes/services/customerService";
 import { collectCustomerErrors as collectRules, PDV_PHONE_REGEX, phoneDigits } from "@/lib/pdv-customer-rules";
 import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
+import { Switch } from "@/components/ui/switch";
+import { SchedulePicker } from "@/components/scheduling/schedule-picker";
+import { useSchedulingSlots } from "@/hooks/use-scheduling-slots";
+import { SCHEDULE_PRICE_NOTICE } from "@/lib/scheduling";
 import { toScanItem } from "@/lib/barcode/to-scan-item";
 import { scanErrorMessage } from "@/lib/barcode/scan-messages";
 import { needsOptions } from "@/lib/barcode/needs-options";
@@ -135,6 +139,22 @@ export default function PDVPage() {
   const [selectedNeighborhoodId, setSelectedNeighborhoodId] = useState<string>("");
   const [kmDelivery, setKmDelivery] = useState<KmDeliveryState>(emptyKmDeliveryState);
   const { shop, isLoading: isShopLoading } = useShop();
+  // Agendar pedido: desligado por padrão. Só delivery/retirada, e só se a loja aceita agendar esse tipo.
+  const [scheduleEnabled, setScheduleEnabled] = useState(false);
+  const [scheduledFor, setScheduledFor] = useState<string | null>(null);
+  const isSchedulableType = orderType === "delivery" || orderType === "pickup";
+  const { data: schedulingSlots } = useSchedulingSlots({
+    admin: true,
+    withdrawal: orderType === "pickup",
+    enabled: isSchedulableType,
+  });
+  const scheduleAvailable = isSchedulableType && !!schedulingSlots?.allowed && schedulingSlots.days.length > 0;
+  useEffect(() => {
+    if (!scheduleAvailable) {
+      setScheduleEnabled(false);
+      setScheduledFor(null);
+    }
+  }, [scheduleAvailable]);
   const shopId = shop?.id;
   const { paymentMethodsData } = usePayment();
   const { deliveryConfig } = useDelivery();
@@ -707,6 +727,11 @@ export default function PDVPage() {
       setCustomerInfo((p) => ({ ...p, name: p.name.trim() }));
     }
 
+    if (scheduleEnabled && !scheduledFor) {
+      toast.error("Escolha o dia e o horário do agendamento");
+      return;
+    }
+
     if (isBelowMinOrder) {
       toast.error(`Valor mínimo para entrega: ${formatPrice(minimumOrderValue)}`);
       return;
@@ -745,6 +770,7 @@ export default function PDVPage() {
             isTableOrder || orderType === "counter" ? undefined : customerInfo.phone.replace(/\D/g, "") || undefined,
           ...(appliedCoupon && { coupon_code: appliedCoupon.code }),
           ...(notes.trim() && { observation: notes.trim() }),
+          ...(scheduleEnabled && scheduledFor && { scheduled_for: scheduledFor }),
           ...(orderType === "delivery" && setDefaultAddress && { set_default_address: true }),
           ...(selectedTableSessionId && { table_session_id: Number(selectedTableSessionId) }),
           address: isPerKm && orderType === "delivery"
@@ -788,7 +814,9 @@ export default function PDVPage() {
 
       const result = await createPDVOrder(orderData);
       if (result) {
-        toast.success("Pedido criado com sucesso!");
+        toast.success(scheduleEnabled ? "Pedido agendado com sucesso!" : "Pedido criado com sucesso!");
+        setScheduleEnabled(false);
+        setScheduledFor(null);
         clearCart();
         goMobileView("catalog");
         setNotes("");
@@ -1574,6 +1602,31 @@ export default function PDVPage() {
                   </div>
                 );
               })()}
+
+              {scheduleAvailable && schedulingSlots && (
+                <div className="space-y-3 rounded-md border border-[#E5E2DD] p-3" data-testid="pdv-schedule">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <Label htmlFor="pdv-schedule-switch" className="text-sm font-medium">Agendar pedido</Label>
+                      <p className="text-xs text-muted-foreground">Para outro dia ou horário, com a loja aberta ou fechada.</p>
+                    </div>
+                    <Switch
+                      id="pdv-schedule-switch"
+                      checked={scheduleEnabled}
+                      onCheckedChange={(checked) => {
+                        setScheduleEnabled(checked);
+                        if (!checked) setScheduledFor(null);
+                      }}
+                    />
+                  </div>
+                  {scheduleEnabled && (
+                    <>
+                      <SchedulePicker slots={schedulingSlots} value={scheduledFor} onChange={setScheduledFor} showPopular idPrefix="pdv" />
+                      <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">{SCHEDULE_PRICE_NOTICE}</p>
+                    </>
+                  )}
+                </div>
+              )}
 
               <div className="space-y-1.5">
                 <Label htmlFor="notes" className="text-sm">Observações do pedido</Label>

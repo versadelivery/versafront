@@ -40,6 +40,11 @@ export interface AdminOrderData {
     ready_at?: string | null
     left_for_delivery_at?: string | null
     delivery_person?: string | null
+    // Pedido agendado: horário combinado; pending = ainda aguardando (fica na aba Agendados)
+    scheduled_for?: string | null
+    scheduled_confirmed_at?: string | null
+    scheduled_released_at?: string | null
+    scheduled_pending?: boolean
     items: {
       data: any[]
     }

@@ -44,6 +44,8 @@ import { useShop } from '@/hooks/use-shop';
 import Link from 'next/link';
 import api from '@/api/config';
 import { toast } from 'sonner';
+import ScheduledOrdersList, { ScheduledOrderRow } from '@/components/admin/scheduled-orders-list';
+import { confirmScheduledOrder, releaseScheduledOrder } from '@/services/scheduling-service';
 import { usePrinterConfig } from '@/hooks/use-printer-config';
 import { mapOrderItem } from './map-order-item';
 // Controle de som foi movido para o Header global da administração
@@ -701,8 +703,11 @@ export default function OrderManagement() {
     }));
   };
 
-  const filteredOrders = React.useMemo(() => {
-    return orders.filter((order: Order) => {
+  // Agendado aguardando o horário fica só na aba "Agendados" (fora das colunas do painel e do KDS)
+  const isScheduledPending = (order: Order) => !!order.socketData?.attributes?.scheduled_pending;
+
+  const matchesFilters = (order: Order, { ignoreStatus = false } = {}) => {
+    {
       // Filtro por busca textual (ID, nome do cliente, telefone)
       if (searchQuery.trim()) {
         const q = searchQuery.trim().toLowerCase();
@@ -726,13 +731,58 @@ export default function OrderManagement() {
       }
 
       // Filtro por status
-      if (filterStatus !== 'all') {
+      if (!ignoreStatus && filterStatus !== 'all') {
         if (order.status !== filterStatus) return false;
       }
 
       return true;
-    });
-  }, [orders, searchQuery, filterDeliveryType, filterPaymentMethod, filterStatus]);
+    }
+  };
+
+  const filteredOrders = React.useMemo(
+    () => orders.filter((order: Order) => !isScheduledPending(order) && matchesFilters(order)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [orders, searchQuery, filterDeliveryType, filterPaymentMethod, filterStatus]
+  );
+
+  const scheduledOrders = React.useMemo(
+    () => orders.filter((order: Order) => isScheduledPending(order) && matchesFilters(order, { ignoreStatus: true })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [orders, searchQuery, filterDeliveryType, filterPaymentMethod]
+  );
+
+  const scheduledRows: ScheduledOrderRow[] = React.useMemo(() => scheduledOrders.map((order: Order) => {
+    const attrs = order.socketData.attributes;
+    const addr = attrs.address?.data?.attributes;
+    const items = (attrs.items?.data || []).map((it: any) => `${it.attributes.quantity}x ${it.attributes.catalog_item?.data?.attributes?.name || it.attributes.name || 'Item'}`);
+    const paymentLabels: Record<string, string> = { cash: 'Dinheiro', credit: 'Crédito', debit: 'Débito', manual_pix: 'Pix', asaas_pix: 'Pix', store_credit: 'Crediário', food_voucher: 'Vale-refeição' };
+    return {
+      id: order.id,
+      customerName: order.customerName,
+      customerPhone: attrs.customer?.data?.attributes?.cellphone || (attrs.customer as any)?.cellphone || undefined,
+      amount: order.amount,
+      deliveryType: order.deliveryType,
+      paymentLabel: paymentLabels[attrs.payment_method],
+      scheduledFor: attrs.scheduled_for as string,
+      confirmed: !!attrs.scheduled_confirmed_at,
+      itemsSummary: items.join(', ') || 'Sem itens',
+      address: order.deliveryType === 'delivery' && addr ? [[addr.address, addr.number].filter(Boolean).join(', '), addr.neighborhood].filter(Boolean).join(' - ') : undefined,
+    };
+  }), [scheduledOrders]);
+
+  const [scheduledBusyId, setScheduledBusyId] = useState<string | null>(null);
+  const runScheduledAction = async (orderId: string, action: (id: string) => Promise<unknown>, success: string) => {
+    setScheduledBusyId(orderId);
+    try {
+      await action(orderId);
+      toast.success(success);
+      await loadOrdersFromApi();
+    } catch (error: any) {
+      toast.error(error?.response?.data?.error || 'Não foi possível atualizar o pedido agendado');
+    } finally {
+      setScheduledBusyId(null);
+    }
+  };
 
   const handleQuickSearch = useCallback(() => {
     const id = quickSearchId.trim();
@@ -981,7 +1031,24 @@ export default function OrderManagement() {
           <TabsList>
             <TabsTrigger value="painel">Painel</TabsTrigger>
             <TabsTrigger value="kds">KDS</TabsTrigger>
+            <TabsTrigger value="agendados" data-testid="tab-agendados">
+              Agendados
+              {scheduledOrders.length > 0 && (
+                <span className="ml-1.5 rounded-full bg-primary px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white">{scheduledOrders.length}</span>
+              )}
+            </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="agendados">
+            <ScheduledOrdersList
+              orders={scheduledRows}
+              busyId={scheduledBusyId}
+              onConfirm={(id) => runScheduledAction(id, confirmScheduledOrder, 'Pedido agendado confirmado')}
+              onRelease={(id) => runScheduledAction(id, releaseScheduledOrder, 'Pedido liberado')}
+              onCancel={cancelOrder}
+              onOpen={setSelectedOrderId}
+            />
+          </TabsContent>
 
           <TabsContent value="painel">
             {isMobile ? (

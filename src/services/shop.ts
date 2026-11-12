@@ -17,6 +17,11 @@ export interface ShopAttributes {
   image?: File | string | any;
   image_url?: string | any;
   auto_accept_orders?: boolean;
+  // Agendamento de pedidos (padrão: disabled)
+  scheduling_mode?: "disabled" | "delivery_and_pickup" | "delivery_only" | "pickup_only";
+  scheduling_min_lead_minutes?: number;
+  scheduling_max_days?: number;
+  scheduling_slot_minutes?: number;
   barcode_not_found_action?: 'notice' | 'quick_create';
   scale_label_mode?: 'weight' | 'total';
   auto_open_cash_register?: boolean;
