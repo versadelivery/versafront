@@ -53,11 +53,11 @@ export default function IndicacoesPage() {
         {summary && <CommissionSummaryCards summary={summary} />}
 
         <Tabs defaultValue="indicados">
-          <TabsList>
-            <TabsTrigger value="indicados">Lojas indicadas</TabsTrigger>
-            <TabsTrigger value="comissoes">Comissões</TabsTrigger>
-            <TabsTrigger value="repasses">Repasses</TabsTrigger>
-            <TabsTrigger value="dados">Dados de recebimento</TabsTrigger>
+          <TabsList className="grid h-auto w-full grid-cols-2 sm:inline-flex sm:w-fit">
+            <TabsTrigger value="indicados" className="py-3 text-base sm:py-1 sm:text-sm">Lojas indicadas</TabsTrigger>
+            <TabsTrigger value="comissoes" className="py-3 text-base sm:py-1 sm:text-sm">Comissões</TabsTrigger>
+            <TabsTrigger value="repasses" className="py-3 text-base sm:py-1 sm:text-sm">Repasses</TabsTrigger>
+            <TabsTrigger value="dados" className="py-3 text-base sm:py-1 sm:text-sm">Dados de recebimento</TabsTrigger>
           </TabsList>
 
           <TabsContent value="indicados" className="mt-4 bg-white rounded-lg border border-[#E5E2DD] p-4">
