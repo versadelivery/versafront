@@ -1603,6 +1603,13 @@ export default function PDVPage() {
                 );
               })()}
 
+              {isSchedulableType && schedulingSlots?.allowed && schedulingSlots.days.length === 0 && (
+                <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800" data-testid="pdv-schedule-no-slots">
+                  Agendamento ligado, mas não há horários disponíveis. Confira o{" "}
+                  <a href="/admin/settings/horarios" className="underline">horário de funcionamento</a>: cada dia aberto precisa fechar depois de abrir.
+                </p>
+              )}
+
               {scheduleAvailable && schedulingSlots && (
                 <div className="space-y-3 rounded-md border border-[#E5E2DD] p-3" data-testid="pdv-schedule">
                   <div className="flex items-center justify-between gap-3">
