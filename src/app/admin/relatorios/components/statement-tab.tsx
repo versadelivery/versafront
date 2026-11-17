@@ -20,6 +20,7 @@ export default function StatementTab() {
   const [start, setStart] = useState("06:00");
   const [end, setEnd] = useState("12:30");
   const [data, setData] = useState<StatementResponse | null>(null);
+  const [applied, setApplied] = useState({ date, shift, start, end }); // período do resultado exibido, não dos inputs
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,7 +28,9 @@ export default function StatementTab() {
     setLoading(true);
     setError(null);
     try {
-      setData(await reportsService.getStatement(date, shift ? start : undefined, shift ? end : undefined));
+      const next = await reportsService.getStatement(date, shift ? start : undefined, shift ? end : undefined);
+      setData(next);
+      setApplied({ date, shift, start, end });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Não foi possível carregar o extrato.");
     } finally {
@@ -67,8 +70,8 @@ export default function StatementTab() {
       {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
       {data && <>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          {shift ? <Clock3 className="h-4 w-4" /> : <CalendarDays className="h-4 w-4" />}
-          {shift ? `Turno das ${start} às ${end}` : "Dia completo"} · {new Date(`${date}T12:00:00`).toLocaleDateString("pt-BR")}
+          {applied.shift ? <Clock3 className="h-4 w-4" /> : <CalendarDays className="h-4 w-4" />}
+          {applied.shift ? `Turno das ${applied.start} às ${applied.end}` : "Dia completo"} · {new Date(`${applied.date}T12:00:00`).toLocaleDateString("pt-BR")}
         </div>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {[
@@ -82,7 +85,7 @@ export default function StatementTab() {
           <CardHeader><CardTitle className="font-tomato">Itens por forma de pagamento</CardTitle></CardHeader>
           <CardContent>
             {data.items.length === 0 ? <p className="py-8 text-center text-sm text-muted-foreground">Nenhum pedido pago neste período.</p> : <div className="divide-y">
-              {data.items.map((item) => <section key={item.name} className="py-4 first:pt-0 last:pb-0">
+              {data.items.map((item) => <section key={`${item.name}-${item.unit}`}className="py-4 first:pt-0 last:pb-0">
                 <div className="flex flex-wrap items-baseline justify-between gap-2"><h3 className="font-semibold">{item.name}</h3><span className="text-sm text-muted-foreground">{quantity(item.quantity, item.unit)} · {money(item.revenue)}</span></div>
                 <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                   {item.payments.map((payment) => <div key={payment.method} className="flex justify-between gap-3 rounded-md bg-muted/40 px-3 py-2 text-sm"><span>{payment.label} <span className="text-muted-foreground">· {quantity(payment.quantity, item.unit)}</span></span><strong>{money(payment.revenue)}</strong></div>)}
