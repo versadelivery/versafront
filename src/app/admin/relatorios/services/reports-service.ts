@@ -481,10 +481,18 @@ export interface StatementItem {
   payments: StatementPaymentBreakdown[];
 }
 
+export interface StatementPaymentMethod {
+  method: string;
+  label: string;
+  order_count: number;
+  total_revenue: number;
+}
+
 export interface StatementResponse {
   items: StatementItem[];
   summary: { order_count: number; item_revenue: number; delivery_fees: number; total_revenue: number; total_item_quantity: number };
-  period: { date: string; start_time: string; end_time: string; full_day: boolean };
+  period: { date: string; start_time: string; end_time: string; full_day: boolean; payment_method: string };
+  payment_methods: StatementPaymentMethod[];
 }
 
 // Visitors
@@ -772,9 +780,13 @@ export const reportsService = {
     return response.data;
   },
 
-  getStatement: async (date: string, startTime?: string, endTime?: string): Promise<StatementResponse> => {
+  getStatement: async (date: string, startTime?: string, endTime?: string, paymentMethod?: string): Promise<StatementResponse> => {
     const response = await api.get(API_ENDPOINTS.REPORTS.STATEMENT, {
-      params: { date, ...(startTime && endTime ? { start_time: startTime, end_time: endTime } : {}) },
+      params: {
+        date,
+        ...(startTime && endTime ? { start_time: startTime, end_time: endTime } : {}),
+        ...(paymentMethod && paymentMethod !== "all" ? { payment_method: paymentMethod } : {}),
+      },
     });
     return response.data;
   },
