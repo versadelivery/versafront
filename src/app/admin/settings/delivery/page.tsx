@@ -87,6 +87,8 @@ export default function DeliverySettingsPage() {
   const [freeDeliveryThreshold, setFreeDeliveryThreshold] = useState<string>("");
   const [bulkAdjustValue, setBulkAdjustValue] = useState<string>("");
   const [minOrderValue, setMinOrderValue] = useState<string>("");
+  const [deliveryTimeMin, setDeliveryTimeMin] = useState<string>("");
+  const [deliveryTimeMax, setDeliveryTimeMax] = useState<string>("");
   const [pickupAdjustmentType, setPickupAdjustmentType] = useState<"none" | "discount" | "surcharge">("none");
   const [pickupAdjustmentValue, setPickupAdjustmentValue] = useState<string>("");
   const [pickupValueType, setPickupValueType] = useState<"fixed" | "percentage">("fixed");
@@ -99,6 +101,7 @@ export default function DeliverySettingsPage() {
     fixedFee?: string;
     freeDeliveryThreshold?: string;
     minOrderValue?: string;
+    deliveryTime?: string;
     neighborhoodName?: string;
     neighborhoodValue?: string;
     neighborhoodFreeDeliveryThreshold?: string;
@@ -120,6 +123,8 @@ export default function DeliverySettingsPage() {
       setHasFreeDelivery(deliveryConfig.min_value_free_delivery !== null);
       setFreeDeliveryThreshold(deliveryConfig.min_value_free_delivery ? formatApiValue(deliveryConfig.min_value_free_delivery) : "");
       setMinOrderValue(deliveryConfig.minimum_order_value ? formatApiValue(deliveryConfig.minimum_order_value) : "");
+      setDeliveryTimeMin(deliveryConfig.delivery_time_min ? String(deliveryConfig.delivery_time_min) : "");
+      setDeliveryTimeMax(deliveryConfig.delivery_time_max ? String(deliveryConfig.delivery_time_max) : "");
       setPickupAdjustmentType(deliveryConfig.pickup_adjustment_type || "none");
       setPickupAdjustmentValue(deliveryConfig.pickup_adjustment_value ? formatApiValue(deliveryConfig.pickup_adjustment_value) : "");
       setPickupValueType(deliveryConfig.pickup_value_type || "fixed");
@@ -264,6 +269,14 @@ export default function DeliverySettingsPage() {
       newErrors.minOrderValue = "Valor mínimo não pode ser negativo";
     }
 
+    const timeMin = deliveryTimeMin ? parseInt(deliveryTimeMin, 10) : null;
+    const timeMax = deliveryTimeMax ? parseInt(deliveryTimeMax, 10) : null;
+    if ((timeMin !== null && timeMin <= 0) || (timeMax !== null && timeMax <= 0)) {
+      newErrors.deliveryTime = "O tempo deve ser maior que zero";
+    } else if (timeMin !== null && timeMax !== null && timeMin > timeMax) {
+      newErrors.deliveryTime = "O tempo máximo deve ser maior ou igual ao mínimo";
+    }
+
     if (deliveryType === "fixed" && hasFreeDelivery && parseCurrencyInput(freeDeliveryThreshold) <= parseCurrencyInput(fixedFee)) {
       newErrors.freeDeliveryThreshold = "O valor mínimo para frete grátis deve ser maior que o valor da taxa";
     }
@@ -301,6 +314,8 @@ export default function DeliverySettingsPage() {
       amount: parseCurrencyInput(fixedFee),
       min_value_free_delivery: hasFreeDelivery ? parseCurrencyInput(freeDeliveryThreshold) : null,
       minimum_order_value: parseCurrencyInput(minOrderValue),
+      delivery_time_min: timeMin,
+      delivery_time_max: timeMax,
       pickup_adjustment_type: pickupAdjustmentType,
       pickup_adjustment_value: pickupAdjustmentType === "none" ? 0 : parseCurrencyInput(pickupAdjustmentValue),
       pickup_value_type: pickupValueType,
@@ -319,6 +334,8 @@ export default function DeliverySettingsPage() {
       setHasFreeDelivery(deliveryConfig.min_value_free_delivery !== null);
       setFreeDeliveryThreshold(deliveryConfig.min_value_free_delivery ? formatApiValue(deliveryConfig.min_value_free_delivery) : "");
       setMinOrderValue(deliveryConfig.minimum_order_value ? formatApiValue(deliveryConfig.minimum_order_value) : "");
+      setDeliveryTimeMin(deliveryConfig.delivery_time_min ? String(deliveryConfig.delivery_time_min) : "");
+      setDeliveryTimeMax(deliveryConfig.delivery_time_max ? String(deliveryConfig.delivery_time_max) : "");
       setStoreLocation({
         latitude: deliveryConfig.latitude,
         longitude: deliveryConfig.longitude,
@@ -414,6 +431,55 @@ export default function DeliverySettingsPage() {
                 </p>
               )}
             </div>
+          </div>
+        </div>
+
+        {/* Tempo de entrega exibido na loja */}
+        <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+          <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
+            <Clock className="h-4 w-4 text-primary" />
+            <h2 className="font-tomato text-base font-semibold text-gray-900">Tempo de entrega</h2>
+          </div>
+          <div className="px-5 py-5">
+            <p className="text-sm text-muted-foreground mb-4">
+              Estimativa mostrada aos clientes no topo da loja. Deixe vazio para exibir &quot;A combinar&quot;
+            </p>
+            <div className="flex items-center gap-3 max-w-xs">
+              <Input
+                id="deliveryTimeMin"
+                type="number"
+                min={1}
+                inputMode="numeric"
+                value={deliveryTimeMin}
+                onChange={(e) => {
+                  setDeliveryTimeMin(e.target.value);
+                  if (errors.deliveryTime) setErrors(prev => ({ ...prev, deliveryTime: "" }));
+                }}
+                placeholder="30"
+                className={`h-10 text-sm border-[#E5E2DD] rounded-md bg-white font-semibold ${errors.deliveryTime ? "border-red-400" : ""}`}
+              />
+              <span className="text-sm text-muted-foreground">a</span>
+              <Input
+                id="deliveryTimeMax"
+                type="number"
+                min={1}
+                inputMode="numeric"
+                value={deliveryTimeMax}
+                onChange={(e) => {
+                  setDeliveryTimeMax(e.target.value);
+                  if (errors.deliveryTime) setErrors(prev => ({ ...prev, deliveryTime: "" }));
+                }}
+                placeholder="45"
+                className={`h-10 text-sm border-[#E5E2DD] rounded-md bg-white font-semibold ${errors.deliveryTime ? "border-red-400" : ""}`}
+              />
+              <span className="text-sm text-muted-foreground">min</span>
+            </div>
+            {errors.deliveryTime && (
+              <p className="text-sm text-red-600 mt-1.5 flex items-center gap-1">
+                <AlertCircle className="w-3.5 h-3.5" />
+                {errors.deliveryTime}
+              </p>
+            )}
           </div>
         </div>
 

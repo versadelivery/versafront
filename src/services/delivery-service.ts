@@ -22,6 +22,8 @@ export interface DeliveryConfig {
   amount: number;
   min_value_free_delivery: number | null;
   minimum_order_value: number | null;
+  delivery_time_min: number | null;
+  delivery_time_max: number | null;
   latitude: number | null;
   longitude: number | null;
   location_address: string | null;
@@ -55,6 +57,8 @@ interface ApiDeliveryConfig {
       amount: number;
       min_value_free_delivery: string | null;
       minimum_order_value: string | null;
+      delivery_time_min?: number | null;
+      delivery_time_max?: number | null;
       pickup_adjustment_type?: "none" | "discount" | "surcharge";
       pickup_adjustment_value?: number | string;
       pickup_value_type?: "fixed" | "percentage";
@@ -104,6 +108,8 @@ export const deliveryService = {
       amount: data.attributes.amount,
       min_value_free_delivery: toNumber(data.attributes.min_value_free_delivery),
       minimum_order_value: toNumber(data.attributes.minimum_order_value),
+      delivery_time_min: data.attributes.delivery_time_min ?? null,
+      delivery_time_max: data.attributes.delivery_time_max ?? null,
       pickup_adjustment_type: data.attributes.pickup_adjustment_type || "none",
       pickup_adjustment_value: parseFloat(String(data.attributes.pickup_adjustment_value || 0)),
       pickup_value_type: data.attributes.pickup_value_type || "fixed",

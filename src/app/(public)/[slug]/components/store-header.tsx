@@ -77,6 +77,15 @@ export default function StoreHeader({ shop: initialShop }: StoreHeaderProps) {
     return `R$ ${Number(min).toFixed(2).replace('.', ',')}`;
   };
 
+  const deliveryTime = () => {
+    const config = attributes.shop_delivery_config?.data?.attributes;
+    const min = config?.delivery_time_min;
+    const max = config?.delivery_time_max;
+    if (!min && !max) return 'A combinar';
+    if (!min || !max || min === max) return `${min || max} min`;
+    return `${min} a ${max} min`;
+  };
+
   const headerStyle = headerColor ? { backgroundColor: headerColor } : {};
   const headerBorderStyle = { borderColor };
 
@@ -221,7 +230,7 @@ export default function StoreHeader({ shop: initialShop }: StoreHeaderProps) {
             {/* Mobile */}
             <div className="flex items-center justify-center gap-3.5 sm:hidden">
               <Clock className="w-3.5 h-3.5 flex-shrink-0" style={{ color: mutedColor }} />
-              <span className="text-xs font-semibold" style={{ color: textColor }}>30 a 45 min</span>
+              <span className="text-xs font-semibold" style={{ color: textColor }}>{deliveryTime()}</span>
               <span className="text-xs" style={{ color: mutedColor }}>·</span>
               <Truck className="w-3.5 h-3.5 flex-shrink-0" style={{ color: mutedColor }} />
               <span className="text-xs font-semibold" style={{ color: textColor }}>{deliveryFee()}</span>
@@ -235,7 +244,7 @@ export default function StoreHeader({ shop: initialShop }: StoreHeaderProps) {
               <div className="flex items-center gap-2.5">
                 <Clock className="w-5 h-5 flex-shrink-0" style={{ color: mutedColor }} />
                 <div>
-                  <p className="text-base font-semibold leading-none" style={{ color: textColor }}>30 a 45 min</p>
+                  <p className="text-base font-semibold leading-none" style={{ color: textColor }}>{deliveryTime()}</p>
                   <p className="text-xs mt-1" style={{ color: mutedColor }}>Entrega</p>
                 </div>
               </div>
