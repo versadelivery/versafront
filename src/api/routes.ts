@@ -94,6 +94,7 @@ export const API_ENDPOINTS = {
     PAYMENT_MODIFICATIONS: "/reports/payment_modifications",
     CASH_REGISTER_STATEMENT: "/reports/cash_register_statement",
     STATEMENT: "/reports/statement",
+    STATEMENT_PERIODS: "/reports/statement_periods",
     VISITORS: "/reports/visitors",
     DELIVERY_FEES: "/reports/delivery_fees",
     COUPON_USAGE: "/reports/coupon_usage",

@@ -491,9 +491,11 @@ export interface StatementPaymentMethod {
 export interface StatementResponse {
   items: StatementItem[];
   summary: { order_count: number; item_revenue: number; delivery_fees: number; total_revenue: number; total_item_quantity: number };
-  period: { date: string; start_time: string; end_time: string; full_day: boolean; payment_method: string };
+  period: { date?: string; start_date?: string; end_date?: string; start_time: string; end_time: string; full_day: boolean; payment_method: string };
   payment_methods: StatementPaymentMethod[];
 }
+
+export interface StatementPeriod { id: string; name: string; start_time: string; end_time: string }
 
 // Visitors
 export interface VisitorBreakdownItem {
@@ -780,15 +782,25 @@ export const reportsService = {
     return response.data;
   },
 
-  getStatement: async (date: string, startTime?: string, endTime?: string, paymentMethod?: string): Promise<StatementResponse> => {
+  getStatement: async (date: string, startTime?: string, endTime?: string, paymentMethod?: string, endDate?: string): Promise<StatementResponse> => {
     const response = await api.get(API_ENDPOINTS.REPORTS.STATEMENT, {
       params: {
-        date,
+        start_date: date,
+        end_date: endDate || date,
         ...(startTime && endTime ? { start_time: startTime, end_time: endTime } : {}),
         ...(paymentMethod && paymentMethod !== "all" ? { payment_method: paymentMethod } : {}),
       },
     });
     return response.data;
+  },
+
+  getStatementPeriods: async (): Promise<StatementPeriod[]> => {
+    const response = await api.get(API_ENDPOINTS.REPORTS.STATEMENT_PERIODS);
+    return response.data.periods;
+  },
+  saveStatementPeriods: async (periods: StatementPeriod[]): Promise<StatementPeriod[]> => {
+    const response = await api.put(API_ENDPOINTS.REPORTS.STATEMENT_PERIODS, { periods });
+    return response.data.periods;
   },
 
   getVisitors: async (
