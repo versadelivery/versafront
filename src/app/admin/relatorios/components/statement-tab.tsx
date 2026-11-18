@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CalendarDays, Clock3, Loader2, Search, Plus, Trash2, Settings2 } from "lucide-react";
+import { CalendarDays, Clock3, Loader2, Plus, Trash2, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ReportExportButton from "@/components/admin/report-export-button";
 import { reportsService, StatementPeriod, StatementResponse } from "../services/reports-service";
 
@@ -12,6 +13,20 @@ const shiftDays = (date: string, days: number) => { const d = new Date(`${date}T
 const money = (v: number) => new Intl.NumberFormat("pt-BR", { style:"currency", currency:"BRL" }).format(v);
 const quantity = (v: number, unit: string) => `${new Intl.NumberFormat("pt-BR", { maximumFractionDigits:3 }).format(v)} ${unit}`;
 const id = () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
+
+function Time24Select({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+  const [hour = "00", minute = "00"] = value.split(":");
+  const parts = [
+    { label: "Hora", value: hour, values: Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0")), set: (v: string) => onChange(`${v}:${minute}`) },
+    { label: "Minuto", value: minute, values: Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0")), set: (v: string) => onChange(`${hour}:${v}`) },
+  ];
+  return <div className="grid gap-1.5 text-sm font-medium"><span>{label}</span><div className="flex items-center gap-1">
+    {parts.map(part => <Select key={part.label} value={part.value} onValueChange={part.set}>
+      <SelectTrigger aria-label={`${label}: ${part.label}`} className="h-10 w-[76px] rounded-md bg-background px-2 font-mono"><SelectValue /></SelectTrigger>
+      <SelectContent className="max-h-60">{part.values.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}</SelectContent>
+    </Select>)}
+    </div></div>;
+}
 
 export default function StatementTab() {
   const [preset, setPreset] = useState("today");
@@ -37,12 +52,16 @@ export default function StatementTab() {
     if (value === "15") { setStartDate(shiftDays(end,-14)); setEndDate(end); }
   };
   const selectedPeriod = periods.find(p => p.id === selected);
-  const fetchStatement = async () => {
+  useEffect(() => {
+    if (!startDate || !endDate || endDate < startDate) return;
+    let active = true;
     setLoading(true); setError(null);
-    try { setData(await reportsService.getStatement(startDate, selectedPeriod?.start_time, selectedPeriod?.end_time, undefined, endDate)); }
-    catch (e) { setError(e instanceof Error ? e.message : "Não foi possível carregar o extrato."); }
-    finally { setLoading(false); }
-  };
+    reportsService.getStatement(startDate, selectedPeriod?.start_time, selectedPeriod?.end_time, undefined, endDate)
+      .then(result => { if (active) setData(result); })
+      .catch(e => { if (active) setError(e instanceof Error ? e.message : "Não foi possível carregar o extrato."); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [startDate, endDate, selected, periods]);
   const savePeriods = async (next: StatementPeriod[]) => {
     setSaving(true); setError(null);
     try { setPeriods(await reportsService.saveStatementPeriods(next)); }
@@ -72,14 +91,12 @@ export default function StatementTab() {
         </select>
       </label>
       <Button variant="outline" onClick={()=>setManage(!manage)}><Settings2 className="mr-2 h-4 w-4"/>Gerenciar turnos</Button>
-      <Button onClick={fetchStatement} disabled={loading || !startDate || !endDate || endDate < startDate}>
-        {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4"/>}Gerar extrato
-      </Button>
+      {loading && <span className="flex h-10 items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin"/>Atualizando extrato</span>}
       {data && <ReportExportButton filename="extrato-itens" headers={["Item","Forma de pagamento","Quantidade","Valor"]} rows={data.items.flatMap(item=>item.payments.map(payment=>[item.name,payment.label,quantity(payment.quantity,item.unit),money(payment.revenue)]))} disabled={loading}/>}
     </CardContent>
     {manage && <CardContent className="border-t pt-4"><CardTitle className="mb-3 text-base">Turnos salvos nesta loja</CardTitle>
       <div className="mb-4 space-y-2">{periods.length===0 && <p className="text-sm text-muted-foreground">Nenhum turno cadastrado.</p>}{periods.map(p=><div key={p.id} className="flex items-center justify-between border-b py-2 text-sm"><span>{p.name} · {p.start_time}–{p.end_time}</span><Button variant="ghost" size="sm" disabled={saving} aria-label={`Remover ${p.name}`} onClick={()=>savePeriods(periods.filter(x=>x.id!==p.id))}><Trash2 className="h-4 w-4"/></Button></div>)}</div>
-      <div className="flex flex-wrap items-end gap-3"><label className="grid gap-1 text-sm">Nome<input className="h-10 rounded-md border border-input bg-background px-3" value={draftName} maxLength={40} placeholder="Almoço" onChange={e=>setDraftName(e.target.value)}/></label><label className="grid gap-1 text-sm">Início<input className="h-10 rounded-md border border-input bg-background px-3" type="time" value={draftStart} onChange={e=>setDraftStart(e.target.value)}/></label><label className="grid gap-1 text-sm">Fim<input className="h-10 rounded-md border border-input bg-background px-3" type="time" value={draftEnd} onChange={e=>setDraftEnd(e.target.value)}/></label><Button variant="outline" onClick={addPeriod} disabled={saving || !draftName.trim() || draftStart===draftEnd}><Plus className="mr-2 h-4 w-4"/>Adicionar turno</Button></div>
+      <div className="flex flex-wrap items-end gap-3"><label className="grid gap-1 text-sm">Nome<input className="h-10 rounded-md border border-input bg-background px-3" value={draftName} maxLength={40} placeholder="Almoço" onChange={e=>setDraftName(e.target.value)}/></label><Time24Select label="Início" value={draftStart} onChange={setDraftStart}/><Time24Select label="Fim" value={draftEnd} onChange={setDraftEnd}/><Button variant="outline" onClick={addPeriod} disabled={saving || !draftName.trim() || draftStart===draftEnd}><Plus className="mr-2 h-4 w-4"/>Adicionar turno</Button></div>
     </CardContent>}
     </Card>
     {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
