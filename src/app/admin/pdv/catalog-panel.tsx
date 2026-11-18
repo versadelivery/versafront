@@ -92,7 +92,7 @@ export function CatalogPanel({
         __cat: g.attributes.catalog_category_id ? String(g.attributes.catalog_category_id) : OTHERS,
         attributes: {
           ...g.attributes,
-          items: (g.attributes.items ?? []).filter((i: any) => i.attributes?.active !== false),
+          items: (g.attributes.items ?? []).filter((i: any) => i.attributes?.active !== false && i.attributes?.available_pdv !== false && i.attributes?.[dayKey] !== false),
         },
       }))
       .filter((g: any) => g.attributes.items.length > 0)

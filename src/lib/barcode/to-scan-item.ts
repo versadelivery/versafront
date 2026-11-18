@@ -7,6 +7,8 @@ export interface CatalogItemLike {
     price?: string | number | null
     price_with_discount?: string | number | null
     active?: boolean
+    available_pdv?: boolean
+    [day: string]: unknown
     barcode?: string | null
     scale_code?: number | null
   }
@@ -29,7 +31,11 @@ export function toScanItem<R extends CatalogItemLike>(raw: R, groupActive = true
     scaleCode: attributes.scale_code ?? null,
     itemType: attributes.item_type,
     price: toNumber(hasDiscount ? discount : attributes.price),
-    active: groupActive && attributes.active !== false,
+    active: groupActive && attributes.active !== false && attributes.available_pdv !== false && attributes[todayKey()] !== false,
     raw,
   }
 }
+
+const DAY_KEYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+// Mesma regra do servidor: o item só vende nos dias marcados (ex.: promoção só na quinta).
+const todayKey = () => `${DAY_KEYS[new Date().getDay()]}_active`

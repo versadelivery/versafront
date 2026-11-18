@@ -294,7 +294,7 @@ export default function PDVPage() {
   const allGroups = (catalog?.data ?? []).filter(
     (group: any) =>
       group.attributes.active !== false &&
-      group.attributes.items?.some((item: any) => item.attributes?.active !== false)
+      group.attributes.items?.some((item: any) => item.attributes?.active !== false && item.attributes?.available_pdv !== false)
   );
 
   const formatPhone = (value: string) => {

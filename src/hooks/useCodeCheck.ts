@@ -20,10 +20,11 @@ interface CodeCheckInput {
   barcode: string;
   scaleCode: string;
   exceptId?: string;
+  sharedCode?: boolean;
 }
 
 // Asks the API (300ms after the last keystroke or scan) which item already uses these codes.
-export function useCodeCheck({ barcode, scaleCode, exceptId }: CodeCheckInput) {
+export function useCodeCheck({ barcode, scaleCode, exceptId, sharedCode }: CodeCheckInput) {
   const barcodeValue = barcode.length >= MIN_BARCODE_LENGTH ? barcode : '';
   // Cada valor é debounced separado: um objeto novo a cada render rearmaria o timer para sempre
   const settled = { barcode: useDebounced(barcodeValue, DEBOUNCE_MS), scaleCode: useDebounced(scaleCode, DEBOUNCE_MS) };
@@ -31,8 +32,8 @@ export function useCodeCheck({ barcode, scaleCode, exceptId }: CodeCheckInput) {
   const hasCode = !!(settled.barcode || settled.scaleCode);
 
   const { data, isFetching } = useQuery({
-    queryKey: ["catalog-code-check", settled.barcode, settled.scaleCode, exceptId],
-    queryFn: () => checkCatalogItemCodes({ barcode: settled.barcode, scale_code: settled.scaleCode, except_id: exceptId }),
+    queryKey: ["catalog-code-check", settled.barcode, settled.scaleCode, exceptId, !!sharedCode],
+    queryFn: () => checkCatalogItemCodes({ barcode: settled.barcode, scale_code: settled.scaleCode, except_id: exceptId, shared_code: !!sharedCode }),
     enabled: hasCode,
   });
 

@@ -65,6 +65,9 @@ export interface Item {
   new_tag?: boolean;
   available_delivery?: boolean;
   available_dine_in?: boolean;
+  available_catalog?: boolean;
+  available_pdv?: boolean;
+  shared_code?: boolean;
   extra: {
     data: CatalogItemExtra[];
   };
@@ -116,6 +119,9 @@ export interface CatalogItemAttributes {
   new_tag?: boolean;
   available_delivery?: boolean;
   available_dine_in?: boolean;
+  available_catalog?: boolean;
+  available_pdv?: boolean;
+  shared_code?: boolean;
   group?: {
     data: any;
   };

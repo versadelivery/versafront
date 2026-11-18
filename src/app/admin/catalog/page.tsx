@@ -252,6 +252,8 @@ function CatalogPage() {
     best_seller_tag: !!(node.attributes as any).best_seller_tag,
     highlight: !!(node.attributes as any).highlight,
     promotion_tag: !!(node.attributes as any).promotion_tag,
+    available_catalog: (node.attributes as any).available_catalog,
+    available_pdv: (node.attributes as any).available_pdv,
     has_out_of_stock_ingredient: !!(node.attributes as any).has_out_of_stock_ingredient,
     catalog_item_extras_attributes: node.attributes.extra?.data as unknown as any[],
     catalog_item_prepare_methods_attributes: node.attributes.prepare_method?.data as unknown as any[],

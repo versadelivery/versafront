@@ -63,10 +63,10 @@ test('unknown scale code returns unknown_scale_code', () => {
   assert.deepEqual(parseBarcode(label(999, 1570), 'weight', items), { kind: 'error', reason: 'unknown_scale_code' })
 })
 
-test('a scale code that belongs to a unit item is not a scale label item', () => {
+test('a scale label of a unit item sells one unit', () => {
   const unitWithCode: ScanItem = { ...coca, scaleCode: 500 }
 
-  assert.deepEqual(parseBarcode(label(500, 1570), 'weight', [unitWithCode]), { kind: 'error', reason: 'unknown_scale_code' })
+  assert.deepEqual(parseBarcode(label(500, 1570), 'weight', [unitWithCode]), { kind: 'unit', item: unitWithCode })
 })
 
 test('zero weight returns zero_weight', () => {
@@ -153,4 +153,26 @@ test('isValidEan13 accepts real codes and rejects wrong digits and wrong lengths
   assert.equal(isValidEan13('790841251492'), false)
   assert.equal(isValidEan13('79084125149200'), false)
   assert.equal(isValidEan13('790841251492a'), false)
+})
+
+test('shared code with two enabled items at different prices is a price overlap', () => {
+  const normal: ScanItem = { ...coca, id: 'a', scaleCode: 45, price: 20 }
+  const promo: ScanItem = { ...coca, id: 'b', scaleCode: 45, price: 15 }
+
+  assert.deepEqual(parseBarcode(label(45, 1), 'weight', [normal, promo]), { kind: 'error', reason: 'price_overlap' })
+  assert.deepEqual(parseBarcode(coca.barcode!, 'weight', [{ ...normal, barcode: coca.barcode }, { ...promo, barcode: coca.barcode }]), { kind: 'error', reason: 'price_overlap' })
+})
+
+test('shared code with a single enabled item (the other disabled today) sells it', () => {
+  const normal: ScanItem = { ...coca, id: 'a', scaleCode: 45, price: 20, active: false }
+  const promo: ScanItem = { ...coca, id: 'b', scaleCode: 45, price: 15 }
+
+  assert.deepEqual(parseBarcode(label(45, 1), 'weight', [normal, promo]), { kind: 'unit', item: promo })
+})
+
+test('shared code with two enabled items at the same price is not an overlap', () => {
+  const a: ScanItem = { ...coca, id: 'a', scaleCode: 45, price: 20 }
+  const b: ScanItem = { ...coca, id: 'b', scaleCode: 45, price: 20 }
+
+  assert.equal(parseBarcode(label(45, 1), 'weight', [a, b]).kind, 'unit')
 })

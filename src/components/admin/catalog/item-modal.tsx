@@ -125,6 +125,9 @@ export function NewItemModal({ isOpen, onOpenChange, initial }: NewItemModalProp
   // Estados - Dias da semana
   const [activeDays, setActiveDays] = useState<Record<DayKey, boolean>>(DEFAULT_ACTIVE_DAYS);
   const [active, setActive] = useState(true);
+  const [availableCatalog, setAvailableCatalog] = useState(true);
+  const [availablePdv, setAvailablePdv] = useState(true);
+  const [sharedCode, setSharedCode] = useState(false);
 
   // Estados - Complementos Compartilhados
   const { complementGroups } = useCatalogComplement();
@@ -481,10 +484,10 @@ export function NewItemModal({ isOpen, onOpenChange, initial }: NewItemModalProp
       if (minWeight) formData.append('min_weight', minWeight);
       if (maxWeight) formData.append('max_weight', maxWeight);
       if (measureInterval) formData.append('measure_interval', measureInterval);
-      if (scaleCode) formData.append('scale_code', scaleCode);
     }
 
     if (barcode) formData.append('barcode', barcode);
+    if (scaleCode) formData.append('scale_code', scaleCode);
 
     // Imagem
     if (imageFile) {
@@ -502,6 +505,9 @@ export function NewItemModal({ isOpen, onOpenChange, initial }: NewItemModalProp
     });
 
     formData.append('active', active.toString());
+    formData.append('available_catalog', availableCatalog.toString());
+    formData.append('available_pdv', availablePdv.toString());
+    formData.append('shared_code', sharedCode.toString());
 
     // Complementos Compartilhados
     selectedComplements.forEach((id) => {
@@ -591,12 +597,28 @@ export function NewItemModal({ isOpen, onOpenChange, initial }: NewItemModalProp
           {/* SEÇÃO: DADOS BÁSICOS */}
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Dados do Item</p>
 
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">
-            <div className="flex flex-col gap-0.5">
-              <span className="text-sm font-medium">Item Ativo</span>
-              <span className="text-xs text-muted-foreground">O item aparecerá no catálogo se estiver ativo</span>
+          <div className="rounded-lg border border-gray-100 bg-gray-50 divide-y divide-gray-100">
+            <div className="flex items-center justify-between p-3">
+              <div className="flex flex-col gap-0.5">
+                <span className="text-sm font-medium">Item Ativo</span>
+                <span className="text-xs text-muted-foreground">Ativo para ser configurado no catálogo e no PDV. Desligado, não aparece em nenhum dos dois</span>
+              </div>
+              <Switch checked={active} onCheckedChange={setActive} />
             </div>
-            <Switch checked={active} onCheckedChange={setActive} />
+            <div className="flex items-center justify-between p-3">
+              <div className="flex flex-col gap-0.5">
+                <span className="text-sm font-medium">Catálogo</span>
+                <span className="text-xs text-muted-foreground">Aparece no catálogo online (cardápio do cliente)</span>
+              </div>
+              <Switch checked={availableCatalog} disabled={!active} onCheckedChange={setAvailableCatalog} />
+            </div>
+            <div className="flex items-center justify-between p-3">
+              <div className="flex flex-col gap-0.5">
+                <span className="text-sm font-medium">PDV</span>
+                <span className="text-xs text-muted-foreground">Aparece para venda no PDV</span>
+              </div>
+              <Switch checked={availablePdv} disabled={!active} onCheckedChange={setAvailablePdv} />
+            </div>
           </div>
 
 
@@ -685,10 +707,12 @@ export function NewItemModal({ isOpen, onOpenChange, initial }: NewItemModalProp
           <BarcodeFields
             barcode={barcode}
             scaleCode={scaleCode}
-            showScaleCode={itemType !== 'unit'}
+            showScaleCode
             errors={errors}
             onBarcodeChange={(value) => { setBarcode(value); markDirty(); }}
             onScaleCodeChange={(value) => { setScaleCode(value); markDirty(); }}
+            sharedCode={sharedCode}
+            onSharedCodeChange={(v) => { setSharedCode(v); markDirty(); }}
           />
 
           {/* Preço */}

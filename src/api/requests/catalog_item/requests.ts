@@ -154,7 +154,7 @@ export interface CodeCheckResult {
   scale_code_item: string | null;
 }
 
-export async function checkCatalogItemCodes(params: { barcode?: string; scale_code?: string; except_id?: string }): Promise<CodeCheckResult> {
+export async function checkCatalogItemCodes(params: { barcode?: string; scale_code?: string; except_id?: string; shared_code?: boolean }): Promise<CodeCheckResult> {
   const response = await api.get('/catalog_items/code_check', { params });
   return response.data;
 }

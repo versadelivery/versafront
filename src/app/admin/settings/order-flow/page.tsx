@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useShop } from "@/hooks/use-shop";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, GripVertical, Check, X, ListOrdered, RotateCcw, Zap, AlertCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -96,6 +98,8 @@ export default function OrderFlowSettingsPage() {
   });
 
   const [flow, setFlow] = useState<string[]>(DEFAULT_FLOW);
+  const { shop } = useShop();
+  const schedulingOn = ((shop as any)?.scheduling_mode ?? "disabled") !== "disabled";
   const [hasChanges, setHasChanges] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
@@ -316,6 +320,19 @@ export default function OrderFlowSettingsPage() {
 
             {/* Flow visual */}
             <div className="space-y-1">
+              {/* Etapa zero: Agendados (opcional, liga e desliga em Configurações > Agendamento) */}
+              <div className="flex items-center gap-3 px-4 py-3 rounded-md border border-[#E5E2DD] bg-white" data-testid="flow-agendados">
+                <div className="flex-shrink-0 invisible"><GripVertical className="w-4 h-4" /></div>
+                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#F0EFEB] flex items-center justify-center text-xs font-semibold text-gray-600">0</div>
+                <span className="w-2 h-2 rounded-full flex-shrink-0 bg-violet-500" />
+                <span className="text-sm font-medium text-gray-900 flex-1 min-w-0">
+                  Agendados
+                  <span className="block text-xs font-normal text-muted-foreground">Sempre antes de &quot;Recebido&quot;. No horário combinado o pedido passa para Recebido.</span>
+                </span>
+                <Link href="/admin/settings/agendamento" className="flex-shrink-0 text-[10px] font-semibold text-muted-foreground underline underline-offset-2 decoration-gray-400">
+                  {schedulingOn ? "Ativo" : "Desligado"}
+                </Link>
+              </div>
               {flow.map((status, index) => {
                 const isFixed = status === "received" || status === "delivered";
                 const isDragging = draggedIndex === index;

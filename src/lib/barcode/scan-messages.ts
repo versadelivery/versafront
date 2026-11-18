@@ -15,5 +15,7 @@ export function scanErrorMessage(reason: ScanError, code: string): string {
       return 'Item inativo.'
     case 'invalid_price':
       return 'Item sem preço. Corrija no catálogo.'
+    case 'price_overlap':
+      return 'Sobreposição de preço. O produto não vai pro carrinho. Deixe só um dos itens com este código habilitado hoje.'
   }
 }

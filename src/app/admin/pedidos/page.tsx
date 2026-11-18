@@ -211,6 +211,7 @@ export default function OrderManagement() {
   const [filterStatus, setFilterStatus] = useState<'all' | Order['status']>('all');
   const [showFilters, setShowFilters] = useState(false);
   const [expandedColumns, setExpandedColumns] = useState<Record<string, boolean>>({
+    scheduled: true,
     recebidos: true,
     aceitos: true,
     em_analise: true,
@@ -784,6 +785,42 @@ export default function OrderManagement() {
     }
   };
 
+  // Coluna "Agendados": etapa zero do painel, sempre antes de "Recebido". Só existe com o agendamento ligado
+  // (ou enquanto sobrar pedido agendado). No horário combinado o pedido sai daqui e entra em "Recebido".
+  const showScheduledColumn = ((shop as any)?.scheduling_mode ?? 'disabled') !== 'disabled' || scheduledOrders.length > 0;
+  const renderScheduledColumn = (mobile: boolean) => {
+    if (!showScheduledColumn) return null;
+    const isExpanded = expandedColumns.scheduled !== false;
+    return (
+      <div key="scheduled" className={cn("bg-[#FAF9F7] rounded-md border border-[#E5E2DD]", !mobile && "overflow-hidden flex flex-col")} data-testid="column-agendados">
+        <button
+          onClick={() => toggleColumn('scheduled')}
+          className={cn("w-full px-4 py-3 flex items-center justify-between bg-white", mobile ? "rounded-t-md" : "border-b border-[#E5E2DD]")}
+        >
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-violet-500" />
+            <h2 className="font-semibold text-sm text-gray-900 uppercase">Agendados</h2>
+            <span className="text-sm text-muted-foreground">({scheduledOrders.length})</span>
+          </div>
+          {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+        </button>
+        {isExpanded && (
+          <div className="p-3 max-h-[80vh] overflow-y-auto">
+            <ScheduledOrdersList
+              compact
+              orders={scheduledRows}
+              busyId={scheduledBusyId}
+              onConfirm={(id) => runScheduledAction(id, confirmScheduledOrder, 'Pedido agendado confirmado')}
+              onRelease={(id) => runScheduledAction(id, releaseScheduledOrder, 'Pedido liberado')}
+              onCancel={cancelOrder}
+              onOpen={setSelectedOrderId}
+            />
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const handleQuickSearch = useCallback(() => {
     const id = quickSearchId.trim();
     if (!id) return;
@@ -1053,6 +1090,7 @@ export default function OrderManagement() {
           <TabsContent value="painel">
             {isMobile ? (
               <div className="space-y-4">
+                {renderScheduledColumn(true)}
                 {activeStatuses.filter(s => s !== 'cancelled').map((status) => {
                   const config = statusConfig[status];
                   if (!config) return null;
@@ -1157,6 +1195,7 @@ export default function OrderManagement() {
             ) : (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {renderScheduledColumn(false)}
                   {activeStatuses.filter(s => s !== 'cancelled').map((status) => {
                     const config = statusConfig[status];
                     if (!config) return null;

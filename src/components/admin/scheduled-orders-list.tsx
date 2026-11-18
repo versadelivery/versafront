@@ -37,11 +37,12 @@ interface ScheduledOrdersListProps {
   onRelease: (orderId: string) => void;
   onCancel: (orderId: string, reason: string, reasonType?: string) => void;
   onOpen: (orderId: string) => void;
+  compact?: boolean; // dentro da coluna do painel: uma coluna só
 }
 
 // Aba "Agendados": pedidos esperando o horário combinado, por dia. Aceitar = confirmar (continua agendado);
-// no horário o pedido entra sozinho como "Aceito"; "Liberar agora" antecipa e refaz o preço.
-export default function ScheduledOrdersList({ orders, busyId, onConfirm, onRelease, onCancel, onOpen }: ScheduledOrdersListProps) {
+// no horário o pedido entra sozinho em "Recebido"; "Liberar agora" antecipa e refaz o preço.
+export default function ScheduledOrdersList({ orders, busyId, onConfirm, onRelease, onCancel, onOpen, compact }: ScheduledOrdersListProps) {
   const [releaseTarget, setReleaseTarget] = useState<ScheduledOrderRow | null>(null);
   const [cancelTarget, setCancelTarget] = useState<ScheduledOrderRow | null>(null);
   const today = useMemo(() => todayInShopZone(), []);
@@ -76,7 +77,7 @@ export default function ScheduledOrdersList({ orders, busyId, onConfirm, onRelea
             <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">{dayOrders.length}</span>
           </h3>
 
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <div className={compact ? "grid grid-cols-1 gap-3" : "grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3"}>
             {dayOrders.map((order) => {
               const busy = busyId === order.id;
               const { time } = inShopZone(order.scheduledFor);
@@ -191,7 +192,7 @@ export default function ScheduledOrdersList({ orders, busyId, onConfirm, onRelea
           <AlertDialogHeader>
             <AlertDialogTitle>Liberar o pedido agora?</AlertDialogTitle>
             <AlertDialogDescription>
-              O pedido #{releaseTarget?.id} sai de Agendados e entra no painel como aceito, antes do horário combinado. O total é
+              O pedido #{releaseTarget?.id} sai de Agendados e entra no painel como recebido, antes do horário combinado. O total é
               recalculado com os preços de hoje.
             </AlertDialogDescription>
           </AlertDialogHeader>

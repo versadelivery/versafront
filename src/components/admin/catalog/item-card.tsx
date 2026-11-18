@@ -33,6 +33,8 @@ interface ItemCardProps {
     best_seller_tag?: boolean;
     highlight?: boolean;
     promotion_tag?: boolean;
+    available_catalog?: boolean;
+    available_pdv?: boolean;
     active: boolean;
     has_out_of_stock_ingredient?: boolean;
     catalog_item_extras_attributes?: any[];
@@ -149,6 +151,8 @@ export function ItemCard({ item, layout = 'grid' }: ItemCardProps) {
               {item.new_tag && <span className="bg-green-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md flex-shrink-0">NOVO!</span>}
               {item.best_seller_tag && <span className="bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md flex-shrink-0">+VENDIDO</span>}
               {item.promotion_tag && <span className="bg-primary text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md flex-shrink-0">PROMOÇÃO</span>}
+              {item.active && item.available_catalog === false && <span className="bg-gray-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md flex-shrink-0">SÓ PDV</span>}
+              {item.active && item.available_pdv === false && <span className="bg-gray-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md flex-shrink-0">SÓ CATÁLOGO</span>}
             </div>
             {item.description && (
               <p className="text-xs text-muted-foreground sm:truncate mt-0.5">{item.description}</p>
@@ -333,7 +337,7 @@ export function ItemCard({ item, layout = 'grid' }: ItemCardProps) {
           )}
 
           {/* Tags visuais */}
-          {(item.new_tag || item.best_seller_tag || item.highlight || item.promotion_tag) && (
+          {(item.new_tag || item.best_seller_tag || item.highlight || item.promotion_tag || (item.active && (item.available_catalog === false || item.available_pdv === false))) && (
             <div className="flex flex-wrap gap-1 mt-1">
               {item.new_tag && (
                 <span className="bg-green-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md">NOVO!</span>
@@ -344,6 +348,8 @@ export function ItemCard({ item, layout = 'grid' }: ItemCardProps) {
               {item.highlight && (
                 <span className="bg-blue-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md">DESTAQUE</span>
               )}
+              {item.active && item.available_catalog === false && <span className="bg-gray-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md">SÓ PDV</span>}
+              {item.active && item.available_pdv === false && <span className="bg-gray-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md">SÓ CATÁLOGO</span>}
               {item.promotion_tag && (
                 <span className="bg-primary text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md">PROMOÇÃO</span>
               )}

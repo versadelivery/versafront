@@ -17,6 +17,7 @@ export type ScanError =
   | 'zero_weight'
   | 'inactive'
   | 'invalid_price'
+  | 'price_overlap'
 
 export type ScanResult<T extends ScanItem> =
   | { kind: 'unit'; item: T }
@@ -29,6 +30,16 @@ const SCALE_LABEL = /^2\d{12}$/
 const round = (value: number, places: number) => {
   const factor = 10 ** places
   return Math.round((value + Number.EPSILON) * factor) / factor
+}
+
+// Códigos compartilhados: vale o item disponível agora (ativo e no dia certo). Dois habilitados com preços diferentes
+// é sobreposição de preço: não adivinha, o operador resolve nos dias habilitados. Sem nenhum ativo, devolve o primeiro
+// para dar o erro certo.
+const OVERLAP = Symbol('overlap')
+const pick = <T extends ScanItem>(candidates: T[]): T | typeof OVERLAP | undefined => {
+  const active = candidates.filter((c) => c.active)
+  if (new Set(active.map((c) => c.price)).size > 1) return OVERLAP
+  return active[0] ?? candidates[0]
 }
 
 const fail = (reason: ScanError): { kind: 'error'; reason: ScanError } => ({ kind: 'error', reason })
@@ -56,9 +67,12 @@ function parseScaleLabel<T extends ScanItem>(code: string, mode: ScaleMode, item
   if (!isValidEan13(code)) return fail('invalid_check_digit')
 
   const scaleCode = Number(code.slice(1, 7))
-  const item = items.find((candidate) => candidate.itemType !== 'unit' && candidate.scaleCode === scaleCode)
+  const item = pick(items.filter((candidate) => candidate.scaleCode === scaleCode))
+  if (item === OVERLAP) return fail('price_overlap')
   if (!item) return fail('unknown_scale_code')
   if (!item.active) return fail('inactive')
+  // Produto unitário com código de balança: a etiqueta só identifica o item, vende 1 unidade
+  if (item.itemType === 'unit') return { kind: 'unit', item }
 
   const payload = Number(code.slice(7, 12))
   if (payload === 0) return fail('zero_weight')
@@ -80,7 +94,8 @@ export function parseBarcode<T extends ScanItem>(text: string, mode: ScaleMode, 
   const code = text.trim()
   if (!/^\d+$/.test(code)) return fail('not_found')
 
-  const factoryItem = items.find((candidate) => candidate.barcode === code)
+  const factoryItem = pick(items.filter((candidate) => candidate.barcode === code))
+  if (factoryItem === OVERLAP) return fail('price_overlap')
   if (factoryItem) {
     if (!factoryItem.active) return fail('inactive')
     return { kind: factoryItem.itemType === 'unit' ? 'unit' : 'needs_weight', item: factoryItem }

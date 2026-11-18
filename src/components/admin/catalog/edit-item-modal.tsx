@@ -136,6 +136,9 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
   // Estados - Dias da semana
   const [activeDays, setActiveDays] = useState<Record<DayKey, boolean>>(DEFAULT_ACTIVE_DAYS);
   const [active, setActive] = useState(true);
+  const [availableCatalog, setAvailableCatalog] = useState(true);
+  const [availablePdv, setAvailablePdv] = useState(true);
+  const [sharedCode, setSharedCode] = useState(false);
 
   // Estados - Complementos Compartilhados
   const { complementGroups } = useCatalogComplement();
@@ -202,6 +205,9 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
       setScaleCode(item.scale_code != null ? item.scale_code.toString() : '');
       setPreviewImage(item.image_url ? (fixImageUrl(item.image_url) || null) : null);
       setActive(item.active ?? true);
+      setAvailableCatalog(item.available_catalog ?? true);
+      setAvailablePdv(item.available_pdv ?? true);
+      setSharedCode(item.shared_code ?? false);
 
 
       // Desconto, abre no modo "Preço final" (o preço promocional que o lojista quer praticar)
@@ -608,9 +614,9 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
         if (measureInterval) formData.append('measure_interval', measureInterval);
       }
 
-      // Vazio limpa o código; item de unidade não pode ter código de balança
+      // Vazio limpa o código
       formData.append('barcode', barcode);
-      formData.append('scale_code', itemType === 'unit' ? '' : scaleCode);
+      formData.append('scale_code', scaleCode);
 
       // Imagem
       if (imageFile) {
@@ -629,6 +635,9 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
       });
 
       formData.append('active', active.toString());
+      formData.append('available_catalog', availableCatalog.toString());
+      formData.append('available_pdv', availablePdv.toString());
+      formData.append('shared_code', sharedCode.toString());
 
       // Complementos Compartilhados
       selectedComplements.forEach((id) => {
@@ -828,12 +837,28 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
         <div className="flex-1 min-w-0 overflow-y-auto px-4 sm:px-6 py-5 space-y-5">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Dados do Item</p>
 
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">
-            <div className="flex flex-col gap-0.5">
-              <span className="text-sm font-medium">Item Ativo</span>
-              <span className="text-xs text-muted-foreground">O item aparecerá no catálogo se estiver ativo</span>
+          <div className="rounded-lg border border-gray-100 bg-gray-50 divide-y divide-gray-100">
+            <div className="flex items-center justify-between p-3">
+              <div className="flex flex-col gap-0.5">
+                <span className="text-sm font-medium">Item Ativo</span>
+                <span className="text-xs text-muted-foreground">Ativo para ser configurado no catálogo e no PDV. Desligado, não aparece em nenhum dos dois</span>
+              </div>
+              <Switch checked={active} onCheckedChange={(v) => { setActive(v); markDirty(); }} />
             </div>
-            <Switch checked={active} onCheckedChange={(v) => { setActive(v); markDirty(); }} />
+            <div className="flex items-center justify-between p-3">
+              <div className="flex flex-col gap-0.5">
+                <span className="text-sm font-medium">Catálogo</span>
+                <span className="text-xs text-muted-foreground">Aparece no catálogo online (cardápio do cliente)</span>
+              </div>
+              <Switch checked={availableCatalog} disabled={!active} onCheckedChange={(v) => { setAvailableCatalog(v); markDirty(); }} />
+            </div>
+            <div className="flex items-center justify-between p-3">
+              <div className="flex flex-col gap-0.5">
+                <span className="text-sm font-medium">PDV</span>
+                <span className="text-xs text-muted-foreground">Aparece para venda no PDV</span>
+              </div>
+              <Switch checked={availablePdv} disabled={!active} onCheckedChange={(v) => { setAvailablePdv(v); markDirty(); }} />
+            </div>
           </div>
 
 
@@ -922,11 +947,13 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
           <BarcodeFields
             barcode={barcode}
             scaleCode={scaleCode}
-            showScaleCode={itemType !== 'unit'}
+            showScaleCode
             exceptId={id}
             errors={errors}
             onBarcodeChange={(value) => { setBarcode(value); clearError('barcode'); markDirty(); }}
             onScaleCodeChange={(value) => { setScaleCode(value); clearError('scaleCode'); markDirty(); }}
+            sharedCode={sharedCode}
+            onSharedCodeChange={(v) => { setSharedCode(v); markDirty(); }}
           />
 
           {/* Preço */}
@@ -1309,8 +1336,8 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
         )}
 
         {/* Footer */}
-        <div className="flex gap-3 px-6 py-4 border-t border-gray-100">
-          <Button type="button" variant="destructive" className="w-28" onClick={() => setIsDeleteConfirmationOpen(true)} disabled={isDeletingCatalogItem || isUpdating}>
+        <div className="flex gap-2 sm:gap-3 px-4 sm:px-6 py-4 border-t border-gray-100">
+          <Button type="button" variant="destructive" className="w-24 sm:w-28 shrink-0" onClick={() => setIsDeleteConfirmationOpen(true)} disabled={isDeletingCatalogItem || isUpdating}>
             {isDeletingCatalogItem ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Excluir'}
           </Button>
           <div className="flex-1" />
