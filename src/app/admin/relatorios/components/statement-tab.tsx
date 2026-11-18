@@ -1,166 +1,93 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { CalendarDays, Clock3, CreditCard, Loader2, Search } from "lucide-react";
-import { isAxiosError } from "axios";
+import { useEffect, useState } from "react";
+import { CalendarDays, Clock3, Loader2, Search, Plus, Trash2, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 import ReportExportButton from "@/components/admin/report-export-button";
-import { reportsService, StatementResponse } from "../services/reports-service";
+import { reportsService, StatementPeriod, StatementResponse } from "../services/reports-service";
 
-const today = () => {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-};
-const money = (value: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
-const quantity = (value: number, unit: string) => `${new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 3 }).format(value)} ${unit}`;
-
-// Mesma ordem/rótulos da API; usado enquanto nenhum extrato foi gerado.
-const DEFAULT_METHODS = [
-  { method: "all", label: "Todos" },
-  { method: "cash", label: "Dinheiro" },
-  { method: "debit", label: "Débito" },
-  { method: "credit", label: "Crédito" },
-  { method: "pix", label: "PIX (todos)" },
-  { method: "manual_pix", label: "PIX Direto" },
-  { method: "asaas_pix", label: "PIX Automático" },
-  { method: "store_credit", label: "Fiado / a receber" },
-  { method: "food_voucher", label: "Vale alimentação / refeição" },
-];
-
-const errorMessage = (e: unknown) => {
-  if (isAxiosError(e)) return e.response?.data?.error ?? "Não foi possível carregar o extrato.";
-  return e instanceof Error ? e.message : "Não foi possível carregar o extrato.";
-};
-
-interface Applied { date: string; shift: boolean; start: string; end: string; method: string }
+const today = () => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}-${String(n.getDate()).padStart(2,"0")}`; };
+const shiftDays = (date: string, days: number) => { const d = new Date(`${date}T12:00:00`); d.setDate(d.getDate()+days); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
+const money = (v: number) => new Intl.NumberFormat("pt-BR", { style:"currency", currency:"BRL" }).format(v);
+const quantity = (v: number, unit: string) => `${new Intl.NumberFormat("pt-BR", { maximumFractionDigits:3 }).format(v)} ${unit}`;
+const id = () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
 
 export default function StatementTab() {
-  const [date, setDate] = useState(today());
-  const [shift, setShift] = useState(false);
-  const [start, setStart] = useState("06:00");
-  const [end, setEnd] = useState("12:30");
-  const [method, setMethod] = useState("all");
+  const [preset, setPreset] = useState("today");
+  const [startDate, setStartDate] = useState(today());
+  const [endDate, setEndDate] = useState(today());
+  const [selected, setSelected] = useState("all");
+  const [periods, setPeriods] = useState<StatementPeriod[]>([]);
+  const [manage, setManage] = useState(false);
+  const [draftName, setDraftName] = useState("");
+  const [draftStart, setDraftStart] = useState("06:00");
+  const [draftEnd, setDraftEnd] = useState("12:30");
   const [data, setData] = useState<StatementResponse | null>(null);
-  const [applied, setApplied] = useState<Applied | null>(null); // período do resultado exibido, não dos inputs
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const requestId = useRef(0);
 
-  const load = useCallback(async (params: Applied) => {
-    const id = ++requestId.current;
-    setLoading(true);
-    setError(null);
-    try {
-      const next = await reportsService.getStatement(params.date, params.shift ? params.start : undefined, params.shift ? params.end : undefined, params.method);
-      if (id !== requestId.current) return; // resposta antiga, ignora
-      setData(next);
-      setApplied(params);
-    } catch (e) {
-      if (id !== requestId.current) return;
-      setError(errorMessage(e));
-    } finally {
-      if (id === requestId.current) setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { void load({ date: today(), shift: false, start: "06:00", end: "12:30", method: "all" }); }, [load]);
-
-  const generate = () => load({ date, shift, start, end, method });
-  const selectMethod = (next: string) => {
-    if (next === method) return;
-    setMethod(next);
-    // com extrato na tela, troca a forma de pagamento mantendo o período exibido
-    if (applied) void load({ ...applied, method: next });
+  useEffect(() => { reportsService.getStatementPeriods().then(setPeriods).catch(() => setError("Não foi possível carregar os turnos salvos.")); }, []);
+  const updatePreset = (value: string) => {
+    setPreset(value);
+    const end = today();
+    if (value === "today") { setStartDate(end); setEndDate(end); }
+    if (value === "7") { setStartDate(shiftDays(end,-6)); setEndDate(end); }
+    if (value === "15") { setStartDate(shiftDays(end,-14)); setEndDate(end); }
+  };
+  const selectedPeriod = periods.find(p => p.id === selected);
+  const fetchStatement = async () => {
+    setLoading(true); setError(null);
+    try { setData(await reportsService.getStatement(startDate, selectedPeriod?.start_time, selectedPeriod?.end_time, undefined, endDate)); }
+    catch (e) { setError(e instanceof Error ? e.message : "Não foi possível carregar o extrato."); }
+    finally { setLoading(false); }
+  };
+  const savePeriods = async (next: StatementPeriod[]) => {
+    setSaving(true); setError(null);
+    try { setPeriods(await reportsService.saveStatementPeriods(next)); }
+    catch (e) { setError(e instanceof Error ? e.message : "Não foi possível salvar os turnos."); }
+    finally { setSaving(false); }
+  };
+  const addPeriod = async () => {
+    if (!draftName.trim() || draftStart === draftEnd) return;
+    const next = [...periods, { id:id(), name:draftName.trim(), start_time:draftStart, end_time:draftEnd }];
+    await savePeriods(next); setDraftName("");
   };
 
-  const methods: { method: string; label: string; order_count?: number; total_revenue?: number }[] = data?.payment_methods ?? DEFAULT_METHODS;
-  const activeLabel = DEFAULT_METHODS.find((m) => m.method === (applied?.method ?? "all"))?.label ?? "Todos";
-  const filtered = !!applied && applied.method !== "all";
-
-  return (
-    <div className="space-y-5 pt-4">
-      <Card>
-        <CardContent className="flex flex-wrap items-end gap-4 pt-6">
-          <label className="grid gap-1.5 text-sm font-medium">Data
-            <input className="h-10 rounded-md border border-input bg-background px-3" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-          </label>
-          <label className="flex h-10 items-center gap-2 text-sm"><input type="checkbox" checked={shift} onChange={(e) => setShift(e.target.checked)} /> Relatório por turno</label>
-          {shift && <>
-            <label className="grid gap-1.5 text-sm font-medium">De
-              <input className="h-10 rounded-md border border-input bg-background px-3" type="time" value={start} onChange={(e) => setStart(e.target.value)} />
-            </label>
-            <label className="grid gap-1.5 text-sm font-medium">Até
-              <input className="h-10 rounded-md border border-input bg-background px-3" type="time" value={end} onChange={(e) => setEnd(e.target.value)} />
-            </label>
-          </>}
-          <Button onClick={generate} disabled={loading || !date || (shift && (!start || !end))}>
-            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
-            Gerar extrato
-          </Button>
-          {data && applied && <ReportExportButton
-            filename={filtered ? `extrato-itens-${applied.method}` : "extrato-itens"}
-            headers={["Item", "Forma de pagamento", "Quantidade", "Valor"]}
-            rows={data.items.flatMap((item) => item.payments.map((payment) => [item.name, payment.label, quantity(payment.quantity, item.unit), money(payment.revenue)]))}
-            summaryData={{ "Forma de pagamento": activeLabel, "Pedidos pagos": data.summary.order_count, "Itens após ajustes": money(data.summary.item_revenue), "Taxas de entrega": money(data.summary.delivery_fees), "Total recebido": money(data.summary.total_revenue) }}
-            disabled={loading}
-          />}
-        </CardContent>
-      </Card>
-
-      <div role="group" aria-label="Forma de pagamento" className="flex flex-wrap gap-2">
-        {methods.map((m) => {
-          const active = method === m.method;
-          const { order_count: count, total_revenue: total } = m;
-          return (
-            <button
-              key={m.method}
-              type="button"
-              aria-pressed={active}
-              disabled={loading}
-              onClick={() => selectMethod(m.method)}
-              className={cn(
-                "flex min-h-11 flex-col items-start rounded-lg border px-3 py-1.5 text-left text-sm transition-colors disabled:opacity-60",
-                active ? "border-primary bg-primary text-primary-foreground" : "border-input bg-background hover:bg-muted",
-              )}
-            >
-              <span className="flex items-center gap-1.5 font-medium"><CreditCard className="h-3.5 w-3.5 shrink-0" />{m.label}</span>
-              {count !== undefined && total !== undefined && <span className={cn("text-xs", active ? "text-primary-foreground/80" : "text-muted-foreground")}>{count} {count === 1 ? "pedido" : "pedidos"} · {money(total)}</span>}
-            </button>
-          );
-        })}
-      </div>
-
-      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
-      {data && applied && <div className={cn("space-y-5 transition-opacity", loading && "opacity-60")} aria-busy={loading}>
-        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-          {applied.shift ? <Clock3 className="h-4 w-4" /> : <CalendarDays className="h-4 w-4" />}
-          {applied.shift ? `Turno das ${applied.start} às ${applied.end}` : "Dia completo"} · {new Date(`${applied.date}T12:00:00`).toLocaleDateString("pt-BR")} · {activeLabel}
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {[
-            ["Pedidos pagos", String(data.summary.order_count)],
-            ["Itens após ajustes", money(data.summary.item_revenue)],
-            ["Taxas de entrega", money(data.summary.delivery_fees)],
-            ["Total recebido", money(data.summary.total_revenue)],
-          ].map(([label, value]) => <Card key={label}><CardContent className="pt-5"><p className="text-sm text-muted-foreground">{label}</p><p className="mt-1 text-xl font-semibold">{value}</p></CardContent></Card>)}
-        </div>
-        <Card>
-          <CardHeader><CardTitle className="font-tomato">{filtered ? `Itens pagos em ${activeLabel}` : "Itens por forma de pagamento"}</CardTitle></CardHeader>
-          <CardContent>
-            {data.items.length === 0 ? <p className="py-8 text-center text-sm text-muted-foreground">{filtered ? `Nenhum pedido pago em ${activeLabel} neste período.` : "Nenhum pedido pago neste período."}</p> : <div className="divide-y">
-              {data.items.map((item) => <section key={`${item.name}-${item.unit}`} className="py-4 first:pt-0 last:pb-0">
-                <div className="flex flex-wrap items-baseline justify-between gap-2"><h3 className="break-words font-semibold">{item.name}</h3><span className="text-sm text-muted-foreground">{quantity(item.quantity, item.unit)} · {money(item.revenue)}</span></div>
-                <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                  {item.payments.map((payment) => <div key={payment.method} className="flex justify-between gap-3 rounded-md bg-muted/40 px-3 py-2 text-sm"><span>{payment.label} <span className="text-muted-foreground">· {quantity(payment.quantity, item.unit)}</span></span><strong>{money(payment.revenue)}</strong></div>)}
-                </div>
-              </section>)}
-            </div>}
-          </CardContent>
-        </Card>
-        <p className="text-xs text-muted-foreground">Os valores de cada item incluem a parcela proporcional dos descontos e acréscimos do pedido.</p>
-      </div>}
-    </div>
-  );
+  return <div className="space-y-5 pt-4">
+    <Card><CardContent className="flex flex-wrap items-end gap-4 pt-6">
+      <label className="grid gap-1.5 text-sm font-medium">Período de datas
+        <select className="h-10 rounded-md border border-input bg-background px-3" value={preset} onChange={e=>updatePreset(e.target.value)}>
+          <option value="today">Hoje</option><option value="7">Últimos 7 dias</option><option value="15">Últimos 15 dias</option><option value="custom">Personalizado</option>
+        </select>
+      </label>
+      {preset === "custom" && <>
+        <label className="grid gap-1.5 text-sm font-medium">De<input className="h-10 rounded-md border border-input bg-background px-3" type="date" value={startDate} onChange={e=>setStartDate(e.target.value)} /></label>
+        <label className="grid gap-1.5 text-sm font-medium">Até<input className="h-10 rounded-md border border-input bg-background px-3" type="date" value={endDate} min={startDate} onChange={e=>setEndDate(e.target.value)} /></label>
+      </>}
+      <label className="grid gap-1.5 text-sm font-medium">Turno
+        <select className="h-10 min-w-44 rounded-md border border-input bg-background px-3" value={selected} onChange={e=>setSelected(e.target.value)}>
+          <option value="all">Dia completo</option>{periods.map(p=><option key={p.id} value={p.id}>{p.name} ({p.start_time}–{p.end_time})</option>)}
+        </select>
+      </label>
+      <Button variant="outline" onClick={()=>setManage(!manage)}><Settings2 className="mr-2 h-4 w-4"/>Gerenciar turnos</Button>
+      <Button onClick={fetchStatement} disabled={loading || !startDate || !endDate || endDate < startDate}>
+        {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4"/>}Gerar extrato
+      </Button>
+      {data && <ReportExportButton filename="extrato-itens" headers={["Item","Forma de pagamento","Quantidade","Valor"]} rows={data.items.flatMap(item=>item.payments.map(payment=>[item.name,payment.label,quantity(payment.quantity,item.unit),money(payment.revenue)]))} disabled={loading}/>}
+    </CardContent>
+    {manage && <CardContent className="border-t pt-4"><CardTitle className="mb-3 text-base">Turnos salvos nesta loja</CardTitle>
+      <div className="mb-4 space-y-2">{periods.length===0 && <p className="text-sm text-muted-foreground">Nenhum turno cadastrado.</p>}{periods.map(p=><div key={p.id} className="flex items-center justify-between border-b py-2 text-sm"><span>{p.name} · {p.start_time}–{p.end_time}</span><Button variant="ghost" size="sm" disabled={saving} aria-label={`Remover ${p.name}`} onClick={()=>savePeriods(periods.filter(x=>x.id!==p.id))}><Trash2 className="h-4 w-4"/></Button></div>)}</div>
+      <div className="flex flex-wrap items-end gap-3"><label className="grid gap-1 text-sm">Nome<input className="h-10 rounded-md border border-input bg-background px-3" value={draftName} maxLength={40} placeholder="Almoço" onChange={e=>setDraftName(e.target.value)}/></label><label className="grid gap-1 text-sm">Início<input className="h-10 rounded-md border border-input bg-background px-3" type="time" value={draftStart} onChange={e=>setDraftStart(e.target.value)}/></label><label className="grid gap-1 text-sm">Fim<input className="h-10 rounded-md border border-input bg-background px-3" type="time" value={draftEnd} onChange={e=>setDraftEnd(e.target.value)}/></label><Button variant="outline" onClick={addPeriod} disabled={saving || !draftName.trim() || draftStart===draftEnd}><Plus className="mr-2 h-4 w-4"/>Adicionar turno</Button></div>
+    </CardContent>}
+    </Card>
+    {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+    {data && <>
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">{selectedPeriod?<Clock3 className="h-4 w-4"/>:<CalendarDays className="h-4 w-4"/>}{selectedPeriod?`${selectedPeriod.name} ${selectedPeriod.start_time}–${selectedPeriod.end_time}`:"Dia completo"} · {startDate===endDate?new Date(`${startDate}T12:00:00`).toLocaleDateString("pt-BR"):`${new Date(`${startDate}T12:00:00`).toLocaleDateString("pt-BR")} a ${new Date(`${endDate}T12:00:00`).toLocaleDateString("pt-BR")}`}</div>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{[["Pedidos pagos",String(data.summary.order_count)],["Itens após ajustes",money(data.summary.item_revenue)],["Taxas de entrega",money(data.summary.delivery_fees)],["Total recebido",money(data.summary.total_revenue)]].map(([label,value])=><Card key={label}><CardContent className="pt-5"><p className="text-sm text-muted-foreground">{label}</p><p className="mt-1 text-xl font-semibold">{value}</p></CardContent></Card>)}</div>
+      <Card><CardHeader><CardTitle className="font-tomato">Itens por forma de pagamento</CardTitle></CardHeader><CardContent>{data.items.length===0?<p className="py-8 text-center text-sm text-muted-foreground">Nenhum pedido pago neste período.</p>:<div className="divide-y">{data.items.map(item=><section key={item.name} className="py-4 first:pt-0 last:pb-0"><div className="flex flex-wrap items-baseline justify-between gap-2"><h3 className="font-semibold">{item.name}</h3><span className="text-sm text-muted-foreground">{quantity(item.quantity,item.unit)} · {money(item.revenue)}</span></div><div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{item.payments.map(payment=><div key={payment.method} className="flex justify-between gap-3 rounded-md bg-muted/40 px-3 py-2 text-sm"><span>{payment.label} <span className="text-muted-foreground">· {quantity(payment.quantity,item.unit)}</span></span><strong>{money(payment.revenue)}</strong></div>)}</div></section>)}</div>}</CardContent></Card>
+      <p className="text-xs text-muted-foreground">Os valores incluem a parcela proporcional dos descontos e acréscimos do pedido.</p>
+    </>}
+  </div>;
 }
