@@ -152,6 +152,7 @@ export async function reorderCatalogItems(catalogGroupId: string, orderedIds: st
 export interface CodeCheckResult {
   barcode_item: string | null;
   scale_code_item: string | null;
+  taken_days?: Record<string, string>;
 }
 
 export async function checkCatalogItemCodes(params: { barcode?: string; scale_code?: string; except_id?: string; shared_code?: boolean }): Promise<CodeCheckResult> {

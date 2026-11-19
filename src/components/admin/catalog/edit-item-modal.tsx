@@ -17,6 +17,8 @@ import { useCatalogComplement } from "@/hooks/useCatalogComplement";
 import { useIngredient } from "@/hooks/useIngredient";
 import { Checkbox } from "@/components/ui/checkbox";
 import { BarcodeFields } from "@/components/admin/catalog/barcode-fields";
+import { ItemWeekdays } from "@/components/admin/catalog/item-weekdays";
+import type { WeekdayState } from "@/components/admin/catalog/weekday-picker";
 
 import { updateCatalogItem } from "@/api/requests/catalog_item/requests";
 import { DeleteConfirmation } from "@/components/ui/delete-confirmation";
@@ -1135,43 +1137,7 @@ export function EditItemModal({ id, isOpen, onOpenChange }: EditItemModalProps) 
           </div>
 
           <hr className="border-gray-100" />
-          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 mb-2">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Disponibilidade Semanal</p>
-
-            <button
-              type="button"
-              onClick={() => {
-                const allActive = Object.values(activeDays).every(v => v);
-                const newState = {} as Record<DayKey, boolean>;
-                DAYS_OF_WEEK.forEach(day => newState[day.key] = !allActive);
-                setActiveDays(newState);
-              }}
-              className="text-[10px] font-medium text-primary hover:underline uppercase tracking-tight"
-            >
-              {allActiveDays ? 'Desmarcar todos' : 'Marcar todos'}
-            </button>
-          </div>
-          <div className="grid grid-cols-7 gap-2">
-            {DAYS_OF_WEEK.map(({ key, label }) => {
-              const isActive = activeDays[key];
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setActiveDays((prev) => ({ ...prev, [key]: !prev[key] }))}
-                  className={`relative cursor-pointer flex flex-col items-center justify-center py-3 rounded-xl border-2 transition-all duration-200 ${
-                    isActive 
-                      ? 'bg-primary border-primary shadow-sm' 
-                      : 'bg-transparent border-gray-100 text-gray-400 border-dashed hover:border-gray-300'
-                  }`}
-                >
-                  <span className={`text-[10px] font-bold uppercase mb-0.5 ${isActive ? 'text-white' : 'text-gray-400'}`}>
-                    {label}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+          <ItemWeekdays value={activeDays as WeekdayState} onChange={(next) => setActiveDays(next as Record<DayKey, boolean>)} barcode={barcode} scaleCode={scaleCode} sharedCode={sharedCode} exceptId={id} />
 
           <hr className="border-gray-100" />
 

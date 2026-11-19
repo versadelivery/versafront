@@ -1068,24 +1068,7 @@ export default function OrderManagement() {
           <TabsList>
             <TabsTrigger value="painel">Painel</TabsTrigger>
             <TabsTrigger value="kds">KDS</TabsTrigger>
-            <TabsTrigger value="agendados" data-testid="tab-agendados">
-              Agendados
-              {scheduledOrders.length > 0 && (
-                <span className="ml-1.5 rounded-full bg-primary px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white">{scheduledOrders.length}</span>
-              )}
-            </TabsTrigger>
           </TabsList>
-
-          <TabsContent value="agendados">
-            <ScheduledOrdersList
-              orders={scheduledRows}
-              busyId={scheduledBusyId}
-              onConfirm={(id) => runScheduledAction(id, confirmScheduledOrder, 'Pedido agendado confirmado')}
-              onRelease={(id) => runScheduledAction(id, releaseScheduledOrder, 'Pedido liberado')}
-              onCancel={cancelOrder}
-              onOpen={setSelectedOrderId}
-            />
-          </TabsContent>
 
           <TabsContent value="painel">
             {isMobile ? (

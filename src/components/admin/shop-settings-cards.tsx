@@ -110,10 +110,9 @@ export function DefaultDelivererCard() {
 export function EstimatedTimeCard() {
   const { ready, draft, set, dirty, saving, save } = useShopDraft((s) => ({
     estimated_prep_time: s.estimated_prep_time ?? 30,
-    estimated_delivery_time: s.estimated_delivery_time ?? 40,
   }));
   if (!ready) return null;
-  const field = (key: "estimated_prep_time" | "estimated_delivery_time", label: string, hint: string) => (
+  const field = (key: "estimated_prep_time", label: string, hint: string) => (
     <div className="space-y-1.5">
       <Label htmlFor={key} className="text-sm font-medium">{label}</Label>
       <Input
@@ -129,23 +128,19 @@ export function EstimatedTimeCard() {
     </div>
   );
   const submit = () => {
-    const { estimated_prep_time: prep, estimated_delivery_time: delivery } = draft;
-    if (!prep || !delivery) return toast.error("Informe os dois tempos (em minutos)");
+    if (!draft.estimated_prep_time) return toast.error("Informe o tempo de preparo (em minutos)");
     save();
   };
   return (
     <ShopSettingCard
       icon={Timer}
-      title="Tempo Estimado"
-      description="Defina o tempo médio de preparo e entrega. Esses valores são usados no cronômetro do painel de pedidos e exibidos ao cliente."
+      title="Tempo de Preparo"
+      description="Tempo médio de preparo, usado no cronômetro do painel de pedidos. O tempo de entrega exibido ao cliente fica em Configurações > Entrega."
       dirty={dirty}
       saving={saving}
       onSave={submit}
     >
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        {field("estimated_prep_time", "Tempo de preparo (minutos)", "Usado no cronômetro do painel e KDS")}
-        {field("estimated_delivery_time", "Tempo de entrega (minutos)", "Exibido ao cliente no checkout e acompanhamento")}
-      </div>
+      {field("estimated_prep_time", "Tempo de preparo (minutos)", "Usado no cronômetro do painel e KDS")}
     </ShopSettingCard>
   );
 }

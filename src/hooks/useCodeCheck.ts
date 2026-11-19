@@ -42,6 +42,7 @@ export function useCodeCheck({ barcode, scaleCode, exceptId, sharedCode }: CodeC
     barcodeOwner: typing ? null : data?.barcode_item ?? null,
     scaleCodeOwner: typing ? null : data?.scale_code_item ?? null,
     barcodeFree: !typing && !isFetching && !!settled.barcode && !!data && !data.barcode_item,
+    takenDays: data?.taken_days ?? {},
     scaleCodeFree: !typing && !isFetching && !!settled.scaleCode && !!data && !data.scale_code_item,
   };
 }

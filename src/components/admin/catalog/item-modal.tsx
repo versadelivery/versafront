@@ -16,6 +16,8 @@ import { useCatalogComplement } from "@/hooks/useCatalogComplement";
 import { useIngredient } from "@/hooks/useIngredient";
 import { Checkbox } from "@/components/ui/checkbox";
 import { BarcodeFields } from "@/components/admin/catalog/barcode-fields";
+import { ItemWeekdays } from "@/components/admin/catalog/item-weekdays";
+import type { WeekdayState } from "@/components/admin/catalog/weekday-picker";
 
 
 // =============================================================================
@@ -800,35 +802,7 @@ export function NewItemModal({ isOpen, onOpenChange, initial }: NewItemModalProp
           <hr className="border-gray-100" />
 
           {/* Disponibilidade Semanal */}
-          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 mb-2">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Disponibilidade Semanal</p>
-            <button
-              type="button"
-              onClick={() => {
-                const allActive = Object.values(activeDays).every(v => v);
-                const newState = {} as Record<DayKey, boolean>;
-                DAYS_OF_WEEK.forEach(day => newState[day.key] = !allActive);
-                setActiveDays(newState);
-              }}
-              className="text-[10px] font-medium text-primary hover:underline uppercase tracking-tight"
-            >
-              {allActiveDays ? 'Desmarcar todos' : 'Marcar todos'}
-            </button>
-          </div>
-          <div className="grid grid-cols-7 gap-1.5">
-            {DAYS_OF_WEEK.map(({ key, label }) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setActiveDays((prev) => ({ ...prev, [key]: !prev[key] }))}
-                className={`py-2 rounded-md text-sm font-medium transition-colors ${
-                  activeDays[key] ? 'bg-foreground text-white' : 'bg-muted/40 text-muted-foreground'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+          <ItemWeekdays value={activeDays as WeekdayState} onChange={(next) => setActiveDays(next as Record<DayKey, boolean>)} barcode={barcode} scaleCode={scaleCode} sharedCode={sharedCode} />
 
           <hr className="border-gray-100" />
           <div className="space-y-3">
