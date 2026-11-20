@@ -197,6 +197,20 @@ function InfoRow({
   );
 }
 
+function ShortcutKey({ children, tone }: { children: React.ReactNode; tone?: 'green' }) {
+  return (
+    <kbd
+      aria-hidden
+      className={cn(
+        'ml-2 hidden md:inline-flex items-center rounded border px-1.5 py-0.5 font-mono text-[10px] font-medium leading-none',
+        tone === 'green' ? 'border-green-300 bg-green-50 text-green-700' : 'border-[#E5E2DD] bg-[#FAF9F7] text-muted-foreground',
+      )}
+    >
+      {children}
+    </kbd>
+  );
+}
+
 export default function OrderDetailsModal({
   open,
   onOpenChange,
@@ -595,6 +609,30 @@ export default function OrderDetailsModal({
     scanner.focusInput();
   }, [isEditingMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Atalhos do teclado (PC): E abre a edição, Ctrl+S salva. Ref evita closure velha no listener.
+  const shortcutsRef = useRef({ startEdit: () => {}, save: () => {} });
+  shortcutsRef.current = {
+    startEdit: () => { if (!isEditingMode) setIsEditingMode(true); },
+    save: () => { if (isEditingMode && !isSaving) handleSaveAllChanges(); },
+  };
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 's') {
+        e.preventDefault(); // senão o navegador abre "Salvar página"
+        shortcutsRef.current.save();
+        return;
+      }
+      if (e.ctrlKey || e.metaKey || e.altKey || e.key.toLowerCase() !== 'e' || e.repeat) return;
+      const el = e.target as HTMLElement | null;
+      if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
+      e.preventDefault();
+      shortcutsRef.current.startEdit();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [open]);
+
   const handleAddItemFromCatalog = (catalogItem: any) => {
     const hasExtras = catalogItem.attributes?.extra?.data?.length > 0;
     const hasMethods = catalogItem.attributes?.prepare_method?.data?.length > 0;
@@ -976,6 +1014,7 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
                 >
                   <Edit3 className="h-4 w-4 mr-1.5" />
                   Editar
+                  <ShortcutKey>E</ShortcutKey>
                 </Button>
                 <Button
                   variant="outline"
@@ -998,6 +1037,7 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
                 >
                   {isSaving ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Save className="h-4 w-4 mr-1.5" />}
                   {isSaving ? 'Salvando…' : 'Salvar'}
+                  {!isSaving && <ShortcutKey tone="green">Ctrl + S</ShortcutKey>}
                 </Button>
                 <Button
                   variant="outline"
