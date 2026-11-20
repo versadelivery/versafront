@@ -477,8 +477,28 @@ export interface StatementItem {
   name: string;
   quantity: number;
   unit: string;
+  unit_price: number;
   revenue: number;
   payments: StatementPaymentBreakdown[];
+}
+
+export interface StatementGroupItem {
+  name: string;
+  quantity: number;
+  unit: string;
+  unit_price: number;
+  revenue: number;
+}
+
+export interface StatementPaymentGroup {
+  method: string;
+  label: string;
+  order_count: number;
+  items: StatementGroupItem[];
+  items_total: number;
+  delivery_fees: number;
+  total_revenue: number;
+  average_ticket: number;
 }
 
 export interface StatementPaymentMethod {
@@ -493,6 +513,7 @@ export interface StatementResponse {
   summary: { order_count: number; item_revenue: number; delivery_fees: number; total_revenue: number; total_item_quantity: number };
   period: { date?: string; start_date?: string; end_date?: string; start_time: string; end_time: string; full_day: boolean; payment_method: string };
   payment_methods: StatementPaymentMethod[];
+  payment_groups: StatementPaymentGroup[];
 }
 
 export interface StatementPeriod { id: string; name: string; start_time: string; end_time: string }
