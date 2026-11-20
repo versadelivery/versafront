@@ -20,7 +20,7 @@ const statusLabels: Record<string, string> = {
 };
 
 export default function PrinterSettingsPage() {
-  const { config, loading } = usePrinterConfig();
+  const { config, setConfig, loading } = usePrinterConfig();
   const [draft, setDraft] = useState<PrinterConfig>(DEFAULT_PRINTER_CONFIG);
   const [saving, setSaving] = useState(false);
   const { data: flow } = useQuery({
@@ -72,7 +72,7 @@ export default function PrinterSettingsPage() {
   };
 
   const save = async () => {
-    try { setSaving(true); setDraft(await updatePrinterConfig(draft)); toast.success('Configurações de impressão salvas'); }
+    try { setSaving(true); const saved = await updatePrinterConfig(draft); setConfig(saved); setDraft(saved); toast.success('Configurações de impressão salvas'); }
     catch { toast.error('Não foi possível salvar as configurações'); }
     finally { setSaving(false); }
   };
