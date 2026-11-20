@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
+import { SaveActions, useSaveBar } from "@/components/admin/save-bar";
 import { Switch } from "@/components/ui/switch";
 import { useShop } from "@/hooks/use-shop";
 import { ShopAttributes } from "@/services/shop";
@@ -104,6 +104,13 @@ export default function AppearanceSettingsPage() {
     setHasChanges(false);
   };
 
+  useSaveBar({
+    dirty: hasChanges,
+    saving: isUpdating,
+    onSave: () => (document.getElementById("appearance-settings-form") as HTMLFormElement | null)?.requestSubmit(),
+    onCancel: handleCancel,
+  });
+
   const applyPreset = (preset: (typeof COLOR_PRESETS)[number]) => {
     setFormData((prev) => ({
       ...prev,
@@ -166,6 +173,7 @@ export default function AppearanceSettingsPage() {
                 Aparência do Catálogo
               </h1>
             </div>
+            <SaveActions />
           </div>
         </div>
       </div>
@@ -431,28 +439,6 @@ export default function AppearanceSettingsPage() {
                     </div>
                   )}
                 </div>
-              </div>
-              {/* Botões de ação */}
-              <div className="flex flex-col sm:flex-row justify-end gap-3">
-                <Button
-                  variant="outline"
-                  type="button"
-                  onClick={handleCancel}
-                  className="w-full sm:w-auto h-10 rounded-md border border-gray-300 cursor-pointer hover:bg-[#FAF9F7]"
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={!hasChanges || isUpdating}
-                  className="w-full sm:w-auto h-10 rounded-md bg-primary hover:bg-primary/90 text-white border border-gray-300 cursor-pointer text-base font-semibold"
-                >
-                  {isUpdating ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    "Salvar alterações"
-                  )}
-                </Button>
               </div>
             </form>
           </div>

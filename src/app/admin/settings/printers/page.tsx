@@ -3,9 +3,10 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, Download, Laptop, Printer, Save } from 'lucide-react';
+import { ArrowLeft, Download, Laptop, Printer } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { SaveActions, useSaveBar } from '@/components/admin/save-bar';
 import { Switch } from '@/components/ui/switch';
 import { DEFAULT_PRINTER_CONFIG, PrinterConfig, PrintTrigger, updatePrinterConfig } from '@/services/printer-config';
 import { usePrinterConfig } from '@/hooks/use-printer-config';
@@ -76,10 +77,17 @@ export default function PrinterSettingsPage() {
     finally { setSaving(false); }
   };
 
+  useSaveBar({
+    dirty: !loading && JSON.stringify(draft) !== JSON.stringify(config),
+    saving,
+    onSave: save,
+    onCancel: () => setDraft(config),
+  });
+
   return <main className="min-h-screen bg-gray-50">
     <header className="border-b border-gray-200 bg-white"><div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4">
       <div className="flex items-center gap-3"><Link href="/admin/settings" className="rounded-md p-2 hover:bg-gray-100"><ArrowLeft className="h-4 w-4" /></Link><Printer className="h-5 w-5" /><h1 className="text-lg font-semibold">Impressoras</h1></div>
-      <Button onClick={save} disabled={loading || saving}><Save className="mr-2 h-4 w-4" />{saving ? 'Salvando...' : 'Salvar'}</Button>
+      <SaveActions />
     </div></header>
     <div className="mx-auto max-w-4xl space-y-4 px-4 py-6">
       <p className="text-sm text-gray-600">{draft.print_target === 'mobile_bluetooth' ? 'O app Versa está selecionado como destino da impressão. A impressora Bluetooth e a fila automática são configuradas no app Android.' : 'A impressão automática envia o pedido ao Conector Versa quando ele entrar no status escolhido. Os status disponíveis seguem o fluxo configurado para esta loja.'}</p>

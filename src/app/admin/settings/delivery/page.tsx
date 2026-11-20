@@ -48,6 +48,7 @@ import { useDelivery } from "@/hooks/use-delivery";
 import { useShop } from "@/hooks/use-shop";
 import { toast } from "sonner";
 import { deliveryService, DeliveryFeeKind } from "@/services/delivery-service";
+import { SaveActions, useSaveBar } from "@/components/admin/save-bar";
 import { useQueryClient } from "@tanstack/react-query";
 import { formatCurrencyInput, formatCurrencyValue as formatApiValue, parseCurrencyInput, parseOptionalCurrencyInput } from "@/utils/format-price";
 import { StoreLocation, StoreLocationPicker } from "./components/store-location-picker";
@@ -113,6 +114,19 @@ export default function DeliverySettingsPage() {
   const [storeLocation, setStoreLocation] = useState<StoreLocation>({ latitude: null, longitude: null, address: "" });
   const [tierDrafts, setTierDrafts] = useState<TierDraft[]>([]);
   const [maxDeliveryDistance, setMaxDeliveryDistance] = useState<string>("");
+  // Foto do formulário logo após carregar/salvar: serve para saber se há alterações pendentes
+  const [loadTick, setLoadTick] = useState(0);
+  const [baseline, setBaseline] = useState<string | null>(null);
+  const signature = JSON.stringify([
+    deliveryType, fixedFee, hasFreeDelivery, freeDeliveryThreshold, minOrderValue, deliveryTimeMin, deliveryTimeMax,
+    pickupAdjustmentType, pickupAdjustmentValue, pickupValueType, storeLocation,
+    tierDrafts.map(({ upToKm, amount }) => [upToKm, amount]), maxDeliveryDistance,
+  ]);
+  useEffect(() => {
+    if (loadTick > 0) setBaseline(signature);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadTick]);
+  const hasChanges = baseline !== null && signature !== baseline;
 
   useEffect(() => {
     if (deliveryConfig) {
@@ -137,6 +151,7 @@ export default function DeliverySettingsPage() {
       setMaxDeliveryDistance(
         deliveryConfig.max_delivery_distance_km !== null ? String(deliveryConfig.max_delivery_distance_km) : ""
       );
+      setLoadTick((t) => t + 1);
     }
   }, [deliveryConfig]);
 
@@ -336,6 +351,9 @@ export default function DeliverySettingsPage() {
       setMinOrderValue(deliveryConfig.minimum_order_value ? formatApiValue(deliveryConfig.minimum_order_value) : "");
       setDeliveryTimeMin(deliveryConfig.delivery_time_min ? String(deliveryConfig.delivery_time_min) : "");
       setDeliveryTimeMax(deliveryConfig.delivery_time_max ? String(deliveryConfig.delivery_time_max) : "");
+      setPickupAdjustmentType(deliveryConfig.pickup_adjustment_type || "none");
+      setPickupAdjustmentValue(deliveryConfig.pickup_adjustment_value ? formatApiValue(deliveryConfig.pickup_adjustment_value) : "");
+      setPickupValueType(deliveryConfig.pickup_value_type || "fixed");
       setStoreLocation({
         latitude: deliveryConfig.latitude,
         longitude: deliveryConfig.longitude,
@@ -348,6 +366,8 @@ export default function DeliverySettingsPage() {
     }
     setErrors({});
   };
+
+  useSaveBar({ dirty: hasChanges, saving: isUpdating, onSave: handleSaveDeliveryConfig, onCancel: handleCancelConfig });
 
   if (isLoading) {
     return (
@@ -376,6 +396,7 @@ export default function DeliverySettingsPage() {
                 Configurações de Entrega
               </h1>
             </div>
+            <SaveActions />
           </div>
         </div>
       </div>
@@ -889,30 +910,6 @@ export default function DeliverySettingsPage() {
               </div>
             )}
           </div>
-        </div>
-
-        {/* Botões de ação */}
-        <div className="flex flex-col sm:flex-row justify-end gap-3">
-          <Button
-            variant="outline"
-            type="button"
-            onClick={handleCancelConfig}
-            className="w-full sm:w-auto h-10 rounded-md border border-gray-300 cursor-pointer hover:bg-[#FAF9F7]"
-          >
-            Cancelar
-          </Button>
-          <Button
-            type="submit"
-            onClick={handleSaveDeliveryConfig}
-            disabled={isUpdating}
-            className="w-full sm:w-auto h-10 rounded-md bg-primary hover:bg-primary/90 text-white border border-gray-300 cursor-pointer text-base font-semibold"
-          >
-            {isUpdating ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              "Salvar alterações"
-            )}
-          </Button>
         </div>
       </div>
 

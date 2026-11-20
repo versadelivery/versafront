@@ -241,10 +241,10 @@ export function PricePanel() {
         );
       })}
 
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-[#E5E2DD] bg-[#FAF9F7]/95 px-4 py-3 backdrop-blur">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#E5E2DD] bg-[#FAF9F7]/95 px-4 pt-3 backdrop-blur" style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}>
         <div className="mx-auto flex max-w-3xl gap-2">
           {changed.length > 0 && !save.isPending && (
-            <Button variant="outline" className="h-12 cursor-pointer" onClick={() => { setDrafts({}); setErrors({}); }}>Descartar</Button>
+            <Button variant="outline" className="hidden h-12 cursor-pointer md:inline-flex" onClick={() => { setDrafts({}); setErrors({}); }}>Descartar</Button>
           )}
           <Button className="h-12 flex-1 cursor-pointer text-base" disabled={changed.length === 0 || save.isPending} onClick={() => save.mutate(changed.map((id) => ({ id, price: hasPrice(drafts[id].price) ? toCents(drafts[id].price) / 100 : null, active: drafts[id].active && hasPrice(drafts[id].price) })))}>
             {save.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : changed.length ? `Salvar alterações (${changed.length})` : "Salvar alterações"}

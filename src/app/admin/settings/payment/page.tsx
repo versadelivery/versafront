@@ -13,6 +13,7 @@ import { usePayment } from "./usePayment";
 import { AdjustmentType, ValueType, ManualPixPaymentMoment, generatePixKeyOtp, updatePixKey } from "./payment-service";
 import { useShop } from "@/hooks/use-shop";
 import Link from "next/link";
+import { SaveActions, useSaveBar } from "@/components/admin/save-bar";
 
 interface PaymentMethod {
   id: string;
@@ -352,6 +353,8 @@ export default function PaymentSettingsPage() {
     });
   })();
 
+  useSaveBar({ dirty: !!hasChanges, saving: isUpdating, onSave: handleSaveSettings });
+
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
   const webhookUrl = shop?.id
     ? `${process.env.NEXT_PUBLIC_API_URL || 'https://api.versaapp.com.br'}/webhooks/asaas/orders/${shop.id}`
@@ -374,21 +377,7 @@ export default function PaymentSettingsPage() {
               <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
               <h1 className="font-tomato text-base sm:text-lg font-bold text-gray-900">Meios de Pagamento</h1>
             </div>
-            <Button
-              type="button"
-              onClick={handleSaveSettings}
-              disabled={!hasChanges || isUpdating}
-              className="rounded-md border border-gray-300 cursor-pointer bg-primary text-white hover:bg-primary/90 text-sm"
-            >
-              {isUpdating ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
-                  Salvando...
-                </>
-              ) : (
-                "Salvar alterações"
-              )}
-            </Button>
+            <SaveActions />
           </div>
         </div>
       </div>

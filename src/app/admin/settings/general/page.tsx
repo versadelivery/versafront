@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { SaveActions, useSaveBar } from "@/components/admin/save-bar";
 import { ImageIcon, Upload, MapPin, Phone, Mail, Settings, ArrowLeft, Tag, Globe } from "lucide-react";
 import {
   Select,
@@ -151,7 +152,10 @@ export default function GeneralSettingsPage() {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!hasChanges) return;
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      toast.error("Confira os campos destacados em vermelho");
+      return;
+    }
 
     updateShop({
       ...formData,
@@ -165,6 +169,13 @@ export default function GeneralSettingsPage() {
     setHasChanges(false);
     setFieldErrors({});
   };
+
+  useSaveBar({
+    dirty: hasChanges,
+    saving: isUpdating,
+    onSave: () => (document.getElementById("general-settings-form") as HTMLFormElement | null)?.requestSubmit(),
+    onCancel: handleCancel,
+  });
 
   if (isLoading) {
     return (
@@ -191,28 +202,7 @@ export default function GeneralSettingsPage() {
               <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
               <h1 className="truncate font-tomato text-sm sm:text-lg font-bold text-gray-900">Cadastro da Loja</h1>
             </div>
-            {/* Botoes de acao */}
-            <div className="flex shrink-0 items-center gap-2">
-              <Button
-                variant="outline"
-                type="button"
-                onClick={handleCancel}
-                className="rounded-md border border-gray-300 cursor-pointer text-sm"
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="button"
-                disabled={!hasChanges || isUpdating}
-                onClick={() => {
-                  const form = document.getElementById('general-settings-form') as HTMLFormElement;
-                  form?.requestSubmit();
-                }}
-                className="rounded-md border border-gray-300 cursor-pointer bg-primary text-white hover:bg-primary/90 text-sm"
-              >
-                {isUpdating ? "Salvando..." : (<><span className="sm:hidden">Salvar</span><span className="hidden sm:inline">Salvar alterações</span></>)}
-              </Button>
-            </div>
+            <SaveActions />
           </div>
         </div>
       </div>

@@ -7,6 +7,7 @@ import { useShop } from "@/hooks/use-shop";
 import { useAuthContext } from "@/contexts/auth-context";
 import { hasPermission } from "@/lib/permissions";
 import type { ShopAttributes } from "@/services/shop";
+import { useHasHeaderActions, useSaveBar } from "@/components/admin/save-bar";
 
 type Draft = Partial<ShopAttributes>;
 
@@ -51,10 +52,13 @@ interface ShopSettingCardProps {
   dirty: boolean;
   saving: boolean;
   onSave: () => void;
+  onCancel?: () => void;
   children: ReactNode;
 }
 
-export function ShopSettingCard({ icon: Icon, title, description, dirty, saving, onSave, children }: ShopSettingCardProps) {
+export function ShopSettingCard({ icon: Icon, title, description, dirty, saving, onSave, onCancel, children }: ShopSettingCardProps) {
+  useSaveBar({ dirty, saving, onSave, onCancel });
+  const hasHeaderActions = useHasHeaderActions();
   return (
     <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
       <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
@@ -64,7 +68,8 @@ export function ShopSettingCard({ icon: Icon, title, description, dirty, saving,
       <div className="px-5 py-5 space-y-4">
         {description && <p className="text-sm text-muted-foreground">{description}</p>}
         {children}
-        <div className="flex justify-end pt-1">
+        {/* celular: barra flutuante; desktop: botão aqui, a menos que o cabeçalho da tela já tenha o seu */}
+        <div className={hasHeaderActions ? "hidden" : "hidden justify-end pt-1 md:flex"}>
           <Button type="button" disabled={!dirty || saving} onClick={onSave} className="rounded-md bg-primary text-white hover:bg-primary/90 text-sm cursor-pointer">
             {saving ? "Salvando..." : "Salvar"}
           </Button>

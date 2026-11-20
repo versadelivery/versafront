@@ -12,10 +12,10 @@ import { ShopSettingCard, useShopDraft } from "@/components/admin/shop-setting-c
 // Cada card salva só os próprios campos da loja.
 
 export function AutoAcceptCard() {
-  const { ready, draft, set, dirty, saving, save } = useShopDraft((s) => ({ auto_accept_orders: s.auto_accept_orders ?? false }));
+  const { ready, draft, set, dirty, saving, save, reset } = useShopDraft((s) => ({ auto_accept_orders: s.auto_accept_orders ?? false }));
   if (!ready) return null;
   return (
-    <ShopSettingCard icon={ShoppingBag} title="Pedidos" dirty={dirty} saving={saving} onSave={() => save()}>
+    <ShopSettingCard icon={ShoppingBag} title="Pedidos" dirty={dirty} saving={saving} onSave={() => save()} onCancel={reset}>
       <div className="flex items-center justify-between gap-4">
         <div>
           <Label htmlFor="auto_accept_orders" className="text-sm font-medium">Aceitar pedidos automaticamente</Label>
@@ -30,7 +30,7 @@ export function AutoAcceptCard() {
 }
 
 export function AutoOpenCashCard() {
-  const { ready, draft, set, dirty, saving, save } = useShopDraft((s) => ({
+  const { ready, draft, set, dirty, saving, save, reset } = useShopDraft((s) => ({
     auto_open_cash_register: s.auto_open_cash_register ?? false,
     auto_open_cash_register_time: s.auto_open_cash_register_time ?? null,
   }));
@@ -41,7 +41,7 @@ export function AutoOpenCashCard() {
     save();
   };
   return (
-    <ShopSettingCard icon={Wallet} title="Abertura automática" dirty={dirty} saving={saving} onSave={submit}>
+    <ShopSettingCard icon={Wallet} title="Abertura automática" dirty={dirty} saving={saving} onSave={submit} onCancel={reset}>
       <div className="flex items-center justify-between gap-4">
         <div>
           <Label htmlFor="auto_open_cash_register" className="text-sm font-medium">Abrir caixa automaticamente</Label>
@@ -74,7 +74,7 @@ export function AutoOpenCashCard() {
 }
 
 export function DefaultDelivererCard() {
-  const { ready, draft, set, dirty, saving, save } = useShopDraft((s) => ({ default_delivery_person_id: s.default_delivery_person_id ?? null }));
+  const { ready, draft, set, dirty, saving, save, reset } = useShopDraft((s) => ({ default_delivery_person_id: s.default_delivery_person_id ?? null }));
   const { users, loading } = useUsers();
   if (!ready) return null;
   const deliveryPeople = users.filter((u: any) => u.attributes?.role === "delivery_man");
@@ -87,6 +87,7 @@ export function DefaultDelivererCard() {
       dirty={dirty}
       saving={saving}
       onSave={() => save()}
+      onCancel={reset}
     >
       <div className="max-w-md space-y-1.5">
         <Label className="text-sm font-medium">Entregador</Label>
@@ -108,7 +109,7 @@ export function DefaultDelivererCard() {
 }
 
 export function EstimatedTimeCard() {
-  const { ready, draft, set, dirty, saving, save } = useShopDraft((s) => ({
+  const { ready, draft, set, dirty, saving, save, reset } = useShopDraft((s) => ({
     estimated_prep_time: s.estimated_prep_time ?? 30,
   }));
   if (!ready) return null;
@@ -139,6 +140,7 @@ export function EstimatedTimeCard() {
       dirty={dirty}
       saving={saving}
       onSave={submit}
+      onCancel={reset}
     >
       {field("estimated_prep_time", "Tempo de preparo (minutos)", "Usado no cronômetro do painel e KDS")}
     </ShopSettingCard>

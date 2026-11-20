@@ -8,6 +8,7 @@ import { ArrowLeft, GripVertical, Check, X, ListOrdered, RotateCcw, Zap, AlertCi
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { SaveActions, useSaveBar } from "@/components/admin/save-bar";
 import { AutoAcceptCard } from "@/components/admin/shop-settings-cards";
 import api from "@/api/config";
 import { API_ENDPOINTS } from "@/api/routes";
@@ -205,6 +206,8 @@ export default function OrderFlowSettingsPage() {
     setFlow(savedFlow);
   };
 
+  useSaveBar({ dirty: hasChanges, saving: isSaving, onSave: handleSave, onCancel: handleCancel });
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#FAF9F7] flex items-center justify-center">
@@ -232,6 +235,7 @@ export default function OrderFlowSettingsPage() {
                 Fluxo de Pedidos
               </h1>
             </div>
+            <SaveActions />
           </div>
         </div>
       </div>
@@ -448,7 +452,7 @@ export default function OrderFlowSettingsPage() {
         </div>
 
         {/* Botões de ação */}
-        <div className="flex flex-col sm:flex-row justify-end gap-3">
+        <div className="flex justify-end">
           <Button
             variant="ghost"
             onClick={handleReset}
@@ -456,25 +460,6 @@ export default function OrderFlowSettingsPage() {
           >
             <RotateCcw className="w-4 h-4 mr-1.5" />
             Restaurar padrão
-          </Button>
-          <Button
-            variant="outline"
-            onClick={handleCancel}
-            disabled={!hasChanges}
-            className="w-full sm:w-auto h-10 rounded-md border border-gray-300 cursor-pointer hover:bg-[#FAF9F7]"
-          >
-            Cancelar
-          </Button>
-          <Button
-            onClick={handleSave}
-            disabled={!hasChanges || isSaving}
-            className="w-full sm:w-auto h-10 rounded-md bg-primary hover:bg-primary/90 text-white border border-gray-300 cursor-pointer text-base font-semibold"
-          >
-            {isSaving ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              "Salvar alterações"
-            )}
           </Button>
         </div>
       </div>

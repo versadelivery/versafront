@@ -227,7 +227,7 @@ export default function TemplatesPage() {
           )}
         </div>
 
-        <div className="fixed inset-x-0 bottom-0 border-t border-[#E5E2DD] bg-[#FAF9F7]/95 px-4 py-3 backdrop-blur">
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#E5E2DD] bg-[#FAF9F7]/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur">
           <div className="mx-auto max-w-3xl space-y-2">
             <p className="text-center text-xs text-muted-foreground">
               {plural(totals.categories, "categoria", "categorias")} · {plural(totals.groups, "grupo", "grupos")} · {plural(totals.items, "item", "itens")}

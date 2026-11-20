@@ -3,9 +3,11 @@
 import React, { useState, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { useSaveBar } from "@/components/admin/save-bar";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CheckCircle, XCircle, AlertCircle, CopyCheck, ArrowDown, Plus, Trash2 } from "lucide-react";
+import { CheckCircle, XCircle, CopyCheck, ArrowDown, Plus, Trash2 } from "lucide-react";
 import { useSchedule, WeekSchedule, DayKey } from "../hooks/useSchedule";
 
 interface TimeInputProps {
@@ -315,11 +317,13 @@ export default function ScheduleSettings() {
         Number(close[2]) > 59
       ) {
         setSaveError(`Informe horários válidos para ${DAY_LABELS[day]}.`);
+        toast.error(`Informe horários válidos para ${DAY_LABELS[day]}.`);
         return;
       }
 
       if (closeMinutes <= openMinutes) {
         setSaveError(`O fechamento deve ser depois da abertura em ${DAY_LABELS[day]}.`);
+        toast.error(`O fechamento deve ser depois da abertura em ${DAY_LABELS[day]}.`);
         return;
       }
 
@@ -330,6 +334,7 @@ export default function ScheduleSettings() {
         const secondCloseMinutes = secondClose ? Number(secondClose[1]) * 60 + Number(secondClose[2]) : -1;
         if (!secondOpen || !secondClose || secondCloseMinutes <= secondOpenMinutes || secondOpenMinutes < closeMinutes) {
           setSaveError(`O segundo período de ${DAY_LABELS[day]} deve começar após o primeiro e ter horários válidos.`);
+          toast.error(`O segundo período de ${DAY_LABELS[day]} deve começar após o primeiro e ter horários válidos.`);
           return;
         }
       }
@@ -340,11 +345,23 @@ export default function ScheduleSettings() {
       await updateSchedule(localSchedule);
       setHasChanges(false);
       setSaveSuccess(true);
+      toast.success("Horários salvos com sucesso!");
     } catch (error: any) {
       console.error("Erro ao salvar horários:", error);
       setSaveError(error.message || "Erro ao salvar horários");
+      toast.error(error.message || "Erro ao salvar horários");
     }
   };
+
+  useSaveBar({
+    dirty: hasChanges,
+    saving: isUpdating,
+    onSave: handleSave,
+    onCancel: () => {
+      if (schedule) setLocalSchedule(schedule);
+      setHasChanges(false);
+    },
+  });
 
   // Loading state
   if (!localSchedule) {
@@ -434,35 +451,6 @@ export default function ScheduleSettings() {
       {/* Informação de timezone */}
       <div className="text-sm text-muted-foreground pt-2">
         Os horários são configurados no fuso horário de Brasília (GMT-3).
-      </div>
-
-      {/* Botão de salvar */}
-      <div className="flex items-center gap-4 pt-4 border-t border-[#E5E2DD]">
-        <Button
-          onClick={handleSave}
-          disabled={!hasChanges || isUpdating}
-          className="rounded-md border border-gray-300 cursor-pointer bg-primary text-white hover:bg-primary/90"
-        >
-          {isUpdating ? (
-            <>
-              <AlertCircle className="h-4 w-4 animate-spin mr-1.5" />
-              Salvando...
-            </>
-          ) : saveSuccess ? (
-            <>
-              <CheckCircle className="h-4 w-4 mr-1.5" />
-              Salvo!
-            </>
-          ) : (
-            "Salvar Horários"
-          )}
-        </Button>
-
-        {hasChanges && !isUpdating && (
-          <span className="text-sm text-amber-600 font-medium">
-            Você tem alterações não salvas
-          </span>
-        )}
       </div>
     </div>
   );

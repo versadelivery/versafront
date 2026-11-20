@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
+import { useSaveBar } from "@/components/admin/save-bar";
 import { ResellerConfig } from "../services/reseller-service";
 import { useResellerConfig, useUpdateResellerConfig } from "../hooks/useReseller";
 
@@ -35,24 +36,40 @@ export function ResellerConfigForm() {
 
   const config: ResellerConfig | undefined = data?.data?.attributes;
 
-  const { register, handleSubmit, setValue, watch } = useForm<ConfigFormData>({
+  const { register, handleSubmit, setValue, reset, watch, formState: { isDirty } } = useForm<ConfigFormData>({
     resolver: zodResolver(configSchema),
   });
 
   useEffect(() => {
     if (config) {
-      setValue("pix_key", config.pix_key ?? "");
-      setValue("pix_key_type", config.pix_key_type ?? "");
-      setValue("document", config.document ?? "");
-      setValue("bank_name", config.bank_name ?? "");
-      setValue("bank_agency", config.bank_agency ?? "");
-      setValue("bank_account", config.bank_account ?? "");
+      reset({
+        pix_key: config.pix_key ?? "",
+        pix_key_type: config.pix_key_type ?? "",
+        document: config.document ?? "",
+        bank_name: config.bank_name ?? "",
+        bank_agency: config.bank_agency ?? "",
+        bank_account: config.bank_account ?? "",
+      });
     }
-  }, [config, setValue]);
+  }, [config, reset]);
 
   const onSubmit = (data: ConfigFormData) => {
     updateConfig(data);
   };
+
+  useSaveBar({
+    dirty: isDirty,
+    saving: isPending,
+    onSave: handleSubmit(onSubmit),
+    onCancel: () => config && reset({
+      pix_key: config.pix_key ?? "",
+      pix_key_type: config.pix_key_type ?? "",
+      document: config.document ?? "",
+      bank_name: config.bank_name ?? "",
+      bank_agency: config.bank_agency ?? "",
+      bank_account: config.bank_account ?? "",
+    }),
+  });
 
   if (isLoading) {
     return (
@@ -73,7 +90,7 @@ export function ResellerConfigForm() {
         <Label>Tipo de chave PIX</Label>
         <Select
           value={watch("pix_key_type") ?? ""}
-          onValueChange={(v) => setValue("pix_key_type", v)}
+          onValueChange={(v) => setValue("pix_key_type", v, { shouldDirty: true })}
         >
           <SelectTrigger>
             <SelectValue placeholder="Selecione o tipo" />
@@ -114,7 +131,8 @@ export function ResellerConfigForm() {
         <Input {...register("bank_account")} placeholder="12345-6" />
       </div>
 
-      <Button type="submit" disabled={isPending} className="w-full">
+      {/* desktop: botão aqui; celular: barra flutuante */}
+      <Button type="submit" disabled={isPending || !isDirty} className="hidden w-full md:inline-flex">
         {isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
         Salvar dados de recebimento
       </Button>

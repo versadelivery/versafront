@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, CalendarClock, Info, Loader2, Timer } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ArrowLeft, CalendarClock, Info, Timer } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useShop } from "@/hooks/use-shop";
 import { cn } from "@/lib/utils";
+import { SaveActions, useSaveBar } from "@/components/admin/save-bar";
 import { EstimatedTimeCard } from "@/components/admin/shop-settings-cards";
 import { SCHEDULING_MODE_OPTIONS, type SchedulingMode } from "@/lib/scheduling";
 
@@ -67,6 +67,8 @@ export default function SchedulingSettingsPage() {
     updateShop(form);
   };
 
+  useSaveBar({ dirty: hasChanges && !leadTooLong, saving: isUpdating, onSave: save, onCancel: () => setForm(initial) });
+
   const header = (
     <div className="bg-white border-b border-[#E5E2DD] sticky top-0 z-30">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -79,35 +81,7 @@ export default function SchedulingSettingsPage() {
             <div className="h-6 w-px bg-[#E5E2DD] hidden sm:block" />
             <h1 className="truncate font-tomato text-sm sm:text-lg font-bold text-gray-900">Agendamento e Tempo de Entrega</h1>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <Button
-              variant="outline"
-              type="button"
-              disabled={!hasChanges || isUpdating}
-              onClick={() => setForm(initial)}
-              className="rounded-md border border-gray-300 cursor-pointer text-sm"
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="button"
-              disabled={!hasChanges || isUpdating || leadTooLong}
-              onClick={save}
-              className="rounded-md border border-gray-300 cursor-pointer bg-primary text-white hover:bg-primary/90 text-sm"
-            >
-              {isUpdating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Salvando...
-                </>
-              ) : (
-                <>
-                  <span className="sm:hidden">Salvar</span>
-                  <span className="hidden sm:inline">Salvar alterações</span>
-                </>
-              )}
-            </Button>
-          </div>
+          <SaveActions />
         </div>
       </div>
     </div>
