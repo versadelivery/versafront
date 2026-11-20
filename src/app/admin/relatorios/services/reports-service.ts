@@ -497,8 +497,15 @@ export interface StatementPaymentGroup {
   items: StatementGroupItem[];
   items_total: number;
   delivery_fees: number;
+  delivery_fee_items: StatementDeliveryFee[];
   total_revenue: number;
   average_ticket: number;
+}
+
+export interface StatementDeliveryFee {
+  amount: number;
+  count: number;
+  total: number;
 }
 
 export interface StatementPaymentMethod {
