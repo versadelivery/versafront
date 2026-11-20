@@ -29,15 +29,15 @@ export function OrderReceiptDialog({ order, mode, config, onClose }: Props) {
     }
   };
   return <Dialog open onOpenChange={open => !open && onClose()}>
-    <DialogContent className="max-w-xl p-0 overflow-hidden">
-      <DialogHeader className="border-b border-gray-200 px-5 py-4"><DialogTitle>{title} · Pedido #{order.id}</DialogTitle></DialogHeader>
-      <div className="max-h-[65vh] overflow-auto bg-gray-100 p-4">
-        <iframe title={`Prévia ${title}`} srcDoc={buildOrderReceipt(order, mode, fontSize, config)} className="mx-auto h-[58vh] w-[340px] max-w-full border border-gray-300 bg-white" />
+    <DialogContent className="gap-0 sm:max-w-2xl overflow-hidden p-0 max-sm:max-w-[calc(100vw-1rem)]">
+      <DialogHeader className="border-b border-[#E5E2DD] px-4 py-4 pr-12 text-left sm:px-5"><DialogTitle className="font-tomato text-base font-semibold">{title} · Pedido #{order.id}</DialogTitle></DialogHeader>
+      <div className="max-h-[60vh] overflow-auto bg-[#FAF9F7] p-3 sm:p-4">
+        <iframe title={`Prévia ${title}`} srcDoc={buildOrderReceipt(order, mode, fontSize, config)} className="mx-auto h-[52vh] w-[340px] max-w-full border border-gray-300 bg-white" />
       </div>
-      <div className="flex justify-end gap-2 border-t border-gray-200 px-5 py-4">
-        <Button variant="outline" onClick={() => downloadOrderReceipt(order, mode, fontSize, config)}><Download className="mr-2 h-4 w-4" />Baixar PDF</Button>
-        <Button variant="outline" onClick={() => printOrderReceipt(order, mode, fontSize, config)}><Printer className="mr-2 h-4 w-4" />Diálogo do sistema</Button>
-        <Button onClick={sendToPrinter}><Printer className="mr-2 h-4 w-4" />Impressora conectada</Button>
+      <div className="flex flex-col gap-2 border-t border-[#E5E2DD] bg-white px-4 py-4 sm:flex-row sm:justify-end sm:px-5">
+        <Button variant="outline" className="w-full sm:w-auto" onClick={() => downloadOrderReceipt(order, mode, fontSize, config)}><Download className="mr-2 h-4 w-4" />Baixar PDF</Button>
+        <Button variant="outline" className="w-full sm:w-auto" onClick={() => printOrderReceipt(order, mode, fontSize, config)}><Printer className="mr-2 h-4 w-4" />Diálogo do sistema</Button>
+        <Button className="order-first w-full sm:order-none sm:w-auto" onClick={sendToPrinter}><Printer className="mr-2 h-4 w-4" />Impressora conectada</Button>
       </div>
     </DialogContent>
   </Dialog>;
