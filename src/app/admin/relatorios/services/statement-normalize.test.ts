@@ -26,6 +26,16 @@ test("API intermediária (grupos sem delivery_fee_items) ganha lista vazia", () 
 });
 
 test("resposta completa passa intacta", () => {
-  const g = { method: "cash", label: "Dinheiro", order_count: 8, items: [], items_total: 632, delivery_fees: 19, delivery_fee_items: [{ amount: 2, count: 5, total: 10 }], total_revenue: 651, average_ticket: 81.38 };
+  const g = { method: "cash", label: "Dinheiro", order_count: 8, items: [], items_total: 632, delivery_fees: 19, delivery_fee_items: [{ amount: 2, count: 5, total: 10 }], payment_breakdown: [], total_revenue: 651, average_ticket: 81.38 };
   assert.deepEqual(normalizeStatement({ payment_groups: [g] } as never).payment_groups[0], g);
+});
+
+test("API sem payment_breakdown ganha lista vazia; bloco dividido mantém o breakdown", () => {
+  const base = { order_count: 1, items: [], items_total: 20, delivery_fees: 0, total_revenue: 20, average_ticket: 20 };
+  const r = normalizeStatement({ payment_groups: [
+    { method: "cash", label: "Dinheiro", ...base },
+    { method: "split", label: "Dividido (2 formas)", ...base, payment_breakdown: [{ method: "cash", label: "Dinheiro", amount: "12.5" }, { method: "credit", label: "Crédito", amount: 7.5 }] },
+  ] } as never);
+  assert.deepEqual(r.payment_groups[0].payment_breakdown, []);
+  assert.deepEqual(r.payment_groups[1].payment_breakdown.map((b) => b.amount), [12.5, 7.5]);
 });

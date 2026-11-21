@@ -64,6 +64,7 @@ export interface ShopData {
             food_voucher: boolean;
             store_credit: boolean;
             asaas_pix: boolean;
+            allow_split_payment?: boolean;
           };
         };
       } | null;

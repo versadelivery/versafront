@@ -32,7 +32,9 @@ export interface CreateOrderRequest {
   order: {
     shop_id: number;
     withdrawal: boolean;
-    payment_method: 'manual_pix' | 'asaas_pix' | 'credit' | 'debit' | 'cash';
+    payment_method: 'manual_pix' | 'asaas_pix' | 'credit' | 'debit' | 'cash' | 'store_credit' | 'food_voucher';
+    // Pagamento dividido: exatamente 2 partes que somam o total do pedido
+    payments?: { payment_method: string; amount: number }[];
     customer_name?: string;
     customer_phone?: string;
     coupon_code?: string;

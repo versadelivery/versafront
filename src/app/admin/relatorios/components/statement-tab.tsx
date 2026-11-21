@@ -13,7 +13,7 @@ const today = () => { const n = new Date(); return `${n.getFullYear()}-${String(
 const shiftDays = (date: string, days: number) => { const d = new Date(`${date}T12:00:00`); d.setDate(d.getDate()+days); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
 const money = (v: number) => new Intl.NumberFormat("pt-BR", { style:"currency", currency:"BRL" }).format(v);
 const quantity = (v: number, unit: string) => `${new Intl.NumberFormat("pt-BR", { maximumFractionDigits:3 }).format(v)} ${unit}`;
-const METHOD_FILTERS = [["all", "Todos"], ["cash", "Dinheiro"], ["pix", "Pix"], ["credit", "Crédito"], ["debit", "Débito"], ["food_voucher", "Vale"], ["store_credit", "Fiado"]] as const;
+const METHOD_FILTERS = [["all", "Todos"], ["cash", "Dinheiro"], ["pix", "Pix"], ["credit", "Crédito"], ["debit", "Débito"], ["food_voucher", "Vale"], ["store_credit", "Fiado"], ["split", "Dividido"]] as const;
 const brDate = (date: string) => new Date(`${date}T12:00:00`).toLocaleDateString("pt-BR");
 const emittedAt = () => new Date().toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }).replace(",", " às");
 const id = () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
@@ -106,7 +106,7 @@ export default function StatementTab({ footer }: { footer?: (ctx: StatementFoote
       <Button variant="outline" onClick={()=>setManage(!manage)}><Settings2 className="mr-2 h-4 w-4"/>Gerenciar turnos</Button>
       {loading && <span className="flex h-10 items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin"/>Atualizando extrato</span>}
       {data && <Button variant="outline" size="sm" onClick={()=>window.print()} disabled={loading}><Printer className="mr-2 h-4 w-4"/>Imprimir</Button>}
-      {data && <ReportExportButton filename="extrato-por-pagamento" headers={["Pagamento","Item","Quantidade","Preço unitário","Total"]} rows={data.payment_groups.flatMap(group=>[...group.items.map(item=>[group.label,item.name,quantity(item.quantity,item.unit),money(item.unit_price),money(item.revenue)]),...group.delivery_fee_items.map(fee=>[group.label,"Taxa de entrega",`${fee.count} un.`,money(fee.amount),money(fee.total)])])} summaryData={Object.fromEntries(data.payment_groups.flatMap(group=>[[`${group.label} · vendas`,group.order_count],[`${group.label} · valor total`,money(group.total_revenue)],[`${group.label} · ticket médio`,money(group.average_ticket)]]))} disabled={loading}/>}
+      {data && <ReportExportButton filename="extrato-por-pagamento" headers={["Pagamento","Item","Quantidade","Preço unitário","Total"]} rows={data.payment_groups.flatMap(group=>[...group.items.map(item=>[group.label,item.name,quantity(item.quantity,item.unit),money(item.unit_price),money(item.revenue)]),...group.delivery_fee_items.map(fee=>[group.label,"Taxa de entrega",`${fee.count} un.`,money(fee.amount),money(fee.total)]),...group.payment_breakdown.map(part=>[group.label,`Recebido em ${part.label}`,"","",money(part.amount)])])} summaryData={Object.fromEntries(data.payment_groups.flatMap(group=>[[`${group.label} · vendas`,group.order_count],[`${group.label} · valor total`,money(group.total_revenue)],[`${group.label} · ticket médio`,money(group.average_ticket)]]))} disabled={loading}/>}
     </CardContent>
     {manage && <CardContent className="border-t pt-4"><CardTitle className="mb-3 text-base">Turnos salvos nesta loja</CardTitle>
       <div className="mb-4 space-y-2">{periods.length===0 && <p className="text-sm text-muted-foreground">Nenhum turno cadastrado.</p>}{periods.map(p=><div key={p.id} className="flex items-center justify-between border-b py-2 text-sm"><span>{p.name} · {p.start_time}–{p.end_time}</span><Button variant="ghost" size="sm" disabled={saving} aria-label={`Remover ${p.name}`} onClick={()=>savePeriods(periods.filter(x=>x.id!==p.id))}><Trash2 className="h-4 w-4"/></Button></div>)}</div>
@@ -172,6 +172,10 @@ function PaymentGroupCard({ group }: { group: StatementPaymentGroup }) {
         <span className="text-right font-medium tabular-nums">{money(fee.total)}</span></div>)}
       <div className={cn(ROW, COLS, "mt-2 border-t-2 border-slate-800 pt-2 text-base font-bold")}><span className="sm:col-span-3">Valor total</span><span className="text-right tabular-nums">{money(group.total_revenue)}</span></div>
       <div className={cn(ROW, COLS, "pt-0.5 text-sm text-slate-600")}><span className="sm:col-span-3">Ticket médio</span><span className="text-right font-medium tabular-nums">{money(group.average_ticket)}</span></div>
+      {group.payment_breakdown.length>0&&<div className="mt-3 rounded border border-slate-300 px-3 py-2" data-testid="split-breakdown">
+        <p className="mb-1 text-[11px] font-semibold uppercase text-slate-500">Recebido em cada forma de pagamento</p>
+        {group.payment_breakdown.map(part=><div key={part.method} className="flex justify-between gap-3 py-0.5 text-sm"><span>{part.label}</span><span className="font-medium tabular-nums">{money(part.amount)}</span></div>)}
+      </div>}
     </>}
   </section>;
 }

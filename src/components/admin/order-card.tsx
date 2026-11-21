@@ -1,5 +1,6 @@
 'use client';
 
+import { formatPayments, paymentsOf } from '@/lib/split-payment'
 import React, { useState, useEffect, useRef } from 'react';
 import { useUsers } from '@/app/admin/settings/users/hooks/useUsers';
 import { Card, CardContent } from '@/components/ui/card';
@@ -231,7 +232,7 @@ ${order.socketData?.attributes?.observation ? `📝 *OBSERVAÇÕES*
 ${order.socketData.attributes.observation}
 
 ` : ''}💳 *FORMA DE PAGAMENTO*
-${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '', order.socketData?.attributes?.manual_pix_payment_moment)}
+${formatPayments(paymentsOf(order.socketData?.attributes)) || getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '', order.socketData?.attributes?.manual_pix_payment_moment)}
 
 💰 *TOTAL: R$ ${order.amount.toFixed(2)}*
     `.trim();
@@ -356,7 +357,7 @@ ${getPaymentMethodLabel(order.socketData?.attributes?.payment_method || '', orde
               {paymentMethod && (
                 <div className="flex items-center gap-1.5 text-gray-700">
                   <CreditCard className="w-3 h-3 text-gray-700" />
-                  <span>{getPaymentMethodLabel(paymentMethod, manualPixPaymentMoment)}</span>
+                  <span data-testid="order-payment-label">{formatPayments(paymentsOf(order.socketData?.attributes)) || getPaymentMethodLabel(paymentMethod, manualPixPaymentMoment)}</span>
                 </div>
               )}
               {order.deliveryType === 'delivery' && deliveryFee > 0 && (

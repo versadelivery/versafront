@@ -1,5 +1,6 @@
 "use client";
 
+import { formatPayments, paymentsOf } from '@/lib/split-payment'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
@@ -252,7 +253,7 @@ export default function OrderDetailDialog({
                 <div className="flex justify-between pt-1">
                   <span className="text-muted-foreground">Pagamento</span>
                   <span className="font-medium">
-                    {paymentLabels[attrs.payment_method] || attrs.payment_method}
+                    {formatPayments(paymentsOf(attrs)) || paymentLabels[attrs.payment_method] || attrs.payment_method}
                   </span>
                 </div>
                 {attrs.paid_at && (

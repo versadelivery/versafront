@@ -27,6 +27,7 @@ interface ShopPaymentConfig {
   store_credit: boolean;
   asaas_pix: boolean;
   manual_pix: boolean;
+  allow_split_payment?: boolean;
 }
 
 interface DeliveryNeighborhood {

@@ -72,6 +72,7 @@ export interface ShopResponse {
             food_voucher: boolean
             store_credit: boolean
             asaas_pix: boolean
+            allow_split_payment?: boolean
             cash_adjustment_type: string
             cash_adjustment_value: string
             cash_value_type: string

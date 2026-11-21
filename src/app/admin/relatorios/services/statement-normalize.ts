@@ -17,6 +17,7 @@ export function normalizeStatement(raw: Partial<StatementResponse> | null | unde
       ...g,
       items: Array.isArray(g.items) ? g.items : [],
       delivery_fee_items: Array.isArray(g.delivery_fee_items) ? g.delivery_fee_items : [],
+      payment_breakdown: Array.isArray(g.payment_breakdown) ? g.payment_breakdown.map((b) => ({ ...b, amount: num(b.amount) })) : [],
       order_count: num(g.order_count), items_total: num(g.items_total), delivery_fees: num(g.delivery_fees),
       total_revenue: num(g.total_revenue), average_ticket: num(g.average_ticket),
     }));
@@ -24,7 +25,7 @@ export function normalizeStatement(raw: Partial<StatementResponse> | null | unde
     groups = [{
       method: "all", label: "Todos", order_count: num(summary.order_count),
       items: items.map((i) => ({ name: i.name, quantity: num(i.quantity), unit: i.unit, unit_price: num(i.unit_price) || (num(i.quantity) ? num(i.revenue) / num(i.quantity) : 0), revenue: num(i.revenue) })),
-      items_total: num(summary.item_revenue), delivery_fees: num(summary.delivery_fees), delivery_fee_items: [],
+      items_total: num(summary.item_revenue), delivery_fees: num(summary.delivery_fees), delivery_fee_items: [], payment_breakdown: [],
       total_revenue: num(summary.total_revenue), average_ticket: num(summary.order_count) ? num(summary.total_revenue) / num(summary.order_count) : 0,
     }];
   }

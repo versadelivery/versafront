@@ -6,7 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Loader2, CreditCard, Wallet, QrCode, ArrowLeft, Percent, Zap, Eye, EyeOff, Info, KeyRound, Truck, ShoppingBag } from "lucide-react";
+import { Loader2, CreditCard, Wallet, QrCode, ArrowLeft, Percent, Zap, Eye, EyeOff, Info, KeyRound, Truck, ShoppingBag, Split } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { usePayment } from "./usePayment";
@@ -25,6 +25,10 @@ interface PaymentMethod {
   adjustmentValue: string;
   valueType: ValueType;
   supportsAdjustment?: boolean;
+  /** aparece no PDV (o campo "enabled" é o do site) */
+  pdv: boolean;
+  /** texto de apoio para quem decide onde a forma aparece */
+  hint?: string;
 }
 
 interface AsaasPixConfig {
@@ -49,6 +53,7 @@ const idToAttributeKey = {
   debit_card: 'debit',
   pix: 'manual_pix',
   food_voucher: 'food_voucher',
+  store_credit: 'store_credit',
 } as const;
 
 const adjustmentTypeLabels: Record<AdjustmentType, string> = {
@@ -62,6 +67,7 @@ export default function PaymentSettingsPage() {
   const { shop } = useShop();
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [serviceFee, setServiceFee] = useState({ enabled: false, percentage: "10" });
+  const [allowSplit, setAllowSplit] = useState(false);
   const [asaasPix, setAsaasPix] = useState<AsaasPixConfig>({
     enabled: false,
     apiKey: '',
@@ -95,6 +101,7 @@ export default function PaymentSettingsPage() {
           description: "Pagamento em espécie no momento da entrega",
           icon: <Wallet className="w-5 h-5 text-primary" />,
           enabled: attrs.cash,
+          pdv: attrs.cash_pdv ?? true,
           adjustmentType: attrs.cash_adjustment_type || "none",
           adjustmentValue: attrs.cash_adjustment_value || "0",
           valueType: attrs.cash_value_type || "fixed"
@@ -105,6 +112,7 @@ export default function PaymentSettingsPage() {
           description: "Pagamento com cartão de crédito na maquininha",
           icon: <CreditCard className="w-5 h-5 text-primary" />,
           enabled: attrs.credit,
+          pdv: attrs.credit_pdv ?? true,
           adjustmentType: attrs.credit_adjustment_type || "none",
           adjustmentValue: attrs.credit_adjustment_value || "0",
           valueType: attrs.credit_value_type || "fixed"
@@ -115,6 +123,7 @@ export default function PaymentSettingsPage() {
           description: "Pagamento com cartão de débito na maquininha",
           icon: <CreditCard className="w-5 h-5 text-primary" />,
           enabled: attrs.debit,
+          pdv: attrs.debit_pdv ?? true,
           adjustmentType: attrs.debit_adjustment_type || "none",
           adjustmentValue: attrs.debit_adjustment_value || "0",
           valueType: attrs.debit_value_type || "fixed"
@@ -125,6 +134,8 @@ export default function PaymentSettingsPage() {
           description: "Pagamento com cartão de vale alimentação ou refeição",
           icon: <Wallet className="w-5 h-5 text-primary" />,
           enabled: attrs.food_voucher,
+          pdv: attrs.food_voucher_pdv ?? false,
+          hint: "Vale só no PDV: deixe \"Site\" desligado para o cliente não ver.",
           adjustmentType: attrs.food_voucher_adjustment_type || "none",
           adjustmentValue: attrs.food_voucher_adjustment_value || "0",
           valueType: attrs.food_voucher_value_type || "fixed"
@@ -135,6 +146,8 @@ export default function PaymentSettingsPage() {
           description: "Registra o valor para recebimento posterior",
           icon: <Wallet className="w-5 h-5 text-primary" />,
           enabled: attrs.store_credit,
+          pdv: attrs.store_credit_pdv ?? false,
+          hint: "Normalmente só no PDV: o lojista lança o fiado e ele não aparece no site.",
           adjustmentType: attrs.store_credit_adjustment_type || "none",
           adjustmentValue: attrs.store_credit_adjustment_value || "0",
           valueType: attrs.store_credit_value_type || "fixed"
@@ -146,6 +159,7 @@ export default function PaymentSettingsPage() {
           icon: <QrCode className="w-5 h-5 text-primary" />,
           // if asaas_pix is active, manual_pix is forced off
           enabled: attrs.asaas_pix ? false : attrs.manual_pix,
+          pdv: attrs.manual_pix_pdv ?? false,
           adjustmentType: attrs.manual_pix_adjustment_type || "none",
           adjustmentValue: attrs.manual_pix_adjustment_value || "0",
           valueType: attrs.manual_pix_value_type || "fixed"
@@ -155,6 +169,7 @@ export default function PaymentSettingsPage() {
         paymentMoment: attrs.manual_pix_payment_moment || 'on_delivery',
         pixKey: attrs.pix_key || '',
       });
+      setAllowSplit(attrs.allow_split_payment ?? false);
       setServiceFee({
         enabled: attrs.service_fee_enabled ?? false,
         percentage: attrs.service_fee_percentage ?? "10",
@@ -178,6 +193,10 @@ export default function PaymentSettingsPage() {
         method.id === id ? { ...method, enabled: !method.enabled } : method
       )
     );
+  };
+
+  const handleTogglePdv = (id: string) => {
+    setPaymentMethods(prev => prev.map(method => (method.id === id ? { ...method, pdv: !method.pdv } : method)));
   };
 
   const handleToggleAsaasPix = (enabled: boolean) => {
@@ -282,6 +301,13 @@ export default function PaymentSettingsPage() {
         id: paymentMethodsData.data.id,
         type: "shop_payment_config",
         attributes: {
+          allow_split_payment: allowSplit,
+          cash_pdv: cash?.pdv ?? true,
+          debit_pdv: debit?.pdv ?? true,
+          credit_pdv: credit?.pdv ?? true,
+          manual_pix_pdv: pix?.pdv ?? false,
+          store_credit_pdv: storeCredit?.pdv ?? false,
+          food_voucher_pdv: foodVoucher?.pdv ?? false,
           cash: cash?.enabled || false,
           credit: credit?.enabled || false,
           debit: debit?.enabled || false,
@@ -328,6 +354,7 @@ export default function PaymentSettingsPage() {
 
     if (manualPixConfig.paymentMoment !== (attrs.manual_pix_payment_moment || 'on_delivery')) return true;
 
+    if (allowSplit !== (attrs.allow_split_payment ?? false)) return true;
     if (serviceFee.enabled !== (attrs.service_fee_enabled ?? false)) return true;
     if (String(serviceFee.percentage) !== String(attrs.service_fee_percentage ?? "10")) return true;
 
@@ -342,7 +369,8 @@ export default function PaymentSettingsPage() {
 
     return paymentMethods.some(method => {
       const attrKey = idToAttributeKey[method.id as keyof typeof idToAttributeKey];
-      if (method.enabled !== attrs[attrKey]) return true;
+      if (method.enabled !== (attrs.asaas_pix && attrKey === 'manual_pix' ? false : attrs[attrKey])) return true;
+      if (method.pdv !== attrs[`${attrKey}_pdv` as keyof typeof attrs]) return true;
       const adjTypeKey = `${attrKey}_adjustment_type` as keyof typeof attrs;
       const adjValueKey = `${attrKey}_adjustment_value` as keyof typeof attrs;
       const valTypeKey = `${attrKey}_value_type` as keyof typeof attrs;
@@ -433,6 +461,27 @@ export default function PaymentSettingsPage() {
               )}
             </div>
 
+            {/* Pagamento em 2 formas */}
+            <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+              <div className="px-5 py-4 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <Split className="w-5 h-5 text-primary" />
+                  <div>
+                    <h3 className="font-tomato text-base font-semibold text-gray-900">Permitir pagamento em 2 formas</h3>
+                    <p className="text-sm text-muted-foreground">
+                      O cliente (e o PDV) pode dividir o valor do pedido entre duas formas, por exemplo Dinheiro + Pix. Fiado e PIX Automático não entram na divisão.
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  data-testid="allow-split-switch"
+                  checked={allowSplit}
+                  onCheckedChange={setAllowSplit}
+                  disabled={isUpdating}
+                />
+              </div>
+            </div>
+
             {/* Metodos padrao */}
             {paymentMethods.map((method) => (
               <div
@@ -445,19 +494,35 @@ export default function PaymentSettingsPage() {
                     <div>
                       <h3 className="font-tomato text-base font-semibold text-gray-900">{method.name}</h3>
                       <p className="text-sm text-muted-foreground">{method.description}</p>
+                      {method.hint && <p className="text-xs text-muted-foreground mt-0.5">{method.hint}</p>}
                       {method.id === 'pix' && asaasPix.enabled && (
                         <p className="text-xs text-amber-600 mt-0.5">Desativado: PIX Automático está ativo</p>
                       )}
                     </div>
                   </div>
-                  <Switch
-                    checked={method.enabled}
-                    onCheckedChange={() => handleToggleManualPix(method.id)}
-                    disabled={isUpdating || (method.id === 'pix' && asaasPix.enabled)}
-                  />
+                  <div className="flex shrink-0 items-center gap-5">
+                    <label className="flex flex-col items-center gap-1 text-xs font-medium text-gray-600">
+                      Site
+                      <Switch
+                        data-testid={`site-switch-${method.id}`}
+                        checked={method.enabled}
+                        onCheckedChange={() => handleToggleManualPix(method.id)}
+                        disabled={isUpdating || (method.id === 'pix' && asaasPix.enabled)}
+                      />
+                    </label>
+                    <label className="flex flex-col items-center gap-1 text-xs font-medium text-gray-600">
+                      PDV
+                      <Switch
+                        data-testid={`pdv-switch-${method.id}`}
+                        checked={method.pdv}
+                        onCheckedChange={() => handleTogglePdv(method.id)}
+                        disabled={isUpdating}
+                      />
+                    </label>
+                  </div>
                 </div>
 
-                {method.enabled && (
+                {(method.enabled || method.pdv) && (
                   <div className="px-5 py-4 border-t border-[#E5E2DD] bg-[#FAF9F7] space-y-4">
                     {/* Ajuste de preço */}
                     {method.supportsAdjustment !== false && (

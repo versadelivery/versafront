@@ -36,6 +36,8 @@ import PublicLoading from '@/components/public-loading'
 import { KmDeliveryAddress, KmDeliveryState, emptyKmDeliveryState } from '@/components/map/km-delivery-address'
 import { AddressNumberField } from '@/components/address-number-field'
 import { hasAddressNumber, normalizeAddressNumber, splitStreetNumber } from '@/utils/address-number'
+import { SplitPaymentPicker, type SplitValue } from '@/components/payments/split-payment-picker'
+import { SPLIT_METHODS, type SplitMethod } from '@/lib/split-payment'
 
 type DeliveryOption = 'delivery' | 'pickup'
 
@@ -384,6 +386,8 @@ export default function CheckoutPage() {
   const [complement, setComplement] = useState('')
   const [reference, setReference] = useState('')
   const [changeFor, setChangeFor] = useState('')
+  // Pagamento dividido em 2 formas (só aparece se a loja liga a opção)
+  const [split, setSplit] = useState<SplitValue>({ active: false, payments: null })
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [cartItems, setCartItems] = useState<CartItemWithExtras[]>([])
@@ -491,6 +495,10 @@ export default function CheckoutPage() {
       })
     : []
   const noPaymentMethods = shopPaymentConfig && availablePaymentMethods.length === 0
+  // Fiado e PIX automático ficam de fora da divisão
+  const splitMethods = availablePaymentMethods
+    .filter(([m]) => (SPLIT_METHODS as readonly string[]).includes(m))
+    .map(([m, cfg]) => ({ key: m as SplitMethod, label: cfg.label as string }))
 
   // Auto-selecionar o primeiro método de pagamento disponível
   useEffect(() => {
@@ -723,7 +731,8 @@ export default function CheckoutPage() {
     return adjType === 'discount' ? -amount : amount
   }
 
-  const paymentAdjustment = calculatePaymentAdjustment()
+  // Dividido: o preço não muda conforme a forma, então não há acréscimo/desconto por forma
+  const paymentAdjustment = split.active ? 0 : calculatePaymentAdjustment()
 
   const calculatePickupAdjustment = (): number => {
     if (deliveryOption !== 'pickup' || !shopDeliveryConfig) return 0
@@ -833,7 +842,10 @@ export default function CheckoutPage() {
         }
       }
     }
-    if (paymentMethod === 'cash' && changeFor) {
+    if (split.active && !split.payments) {
+      errors.payment = 'Conclua a divisão do pagamento (escolha as 2 formas e os valores)'
+    }
+    if (!split.active && paymentMethod === 'cash' && changeFor) {
       const changeValue = parseFloat(changeFor)
       if (changeValue < calculateTotal()) {
         errors.changeFor = 'O troco deve ser maior ou igual ao total do pedido'
@@ -864,7 +876,8 @@ export default function CheckoutPage() {
       order: {
         shop_id: Number(shop?.data.id),
         withdrawal: deliveryOption === 'pickup',
-        payment_method: paymentMethod as any,
+        payment_method: (split.active && split.payments ? split.payments[0].payment_method : paymentMethod) as any,
+        ...(split.active && split.payments && { payments: split.payments }),
         customer_name: guestName.trim(),
         customer_phone: guestPhone.replace(/\D/g, ''),
         ...(observation.trim() && { observation: observation.trim() }),
@@ -1614,7 +1627,11 @@ export default function CheckoutPage() {
                     </AlertDescription>
                   </Alert>
                 )}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {!!shopPaymentConfig?.allow_split_payment && calculateTotal() > 0 && (
+                  <SplitPaymentPicker idPrefix="site-split" title="Combinar 2 meios de pagamento" total={calculateTotal()} methods={splitMethods} onChange={setSplit} />
+                )}
+                {fieldErrors.payment && <p className="text-sm text-red-500">{fieldErrors.payment}</p>}
+                {!split.active && <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {(Object.entries(PAYMENT_LABELS) as [PaymentMethod, { label: string; icon: React.ReactNode }][]).map(([method, cfg]) => {
                     const available = shopPaymentConfig?.[method === 'manual_pix' ? 'manual_pix' : method]
                     if (!available) return null
@@ -1641,9 +1658,9 @@ export default function CheckoutPage() {
                       </button>
                     )
                   })}
-                </div>
+                </div>}
 
-                {paymentMethod === 'cash' && (
+                {!split.active && paymentMethod === 'cash' && (
                   <div>
                     <Label htmlFor="changeFor" className="text-sm font-medium text-gray-700 mb-1.5 block">Troco para</Label>
                     <Input

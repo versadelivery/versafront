@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { formatPayments, paymentsOf } from '@/lib/split-payment'
 import { useUsers } from '@/app/admin/settings/users/hooks/useUsers';
 import { Dialog, DialogContent } from '@/components/ui/order-dialog';
 import { Button } from '@/components/ui/button';
@@ -92,6 +93,8 @@ interface OrderDetailsModalProps {
     total: number;
     withdrawal: boolean;
     payment_method: string;
+    /** pagamento dividido: as 2 partes (vazio/ausente = forma única) */
+    payments?: { payment_method: string; amount: number | string }[];
     delivery_fee?: number;
     address?: {
       address: string;
@@ -221,7 +224,7 @@ export default function OrderDetailsModal({
   const { users, loading: loadingUsers } = useUsers();
   const deliveryPeople = users.filter((u: any) => u.attributes?.role === 'delivery_man');
   const statusInfo = getStatusInfo(order.status);
-  const paymentLabel = getPaymentMethodLabel(order.payment_method);
+  const paymentLabel = formatPayments(order.payments) || getPaymentMethodLabel(order.payment_method);
   const deliveryFee = order.delivery_fee ?? 0;
 
   const [selectedDeliveryPerson, setSelectedDeliveryPerson] = useState(order.deliveryPerson || '');

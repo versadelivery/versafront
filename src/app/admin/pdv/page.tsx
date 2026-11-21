@@ -37,6 +37,10 @@ import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
 import { SchedulePicker } from "@/components/scheduling/schedule-picker";
 import { useSchedulingSlots } from "@/hooks/use-scheduling-slots";
 import { SCHEDULE_PRICE_NOTICE, describeSchedule } from "@/lib/scheduling";
+import { SplitPaymentPicker, type SplitValue } from "@/components/payments/split-payment-picker";
+import { SPLIT_METHODS, type SplitMethod } from "@/lib/split-payment";
+
+type PdvMethod = "cash" | "credit" | "debit" | "pix" | "store_credit" | "food_voucher";
 import { toScanItem } from "@/lib/barcode/to-scan-item";
 import { scanErrorMessage } from "@/lib/barcode/scan-messages";
 import { needsOptions } from "@/lib/barcode/needs-options";
@@ -122,7 +126,10 @@ export default function PDVPage() {
   const [savedAddressId, setSavedAddressId] = useState("");
   const [setDefaultAddress, setSetDefaultAddress] = useState(false);
   const [registeringCustomer, setRegisteringCustomer] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<"cash" | "credit" | "debit" | "pix">("credit");
+  const [paymentMethod, setPaymentMethod] = useState<PdvMethod>("credit");
+  // Pagamento dividido em 2 formas (só aparece se a loja liga a opção); splitKey remonta o seletor após o pedido
+  const [split, setSplit] = useState<SplitValue>({ active: false, payments: null });
+  const [splitKey, setSplitKey] = useState(0);
   const [changeAmount, setChangeAmount] = useState("");
   const [notes, setNotes] = useState("");
   const [isProcessingOrder, setIsProcessingOrder] = useState(false);
@@ -339,8 +346,7 @@ export default function PDVPage() {
   const deliveryFee = calculateDeliveryFee();
   const minimumOrderValue = deliveryConfig?.minimum_order_value ?? 0;
 
-  const pdvPaymentMethodToApi = (m: "cash" | "credit" | "debit" | "pix") =>
-    m === "cash" ? "cash" : m === "pix" ? "manual_pix" : m;
+  const pdvPaymentMethodToApi = (m: PdvMethod) => (m === "pix" ? "manual_pix" : m);
 
   const calculatePdvPaymentAdjustment = (): number => {
     const attrs = paymentMethodsData?.data?.attributes;
@@ -355,10 +361,11 @@ export default function PDVPage() {
     return adjType === "discount" ? -amount : amount;
   };
 
-  const paymentAdjustment = calculatePdvPaymentAdjustment();
+  // Dividido: o preço não muda conforme a forma, então não há acréscimo/desconto por forma
+  const paymentAdjustment = split.active ? 0 : calculatePdvPaymentAdjustment();
 
-  const getPaymentMethodLabel = (m: "cash" | "credit" | "debit" | "pix") =>
-    m === "cash" ? "Dinheiro" : m === "credit" ? "Crédito" : m === "debit" ? "Débito" : "PIX";
+  const getPaymentMethodLabel = (m: PdvMethod) =>
+    ({ cash: "Dinheiro", credit: "Crédito", debit: "Débito", pix: "PIX", store_credit: "Fiado (a receber)", food_voucher: "Vale alimentação / refeição" })[m];
 
   // Clique no item, abre modal se tiver opções ou for peso, senão adiciona direto
   const handleItemClick = (item: any) => {
@@ -532,14 +539,27 @@ export default function PDVPage() {
   // Métodos de pagamento disponíveis (dinâmico baseado na config da loja)
   const availablePaymentMethods = (() => {
     const attrs = paymentMethodsData?.data?.attributes;
-    const methods: { value: "cash" | "credit" | "debit" | "pix"; label: string }[] = [];
+    const methods: { value: PdvMethod; label: string }[] = [];
     if (!attrs) return [{ value: "credit" as const, label: "Crédito" }, { value: "debit" as const, label: "Débito" }, { value: "cash" as const, label: "Dinheiro" }, { value: "pix" as const, label: "PIX" }];
-    if (attrs.credit) methods.push({ value: "credit", label: "Crédito" });
-    if (attrs.debit) methods.push({ value: "debit", label: "Débito" });
-    if (attrs.cash) methods.push({ value: "cash", label: "Dinheiro" });
-    if (attrs.manual_pix) methods.push({ value: "pix", label: "PIX" });
+    // O PDV usa as chaves *_pdv (as sem sufixo são as do site)
+    if (attrs.credit_pdv) methods.push({ value: "credit", label: "Crédito" });
+    if (attrs.debit_pdv) methods.push({ value: "debit", label: "Débito" });
+    if (attrs.cash_pdv) methods.push({ value: "cash", label: "Dinheiro" });
+    if (attrs.manual_pix_pdv) methods.push({ value: "pix", label: "PIX" });
+    if (attrs.store_credit_pdv) methods.push({ value: "store_credit", label: "Fiado (a receber)" });
+    if (attrs.food_voucher_pdv) methods.push({ value: "food_voucher", label: "Vale alimentação / refeição" });
     return methods;
   })();
+
+  // Formas que entram na divisão (fiado e PIX automático ficam de fora)
+  const splitMethods = useMemo(
+    () => availablePaymentMethods
+      .map((m) => ({ key: (m.value === "pix" ? "manual_pix" : m.value) as SplitMethod, label: m.label }))
+      .filter((m) => SPLIT_METHODS.includes(m.key)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [paymentMethodsData]
+  );
+  const canSplit = !!paymentMethodsData?.data?.attributes?.allow_split_payment && !isTableOrder && orderTotal > 0;
 
   // Garantir que o método de pagamento selecionado está disponível
   useEffect(() => {
@@ -548,7 +568,7 @@ export default function PDVPage() {
     }
   }, [paymentMethodsData]);
 
-  const getAdjustmentLabel = (m: "cash" | "credit" | "debit" | "pix"): string => {
+  const getAdjustmentLabel = (m: PdvMethod): string => {
     const attrs = paymentMethodsData?.data?.attributes;
     if (!attrs) return "";
     const attrKey = pdvPaymentMethodToApi(m);
@@ -744,7 +764,12 @@ export default function PDVPage() {
       }
     }
 
-    if (paymentMethod === "cash" && changeAmount) {
+    if (split.active && !split.payments) {
+      toast.error("Conclua a divisão do pagamento (escolha as 2 formas e os valores)");
+      return;
+    }
+
+    if (!split.active && paymentMethod === "cash" && changeAmount) {
       const changeValue = parseFloat(changeAmount);
       if (changeValue < cartTotal) {
         toast.error("O valor do troco deve ser maior ou igual ao total do pedido");
@@ -759,8 +784,8 @@ export default function PDVPage() {
         order: {
           shop_id: Number(shopId) || 0,
           withdrawal: isTableOrder ? true : orderType !== "delivery",
-          payment_method:
-            paymentMethod === "pix" ? ("manual_pix" as const) : (paymentMethod as "cash" | "credit" | "debit"),
+          payment_method: split.active && split.payments ? split.payments[0].payment_method : pdvPaymentMethodToApi(paymentMethod),
+          ...(split.active && split.payments && { payments: split.payments }),
           customer_name: isTableOrder
             ? (selectedSession?.attributes.customer_name || `Mesa ${selectedSession?.attributes.table_number}`)
             // Balcão sem nome sai como "Balcão" para a cozinha e o caixa saberem a origem
@@ -820,6 +845,8 @@ export default function PDVPage() {
         goMobileView("catalog");
         setNotes("");
         setChangeAmount("");
+        setSplit({ active: false, payments: null });
+        setSplitKey((k) => k + 1);
         handleRemoveCoupon();
         setFormErrors({});
         if (!isTableOrder) {
@@ -1598,11 +1625,16 @@ export default function PDVPage() {
                   <p className="text-xs text-red-500 mt-1">Configure os métodos de pagamento nas configurações da loja.</p>
                 </div>
               ) : (
+              <>
+              {canSplit && (
+                <SplitPaymentPicker key={splitKey} idPrefix="pdv-split" total={orderTotal} methods={splitMethods} onChange={setSplit} />
+              )}
+              {!split.active && (
               <div className="space-y-1.5">
                 <Label className="text-sm">Método de Pagamento</Label>
                 <Select
                   value={paymentMethod}
-                  onValueChange={(v: "cash" | "credit" | "debit" | "pix") => setPaymentMethod(v)}
+                  onValueChange={(v: PdvMethod) => setPaymentMethod(v)}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -1617,8 +1649,10 @@ export default function PDVPage() {
                 </Select>
               </div>
               )}
+              </>
+              )}
 
-              {paymentMethod === "cash" && (() => {
+              {!split.active && paymentMethod === "cash" && (() => {
                 const changeValue = changeAmount ? parseFloat(changeAmount) : 0;
                 const isChangeInvalid = !!changeAmount && changeValue < cartTotal;
                 const changeBack = changeValue - cartTotal;

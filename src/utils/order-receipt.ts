@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { formatPayments, paymentsOf } from '@/lib/split-payment'
 import { PrinterConfig, PrintFontSize } from '@/services/printer-config';
 import { orderItemQuantityLabel } from '@/utils/order-item-quantity';
 
@@ -70,7 +71,7 @@ export function buildOrderReceipt(order: ReceiptOrder, mode: ReceiptMode, fontSi
   const subtotal = Number(attrs.total_items_price || 0);
   const total = Number(attrs.total_price || order.amount || 0);
   const deliveryFee = Number(attrs.delivery_fee || 0);
-  const payment = paymentLabels[attrs.payment_method] || String(attrs.payment_method || 'NÃO INFORMADO').toUpperCase();
+  const payment = formatPayments(attrs.payments) || paymentLabels[attrs.payment_method] || String(attrs.payment_method || 'NÃO INFORMADO').toUpperCase();
   const changeFor = Number(attrs.change_for || attrs.cash_change_for || 0);
   const change = changeFor > 0 ? Math.max(0, changeFor - total) : 0;
 
@@ -173,7 +174,7 @@ export function buildWhatsAppReceiptMessage(order: ReceiptOrder) {
   if (discount) lines.push(`Desconto: −${whatsappMoney(discount)}`);
   lines.push(...adjustmentLines(attrs, whatsappMoney));
   lines.push(`*TOTAL A PAGAR: ${whatsappMoney(total)}*`, '', '💳 *FORMA DE PAGAMENTO*');
-  lines.push(paymentLabels[attrs.payment_method] || attrs.payment_method || 'Não informado');
+  lines.push(formatPayments(attrs.payments) || paymentLabels[attrs.payment_method] || attrs.payment_method || 'Não informado');
   if (changeFor) lines.push(`Troco para: ${whatsappMoney(changeFor)}`, `Levar de troco: ${whatsappMoney(Math.max(0, changeFor - total))}`);
   lines.push('', '━━━━━━━━━━━━━━━━━━', '🙏 Obrigado pela preferência!', 'www.versadelivery.com.br');
   return lines.filter((line, index, all) => line !== '' || (index > 0 && all[index - 1] !== '')).join('\n');

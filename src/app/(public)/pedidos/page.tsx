@@ -1,5 +1,6 @@
 'use client';
 
+import { formatPayments, paymentsOf } from '@/lib/split-payment'
 import React, { useEffect, useState } from 'react';
 import { useRouter } from "next/navigation";
 import { getOrdersByPhone } from "@/services/order-service";
@@ -256,7 +257,7 @@ export default function OrdersPage() {
                       </span>
                       <span className="flex items-center gap-1.5 flex-shrink-0">
                         <CreditCard className="w-4 h-4" />
-                        {getPaymentMethodLabel(order.attributes.payment_method)}
+                        {formatPayments(paymentsOf(order.attributes)) || getPaymentMethodLabel(order.attributes.payment_method)}
                       </span>
                       {!order.attributes.withdrawal && order.attributes.address?.data?.attributes?.neighborhood && (
                         <span className="flex items-center gap-1.5 truncate hidden sm:flex">

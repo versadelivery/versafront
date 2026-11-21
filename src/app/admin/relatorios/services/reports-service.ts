@@ -500,8 +500,16 @@ export interface StatementPaymentGroup {
   items_total: number;
   delivery_fees: number;
   delivery_fee_items: StatementDeliveryFee[];
+  /** só no bloco "Dividido (2 formas)": quanto entrou em cada forma de pagamento */
+  payment_breakdown: StatementBreakdown[];
   total_revenue: number;
   average_ticket: number;
+}
+
+export interface StatementBreakdown {
+  method: string;
+  label: string;
+  amount: number;
 }
 
 export interface StatementDeliveryFee {

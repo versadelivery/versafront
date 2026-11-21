@@ -9,6 +9,13 @@ export type ShopPaymentConfig = {
     id: string;
     type: "shop_payment_config";
     attributes: {
+      allow_split_payment: boolean;
+      cash_pdv: boolean;
+      debit_pdv: boolean;
+      credit_pdv: boolean;
+      manual_pix_pdv: boolean;
+      store_credit_pdv: boolean;
+      food_voucher_pdv: boolean;
       cash: boolean;
       debit: boolean;
       credit: boolean;

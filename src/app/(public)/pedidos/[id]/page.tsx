@@ -1,5 +1,6 @@
 'use client';
 
+import { formatPayments, paymentsOf } from '@/lib/split-payment'
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ClientOrderData } from "@/lib/client-cable";
@@ -152,6 +153,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
     status: orderData.attributes.status ?? 'received',
     withdrawal: orderData.attributes.withdrawal ?? false,
     payment_method: orderData.attributes.payment_method ?? 'cash',
+    payments: (paymentsOf(orderData.attributes) ?? []) as { payment_method: string; amount: number }[],
     observation: orderData.attributes.observation ?? '',
     delivery_fee: parseFloat(orderData.attributes.delivery_fee ?? '0'),
     items: (orderData.attributes.items?.data ?? []).map((item: any) => ({
@@ -199,7 +201,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
 
   const statusCfg = statusConfig[order.status] ?? statusConfig.received;
   const PaymentIcon = (paymentConfig[order.payment_method] ?? paymentConfig.cash).icon;
-  const paymentLabel = (paymentConfig[order.payment_method] ?? paymentConfig.cash).label;
+  const paymentLabel = formatPayments(order.payments) || (paymentConfig[order.payment_method] ?? paymentConfig.cash).label;
   const dateInfo = formatDate(order.date);
   const subtotal = order.items.reduce((s: number, i: any) => s + (i.total_price ?? i.price * i.quantity), 0);
   const deliveryFee = order.withdrawal ? 0 : order.delivery_fee;

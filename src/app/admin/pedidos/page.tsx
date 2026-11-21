@@ -1,5 +1,6 @@
 'use client';
 
+import { formatPayments, paymentsOf } from '@/lib/split-payment'
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -763,7 +764,7 @@ export default function OrderManagement() {
       customerPhone: attrs.customer?.data?.attributes?.cellphone || (attrs.customer as any)?.cellphone || undefined,
       amount: order.amount,
       deliveryType: order.deliveryType,
-      paymentLabel: paymentLabels[attrs.payment_method],
+      paymentLabel: formatPayments(paymentsOf(attrs)) || paymentLabels[attrs.payment_method],
       scheduledFor: attrs.scheduled_for as string,
       confirmed: !!attrs.scheduled_confirmed_at,
       itemsSummary: items.join(', ') || 'Sem itens',
@@ -1327,6 +1328,7 @@ export default function OrderManagement() {
             total: selectedOrder.amount,
             withdrawal: selectedOrder.deliveryType === 'pickup',
             payment_method: selectedOrder.socketData.attributes.payment_method,
+            payments: paymentsOf(selectedOrder.socketData.attributes),
             delivery_fee: parseFloat(selectedOrder.socketData.attributes.delivery_fee || '0'),
             address: selectedOrder.socketData.attributes.address.data ? (() => {
               const addrAttrs = selectedOrder.socketData.attributes.address.data.attributes;

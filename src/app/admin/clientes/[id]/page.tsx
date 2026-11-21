@@ -1,5 +1,6 @@
 "use client";
 
+import { formatPayments, paymentsOf } from '@/lib/split-payment'
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -384,7 +385,7 @@ export default function CustomerDetailPage() {
                       </span>
                     </TableCell>
                     <TableCell className="py-3 text-sm hidden sm:table-cell">
-                      {paymentLabels[order.attributes.payment_method] || order.attributes.payment_method}
+                      {formatPayments(paymentsOf(order.attributes)) || paymentLabels[order.attributes.payment_method] || order.attributes.payment_method}
                     </TableCell>
                     <TableCell className="py-3 text-sm text-right font-medium">
                       {formatCurrency(order.attributes.total_price)}
