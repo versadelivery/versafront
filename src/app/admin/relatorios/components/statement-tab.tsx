@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Loader2, Plus, Printer, Trash2, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
@@ -13,7 +13,7 @@ const today = () => { const n = new Date(); return `${n.getFullYear()}-${String(
 const shiftDays = (date: string, days: number) => { const d = new Date(`${date}T12:00:00`); d.setDate(d.getDate()+days); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
 const money = (v: number) => new Intl.NumberFormat("pt-BR", { style:"currency", currency:"BRL" }).format(v);
 const quantity = (v: number, unit: string) => `${new Intl.NumberFormat("pt-BR", { maximumFractionDigits:3 }).format(v)} ${unit}`;
-const METHOD_FILTERS = [["all", "Todos"], ["cash", "Dinheiro"], ["pix", "Pix"], ["credit", "Crédito"], ["debit", "Débito"], ["food_voucher", "Vale"]] as const;
+const METHOD_FILTERS = [["all", "Todos"], ["cash", "Dinheiro"], ["pix", "Pix"], ["credit", "Crédito"], ["debit", "Débito"], ["food_voucher", "Vale"], ["store_credit", "Fiado"]] as const;
 const brDate = (date: string) => new Date(`${date}T12:00:00`).toLocaleDateString("pt-BR");
 const emittedAt = () => new Date().toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }).replace(",", " às");
 const id = () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
@@ -32,7 +32,9 @@ function Time24Select({ label, value, onChange }: { label: string; value: string
     </div></div>;
 }
 
-export default function StatementTab() {
+export interface StatementFooterContext { method: string; startDate: string; endDate: string }
+
+export default function StatementTab({ footer }: { footer?: (ctx: StatementFooterContext) => ReactNode } = {}) {
   const [preset, setPreset] = useState("today");
   const [startDate, setStartDate] = useState(today());
   const [endDate, setEndDate] = useState(today());
@@ -144,6 +146,7 @@ export default function StatementTab() {
 
       <footer className="bg-slate-50 px-4 py-3 text-[11px] leading-snug text-slate-500 sm:px-6">Preço unitário = média do período, já com a parcela proporcional de descontos e acréscimos. Pedidos cancelados e não pagos ficam de fora. Ticket médio = valor total ÷ nº de vendas.</footer>
     </div>}
+    {footer?.({ method, startDate, endDate })}
   </div>;
 }
 

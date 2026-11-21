@@ -29,6 +29,7 @@ import DeliveryFeesTab from "./components/delivery-fees-tab";
 import CouponUsageTab from "./components/coupon-usage-tab";
 import WeeklySummaryTab from "./components/weekly-summary-tab";
 import StatementTab from "./components/statement-tab";
+import ReportErrorBoundary from "./components/report-error-boundary";
 import SalesByDeliveryPersonTab from "./components/sales-by-delivery-person-tab";
 
 const CATEGORIES = [
@@ -192,7 +193,7 @@ export default function RelatoriosPage() {
             const Component = TAB_COMPONENTS[tab.key];
             return (
               <TabsContent key={tab.key} value={tab.key}>
-                <Component />
+                <ReportErrorBoundary><Component /></ReportErrorBoundary>
               </TabsContent>
             );
           })}

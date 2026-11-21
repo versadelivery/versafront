@@ -482,6 +482,8 @@ export interface StatementItem {
   payments: StatementPaymentBreakdown[];
 }
 
+import { normalizeStatement } from "./statement-normalize";
+
 export interface StatementGroupItem {
   name: string;
   quantity: number;
@@ -819,7 +821,7 @@ export const reportsService = {
         ...(paymentMethod && paymentMethod !== "all" ? { payment_method: paymentMethod } : {}),
       },
     });
-    return response.data;
+    return normalizeStatement(response.data);
   },
 
   getStatementPeriods: async (): Promise<StatementPeriod[]> => {
