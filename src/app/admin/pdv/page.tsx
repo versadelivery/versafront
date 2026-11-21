@@ -12,7 +12,7 @@ import {
   ShoppingCart, Plus, Minus, Trash2,
   CreditCard, MapPin, User,
   Tag, X, CheckCircle2, Loader2, UtensilsCrossed, ArrowLeft, AlertCircle,
-  Bike, Store, Receipt, Pencil, ChevronRight, UserCheck,
+  Bike, Store, Receipt, Pencil, ChevronRight, UserCheck, CalendarClock,
 } from "lucide-react";
 import { useCatalogGroup } from "@/hooks/useCatalogGroup";
 import { useCatalogCategories } from "@/hooks/useCatalogCategories";
@@ -34,10 +34,9 @@ import { customerService } from "@/app/admin/clientes/services/customerService";
 import type { Customer, CustomerLastAddress } from "@/app/admin/clientes/services/customerService";
 import { collectCustomerErrors as collectRules, PDV_PHONE_REGEX, phoneDigits } from "@/lib/pdv-customer-rules";
 import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
-import { Switch } from "@/components/ui/switch";
 import { SchedulePicker } from "@/components/scheduling/schedule-picker";
 import { useSchedulingSlots } from "@/hooks/use-scheduling-slots";
-import { SCHEDULE_PRICE_NOTICE } from "@/lib/scheduling";
+import { SCHEDULE_PRICE_NOTICE, describeSchedule } from "@/lib/scheduling";
 import { toScanItem } from "@/lib/barcode/to-scan-item";
 import { scanErrorMessage } from "@/lib/barcode/scan-messages";
 import { needsOptions } from "@/lib/barcode/needs-options";
@@ -912,6 +911,51 @@ export default function PDVPage() {
               </div>
             </div>
 
+            {/* Quando: Agora (padrão) ou Agendar, só para delivery/retirada em loja que aceita agendar */}
+            {isSchedulableType && schedulingSlots?.allowed && schedulingSlots.days.length === 0 && (
+              <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800" data-testid="pdv-schedule-no-slots">
+                Agendamento ligado, mas não há horários disponíveis. Confira o{" "}
+                <a href="/admin/settings/horarios" className="underline">horário de funcionamento</a>: cada dia aberto precisa fechar depois de abrir.
+              </p>
+            )}
+            {scheduleAvailable && schedulingSlots && (
+              <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden" data-testid="pdv-schedule">
+                <div className="px-5 py-4 border-b border-[#E5E2DD]">
+                  <h2 className="font-tomato flex items-center gap-2 text-base font-semibold text-gray-900">
+                    <CalendarClock className="h-5 w-5 text-primary" />
+                    Quando?
+                  </h2>
+                </div>
+                <div className="space-y-4 px-5 py-4">
+                  <div role="radiogroup" aria-label="Quando" className="grid grid-cols-2 gap-2">
+                    {([["now", "Agora", "Pedido feito neste momento"], ["later", "Agendar", "Outro dia ou horário"]] as const).map(([key, label, hint]) => {
+                      const active = (key === "later") === scheduleEnabled;
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          role="radio"
+                          aria-checked={active}
+                          data-testid={`pdv-when-${key}`}
+                          onClick={() => { setScheduleEnabled(key === "later"); if (key === "now") setScheduledFor(null); }}
+                          className={`flex flex-col items-center gap-0.5 rounded-md border-2 px-2 py-3 text-center transition-all cursor-pointer ${active ? "border-primary bg-primary text-primary-foreground" : "border-[#E5E2DD] bg-white text-gray-800 hover:border-gray-400"}`}
+                        >
+                          <span className="text-sm font-semibold">{label}</span>
+                          <span className={`text-[11px] leading-tight ${active ? "text-primary-foreground/80" : "text-muted-foreground"}`}>{hint}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {scheduleEnabled && (
+                    <>
+                      <SchedulePicker slots={schedulingSlots} value={scheduledFor} onChange={setScheduledFor} showPopular idPrefix="pdv" />
+                      <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">{SCHEDULE_PRICE_NOTICE}</p>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Cliente: campos variam por tipo */}
             {orderType && orderType !== "table" && (
               <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
@@ -1603,36 +1647,10 @@ export default function PDVPage() {
                 );
               })()}
 
-              {isSchedulableType && schedulingSlots?.allowed && schedulingSlots.days.length === 0 && (
-                <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800" data-testid="pdv-schedule-no-slots">
-                  Agendamento ligado, mas não há horários disponíveis. Confira o{" "}
-                  <a href="/admin/settings/horarios" className="underline">horário de funcionamento</a>: cada dia aberto precisa fechar depois de abrir.
+              {scheduleEnabled && scheduledFor && (
+                <p className="rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground" data-testid="pdv-schedule-summary">
+                  Agendado para {describeSchedule(scheduledFor)}
                 </p>
-              )}
-
-              {scheduleAvailable && schedulingSlots && (
-                <div className="space-y-3 rounded-md border border-[#E5E2DD] p-3" data-testid="pdv-schedule">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <Label htmlFor="pdv-schedule-switch" className="text-sm font-medium">Agendar pedido</Label>
-                      <p className="text-xs text-muted-foreground">Para outro dia ou horário, com a loja aberta ou fechada.</p>
-                    </div>
-                    <Switch
-                      id="pdv-schedule-switch"
-                      checked={scheduleEnabled}
-                      onCheckedChange={(checked) => {
-                        setScheduleEnabled(checked);
-                        if (!checked) setScheduledFor(null);
-                      }}
-                    />
-                  </div>
-                  {scheduleEnabled && (
-                    <>
-                      <SchedulePicker slots={schedulingSlots} value={scheduledFor} onChange={setScheduledFor} showPopular idPrefix="pdv" />
-                      <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">{SCHEDULE_PRICE_NOTICE}</p>
-                    </>
-                  )}
-                </div>
               )}
 
               <div className="space-y-1.5">

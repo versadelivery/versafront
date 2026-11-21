@@ -88,6 +88,7 @@ export function SchedulePicker({ slots, value, onChange, showPopular = false, id
               key={day.date}
               type="button"
               id={`${idPrefix}-day-${day.date}`}
+              data-testid={`schedule-day-${day.date}`}
               aria-pressed={selectedDay === day.date}
               onClick={() => pickDay(day.date)}
               className={chipClass(selectedDay === day.date)}
@@ -140,6 +141,7 @@ export function SchedulePicker({ slots, value, onChange, showPopular = false, id
                 key={iso}
                 type="button"
                 aria-pressed={value === iso}
+                data-testid={`schedule-time-${formatSlotTime(iso)}`}
                 onClick={() => onChange(iso)}
                 className={cn(chipClass(value === iso), "w-full text-center tabular-nums")}
               >
