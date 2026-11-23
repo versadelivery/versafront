@@ -1,4 +1,4 @@
-import { isWeightItem } from './order-item-quantity';
+import { isWeightItem } from './order-item-quantity.ts';
 
 type Priced = { price?: number | string | null };
 
@@ -6,6 +6,8 @@ export interface TotalInput {
   price: number;
   quantity?: number | null;
   weight?: number | string | null;
+  // Peso da etiqueta: já é o de todas as unidades, não multiplica o preço do kg pela quantidade
+  weight_total?: boolean | null;
   item_type?: string | null;
   assembly_pricing_mode?: string | null;
   selected_extras?: Priced[];
@@ -27,9 +29,12 @@ export function calculateItemTotal(item: TotalInput): number {
 
   const unit = Number(item.price) || 0;
   const options = sum(item.selected_extras) + sum(item.complements) + steps;
+  const quantity = Number(item.quantity) || 1;
   const total = isWeightItem(item)
-    ? (unit * (Number(item.weight) || 1) + options) * (Number(item.quantity) || 1)
-    : (unit + options) * (Number(item.quantity) || 1);
+    ? item.weight_total
+      ? unit * (Number(item.weight) || 1) + options * quantity
+      : (unit * (Number(item.weight) || 1) + options) * quantity
+    : (unit + options) * quantity;
 
   return Math.round(total * 100) / 100;
 }

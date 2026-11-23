@@ -163,6 +163,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
       price_with_discount: item.attributes?.price_with_discount ? parseFloat(item.attributes.price_with_discount) : null,
       quantity: item.attributes?.quantity ?? 0,
       weight: item.attributes?.weight ? parseFloat(item.attributes.weight) : null,
+      weight_total: !!item.attributes?.weight_total,
       item_type: item.attributes?.item_type ?? 'unit',
       total_price: item.attributes?.total_price ? parseFloat(item.attributes.total_price) : null,
       observation: item.attributes?.observation ?? '',
@@ -292,7 +293,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                           </div>
                           <p className="text-sm text-muted-foreground mt-0.5">
                             {item.weight && (item.item_type === 'weight_per_kg' || item.item_type === 'weight_per_g')
-                              ? `${item.weight} ${item.item_type === 'weight_per_g' ? 'g' : 'kg'} × ${formatCurrency(item.price_with_discount ?? item.price)}/${item.item_type === 'weight_per_g' ? 'g' : 'kg'}`
+                              ? `${item.quantity > 1 ? (item.weight_total ? `${item.quantity} un. · ` : `${item.quantity}× `) : ''}${item.weight} ${item.item_type === 'weight_per_g' ? 'g' : 'kg'} × ${formatCurrency(item.price_with_discount ?? item.price)}/${item.item_type === 'weight_per_g' ? 'g' : 'kg'}`
                               : `${item.quantity}× ${formatCurrency(item.price_with_discount ?? item.price)}`
                             }
                           </p>

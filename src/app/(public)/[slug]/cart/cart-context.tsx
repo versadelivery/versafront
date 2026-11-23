@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useMemo, useCallback, ReactNode, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { CatalogItem } from '../types'
+import { isSameCartLine } from '@/lib/cart-line'
 
 interface CartItem extends CatalogItem {
   cartId: string
@@ -28,28 +29,6 @@ interface CartContextType {
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
-
-function arraysEqual(a?: string[], b?: string[]): boolean {
-  if (!a && !b) return true
-  if (!a || !b) return false
-  if (a.length !== b.length) return false
-  for (let i = 0; i < a.length; i++) {
-    if (a[i] !== b[i]) return false
-  }
-  return true
-}
-
-function optionsEqual(a?: Record<string, string>, b?: Record<string, string>): boolean {
-  if (!a && !b) return true
-  if (!a || !b) return false
-  const keysA = Object.keys(a)
-  const keysB = Object.keys(b)
-  if (keysA.length !== keysB.length) return false
-  for (const key of keysA) {
-    if (a[key] !== b[key]) return false
-  }
-  return true
-}
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const params = useParams()
@@ -97,13 +76,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addItem = useCallback((newItem: CartItem) => {
     setItems(prevItems => {
-      const existingItemIndex = prevItems.findIndex(
-        item => item.id === newItem.id &&
-        arraysEqual(item.selectedExtras, newItem.selectedExtras) &&
-        optionsEqual(item.selectedOptions, newItem.selectedOptions) &&
-        arraysEqual(item.selectedSharedComplements, newItem.selectedSharedComplements) &&
-        item.weight === newItem.weight
-      )
+      const existingItemIndex = prevItems.findIndex(item => isSameCartLine(item, newItem))
       if (existingItemIndex >= 0) {
         const updatedItems = [...prevItems]
         updatedItems[existingItemIndex] = {

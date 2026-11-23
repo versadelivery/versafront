@@ -75,13 +75,20 @@ function getShopFromStorage(): any {
 
 // ─── Price calculator ─────────────────────────────────────────────────────────
 
+// Peso da etiqueta (weight_total) é o de todas as unidades: o carrinho guarda o peso por unidade
+function unitWeight(attrs: CustomerOrderItem["attributes"]): number {
+  const weight = Number(attrs.weight) || 0
+  const quantity = Number(attrs.quantity) || 1
+  return (attrs as { weight_total?: boolean }).weight_total && quantity > 1 ? Math.round((weight / quantity) * 1000) / 1000 : weight
+}
+
 function calcTotalPrice(catalogItem: CatalogItem, attrs: CustomerOrderItem["attributes"]): number {
   const a = catalogItem.attributes
   const hasDiscount = a.price_with_discount !== null && Number(a.price_with_discount) < Number(a.price)
   const base = hasDiscount ? Number(a.price_with_discount) : Number(a.price)
   const isWeight = a.item_type === "weight_per_kg" || a.item_type === "weight_per_g"
 
-  let total = (isWeight && attrs.weight) ? base * attrs.weight : base
+  let total = (isWeight && attrs.weight) ? base * unitWeight(attrs) : base
   total *= attrs.quantity
 
   ;(attrs.selected_extras ?? []).forEach((ex) => {
@@ -137,7 +144,7 @@ function toCartItem(catalogItem: CatalogItem, attrs: CustomerOrderItem["attribut
     ...catalogItem,
     cartId: crypto.randomUUID(),
     quantity: attrs.quantity,
-    weight: isWeight ? (attrs.weight ?? undefined) : undefined,
+    weight: isWeight && attrs.weight ? unitWeight(attrs) : undefined,
     selectedExtras: validExtras,
     selectedMethods: validMethods,
     selectedOptions: validOptions,

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { formatPayments, paymentsOf } from '@/lib/split-payment'
 import { PrinterConfig, PrintFontSize } from '@/services/printer-config';
-import { orderItemQuantityLabel } from '@/utils/order-item-quantity';
+import { isWeightItem, orderItemPrintLabel, orderItemQuantityLabel, orderItemTotalWeightLabel } from '@/utils/order-item-quantity';
 
 export type ReceiptMode = 'summary' | 'complete';
 export interface ReceiptOrder { id: string; amount?: number; customerName?: string; socketData?: any; attributes?: any }
@@ -37,14 +37,18 @@ function itemDetails(item: any, detailed: boolean) {
   const attrs = item.attributes || {};
   const catalog = attrs.catalog_item?.data?.attributes || {};
   const name = escapeHtml(catalog.name || attrs.name || 'Item removido');
-  const weight = attrs.weight ? `${detailed ? number(attrs.weight) : Number(attrs.weight).toLocaleString('pt-BR')} kg` : orderItemQuantityLabel(attrs);
+  // Via resumida e completa mostram a quantidade e o peso total (etiqueta): "2 un. · 2,406 kg"
+  const weight = attrs.weight && isWeightItem(attrs) ? orderItemPrintLabel(attrs, detailed ? number : (value) => value.toLocaleString('pt-BR', { maximumFractionDigits: 3 })) : orderItemQuantityLabel(attrs);
+  // Via resumida com várias unidades por peso: quantidade e peso total em linhas separadas (cabem melhor no papel)
+  const splitLines = !!attrs.weight && isWeightItem(attrs) && Number(attrs.quantity) > 1;
   const methods = (attrs.selected_prepare_methods || []).map((entry: any) => entry.name).filter(Boolean).join(', ');
   const steps = (attrs.selected_steps || []).map((entry: any) => `${entry.step_name}: ${entry.option_name}`).join('<br>');
   const extras = [...(attrs.selected_extras || []), ...(attrs.complements || [])].map((entry: any) => entry.name).filter(Boolean).join(', ');
   const price = Number(attrs.price_with_discount || attrs.price || 0);
   return `<div class="item emphasis">
     <strong>${name}</strong>
-    <div>${detailed ? `${weight} x ${money(price)}${attrs.weight ? '/kg' : ''}` : `Quantidade/Peso: ${escapeHtml(weight)}`}</div>
+    ${detailed || !splitLines ? `<div>${detailed ? `${weight} x ${money(price)}${attrs.weight ? '/kg' : ''}` : `Quantidade/Peso: ${escapeHtml(weight)}`}</div>`
+      : `<div>Quantidade: ${escapeHtml(attrs.quantity)} un.</div><div>Peso total: ${escapeHtml(orderItemTotalWeightLabel(attrs, (value) => value.toLocaleString('pt-BR', { maximumFractionDigits: 3 })))}</div>`}
     ${methods ? `<div>Preparo: ${escapeHtml(methods)}</div>` : ''}
     ${steps ? `<div>Montagem:<br>${steps}</div>` : ''}
     ${extras ? `<div>Adicionais: ${escapeHtml(extras)}</div>` : ''}
@@ -150,9 +154,7 @@ export function buildWhatsAppReceiptMessage(order: ReceiptOrder) {
     const itemAttrs = item.attributes || {};
     const catalog = itemAttrs.catalog_item?.data?.attributes || {};
     const name = catalog.name || itemAttrs.name || 'Item removido';
-    const quantity = itemAttrs.weight
-      ? `${number(itemAttrs.weight)} kg`
-      : orderItemQuantityLabel(itemAttrs);
+    const quantity = itemAttrs.weight && isWeightItem(itemAttrs) ? orderItemPrintLabel(itemAttrs, number) : orderItemQuantityLabel(itemAttrs);
     const unitPrice = Number(itemAttrs.price_with_discount || itemAttrs.price || 0);
     const methods = (itemAttrs.selected_prepare_methods || []).map((entry: any) => entry.name).filter(Boolean).join(', ');
     const steps = (itemAttrs.selected_steps || []).map((entry: any) => `${entry.step_name}: ${entry.option_name}`).filter(Boolean).join(' · ');

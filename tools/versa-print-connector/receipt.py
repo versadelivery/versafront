@@ -99,13 +99,20 @@ class Receipt:
         return ''.join(svg), height, self.parts
 
 
-def item_values(raw):
+def item_values(raw, mode="complete"):
     item = unwrap(raw); catalog = unwrap(item.get("catalog_item"))
     methods = ", ".join(x.get("name", "") for x in item.get("selected_prepare_methods", []))
     steps = ", ".join(f'{x.get("step_name")}: {x.get("option_name")}' for x in item.get("selected_steps", []))
     extras = ", ".join(x.get("name", "") for x in item.get("selected_extras", []) + item.get("complements", []))
     weight = item.get("weight")
-    quantity = f'{float(weight):g} kg'.replace(".", ",") if weight else str(item.get("quantity", 1))
+    if weight:
+        units = int(item.get("quantity") or 1)
+        # weight_total: o peso já é o de todas as unidades (etiqueta); senão é por unidade
+        total = float(weight) if item.get("weight_total") else float(weight) * units
+        quantity = f'{round(total, 3):g} kg'.replace(".", ",")
+        if units > 1 and mode != "summary": quantity = f"{units} un. · {quantity}"
+    else:
+        quantity = str(item.get("quantity", 1))
     return item, catalog.get("name") or item.get("name") or "ITEM", quantity, methods, steps, extras
 
 
@@ -143,8 +150,11 @@ def build_receipt(job, paper_width=DEFAULT_WIDTH):
 
     items = order.get("items", {}).get("data", []) if isinstance(order.get("items"), dict) else order.get("items", [])
     for raw in items:
-        item, name, quantity, methods, steps, extras = item_values(raw)
+        item, name, quantity, methods, steps, extras = item_values(raw, mode)
         r.text(name.upper(), size, True, gap=gap)
+        if mode == "summary" and item.get("weight") and int(item.get("quantity") or 1) > 1:
+            # Várias unidades por peso: quantidade e peso total em linhas separadas
+            r.pair("Quantidade:", f'{int(item.get("quantity"))} un.', size, True, gap)
         r.pair("Peso:" if item.get("weight") else "Quantidade:", quantity, size, mode == "summary", gap)
         if methods: r.pair("Preparo:", methods, size, mode == "summary", gap)
         if steps: r.pair("Montagem:", steps, size, mode == "summary", gap)

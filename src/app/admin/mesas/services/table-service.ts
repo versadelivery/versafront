@@ -26,6 +26,7 @@ export interface TableSessionOrderItem {
   quantity: number;
   item_type?: string | null;
   weight?: number | null;
+  weight_total?: boolean | null;
 }
 
 export interface TableSessionOrderSummary {

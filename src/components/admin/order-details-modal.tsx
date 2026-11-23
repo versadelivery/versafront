@@ -65,6 +65,8 @@ interface OrderItem {
   weight?: number;
   // Peso conferido pela etiqueta da balança (a bipada marca; a API grava junto com o peso)
   weight_confirmed?: boolean;
+  // Peso da linha já é o de todas as unidades (etiqueta); o valor não multiplica pela quantidade
+  weight_total?: boolean;
   // Linha adicionada nesta edição, ainda não salva
   _isNew?: boolean;
   item_type?: string;
@@ -524,7 +526,7 @@ export default function OrderDetailsModal({
       ...prev,
       items: prev.items.map((item) => {
         if (item.id !== itemId) return item;
-        const updated = { ...item, weight, weight_confirmed: true };
+        const updated = { ...item, weight, weight_confirmed: true, weight_total: true };
         return { ...updated, total_price: calculateItemTotal(updated) };
       }),
     }));
@@ -689,6 +691,7 @@ export default function OrderDetailsModal({
         item_type: catalogItem.attributes.item_type,
         price: basePrice,
         weight_confirmed: !!options.weightConfirmed,
+        weight_total: !!options.weightConfirmed,
       }),
       _isNew: true,
     };
@@ -775,7 +778,8 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
       ...prev,
       items: prev.items.map((item: any) => {
         if (item.id !== itemId) return item;
-        const updated = { ...item, weight };
+        // Peso digitado no ajuste é o da etiqueta (todas as unidades juntas)
+        const updated = { ...item, weight, weight_total: true };
         return { ...updated, total_price: calculateItemTotal(updated) };
       }),
     }));
@@ -1495,6 +1499,7 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
                             {isWeightItem(item) && item.weight != null && (
                               <span className="text-xs px-1.5 py-0.5 rounded-md border border-[#E5E2DD] bg-white text-muted-foreground flex-shrink-0">
                                 {formatWeight(Number(item.weight))} {item.item_type === 'weight_per_g' ? 'g' : 'kg'}
+                                {item.weight_total && Number(item.quantity) > 1 ? ' no total' : ''}
                               </span>
                             )}
                             {isWeightItem(item) && item.weight_confirmed && (
@@ -1609,6 +1614,17 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
                                       </button>
                                     );
                                   })}
+                                </div>
+                              </div>
+                            )}
+                            {/* Catálogo não carregado: o preparo escolhido continua visível (só leitura) durante a edição */}
+                            {!(item.available_prepare_methods?.length > 0) && item.selected_prepare_methods?.length > 0 && (
+                              <div className="mt-2" data-testid="selected-prepare-methods">
+                                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Preparo</span>
+                                <div className="flex flex-wrap gap-1.5 mt-1">
+                                  {item.selected_prepare_methods.map((method: any) => (
+                                    <span key={`selected-method-${method.id ?? method.name}`} className="rounded-md border border-[#E5E2DD] bg-white px-2 py-1 text-xs text-gray-700">{method.name}</span>
+                                  ))}
                                 </div>
                               </div>
                             )}

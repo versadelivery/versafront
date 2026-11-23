@@ -13,6 +13,7 @@ export function mapOrderItem(item: any) {
     weight: (item.attributes as any).weight != null ? parseFloat((item.attributes as any).weight) : undefined,
     item_type: item.attributes.item_type,
     weight_confirmed: !!item.attributes.weight_confirmed,
+    weight_total: !!item.attributes.weight_total,
     selected_extras: (item.attributes as any).selected_extras?.map((e: any) => ({
       id: e.id,
       name: e.name,
