@@ -72,6 +72,8 @@ interface CartItem {
   // Preço do kg (ou do g) do catálogo; `price` já é o total da linha
   weightUnitPrice?: number;
   itemType?: string;
+  // Peso lido da etiqueta da balança já é o total da linha: não multiplica por quantidade
+  fromScale?: boolean;
 }
 
 interface CustomerInfo {
@@ -242,7 +244,7 @@ export default function PDVPage() {
         setScaleWeight(result.weight);
         setOptionsItem(item);
       } else {
-        addToCart(item, { weight: result.weight });
+        addToCart(item, { weight: result.weight, fromScale: true });
       }
       return;
     }
@@ -394,6 +396,7 @@ export default function PDVPage() {
       selectedOptions?: Record<string, { optionId: string; optionName: string }>;
       selectedSharedComplements?: { id: string; name: string; price: number }[];
       weight?: number;
+      fromScale?: boolean;
     }
   ) => {
     const attrs = item.attributes;
@@ -424,7 +427,7 @@ export default function PDVPage() {
       selectedMethods: options?.selectedMethods,
       selectedStepOptions: options?.selectedOptions,
       selectedSharedComplements: options?.selectedSharedComplements,
-      ...(isWeightBased && itemWeight && { weight: itemWeight, itemType: attrs.item_type, weightUnitPrice: basePrice }),
+      ...(isWeightBased && itemWeight && { weight: itemWeight, itemType: attrs.item_type, weightUnitPrice: basePrice, fromScale: !!options?.fromScale }),
     };
 
     setCartIdCounter((prev) => prev + 1);
@@ -447,7 +450,7 @@ export default function PDVPage() {
     selectedSharedComplements: { id: string; name: string; price: number }[];
     weight?: number;
   }) => {
-    if (optionsItem) addToCart(optionsItem, options);
+    if (optionsItem) addToCart(optionsItem, { ...options, fromScale: scaleWeight !== undefined });
     closeOptions();
   };
 
@@ -462,7 +465,7 @@ export default function PDVPage() {
     setCart((prev) =>
       prev.map((item) =>
         item.id === itemId
-          ? { ...item, quantity: newQuantity, totalPrice: item.price * newQuantity }
+          ? { ...item, quantity: newQuantity, totalPrice: Math.round(item.price * newQuantity * 100) / 100 }
           : item
       )
     );
@@ -1422,11 +1425,12 @@ export default function PDVPage() {
                             {item.weight && item.itemType
                               ? `${formatWeight(item.weight)} ${item.itemType === 'weight_per_g' ? 'g' : 'kg'}`
                               : `${formatPrice(item.price)} × ${item.quantity}`}
+                            {item.weight && item.itemType && !item.fromScale && item.quantity > 1 && ` × ${item.quantity}`}
                           </span>
                         </div>
                         <div className="flex flex-col items-end gap-1 flex-shrink-0">
                           <div className="flex items-center gap-1">
-                          {item.weight && item.itemType ? (
+                          {item.fromScale ? (
                             <Button
                               size="sm"
                               variant="ghost"
