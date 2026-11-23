@@ -101,7 +101,7 @@ export default function PaymentSettingsPage() {
           description: "Pagamento em espécie no momento da entrega",
           icon: <Wallet className="w-5 h-5 text-primary" />,
           enabled: attrs.cash,
-          pdv: attrs.cash_pdv ?? true,
+          pdv: attrs.cash_pdv ?? attrs.cash ?? true,
           adjustmentType: attrs.cash_adjustment_type || "none",
           adjustmentValue: attrs.cash_adjustment_value || "0",
           valueType: attrs.cash_value_type || "fixed"
@@ -112,7 +112,7 @@ export default function PaymentSettingsPage() {
           description: "Pagamento com cartão de crédito na maquininha",
           icon: <CreditCard className="w-5 h-5 text-primary" />,
           enabled: attrs.credit,
-          pdv: attrs.credit_pdv ?? true,
+          pdv: attrs.credit_pdv ?? attrs.credit ?? true,
           adjustmentType: attrs.credit_adjustment_type || "none",
           adjustmentValue: attrs.credit_adjustment_value || "0",
           valueType: attrs.credit_value_type || "fixed"
@@ -123,7 +123,7 @@ export default function PaymentSettingsPage() {
           description: "Pagamento com cartão de débito na maquininha",
           icon: <CreditCard className="w-5 h-5 text-primary" />,
           enabled: attrs.debit,
-          pdv: attrs.debit_pdv ?? true,
+          pdv: attrs.debit_pdv ?? attrs.debit ?? true,
           adjustmentType: attrs.debit_adjustment_type || "none",
           adjustmentValue: attrs.debit_adjustment_value || "0",
           valueType: attrs.debit_value_type || "fixed"
@@ -134,7 +134,7 @@ export default function PaymentSettingsPage() {
           description: "Pagamento com cartão de vale alimentação ou refeição",
           icon: <Wallet className="w-5 h-5 text-primary" />,
           enabled: attrs.food_voucher,
-          pdv: attrs.food_voucher_pdv ?? false,
+          pdv: attrs.food_voucher_pdv ?? attrs.food_voucher ?? false,
           hint: "Vale só no PDV: deixe \"Site\" desligado para o cliente não ver.",
           adjustmentType: attrs.food_voucher_adjustment_type || "none",
           adjustmentValue: attrs.food_voucher_adjustment_value || "0",
@@ -146,7 +146,7 @@ export default function PaymentSettingsPage() {
           description: "Registra o valor para recebimento posterior",
           icon: <Wallet className="w-5 h-5 text-primary" />,
           enabled: attrs.store_credit,
-          pdv: attrs.store_credit_pdv ?? false,
+          pdv: attrs.store_credit_pdv ?? attrs.store_credit ?? false,
           hint: "Normalmente só no PDV: o lojista lança o fiado e ele não aparece no site.",
           adjustmentType: attrs.store_credit_adjustment_type || "none",
           adjustmentValue: attrs.store_credit_adjustment_value || "0",
@@ -159,7 +159,7 @@ export default function PaymentSettingsPage() {
           icon: <QrCode className="w-5 h-5 text-primary" />,
           // if asaas_pix is active, manual_pix is forced off
           enabled: attrs.asaas_pix ? false : attrs.manual_pix,
-          pdv: attrs.manual_pix_pdv ?? false,
+          pdv: attrs.manual_pix_pdv ?? attrs.manual_pix ?? false,
           adjustmentType: attrs.manual_pix_adjustment_type || "none",
           adjustmentValue: attrs.manual_pix_adjustment_value || "0",
           valueType: attrs.manual_pix_value_type || "fixed"

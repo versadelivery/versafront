@@ -16,8 +16,13 @@ export const usePayment = () => {
       queryClient.invalidateQueries({ queryKey: ["payment-methods"] });
       toast.success("Métodos de pagamento atualizados com sucesso");
     },
-    onError: () => {
-      toast.error("Erro ao atualizar métodos de pagamento");
+    onError: (error: unknown) => {
+      const response = (error as { response?: { status?: number; data?: { error?: string } } })?.response;
+      if (response?.status === 403) {
+        toast.error("Você não tem permissão para alterar as formas de pagamento. Peça ao administrador da loja.");
+        return;
+      }
+      toast.error(response?.data?.error || "Erro ao atualizar métodos de pagamento");
     },
   });
 

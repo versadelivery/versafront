@@ -541,13 +541,13 @@ export default function PDVPage() {
     const attrs = paymentMethodsData?.data?.attributes;
     const methods: { value: PdvMethod; label: string }[] = [];
     if (!attrs) return [{ value: "credit" as const, label: "Crédito" }, { value: "debit" as const, label: "Débito" }, { value: "cash" as const, label: "Dinheiro" }, { value: "pix" as const, label: "PIX" }];
-    // O PDV usa as chaves *_pdv (as sem sufixo são as do site)
-    if (attrs.credit_pdv) methods.push({ value: "credit", label: "Crédito" });
-    if (attrs.debit_pdv) methods.push({ value: "debit", label: "Débito" });
-    if (attrs.cash_pdv) methods.push({ value: "cash", label: "Dinheiro" });
-    if (attrs.manual_pix_pdv) methods.push({ value: "pix", label: "PIX" });
-    if (attrs.store_credit_pdv) methods.push({ value: "store_credit", label: "Fiado (a receber)" });
-    if (attrs.food_voucher_pdv) methods.push({ value: "food_voucher", label: "Vale alimentação / refeição" });
+    // O PDV usa as chaves *_pdv (as sem sufixo são as do site). API antiga (sem *_pdv): segue o campo do site.
+    if (attrs.credit_pdv ?? attrs.credit) methods.push({ value: "credit", label: "Crédito" });
+    if (attrs.debit_pdv ?? attrs.debit) methods.push({ value: "debit", label: "Débito" });
+    if (attrs.cash_pdv ?? attrs.cash) methods.push({ value: "cash", label: "Dinheiro" });
+    if (attrs.manual_pix_pdv ?? attrs.manual_pix) methods.push({ value: "pix", label: "PIX" });
+    if (attrs.store_credit_pdv ?? attrs.store_credit) methods.push({ value: "store_credit", label: "Fiado (a receber)" });
+    if (attrs.food_voucher_pdv ?? attrs.food_voucher) methods.push({ value: "food_voucher", label: "Vale alimentação / refeição" });
     return methods;
   })();
 
