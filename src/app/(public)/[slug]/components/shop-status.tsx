@@ -12,9 +12,11 @@ interface ShopStatusProps {
   };
   shopScheduleConfig?: Record<string, string | boolean | null>;
   isDarkHeader?: boolean;
+  // Cor escolhida pelo dono para todo o texto de status; vazio = automática (verde/vermelho)
+  statusTextColor?: string | null;
 }
 
-export default function ShopStatus({ shopStatusData, shopScheduleConfig, isDarkHeader = false }: ShopStatusProps) {
+export default function ShopStatus({ shopStatusData, shopScheduleConfig, isDarkHeader = false, statusTextColor }: ShopStatusProps) {
   const [isScheduleOpen, setIsScheduleOpen] = useState(false);
   const { shopStatus, loading } = useShopStatus({
     initialShopStatus: shopStatusData,
@@ -35,11 +37,12 @@ export default function ShopStatus({ shopStatusData, shopScheduleConfig, isDarkH
     );
   }
 
-  const openBorder = isDarkHeader ? '#86EFAC' : '#22C55E';
-  const openText = isDarkHeader ? '#86EFAC' : '#16A34A';
-  const closedBorder = isDarkHeader ? '#FCA5A5' : '#EF4444';
-  const closedText = isDarkHeader ? '#FCA5A5' : '#DC2626';
-  const mutedText = isDarkHeader ? 'rgba(255,255,255,0.6)' : undefined;
+  const custom = statusTextColor || undefined;
+  const openBorder = custom ?? (isDarkHeader ? '#86EFAC' : '#22C55E');
+  const openText = custom ?? (isDarkHeader ? '#86EFAC' : '#16A34A');
+  const closedBorder = custom ?? (isDarkHeader ? '#FCA5A5' : '#EF4444');
+  const closedText = custom ?? (isDarkHeader ? '#FCA5A5' : '#DC2626');
+  const mutedText = custom ?? (isDarkHeader ? 'rgba(255,255,255,0.6)' : undefined);
   const days = [
     ['sunday', 'Domingo'], ['monday', 'Segunda-feira'], ['tuesday', 'Terça-feira'],
     ['wednesday', 'Quarta-feira'], ['thursday', 'Quinta-feira'], ['friday', 'Sexta-feira'],
@@ -74,7 +77,7 @@ export default function ShopStatus({ shopStatusData, shopScheduleConfig, isDarkH
       <div className="flex items-center gap-2 border-l-2 pl-2.5" style={{ borderColor: shopStatus.isOpen ? openBorder : closedBorder }}>
         <div className="text-sm font-semibold" style={{ color: shopStatus.isOpen ? openText : closedText }}>
           <span>{shopStatus.isOpen ? 'Aberto agora' : `Fechado agora${reopeningLabel}`}</span>
-          <span className="ml-1 font-normal" style={{ color: mutedText || '#6B7280' }}>
+          <span className="ml-1 font-normal" style={{ color: mutedText || '#6B7280', opacity: custom ? 0.85 : undefined }}>
             · {todayLabel.charAt(0).toUpperCase() + todayLabel.slice(1)}
             {schedule[`${todayKey}_active`]
               ? ` ${formatDay(todayKey)}`

@@ -4,7 +4,7 @@ import { AdminBanner } from "@/components/admin/admin-banner";
 import { UrlCard } from "@/components/admin/url-card";
 import { AdminDashboardCard } from "@/components/admin/card";
 import { dashboardCards } from "./utils";
-import bannerImg from "../../../public/img/hero-admin.jpg";
+import bannerImg from "../../../public/img/admin-banner-default.jpg";
 import { useShop } from "@/hooks/use-shop";
 import { Button } from "@/components/ui/button";
 import { Info } from "lucide-react";

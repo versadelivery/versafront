@@ -18,10 +18,16 @@ import { useShop } from "@/hooks/use-shop";
 import { ShopAttributes } from "@/services/shop";
 import { usePhoneMask } from "@/hooks/use-phone-mask";
 import Link from "next/link";
+import defaultBanner from "../../../../../public/img/admin-banner-default.jpg";
+
+const BANNER_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const BANNER_MAX_BYTES = 8 * 1024 * 1024;
 
 export default function GeneralSettingsPage() {
   const { shop, isLoading, updateShop, isUpdating } = useShop();
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  // null = sem banner próprio (vale a imagem padrão)
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<ShopAttributes>>({});
   const [hasChanges, setHasChanges] = useState(false);
   const [initialData, setInitialData] = useState<Partial<ShopAttributes>>({});
@@ -44,6 +50,8 @@ export default function GeneralSettingsPage() {
         email: shop.email || "",
         slug: shop.slug,
         image: null,
+        admin_banner: null,
+        remove_admin_banner: false,
         business_category: shop.business_category || "other"
       };
 
@@ -55,6 +63,9 @@ export default function GeneralSettingsPage() {
       }
 
       setLogoPreview(shop.image_url || null);
+      setBannerPreview(shop.admin_banner_url || null);
+      // Depois de salvar, o arquivo já está no servidor: não deixa o formulário "sujo"
+      setFormData(prev => ({ ...prev, admin_banner: null, remove_admin_banner: false }));
     }
   }, [shop, isLoading, isUpdating]);
 
@@ -63,6 +74,9 @@ export default function GeneralSettingsPage() {
       const changesDetected = Object.keys(formData).some(key => {
         if (key === 'image') {
           return formData.image !== null;
+        }
+        if (key === 'admin_banner') {
+          return formData.admin_banner !== null;
         }
         return formData[key as keyof typeof formData] !== initialData[key as keyof typeof initialData];
       });
@@ -80,6 +94,30 @@ export default function GeneralSettingsPage() {
       reader.readAsDataURL(file);
       setFormData(prev => ({ ...prev, image: file }));
     }
+  };
+
+  const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!BANNER_TYPES.includes(file.type)) {
+      toast.error("O banner deve ser JPG, PNG ou WebP");
+      return;
+    }
+    if (file.size > BANNER_MAX_BYTES) {
+      toast.error("O banner deve ter no máximo 8 MB");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = () => setBannerPreview(reader.result as string);
+    reader.readAsDataURL(file);
+    setFormData(prev => ({ ...prev, admin_banner: file, remove_admin_banner: false }));
+  };
+
+  // Volta para a imagem padrão: o banner próprio só é apagado ao salvar
+  const handleBannerReset = () => {
+    setBannerPreview(null);
+    setFormData(prev => ({ ...prev, admin_banner: null, remove_admin_banner: !!shop?.admin_banner_url }));
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -166,6 +204,7 @@ export default function GeneralSettingsPage() {
   const handleCancel = () => {
     setFormData(initialData);
     setLogoPreview(shop?.image_url || null);
+    setBannerPreview(shop?.admin_banner_url || null);
     setHasChanges(false);
     setFieldErrors({});
   };
@@ -330,6 +369,54 @@ export default function GeneralSettingsPage() {
                     </p>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* SectionCard: Banner do painel */}
+          <div className="bg-white rounded-md border border-[#E5E2DD] overflow-hidden">
+            <div className="px-5 py-4 border-b border-[#E5E2DD] flex items-center gap-2">
+              <ImageIcon className="h-4 w-4 text-primary" />
+              <h2 className="font-tomato text-base font-semibold text-gray-900">Banner do Painel</h2>
+            </div>
+            <div className="px-5 py-5 space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Imagem que aparece no topo do painel (/admin) e na tela inicial do app. Sem banner próprio, usamos a imagem padrão.
+              </p>
+              <div className="relative h-40 sm:h-52 w-full overflow-hidden rounded-md border border-[#E5E2DD] bg-black">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={bannerPreview || defaultBanner.src}
+                  alt="Banner do painel"
+                  data-testid="banner-preview"
+                  className="h-full w-full object-cover opacity-60"
+                />
+                <span className="absolute left-2 top-2 rounded bg-black/60 px-2 py-0.5 text-xs text-white">
+                  {bannerPreview ? "Banner da loja" : "Imagem padrão"}
+                </span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-md border border-[#E5E2DD] px-3 text-sm font-medium hover:border-primary">
+                  <Upload className="h-4 w-4" />
+                  {bannerPreview ? "Trocar banner" : "Enviar banner"}
+                  <input
+                    type="file"
+                    name="admin_banner"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handleBannerChange}
+                    className="sr-only"
+                  />
+                </label>
+                {bannerPreview && (
+                  <button
+                    type="button"
+                    onClick={handleBannerReset}
+                    className="h-10 rounded-md border border-[#E5E2DD] px-3 text-sm hover:border-primary"
+                  >
+                    Usar imagem padrão
+                  </button>
+                )}
+                <span className="text-xs text-muted-foreground">JPG, PNG ou WebP, até 8 MB. Sugestão: 1920×1080.</span>
               </div>
             </div>
           </div>

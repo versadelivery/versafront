@@ -34,6 +34,12 @@ export interface ShopAttributes {
   group_color?: string | null;
   catalog_layout?: string | null;
   accent_color?: string | null;
+  // Cor do texto "Aberto/Fechado agora" no catálogo; vazio = automática
+  status_text_color?: string | null;
+  // Banner do painel (/admin); sem ele vale a imagem padrão
+  admin_banner?: File | null;
+  admin_banner_url?: string | null;
+  remove_admin_banner?: boolean;
   estimated_prep_time?: number | null;
   estimated_delivery_time?: number | null;
   business_category?: string | null;
@@ -79,6 +85,10 @@ export const shopService = {
         if (value instanceof File) {
           formData.append('shop[image]', value);
         }
+        return;
+      }
+      if (key === 'admin_banner' || key === 'admin_banner_url') {
+        if (value instanceof File) formData.append('shop[admin_banner]', value);
         return;
       }
       formData.append(`shop[${key}]`, value === null ? '' : value);

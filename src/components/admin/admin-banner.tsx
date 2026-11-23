@@ -13,16 +13,29 @@ interface AdminBannerProps {
 export function AdminBanner({ bannerImg, children }: AdminBannerProps) {
   const { shop, isLoading } = useShop();
   const shopImage = fixImageUrl(shop?.image_url);
+  // Banner próprio da loja; sem ele fica a imagem padrão (a mesma do app)
+  const customBanner = fixImageUrl(shop?.admin_banner_url);
 
   return (
     <div className="relative">
       <div className="h-96 w-full bg-black overflow-hidden lg:rounded-b-[80px] rounded-b-md">
-        <Image
-          src={bannerImg}
-          alt="Background"
-          className="w-full h-full object-cover opacity-30"
-          priority
-        />
+        {customBanner ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={customBanner}
+            alt="Banner da loja"
+            data-testid="admin-banner-custom"
+            className="w-full h-full object-cover opacity-30"
+          />
+        ) : (
+          <Image
+            src={bannerImg}
+            alt="Background"
+            data-testid="admin-banner-default"
+            className="w-full h-full object-cover opacity-30"
+            priority
+          />
+        )}
       </div>
       
       <div className="absolute top-1/2 left-1/2 transform mt-8 -translate-x-1/2 -translate-y-1/2 z-10">

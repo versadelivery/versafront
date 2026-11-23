@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { SaveActions, useSaveBar } from "@/components/admin/save-bar";
 import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
 import { useShop } from "@/hooks/use-shop";
 import { ShopAttributes } from "@/services/shop";
 import {
@@ -42,7 +43,39 @@ type CatalogFormData = Pick<
   | "group_color"
   | "catalog_layout"
   | "accent_color"
+  | "status_text_color"
 >;
+
+// Mesmas cores automáticas do ShopStatus do catálogo
+function statusColors(isDark: boolean, custom?: string | null) {
+  return {
+    open: custom || (isDark ? "#86EFAC" : "#16A34A"),
+    closed: custom || (isDark ? "#FCA5A5" : "#DC2626"),
+    muted: custom || (isDark ? "rgba(255,255,255,0.6)" : "#6B7280"),
+  };
+}
+
+function StatusExample({ isDark, custom }: { isDark: boolean; custom?: string | null }) {
+  const c = statusColors(isDark, custom);
+  const rows = [
+    { label: "Aberto agora", detail: "Sábado 08:00 às 18:00", color: c.open },
+    { label: "Fechado agora", detail: "Sábado · sem atendimento", color: c.closed },
+  ];
+  return (
+    <div className="space-y-2" data-testid="status-example">
+      {rows.map((r) => (
+        <div key={r.label} className="flex items-center gap-2 border-l-2 pl-2.5" style={{ borderColor: r.color }}>
+          <div className="text-sm font-semibold" style={{ color: r.color }}>
+            <span>{r.label}</span>
+            <span className="ml-1 font-normal" style={{ color: c.muted, opacity: custom ? 0.85 : undefined }}>
+              · {r.detail}
+            </span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function AppearanceSettingsPage() {
   const { shop, isLoading, updateShop, isUpdating } = useShop();
@@ -55,6 +88,7 @@ export default function AppearanceSettingsPage() {
     group_color: "#FFFFFF",
     catalog_layout: "list",
     accent_color: "#16A34A",
+    status_text_color: "",
   });
   const [initialData, setInitialData] = useState<CatalogFormData | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
@@ -70,6 +104,7 @@ export default function AppearanceSettingsPage() {
         group_color: shop.group_color || "#FFFFFF",
         catalog_layout: shop.catalog_layout || "list",
         accent_color: shop.accent_color || "#16A34A",
+        status_text_color: shop.status_text_color || "",
       };
 
       if (!initialData || (initialData as any)._slug !== shop.slug) {
@@ -93,6 +128,10 @@ export default function AppearanceSettingsPage() {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!hasChanges) return;
+    if (formData.status_text_color && !validStatusColor) {
+      toast.error("Cor do texto de status inválida. Use o formato #RRGGBB");
+      return;
+    }
     updateShop(formData as Partial<ShopAttributes>);
   };
 
@@ -120,6 +159,8 @@ export default function AppearanceSettingsPage() {
       accent_color: preset.accent,
     }));
   };
+
+  const validStatusColor = /^#[0-9a-fA-F]{6}$/.test(formData.status_text_color || "");
 
   const isDarkHeader = useMemo(() => {
     const hex = formData.header_color || "#FFFFFF";
@@ -328,6 +369,52 @@ export default function AppearanceSettingsPage() {
                       </p>
                     </div>
                   </div>
+
+                  {/* Texto de status da loja */}
+                  <div className="pt-5 border-t border-[#E5E2DD] space-y-3">
+                    <div>
+                      <Label htmlFor="status_text_color" className="text-sm font-medium">
+                        Cor do texto de status da loja
+                      </Label>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Muda a cor de "Aberto agora / Fechado agora" e do horário, que aparecem no topo do catálogo.
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <input
+                        type="color"
+                        id="status_text_color"
+                        value={validStatusColor ? formData.status_text_color! : isDarkHeader ? "#FFFFFF" : "#1F2937"}
+                        onChange={(e) =>
+                          setFormData((prev) => ({ ...prev, status_text_color: e.target.value.toUpperCase() }))
+                        }
+                        className="w-10 h-10 rounded-md border border-[#E5E2DD] cursor-pointer p-0.5"
+                      />
+                      <Input
+                        value={formData.status_text_color || ""}
+                        placeholder="Automático"
+                        onChange={(e) =>
+                          setFormData((prev) => ({ ...prev, status_text_color: e.target.value.trim() }))
+                        }
+                        className="h-10 w-36 rounded-md border-[#E5E2DD] font-mono text-sm"
+                        maxLength={7}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setFormData((prev) => ({ ...prev, status_text_color: "" }))}
+                        disabled={!formData.status_text_color}
+                        className="h-10 px-3 rounded-md border border-[#E5E2DD] text-sm hover:border-primary disabled:opacity-50 disabled:hover:border-[#E5E2DD]"
+                      >
+                        Automático
+                      </button>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1.5">Exemplo, como vai aparecer no catálogo:</p>
+                      <div className="rounded-md border border-[#E5E2DD] px-4 py-3" style={{ backgroundColor: formData.header_color || "#FFFFFF" }}>
+                        <StatusExample isDark={isDarkHeader} custom={validStatusColor ? formData.status_text_color : null} />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -528,12 +615,9 @@ export default function AppearanceSettingsPage() {
                       >
                         {shop?.name || "Sua Loja"}
                       </p>
-                      <p
-                        className="text-xs mt-0.5"
-                        style={{ color: isDarkHeader ? "rgba(255,255,255,0.7)" : "#6B7280" }}
-                      >
-                        Aberto agora
-                      </p>
+                      <div className="mt-1">
+                        <StatusExample isDark={isDarkHeader} custom={validStatusColor ? formData.status_text_color : null} />
+                      </div>
                     </div>
                   </div>
                   <div

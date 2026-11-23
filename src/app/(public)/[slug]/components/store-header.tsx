@@ -214,6 +214,7 @@ export default function StoreHeader({ shop: initialShop }: StoreHeaderProps) {
                     attributes.shop_schedule_config
                   }
                   isDarkHeader={isDark}
+                  statusTextColor={attributes.status_text_color}
                 />
                 {attributes.address && (
                   <span className="flex items-center gap-1.5 text-sm" style={{ color: mutedColor }}>
