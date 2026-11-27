@@ -30,6 +30,31 @@ export function parseMoney(text: string): number {
 export const formatBRL = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 
+/** Regra de acréscimo/desconto de uma forma de pagamento (campos da config da loja) */
+export interface AdjustmentRule { type?: string | null; value?: number | string | null; valueType?: string | null }
+
+const cents = (n: number) => BigInt(Math.round(n * 100));
+
+/**
+ * Acréscimo (+) ou desconto (-) da forma sobre a parte `part` do valor `base` do pedido; o percentual incide sobre os itens.
+ * Conta em centavos inteiros, arredondando meio-centavo para cima: o mesmo resultado da API (Orders::PaymentPlan).
+ */
+export function ruleAdjustment(rule: AdjustmentRule | null | undefined, itemsTotal: number, part = 1, base = 1): number {
+  if (!rule || !rule.type || rule.type === "none") return 0;
+  const value = Number(rule.value ?? 0);
+  if (!(value > 0)) return 0;
+  let amount: number;
+  if (rule.valueType === "percentage") {
+    if (!(base > 0)) return 0;
+    const num = cents(itemsTotal) * cents(part) * BigInt(Math.round(value * 100));
+    const den = cents(base) * 10000n;
+    amount = Number((2n * num + den) / (2n * den)) / 100;
+  } else {
+    amount = round2(value);
+  }
+  return rule.type === "discount" ? -amount : amount;
+}
+
 export const remaining = (total: number, first: number) => round2(total - first);
 
 /** Mensagem de erro do 1º valor (precisa ficar entre 0 e o total, sem chegar nele) ou null se está ok */

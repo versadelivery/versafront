@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { formatPayments, paymentsOf } from '@/lib/split-payment'
+import { formatPayments, paymentsOf, round2, parseMoney, type AdjustmentRule } from '@/lib/split-payment'
+import { draftAdjustment, draftError, draftFromOrder, draftPayload, draftsEqual, type PaymentDraft } from '@/lib/order-payment-draft'
+import { OrderPaymentEditor } from '@/components/admin/order-payment-editor'
+import { usePayment } from '@/app/admin/settings/payment/usePayment'
 import { useUsers } from '@/app/admin/settings/users/hooks/useUsers';
 import { Dialog, DialogContent } from '@/components/ui/order-dialog';
 import { Button } from '@/components/ui/button';
@@ -233,6 +236,10 @@ export default function OrderDetailsModal({
   const [isSavingDelivery, setIsSavingDelivery] = useState(false);
   const [isEditingMode, setIsEditingMode] = useState(false);
   const [editedOrder, setEditedOrder] = useState(order);
+  const { paymentMethodsData } = usePayment();
+  const [paymentDraft, setPaymentDraft] = useState<PaymentDraft>(() => draftFromOrder(order));
+  // Texto digitado no campo de preço (permite "12," sem perder o cursor)
+  const [priceDrafts, setPriceDrafts] = useState<Record<string, string>>({});
   const [removedItemIds, setRemovedItemIds] = useState<string[]>([]);
   // Texto digitado no campo de peso (permite "2," sem perder o cursor); some ao sair do campo
   const [weightDrafts, setWeightDrafts] = useState<Record<string, string>>({});
@@ -290,6 +297,8 @@ export default function OrderDetailsModal({
     setRemovedItemIds([]);
     setNewItemsToAdd([]);
     setWeightDrafts({});
+    setPriceDrafts({});
+    setPaymentDraft(draftFromOrder(order));
   }, [orderSignature]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const editedSubtotal = (editedOrder.items || []).reduce(
@@ -298,12 +307,24 @@ export default function OrderDetailsModal({
   );
   const savedManualAdjustment = order.manual_adjustment || 0;
 
-  const editedTotal = editedSubtotal
+  // Valor sem o acréscimo/desconto da forma de pagamento: é ele que se divide entre as formas
+  const baseTotal = Math.max(round2(editedSubtotal
     + (editedOrder.delivery_fee || 0)
     - (editedOrder.discount_amount || 0)
-    + (editedOrder.payment_adjustment_amount || 0)
     + (editedOrder.pickup_adjustment_amount || 0)
-    + savedManualAdjustment;
+    + savedManualAdjustment), 0);
+  const paymentAttrs = paymentMethodsData?.data?.attributes as Record<string, unknown> | undefined;
+  const ruleOf = (method: string): AdjustmentRule | null => paymentAttrs ? ({
+    type: paymentAttrs[`${method}_adjustment_type`] as string,
+    value: paymentAttrs[`${method}_adjustment_value`] as string,
+    valueType: paymentAttrs[`${method}_value_type`] as string,
+  }) : null;
+  // Em edição o acréscimo/desconto vem da forma escolhida; fora dela, o que está gravado
+  const shownPaymentAdjustment = isEditingMode && paymentAttrs
+    ? draftAdjustment(paymentDraft, ruleOf, editedSubtotal, baseTotal)
+    : (editedOrder.payment_adjustment_amount || 0);
+
+  const editedTotal = Math.max(round2(baseTotal + shownPaymentAdjustment), 0);
 
   const handleSaveAllChanges = async () => {
     if (isSaving) return;
@@ -347,8 +368,17 @@ export default function OrderDetailsModal({
         changes.total = editedTotal;
       }
 
-      if (editedOrder.payment_method !== order.payment_method) {
-        changes.payment_method = editedOrder.payment_method;
+      // Pagamento: só vai para a API quando o atendente mexeu; a conferência (soma = valor do pedido) é aqui e na API
+      const paymentTouched = !draftsEqual(paymentDraft, draftFromOrder(order));
+      if (paymentTouched) {
+        const paymentProblem = draftError(paymentDraft, baseTotal);
+        if (paymentProblem) {
+          toast.error(paymentProblem);
+          return;
+        }
+        Object.assign(changes, draftPayload(paymentDraft));
+        // O total é refeito pela API com o acréscimo/desconto de cada forma
+        delete changes.total;
       }
 
       if (editedOrder.withdrawal !== order.withdrawal) {
@@ -364,7 +394,7 @@ export default function OrderDetailsModal({
         const itemChange: any = { id: editedItem.id };
         let hasChange = false;
 
-        if (editedItem.price !== originalItem.price) {
+        if (Number(editedItem.price) !== Number(originalItem.price)) {
           itemChange.price = editedItem.price;
           hasChange = true;
         }
@@ -464,6 +494,8 @@ export default function OrderDetailsModal({
   };
 
   const handleCancelAllChanges = () => {
+    setPaymentDraft(draftFromOrder(order));
+    setPriceDrafts({});
     setEditedOrder(order);
     setRemovedItemIds([]);
     setNewItemsToAdd([]);
@@ -784,6 +816,22 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
       }),
     }));
     setNewItemsToAdd(prev => prev.map(ni => (ni._tempId === itemId ? { ...ni, weight } : ni)));
+  };
+
+  // Preço digitado (do kg ou da unidade): recalcula o valor mostrado; a API recalcula de novo ao salvar
+  const handlePriceChange = (itemId: string, raw: string) => {
+    setPriceDrafts(prev => ({ ...prev, [itemId]: raw }));
+    const price = parseMoney(raw);
+    if (!Number.isFinite(price)) return;
+
+    setEditedOrder(prev => ({
+      ...prev,
+      items: prev.items.map((item: any) => {
+        if (item.id !== itemId) return item;
+        const updated = { ...item, price };
+        return { ...updated, total_price: calculateItemTotal(updated) };
+      }),
+    }));
   };
 
   // Atualiza uma opção do item e já recalcula o valor mostrado (a API recalcula de novo ao salvar)
@@ -1251,28 +1299,23 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
             <div className="space-y-4">
               <SectionCard icon={CreditCard} title="Pagamento">
                 <div className="divide-y divide-[#E5E2DD]">
-                  <div className="flex items-start justify-between py-1.5">
-                    <span className="text-sm text-muted-foreground">Metodo</span>
-                    {isEditingMode ? (
-                      <Select
-                        value={editedOrder.payment_method}
-                        onValueChange={(value) => setEditedOrder(prev => ({ ...prev, payment_method: value }))}
-                      >
-                        <SelectTrigger className="h-8 w-40 text-sm border-[#E5E2DD] rounded-md bg-white cursor-pointer">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-md border-[#E5E2DD]">
-                          <SelectItem value="cash">Dinheiro</SelectItem>
-                          <SelectItem value="manual_pix">PIX</SelectItem>
-                          <SelectItem value="asaas_pix">PIX Automático</SelectItem>
-                          <SelectItem value="credit">Cartão de Crédito</SelectItem>
-                          <SelectItem value="debit">Cartão de Débito</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    ) : (
+                  {isEditingMode ? (
+                    <div className="py-1.5">
+                      <OrderPaymentEditor
+                        draft={paymentDraft}
+                        onChange={setPaymentDraft}
+                        baseTotal={baseTotal}
+                        itemsTotal={editedSubtotal}
+                        ruleOf={ruleOf}
+                        splitAllowed={!!(paymentAttrs as any)?.allow_split_payment}
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex items-start justify-between py-1.5">
+                      <span className="text-sm text-muted-foreground">Metodo</span>
                       <span className="text-sm font-medium text-gray-900">{paymentLabel}</span>
-                    )}
-                  </div>
+                    </div>
+                  )}
                   {!isEditingMode && (
                     <InfoRow
                       label="Status"
@@ -1356,24 +1399,24 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
                     </div>
                   )}
 
-                  {order.payment_adjustment_amount !== undefined && order.payment_adjustment_amount !== 0 && (
-                    <div className="flex items-start justify-between py-1.5">
+                  {shownPaymentAdjustment !== 0 && (
+                    <div className="flex items-start justify-between py-1.5" data-testid="payment-adjustment-row">
                       <span
                         className={cn(
                           'text-sm',
-                          order.payment_adjustment_amount < 0 ? 'text-green-600' : 'text-orange-600',
+                          shownPaymentAdjustment < 0 ? 'text-green-600' : 'text-orange-600',
                         )}
                       >
-                        {order.payment_adjustment_amount < 0 ? 'Desconto no pagamento' : 'Acréscimo no pagamento'}
+                        {shownPaymentAdjustment < 0 ? 'Desconto no pagamento' : 'Acréscimo no pagamento'}
                       </span>
                       <span
                         className={cn(
                           'text-sm font-medium',
-                          order.payment_adjustment_amount < 0 ? 'text-green-600' : 'text-orange-600',
+                          shownPaymentAdjustment < 0 ? 'text-green-600' : 'text-orange-600',
                         )}
                       >
-                        {order.payment_adjustment_amount < 0 ? '-' : '+'}
-                        {formatCurrency(Math.abs(order.payment_adjustment_amount))}
+                        {shownPaymentAdjustment < 0 ? '-' : '+'}
+                        {formatCurrency(Math.abs(shownPaymentAdjustment))}
                       </span>
                     </div>
                   )}
@@ -1529,6 +1572,27 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
                             )}
                           </div>
                         </div>
+
+                        {isEditingMode && !String(item.id).startsWith('new_') && (
+                          <div className="mt-2 flex items-center gap-2">
+                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                              {isWeightItem(item) ? `Preço por ${item.item_type === 'weight_per_g' ? 'g' : 'kg'}` : 'Preço unitário'}
+                            </span>
+                            <Input
+                              type="text"
+                              inputMode="decimal"
+                              data-testid={`item-price-${item.id}`}
+                              aria-label={`Preço de ${item.name}`}
+                              className="h-10 w-28 text-base"
+                              value={priceDrafts[item.id] ?? String(round2(Number(item.price) || 0)).replace('.', ',')}
+                              onChange={(e) => handlePriceChange(item.id, e.target.value)}
+                              onBlur={() => setPriceDrafts(prev => {
+                                const { [item.id]: _removed, ...rest } = prev;
+                                return rest;
+                              })}
+                            />
+                          </div>
+                        )}
 
                         {isEditingMode && isWeightItem(item) && (
                           <div className="mt-2 flex items-center gap-2">

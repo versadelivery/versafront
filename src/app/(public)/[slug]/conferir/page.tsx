@@ -37,7 +37,7 @@ import { KmDeliveryAddress, KmDeliveryState, emptyKmDeliveryState } from '@/comp
 import { AddressNumberField } from '@/components/address-number-field'
 import { hasAddressNumber, normalizeAddressNumber, splitStreetNumber } from '@/utils/address-number'
 import { SplitPaymentPicker, type SplitValue } from '@/components/payments/split-payment-picker'
-import { SPLIT_METHODS, type SplitMethod } from '@/lib/split-payment'
+import { SPLIT_METHODS, ruleAdjustment, type SplitMethod } from '@/lib/split-payment'
 
 type DeliveryOption = 'delivery' | 'pickup'
 
@@ -387,7 +387,7 @@ export default function CheckoutPage() {
   const [reference, setReference] = useState('')
   const [changeFor, setChangeFor] = useState('')
   // Pagamento dividido em 2 formas (só aparece se a loja liga a opção)
-  const [split, setSplit] = useState<SplitValue>({ active: false, payments: null })
+  const [split, setSplit] = useState<SplitValue>({ active: false, payments: null, adjustment: 0 })
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [cartItems, setCartItems] = useState<CartItemWithExtras[]>([])
@@ -731,8 +731,19 @@ export default function CheckoutPage() {
     return adjType === 'discount' ? -amount : amount
   }
 
-  // Dividido: o preço não muda conforme a forma, então não há acréscimo/desconto por forma
-  const paymentAdjustment = split.active ? 0 : calculatePaymentAdjustment()
+  // Dividido: cada forma leva o acréscimo/desconto dela sobre a sua parte (só depois de fechar as 2 partes)
+  const paymentAdjustment = split.active ? (split.payments ? split.adjustment : 0) : calculatePaymentAdjustment()
+  const splitAdjustFor = (method: SplitMethod, amount: number) => {
+    if (!shopPaymentConfig) return 0
+    const cfg = shopPaymentConfig as unknown as Record<string, unknown>
+    const base = (totalPrice || 0) + (calculateDeliveryFee() || 0) - (couponDiscount || 0) + pickupAdjustment
+    return ruleAdjustment(
+      { type: cfg[`${method}_adjustment_type`] as string, value: cfg[`${method}_adjustment_value`] as string, valueType: cfg[`${method}_value_type`] as string },
+      totalPrice || 0,
+      amount,
+      base,
+    )
+  }
 
   const calculatePickupAdjustment = (): number => {
     if (deliveryOption !== 'pickup' || !shopDeliveryConfig) return 0
@@ -1628,7 +1639,7 @@ export default function CheckoutPage() {
                   </Alert>
                 )}
                 {!!shopPaymentConfig?.allow_split_payment && calculateTotal() > 0 && (
-                  <SplitPaymentPicker idPrefix="site-split" title="Combinar 2 meios de pagamento" total={calculateTotal()} methods={splitMethods} onChange={setSplit} />
+                  <SplitPaymentPicker idPrefix="site-split" title="Combinar 2 meios de pagamento" total={calculateTotal() - paymentAdjustment} methods={splitMethods} onChange={setSplit} adjustFor={splitAdjustFor} />
                 )}
                 {fieldErrors.payment && <p className="text-sm text-red-500">{fieldErrors.payment}</p>}
                 {!split.active && <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -1730,7 +1741,7 @@ export default function CheckoutPage() {
                 appliedCouponCode={appliedCoupon?.code}
                 paymentAdjustment={paymentAdjustment}
                 pickupAdjustment={pickupAdjustment}
-                paymentMethodLabel={PAYMENT_LABELS[paymentMethod].label}
+                paymentMethodLabel={split.active ? 'pagamento' : PAYMENT_LABELS[paymentMethod].label}
               />
             </div>
           </div>
@@ -1767,7 +1778,7 @@ export default function CheckoutPage() {
                 appliedCouponCode={appliedCoupon?.code}
                 paymentAdjustment={paymentAdjustment}
                 pickupAdjustment={pickupAdjustment}
-                paymentMethodLabel={PAYMENT_LABELS[paymentMethod].label}
+                paymentMethodLabel={split.active ? 'pagamento' : PAYMENT_LABELS[paymentMethod].label}
               />
             </div>
           </div>

@@ -575,7 +575,7 @@ ${formatPayments(paymentsOf(order.socketData?.attributes)) || getPaymentMethodLa
               variant="ghost"
               className="w-full font-semibold rounded-xl bg-[#1B1B1B] text-white hover:bg-[#7ED957] hover:text-black transition-colors cursor-pointer"
               onClick={() => {
-                if (nextStatus === 'saiu') {
+                if (nextStatus === 'saiu' && order.deliveryType === 'delivery') {
                   handleLeftForDelivery();
                 } else {
                   onUpdateOrderStatus(order.id, nextStatus);

@@ -37,8 +37,9 @@ import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
 import { SchedulePicker } from "@/components/scheduling/schedule-picker";
 import { useSchedulingSlots } from "@/hooks/use-scheduling-slots";
 import { SCHEDULE_PRICE_NOTICE, describeSchedule } from "@/lib/scheduling";
+import { Switch } from "@/components/ui/switch";
 import { SplitPaymentPicker, type SplitValue } from "@/components/payments/split-payment-picker";
-import { SPLIT_METHODS, type SplitMethod } from "@/lib/split-payment";
+import { SPLIT_METHODS, ruleAdjustment, type SplitMethod } from "@/lib/split-payment";
 
 type PdvMethod = "cash" | "credit" | "debit" | "pix" | "store_credit" | "food_voucher";
 import { toScanItem } from "@/lib/barcode/to-scan-item";
@@ -130,10 +131,13 @@ export default function PDVPage() {
   const [registeringCustomer, setRegisteringCustomer] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PdvMethod>("credit");
   // Pagamento dividido em 2 formas (só aparece se a loja liga a opção); splitKey remonta o seletor após o pedido
-  const [split, setSplit] = useState<SplitValue>({ active: false, payments: null });
+  const [split, setSplit] = useState<SplitValue>({ active: false, payments: null, adjustment: 0 });
   const [splitKey, setSplitKey] = useState(0);
   const [changeAmount, setChangeAmount] = useState("");
   const [notes, setNotes] = useState("");
+  // Balcão: o atendente já pode deixar a venda entregue e/ou paga ao finalizar
+  const [markDelivered, setMarkDelivered] = useState(false);
+  const [markPaid, setMarkPaid] = useState(false);
   const [isProcessingOrder, setIsProcessingOrder] = useState(false);
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<ValidateCouponData | null>(null);
@@ -363,8 +367,8 @@ export default function PDVPage() {
     return adjType === "discount" ? -amount : amount;
   };
 
-  // Dividido: o preço não muda conforme a forma, então não há acréscimo/desconto por forma
-  const paymentAdjustment = split.active ? 0 : calculatePdvPaymentAdjustment();
+  // Dividido: cada forma leva o acréscimo/desconto dela sobre a sua parte (só depois de fechar as 2 partes)
+  const paymentAdjustment = split.active ? (split.payments ? split.adjustment : 0) : calculatePdvPaymentAdjustment();
 
   const getPaymentMethodLabel = (m: PdvMethod) =>
     ({ cash: "Dinheiro", credit: "Crédito", debit: "Débito", pix: "PIX", store_credit: "Fiado (a receber)", food_voucher: "Vale alimentação / refeição" })[m];
@@ -538,6 +542,18 @@ export default function PDVPage() {
   }, [cartTotal, appliedCoupon]);
 
   const orderTotal = Math.max(cartTotal - couponDiscount + paymentAdjustment + deliveryFee, 0);
+  // Valor a dividir entre as 2 formas: o pedido sem acréscimo/desconto de forma de pagamento
+  const splitBase = Math.max(cartTotal - couponDiscount + deliveryFee, 0);
+  const splitAdjustFor = (method: SplitMethod, amount: number) => {
+    const attrs = paymentMethodsData?.data?.attributes as Record<string, unknown> | undefined;
+    if (!attrs) return 0;
+    return ruleAdjustment(
+      { type: attrs[`${method}_adjustment_type`] as string, value: attrs[`${method}_adjustment_value`] as string, valueType: attrs[`${method}_value_type`] as string },
+      cartTotal,
+      amount,
+      splitBase,
+    );
+  };
 
   // Métodos de pagamento disponíveis (dinâmico baseado na config da loja)
   const availablePaymentMethods = (() => {
@@ -797,6 +813,8 @@ export default function PDVPage() {
             isTableOrder || orderType === "counter" ? undefined : customerInfo.phone.replace(/\D/g, "") || undefined,
           ...(appliedCoupon && { coupon_code: appliedCoupon.code }),
           ...(notes.trim() && { observation: notes.trim() }),
+          ...(orderType === "counter" && !scheduleEnabled && markDelivered && { delivered: true }),
+          ...(orderType === "counter" && !scheduleEnabled && markPaid && { paid: true }),
           ...(scheduleEnabled && scheduledFor && { scheduled_for: scheduledFor }),
           ...(orderType === "delivery" && setDefaultAddress && { set_default_address: true }),
           ...(selectedTableSessionId && { table_session_id: Number(selectedTableSessionId) }),
@@ -847,8 +865,10 @@ export default function PDVPage() {
         clearCart();
         goMobileView("catalog");
         setNotes("");
+        setMarkDelivered(false);
+        setMarkPaid(false);
         setChangeAmount("");
-        setSplit({ active: false, payments: null });
+        setSplit({ active: false, payments: null, adjustment: 0 });
         setSplitKey((k) => k + 1);
         handleRemoveCoupon();
         setFormErrors({});
@@ -1518,7 +1538,7 @@ export default function PDVPage() {
                     )}
                     {paymentAdjustment !== 0 && (
                       <div className={`flex justify-between items-center text-sm ${paymentAdjustment < 0 ? "text-green-600" : "text-orange-600"}`}>
-                        <span>{paymentAdjustment < 0 ? "Desc." : "Acresc."} {getPaymentMethodLabel(paymentMethod)}:</span>
+                        <span>{paymentAdjustment < 0 ? "Desc." : "Acresc."} {split.active ? "pagamento" : getPaymentMethodLabel(paymentMethod)}:</span>
                         <span>{paymentAdjustment < 0 ? "- " : "+ "}{formatPrice(Math.abs(paymentAdjustment))}</span>
                       </div>
                     )}
@@ -1631,7 +1651,7 @@ export default function PDVPage() {
               ) : (
               <>
               {canSplit && (
-                <SplitPaymentPicker key={splitKey} idPrefix="pdv-split" total={orderTotal} methods={splitMethods} onChange={setSplit} />
+                <SplitPaymentPicker key={splitKey} idPrefix="pdv-split" total={splitBase} methods={splitMethods} onChange={setSplit} adjustFor={splitAdjustFor} />
               )}
               {!split.active && (
               <div className="space-y-1.5">
@@ -1701,6 +1721,20 @@ export default function PDVPage() {
                   rows={3}
                 />
               </div>
+
+              {orderType === "counter" && !scheduleEnabled && (
+                <div className="space-y-2 rounded-md border border-[#E5E2DD] p-3" data-testid="pdv-counter-status">
+                  <p className="text-sm font-medium">Venda de balcão</p>
+                  <div className="flex items-center justify-between gap-3">
+                    <Label htmlFor="pdv-mark-delivered" className="text-sm font-normal cursor-pointer">Já entregue</Label>
+                    <Switch id="pdv-mark-delivered" data-testid="pdv-mark-delivered" checked={markDelivered} onCheckedChange={setMarkDelivered} />
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <Label htmlFor="pdv-mark-paid" className="text-sm font-normal cursor-pointer">Já pago</Label>
+                    <Switch id="pdv-mark-paid" data-testid="pdv-mark-paid" checked={markPaid} onCheckedChange={setMarkPaid} />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

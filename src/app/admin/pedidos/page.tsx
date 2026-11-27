@@ -253,6 +253,9 @@ export default function OrderManagement() {
     if (idx === -1 || idx >= activeStatuses.length - 2) return null; // -2 porque cancelled é o último
     return activeStatuses[idx + 1];
   }, [activeStatuses]);
+  // Retirada/balcão não sai com entregador: pula "saiu p/ entrega" e vai direto para entregue
+  const nextStatusFor = React.useCallback((order: Order, next: Order['status'] | null): Order['status'] | null =>
+    order.deliveryType === 'pickup' && next === 'saiu' ? getNextStatus('saiu') : next, [getNextStatus]);
   const seenOrderIdsRef = useRef<Set<string>>(new Set());
   const overdueAlertedRef = useRef<Set<string>>(new Set());
   const isInitialLoadRef = useRef(true);
@@ -1113,7 +1116,7 @@ export default function OrderManagement() {
                               onDeliveryPersonChange={updateDeliveryPerson}
                               onOpenOrderDetails={setSelectedOrderId}
                               onCancelOrder={cancelOrder}
-                              nextStatus={nextStatus}
+                              nextStatus={nextStatusFor(order, nextStatus)}
                               printerConfig={printerConfig}
                             />
                           ))}
@@ -1221,7 +1224,7 @@ export default function OrderManagement() {
                                 onDeliveryPersonChange={updateDeliveryPerson}
                                 onOpenOrderDetails={setSelectedOrderId}
                                 onCancelOrder={cancelOrder}
-                                nextStatus={nextStatus}
+                                nextStatus={nextStatusFor(order, nextStatus)}
                                 printerConfig={printerConfig}
                               />
                             ))}

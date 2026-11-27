@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import {
-  PAYMENT_LABELS, buildPayments, formatBRL, parseMoney, remaining, validateFirstAmount,
+  PAYMENT_LABELS, buildPayments, formatBRL, parseMoney, remaining, round2, validateFirstAmount,
   type SplitMethod, type SplitPayment,
 } from "@/lib/split-payment";
 
@@ -16,6 +16,8 @@ export interface SplitValue {
   active: boolean;
   /** as 2 partes, só quando o preenchimento terminou (senão null) */
   payments: SplitPayment[] | null;
+  /** soma do acréscimo (+) / desconto (-) das 2 formas (0 enquanto não terminou) */
+  adjustment: number;
 }
 
 interface Props {
@@ -26,6 +28,8 @@ interface Props {
   idPrefix?: string;
   /** texto do título (o site usa "Combinar 2 meios de pagamento") */
   title?: string;
+  /** acréscimo (+) / desconto (-) de uma forma para a parte dela (sem o acréscimo) */
+  adjustFor?: (method: SplitMethod, amount: number) => number;
 }
 
 const chip = (selected: boolean) =>
@@ -35,8 +39,18 @@ const chip = (selected: boolean) =>
     selected ? "border-primary bg-primary text-white" : "border-[#E5E2DD] bg-white text-gray-800 hover:border-gray-400"
   );
 
+/** "+ R$ 0,50" / "- R$ 0,50" ao lado do valor de uma parte (nada quando não há acréscimo/desconto) */
+export function AdjustNote({ adjustment }: { adjustment: number }) {
+  if (!adjustment) return null;
+  return (
+    <span className={cn("text-xs font-semibold", adjustment < 0 ? "text-green-600" : "text-orange-600")} data-testid="split-adjust-note">
+      {adjustment < 0 ? "-" : "+"} {formatBRL(Math.abs(adjustment))}
+    </span>
+  );
+}
+
 // Divisão em 2 formas, em etapas: vê o total, escolhe a 1ª forma e o valor, "OK"; a 2ª etapa já vem com o restante.
-export function SplitPaymentPicker({ total, methods, onChange, idPrefix = "split", title = "Dividir em 2 formas de pagamento" }: Props) {
+export function SplitPaymentPicker({ total, methods, onChange, idPrefix = "split", title = "Dividir em 2 formas de pagamento", adjustFor }: Props) {
   const [active, setActive] = useState(false);
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [first, setFirst] = useState<SplitMethod | null>(null);
@@ -50,6 +64,9 @@ export function SplitPaymentPicker({ total, methods, onChange, idPrefix = "split
   const error = validateFirstAmount(total, firstAmount);
   const rest = Number.isFinite(firstAmount) ? remaining(total, firstAmount) : 0;
   const payments = active && step === 3 && first && second ? buildPayments(total, first, firstAmount, second) : null;
+  const adj1 = payments && first && adjustFor ? adjustFor(first, firstAmount) : 0;
+  const adj2 = payments && second && adjustFor ? adjustFor(second, rest) : 0;
+  const adjustment = round2(adj1 + adj2);
 
   // O total mudou (item novo, cupom, taxa): o preenchimento antigo não vale mais
   const lastTotal = useRef(total);
@@ -68,10 +85,10 @@ export function SplitPaymentPicker({ total, methods, onChange, idPrefix = "split
   }, [methods, first, second]);
 
   useEffect(() => {
-    const key = JSON.stringify({ active, payments });
+    const key = JSON.stringify({ active, payments, adjustment });
     if (emitted.current !== key) {
       emitted.current = key;
-      onChange({ active, payments });
+      onChange({ active, payments, adjustment });
     }
   });
 
@@ -143,6 +160,7 @@ export function SplitPaymentPicker({ total, methods, onChange, idPrefix = "split
               <span className="text-sm"><span className="text-muted-foreground">1ª:</span> <b>{label(first)}</b></span>
               <span className="flex items-center gap-2">
                 <b className="text-sm">{formatBRL(firstAmount)}</b>
+                {step === 3 && <AdjustNote adjustment={adj1} />}
                 <button type="button" className="text-xs font-medium text-primary underline cursor-pointer" data-testid={`${idPrefix}-edit`} onClick={() => { setStep(1); setSecond(null); }}>
                   <Pencil className="mr-0.5 inline h-3 w-3" />Editar
                 </button>
@@ -174,11 +192,18 @@ export function SplitPaymentPicker({ total, methods, onChange, idPrefix = "split
                 <span className="text-sm"><span className="text-muted-foreground">2ª:</span> <b>{label(second)}</b></span>
                 <span className="flex items-center gap-2">
                   <b className="text-sm">{formatBRL(rest)}</b>
+                  <AdjustNote adjustment={adj2} />
                   <button type="button" className="text-xs font-medium text-primary underline cursor-pointer" onClick={() => setStep(2)}>
                     <Pencil className="mr-0.5 inline h-3 w-3" />Editar
                   </button>
                 </span>
               </div>
+              {adjustment !== 0 && (
+                <div className="flex items-baseline justify-between rounded-md bg-[#F6F4F0] px-3 py-2" data-testid={`${idPrefix}-final`}>
+                  <span className="text-sm text-muted-foreground">Total a pagar (com {adjustment < 0 ? "desconto" : "acréscimo"})</span>
+                  <span className="text-base font-bold">{formatBRL(round2(total + adjustment))}</span>
+                </div>
+              )}
               <p className="flex items-center gap-1.5 text-sm font-medium text-green-700" data-testid={`${idPrefix}-done`}>
                 <Check className="h-4 w-4" /> Pagamento dividido pronto
               </p>

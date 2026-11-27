@@ -39,3 +39,13 @@ test("formatPayments", () => {
   assert.equal(formatPayments(undefined), "");
   assert.match(formatPayments([{ payment_method: "cash", amount: 12.5 }, { payment_method: "credit", amount: "7.5" }]).replace(/ /g, " "), /^Dinheiro R\$ 12,50 \+ Crédito R\$ 7,50$/);
 });
+
+test("acréscimo por forma: meio centavo sobe, igual à API (sem erro de ponto flutuante)", async () => {
+  const { ruleAdjustment } = await import("./split-payment.ts");
+  const credit = { type: "surcharge", value: 5, valueType: "percentage" };
+  assert.equal(ruleAdjustment(credit, 69.9, 29.9, 69.9), 1.5); // 1,495 -> 1,50
+  assert.equal(ruleAdjustment({ type: "discount", value: 10, valueType: "percentage" }, 69.9, 40, 69.9), -4);
+  assert.equal(ruleAdjustment({ type: "surcharge", value: 2, valueType: "fixed" }, 100, 10, 100), 2);
+  assert.equal(ruleAdjustment({ type: "none", value: 5, valueType: "percentage" }, 100), 0);
+  assert.equal(ruleAdjustment(credit, 100), 5);
+});
