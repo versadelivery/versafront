@@ -527,7 +527,7 @@ export interface StatementPaymentMethod {
 
 export interface StatementResponse {
   items: StatementItem[];
-  summary: { order_count: number; item_revenue: number; delivery_fees: number; total_revenue: number; total_item_quantity: number };
+  summary: { order_count: number; item_revenue: number; delivery_fees: number; total_revenue: number; total_item_quantity: number; received_total?: number; receivable_total?: number };
   period: { date?: string; start_date?: string; end_date?: string; start_time: string; end_time: string; full_day: boolean; payment_method: string };
   payment_methods: StatementPaymentMethod[];
   payment_groups: StatementPaymentGroup[];
