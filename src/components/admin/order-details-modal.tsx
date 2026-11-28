@@ -96,6 +96,8 @@ interface OrderDetailsModalProps {
     date: string;
     status: string;
     payment_status: string;
+    /** Saiu para entrega ou entregue: itens (peso, quantidade, valor) travados, só o pagamento edita */
+    itemsLocked?: boolean;
     total: number;
     withdrawal: boolean;
     payment_method: string;
@@ -236,6 +238,9 @@ export default function OrderDetailsModal({
   const [selectedDeliveryPerson, setSelectedDeliveryPerson] = useState(order.deliveryPerson || '');
   const [isSavingDelivery, setIsSavingDelivery] = useState(false);
   const [isEditingMode, setIsEditingMode] = useState(false);
+  // Saiu para entrega ou entregue: peso, quantidade, valor e itens travados; só o pagamento (e a baixa) pode mudar
+  const itemsLocked = !!order.itemsLocked || order.status === 'delivered';
+  const editingItems = isEditingMode && !itemsLocked;
   const [editedOrder, setEditedOrder] = useState(order);
   const { paymentMethodsData } = usePayment();
   const [paymentDraft, setPaymentDraft] = useState<PaymentDraft>(() => draftFromOrder(order));
@@ -647,15 +652,15 @@ export default function OrderDetailsModal({
     clearSearch: () => setScanText(''),
     ready: !loadingCatalog && catalogGroups.length > 0 && !isShopLoading,
     onNotReady: () => toast.error('Catálogo carregando. Bipe de novo em instantes.'),
-    shortcut: isEditingMode, // F2 só vale com a edição aberta
+    shortcut: editingItems, // F2 só vale com a edição de itens aberta
   });
 
   // Ao entrar na edição o catálogo carrega e o campo de bipagem já fica em foco
   useEffect(() => {
-    if (!isEditingMode) return;
+    if (!editingItems) return;
     ensureCatalogLoaded();
     scanner.focusInput();
-  }, [isEditingMode]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [editingItems]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Atalhos do teclado (PC): E abre a edição, Ctrl+S salva. Ref evita closure velha no listener.
   const shortcutsRef = useRef({ startEdit: () => {}, save: () => {} });
@@ -1424,7 +1429,7 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
                 <div className="divide-y divide-[#E5E2DD]">
                   <InfoRow label="Subtotal dos itens" value={formatCurrency(editedSubtotal)} />
 
-                  {!isEditingMode && !editedOrder.withdrawal && (
+                  {!editedOrder.withdrawal && (
                     <InfoRow label="Taxa de entrega" value={formatCurrency(deliveryFee)} />
                   )}
 
@@ -1514,7 +1519,7 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
                   <ShoppingBag className="h-4 w-4 text-primary" />
                   <h3 className="text-sm font-semibold text-gray-900">Itens do pedido ({editedOrder.items.length})</h3>
                 </div>
-                {isEditingMode && (
+                {editingItems && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -1526,7 +1531,12 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
                   </Button>
                 )}
               </div>
-              {isEditingMode && (
+              {isEditingMode && itemsLocked && (
+                <p data-testid="items-locked-note" className="mx-4 mt-3 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                  Este pedido já saiu para entrega: peso, quantidade e valor dos itens não podem mais ser alterados. Só o pagamento pode ser editado.
+                </p>
+              )}
+              {editingItems && (
                 <div className="mx-4 mt-3 space-y-2 rounded-md border border-[#E5E2DD] bg-[#FAF9F7] p-3">
                   <p className="flex items-center gap-2 text-sm font-semibold text-gray-900">
                     <ScanBarcode className="h-4 w-4 text-primary" aria-hidden />
@@ -1598,7 +1608,7 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
                             <span className="text-base font-bold text-primary">
                               {formatCurrency(item.total_price ?? item.price * item.quantity)}
                             </span>
-                            {isEditingMode && (
+                            {editingItems && (
                               <button
                                 onClick={() => handleRemoveItem(item.id)}
                                 className={cn(
@@ -1614,7 +1624,7 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
                           </div>
                         </div>
 
-                        {isEditingMode && !String(item.id).startsWith('new_') && (
+                        {editingItems && !String(item.id).startsWith('new_') && (
                           <div className="mt-2 flex items-center gap-2">
                             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                               {isWeightItem(item) ? `Preço por ${item.item_type === 'weight_per_g' ? 'g' : 'kg'}` : 'Preço unitário'}
@@ -1635,7 +1645,7 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
                           </div>
                         )}
 
-                        {isEditingMode && isWeightItem(item) && (
+                        {editingItems && isWeightItem(item) && (
                           <div className="mt-2 flex items-center gap-2">
                             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                               Peso
@@ -1666,7 +1676,7 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
                         )}
 
                         {/* Extras & Complements */}
-                        {isEditingMode ? (
+                        {editingItems ? (
                           <>
                             {/* Editable extras */}
                             {item.available_extras && item.available_extras.length > 0 && (
@@ -1829,7 +1839,7 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
                         )}
 
                         {/* Steps - opções selecionadas */}
-                        {!(isEditingMode && item.available_steps && item.available_steps.length > 0) && item.selected_steps && item.selected_steps.length > 0 && (
+                        {!(editingItems && item.available_steps && item.available_steps.length > 0) && item.selected_steps && item.selected_steps.length > 0 && (
                           <div className="mt-2">
                             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                               Opcoes
@@ -1955,7 +1965,7 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
         item={optionsItem}
         open={!!optionsItem}
         initialWeight={scaleWeight}
-        onCloseAutoFocus={isEditingMode ? scanner.focusInput : undefined}
+        onCloseAutoFocus={editingItems ? scanner.focusInput : undefined}
         onClose={() => { setOptionsItem(null); setScaleWeight(undefined); }}
         onAddToCart={(options) => {
           if (optionsItem) {

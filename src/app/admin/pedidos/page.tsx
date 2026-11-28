@@ -1328,6 +1328,7 @@ export default function OrderManagement() {
             date: selectedOrder.socketData.attributes.created_at,
             status: mapOrderStatus(selectedOrder.status),
             payment_status: selectedOrder.paymentStatus,
+            itemsLocked: selectedOrder.status === 'saiu' || selectedOrder.status === 'entregue',
             total: selectedOrder.amount,
             withdrawal: selectedOrder.deliveryType === 'pickup',
             payment_method: selectedOrder.socketData.attributes.payment_method,
