@@ -47,8 +47,8 @@ export function ruleAdjustment(rule: AdjustmentRule | null | undefined, itemsTot
   if (rule.valueType === "percentage") {
     if (!(base > 0)) return 0;
     const num = cents(itemsTotal) * cents(part) * BigInt(Math.round(value * 100));
-    const den = cents(base) * 10000n;
-    amount = Number((2n * num + den) / (2n * den)) / 100;
+    const den = cents(base) * BigInt(10000);
+    amount = Number((BigInt(2) * num + den) / (BigInt(2) * den)) / 100;
   } else {
     amount = round2(value);
   }
