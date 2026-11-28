@@ -156,6 +156,7 @@ def build_receipt(job, paper_width=DEFAULT_WIDTH):
             # Várias unidades por peso: quantidade e peso total em linhas separadas
             r.pair("Quantidade:", f'{int(item.get("quantity"))} un.', size, True, gap)
         r.pair("Peso:" if item.get("weight") else "Quantidade:", quantity, size, mode == "summary", gap)
+        if mode == "summary": r.pair("Valor:", money(item.get("total_price")), size, True, gap)
         if methods: r.pair("Preparo:", methods, size, mode == "summary", gap)
         if steps: r.pair("Montagem:", steps, size, mode == "summary", gap)
         if extras: r.pair("Adicionais:", extras, size, mode == "summary", gap)

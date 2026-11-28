@@ -587,8 +587,8 @@ ${formatPayments(paymentsOf(order.socketData?.attributes)) || getPaymentMethodLa
             </Button>
           )}
 
-          {/* Botão PAGO, disponível enquanto o pedido está em andamento */}
-          {!isRecebido && !isEntregue && !isCancelled && (
+          {/* Botão PAGO (baixa): também no pedido entregue, que só vira pago quando o operador confere o recebimento */}
+          {!isRecebido && !isCancelled && (
             <Button
               variant="ghost"
               className={cn(

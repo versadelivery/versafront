@@ -136,8 +136,22 @@ export default function PDVPage() {
   const [changeAmount, setChangeAmount] = useState("");
   const [notes, setNotes] = useState("");
   // Balcão: o atendente já pode deixar a venda entregue e/ou paga ao finalizar
+  // Balcão: "já entregue" / "já pago" ficam como o operador deixou da última vez (vende e recebe na mão do cliente)
   const [markDelivered, setMarkDelivered] = useState(false);
   const [markPaid, setMarkPaid] = useState(false);
+  const [counterFlagsLoaded, setCounterFlagsLoaded] = useState(false);
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("pdv_counter_flags") || "{}");
+      setMarkDelivered(!!saved.delivered);
+      setMarkPaid(!!saved.paid);
+    } catch { /* sem armazenamento: começa desmarcado */ }
+    setCounterFlagsLoaded(true);
+  }, []);
+  useEffect(() => {
+    if (!counterFlagsLoaded) return; // só grava depois de ler, senão o valor padrão apaga o salvo
+    try { localStorage.setItem("pdv_counter_flags", JSON.stringify({ delivered: markDelivered, paid: markPaid })); } catch { /* ignora */ }
+  }, [counterFlagsLoaded, markDelivered, markPaid]);
   const [isProcessingOrder, setIsProcessingOrder] = useState(false);
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<ValidateCouponData | null>(null);
@@ -865,8 +879,6 @@ export default function PDVPage() {
         clearCart();
         goMobileView("catalog");
         setNotes("");
-        setMarkDelivered(false);
-        setMarkPaid(false);
         setChangeAmount("");
         setSplit({ active: false, payments: null, adjustment: 0 });
         setSplitKey((k) => k + 1);

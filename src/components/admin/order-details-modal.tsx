@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { formatPayments, paymentsOf, round2, parseMoney, type AdjustmentRule } from '@/lib/split-payment'
 import { draftAdjustment, draftError, draftFromOrder, draftPayload, draftsEqual, type PaymentDraft } from '@/lib/order-payment-draft'
 import { OrderPaymentEditor } from '@/components/admin/order-payment-editor'
+import { Switch } from '@/components/ui/switch'
 import { usePayment } from '@/app/admin/settings/payment/usePayment'
 import { useUsers } from '@/app/admin/settings/users/hooks/useUsers';
 import { Dialog, DialogContent } from '@/components/ui/order-dialog';
@@ -238,6 +239,10 @@ export default function OrderDetailsModal({
   const [editedOrder, setEditedOrder] = useState(order);
   const { paymentMethodsData } = usePayment();
   const [paymentDraft, setPaymentDraft] = useState<PaymentDraft>(() => draftFromOrder(order));
+  // Baixa do pagamento: só o operador marca (depois de conferir o comprovante); entregar o pedido não paga
+  const isPaidNow = order.payment_status === 'paid';
+  const [paidDraft, setPaidDraft] = useState(isPaidNow);
+  const [isTogglingPaid, setIsTogglingPaid] = useState(false);
   // Texto digitado no campo de preço (permite "12," sem perder o cursor)
   const [priceDrafts, setPriceDrafts] = useState<Record<string, string>>({});
   const [removedItemIds, setRemovedItemIds] = useState<string[]>([]);
@@ -299,6 +304,7 @@ export default function OrderDetailsModal({
     setWeightDrafts({});
     setPriceDrafts({});
     setPaymentDraft(draftFromOrder(order));
+    setPaidDraft(order.payment_status === 'paid');
   }, [orderSignature]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const editedSubtotal = (editedOrder.items || []).reduce(
@@ -379,6 +385,10 @@ export default function OrderDetailsModal({
         Object.assign(changes, draftPayload(paymentDraft));
         // O total é refeito pela API com o acréscimo/desconto de cada forma
         delete changes.total;
+      }
+
+      if (paidDraft !== isPaidNow) {
+        changes.paid_at = paidDraft;
       }
 
       if (editedOrder.withdrawal !== order.withdrawal) {
@@ -495,6 +505,7 @@ export default function OrderDetailsModal({
 
   const handleCancelAllChanges = () => {
     setPaymentDraft(draftFromOrder(order));
+    setPaidDraft(isPaidNow);
     setPriceDrafts({});
     setEditedOrder(order);
     setRemovedItemIds([]);
@@ -1316,19 +1327,49 @@ ${order.items.map((item) => `${orderItemQuantityLabel(item)} ${item.name} - ${fo
                       <span className="text-sm font-medium text-gray-900">{paymentLabel}</span>
                     </div>
                   )}
-                  {!isEditingMode && (
+                  {isEditingMode ? (
+                    <div className="flex items-center justify-between py-2">
+                      <label htmlFor="payment-paid-switch" className="text-sm text-muted-foreground">
+                        Pagamento confirmado (dar baixa)
+                      </label>
+                      <Switch id="payment-paid-switch" data-testid="payment-paid-switch" checked={paidDraft} onCheckedChange={setPaidDraft} />
+                    </div>
+                  ) : (
                     <InfoRow
                       label="Status"
                       value={
-                        <span
-                          className={cn(
-                            'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md border text-xs font-semibold',
-                            order.payment_status === 'paid'
-                              ? 'border-green-400 text-green-700 bg-white'
-                              : 'border-red-400 text-red-700 bg-white',
+                        <span className="inline-flex items-center gap-2">
+                          <span
+                            className={cn(
+                              'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md border text-xs font-semibold',
+                              isPaidNow
+                                ? 'border-green-400 text-green-700 bg-white'
+                                : 'border-red-400 text-red-700 bg-white',
+                            )}
+                          >
+                            {isPaidNow ? 'Pago' : 'Pendente'}
+                          </span>
+                          {order.status !== 'cancelled' && onUpdateOrder && (
+                            <button
+                              type="button"
+                              data-testid="payment-paid-toggle"
+                              disabled={isTogglingPaid}
+                              className="text-xs font-medium underline underline-offset-2 text-gray-700 disabled:opacity-50"
+                              onClick={async () => {
+                                setIsTogglingPaid(true);
+                                try {
+                                  await onUpdateOrder(order.id, { paid_at: !isPaidNow });
+                                  toast.success(isPaidNow ? 'Baixa desfeita' : 'Pagamento confirmado');
+                                } catch {
+                                  // o erro já foi exibido por quem salvou
+                                } finally {
+                                  setIsTogglingPaid(false);
+                                }
+                              }}
+                            >
+                              {isPaidNow ? 'Desfazer baixa' : 'Dar baixa'}
+                            </button>
                           )}
-                        >
-                          {order.payment_status === 'paid' ? 'Pago' : 'Pendente'}
                         </span>
                       }
                     />

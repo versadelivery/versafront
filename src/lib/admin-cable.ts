@@ -428,7 +428,7 @@ export function useAdminActionCable() {
   const updateOrderDetails = useCallback(async (orderId: string, data: any): Promise<AdminOrderData | null> => {
     // Campos que a API de edição aceita (PATCH /orders/:id/edit)
     const order: any = {};
-    for (const key of ['customer', 'address', 'shop', 'items', 'total', 'payment_method', 'payments', 'removed_item_ids', 'new_items', 'withdrawal']) {
+    for (const key of ['customer', 'address', 'shop', 'items', 'total', 'payment_method', 'payments', 'removed_item_ids', 'new_items', 'withdrawal', 'paid_at']) {
       if (data[key] !== undefined) order[key] = data[key];
     }
     if (data.deliveryPerson !== undefined) order.delivery_person = data.deliveryPerson;

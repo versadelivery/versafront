@@ -49,6 +49,7 @@ function itemDetails(item: any, detailed: boolean) {
     <strong>${name}</strong>
     ${detailed || !splitLines ? `<div>${detailed ? `${weight} x ${money(price)}${attrs.weight ? '/kg' : ''}` : `Quantidade/Peso: ${escapeHtml(weight)}`}</div>`
       : `<div>Quantidade: ${escapeHtml(attrs.quantity)} un.</div><div>Peso total: ${escapeHtml(orderItemTotalWeightLabel(attrs, (value) => value.toLocaleString('pt-BR', { maximumFractionDigits: 3 })))}</div>`}
+    ${detailed ? '' : `<div>Valor: ${money(attrs.total_price)}</div>`}
     ${methods ? `<div>Preparo: ${escapeHtml(methods)}</div>` : ''}
     ${steps ? `<div>Montagem:<br>${steps}</div>` : ''}
     ${extras ? `<div>Adicionais: ${escapeHtml(extras)}</div>` : ''}
